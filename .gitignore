@@ -1,0 +1,2 @@
+build/*
+!build/FindSDL2.cmake
