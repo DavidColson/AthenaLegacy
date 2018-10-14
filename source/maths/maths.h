@@ -290,6 +290,7 @@ typedef vec<3, int>   vec3i;
 typedef vec<4, float> vec4;
 typedef mat<4, 4, float> mat4;
 typedef mat<3, 3, float> mat3;
+typedef vec3 color;
 
 mat4 MakeScale(vec3 Scaling);
 
@@ -297,7 +298,9 @@ mat4 MakeTranslate(vec3 translate);
 
 mat4 MakeRotate(vec3 rotation);
 
-mat4 MakePerspective(float ScreenWidth, float ScreenHeight, float Near, float Far, float FOV);
+mat4 MakePerspective(float screenWidth, float screenHeight, float Near, float Far, float FOV);
+
+mat4 MakeOrthographic(float left, float right, float bottom, float top, float near, float far);
 
 mat4 MakeViewport(float width, float height);
 

@@ -14,6 +14,10 @@ IDXGISwapChain *swapchain;             // the pointer to the swap chain interfac
 ID3D11Device *dev;                     // the pointer to our Direct3D device interface
 ID3D11DeviceContext *devcon;           // the pointer to our Direct3D device context
 ID3D11RenderTargetView *backbuffer;    // global declaration
+ID3D11Buffer* wvpBuffer;			   // buffer for wvp
+
+float width = 640.0f;
+float height = 480.0f;
 
 struct Vertex
 {
@@ -22,6 +26,12 @@ struct Vertex
 	vec3 pos{ vec3(0.0f, 0.0f, 0.0f) };
 	vec3 col{ vec3(0.0f, 0.0f, 0.0f) };
 };
+
+struct cbPerObject
+{
+	mat4 wvp;
+};
+cbPerObject perObject;
 
 void InitScene()
 {
@@ -67,14 +77,16 @@ void InitScene()
 
 	// define the model to draw
 	Vertex triangle[] = {
-		Vertex(vec3(0.0f, 0.5f, 0.5f), vec3(1.0f, 0.0f, 0.0f)),
-		Vertex(vec3(0.5f, -0.5f, 0.5f), vec3(0.0f, 1.0f, 0.0f)),
-		Vertex(vec3(-0.5f, -0.5f, 0.5f), vec3(0.0f, 0.0f, 1.0f))
+		Vertex(vec3(0.0f, 0.5f, 0.5f), color(1.0f, 0.0f, 0.0f)),
+		Vertex(vec3(0.5f, -0.5f, 0.5f), color(0.0f, 1.0f, 0.0f)),
+		Vertex(vec3(-0.5f, -0.5f, 0.5f), color(0.0f, 0.0f, 1.0f))
 	};
+	int nVerts = 3;
 
 	DWORD indices[] = {
 		0, 1, 2, 0
 	};
+	int nIndices = 4;
 
 
 
@@ -83,7 +95,7 @@ void InitScene()
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * 3;
+	vertexBufferDesc.ByteWidth = sizeof(Vertex) * nVerts;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
@@ -110,7 +122,7 @@ void InitScene()
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * 4;
+	indexBufferDesc.ByteWidth = sizeof(DWORD) * nIndices;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
@@ -123,6 +135,18 @@ void InitScene()
 	dev->CreateBuffer(&indexBufferDesc, &indexBufferData, &indexBuffer);
 
 	devcon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+
+
+	// Create a constant buffer (uniform) for the WVP
+	D3D11_BUFFER_DESC wvpBufferDesc;
+	ZeroMemory(&wvpBufferDesc, sizeof(wvpBufferDesc));
+	wvpBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	wvpBufferDesc.ByteWidth = sizeof(cbPerObject);
+	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	wvpBufferDesc.CPUAccessFlags = 0;
+	wvpBufferDesc.MiscFlags = 0;
+	dev->CreateBuffer(&wvpBufferDesc, nullptr, &wvpBuffer);
 
 
 
@@ -142,6 +166,7 @@ void InitScene()
 
 
 
+
 	// Set primitive Topology
 	devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
@@ -155,8 +180,8 @@ void InitScene()
 
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
-	viewport.Width = 640;
-	viewport.Height = 480;
+	viewport.Width = width;
+	viewport.Height = height;
 
 	// Set Viewport as active
 	devcon->RSSetViewports(1, &viewport);
@@ -170,8 +195,8 @@ int main(int argc, char *argv[])
 		"DirectX",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
-		640,
-		480,
+		int(width),
+		int(height),
 		0
 	);
 
@@ -221,6 +246,8 @@ int main(int argc, char *argv[])
 
 	InitScene();
 
+	float rotation = 0.0f;
+
 	SDL_Event event;
 	bool bContinue = true;
 	while (bContinue)
@@ -228,6 +255,21 @@ int main(int argc, char *argv[])
 		// clear the back buffer to a deep blue
 		float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 		devcon->ClearRenderTargetView(backbuffer, color);
+
+		rotation += 0.5f;
+		mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, rotation));
+
+		mat4 world = rotmat; // transform into world space
+		mat4 view = MakeTranslate(vec3(0.0f, 0.0f, 0.0f)); // transform into camera space
+
+		float aR = width / height;
+		mat4 projection = MakeOrthographic(-1.0f * aR, 1.0f * aR, -1.0f, 1.0f, 0.1f, 10.0f); // transform into screen space
+
+		mat4 wvp = projection * view * world;
+
+		perObject.wvp = wvp;
+		devcon->UpdateSubresource(wvpBuffer, 0, nullptr, &perObject, 0, 0);
+		devcon->VSSetConstantBuffers(0, 1, &wvpBuffer);
 
 		// do 3D rendering on the back buffer here
 		devcon->DrawIndexed(3, 0, 0);

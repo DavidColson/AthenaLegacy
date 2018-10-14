@@ -69,6 +69,17 @@ mat4 MakePerspective(float ScreenWidth, float ScreenHeight, float Near, float Fa
 	return proj;
 }
 
+mat4 MakeOrthographic(float left, float right, float bottom, float top, float near, float far)
+{
+	mat4 ortho = mat4::identity();
+	ortho[0] = vec4(2.0f / (right - left), 0.f, 0.f, (- right - left) / (right - left));
+	ortho[1] = vec4(0.f, 2.0f / (top - bottom), 0.f, (- top - bottom) / (top - bottom));
+	ortho[2] = vec4(0.f, 0.f, 1.0f / (far - near), (- near) / (far - near));
+	ortho[3] = vec4(0.f, 0.f, 0.f, 1.f);
+
+	return ortho;
+}
+
 mat4 MakeViewport(float width, float height)
 {
 	mat4 view = mat4::identity();
