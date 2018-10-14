@@ -1,4 +1,5 @@
-
+#ifndef ENTITY_SYSTEM_
+#define ENTITY_SYSTEM_
 
 /* EXAMPLE USAGE
 / **************
@@ -157,16 +158,16 @@ public:
 	T* AssignComponent(EntityID id)
 	{
 		int componentTypeId = GetComponentTypeId<T>();
-		if (componentTypeId != m_componentPools.size() - 1) // this is a never before seen component
+		if (componentTypeId != m_component_pools.size() - 1) // this is a never before seen component
 		{
-			m_componentPools.push_back(new ComponentPool(sizeof(T)));
+			m_component_pools.push_back(new ComponentPool(sizeof(T)));
 		}
 
 		// Check the mask so you're not overwriting a component
 		if (m_entities[id].test(componentTypeId) == false)
 		{
 			// Looks up the component in the pool, and initializes it with placement new
-			T* pComponent = new (static_cast<T*>(m_componentPools[componentTypeId]->get(id))) T();
+			T* pComponent = new (static_cast<T*>(m_component_pools[componentTypeId]->get(id))) T();
 
 			// Set the bit for this component to true
 			m_entities[id].set(componentTypeId);
@@ -181,32 +182,34 @@ public:
 	T* GetComponent(EntityID id)
 	{
 		int componentTypeId = GetComponentTypeId<T>();
-		// Check to see if the component exists first
-		if (m_entities[id].test(componentTypeId))
-		{
-			T* pComponent = static_cast<T*>(m_componentPools[componentTypeId]->get(id));
-			return pComponent;
-		}
-		return nullptr;
+#ifdef _DEBUG
+		// Check to see if the component exists first (only done when not in release builds for extra performance
+		assert(m_entities[id].test(componentTypeId));
+#endif // DEBUG
+		T* pComponent = static_cast<T*>(m_component_pools[componentTypeId]->get(id));
+		return pComponent;
 	}
 
 	// Gives you the id within this world for a given component type
-	int componentCounter = 0;
 	template <class T>
 	int GetComponentTypeId()
 	{
 		// static variable will be initialized on first function call
 		// It will then continue to return the same thing, no matter how many times this is called.
 		// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
-		static int componentTypeId = componentCounter++;
-		return componentTypeId;
+		static int component_type_id = component_counter++;
+		return component_type_id;
 	}
 
+private:
+	int component_counter = 0;
 	std::vector<System*> m_systems;
 
-	std::vector<ComponentPool*> m_componentPools;
-	std::vector<ComponentMask> m_entities;
+	std::vector<ComponentPool*> m_component_pools;
+	std::vector<ComponentMask> m_entities; // TODO: Generational Indicies
 };
 
 // Global instances of game world
 World gGameWorld;
+
+#endif

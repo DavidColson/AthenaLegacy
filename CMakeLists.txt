@@ -25,6 +25,10 @@ set (DIRECTX11_LIB_DIR $ENV{${ProgramFiles_x86}}/Windows Kits/10/Lib/${CMAKE_VS_
 set(SOURCES
     "source/main.cpp"
     "source/entity_system.h"
+    "source/renderer.h"
+    "source/renderer.cpp"
+    "source/renderproxy.h"
+    "source/renderproxy.cpp"
     "source/maths/maths.h"
     "source/maths/maths.cpp"
     )
