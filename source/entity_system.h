@@ -1,9 +1,63 @@
 
 
+/* EXAMPLE USAGE
+/ **************
+
+// Create new components like this
+
+struct Transform
+{
+	vec3 pos;
+};
+
+struct Shape
+{
+	vec3 color;
+};
+
+// Define systems like this:
+
+class MovementSystem : public System
+{
+public:
+
+	virtual void UpdateEntity(EntityID id) override
+	{
+		Transform* pTransform = gGameWorld.GetComponent<Transform>(id);
+
+		pTransform->pos.x += 0.01f;
+	}
+
+	virtual void SetSubscriptions() override
+	{
+		Subscribe<Transform>();
+	}
+};
+
+// You will need to register the system with the game world like this:
+
+gGameWorld.RegisterSystem<MovementSystem>();
+
+// To create entities and assign entities to them do this:
+
+EntityID triangle = gGameWorld.NewEntity();
+Transform* pTransform = gGameWorld.AssignComponent<Transform>(triangle);
+Shape* pShape = gGameWorld.AssignComponent<Shape>(triangle);
+
+EntityID circle = gGameWorld.NewEntity();
+gGameWorld.AssignComponent<Shape>(circle);
+
+// To get the whole thing running, just call gGameWorld.UpdateSystems();
+
+*/
+
+
 typedef uint EntityID;
 const int MAX_COMPONENTS = 10;
 const int MAX_ENTITIES = 100;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
+
+class World;
 
 // *****************************************
 // Base class for systems
@@ -11,11 +65,21 @@ typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
 class System
 {
+	friend class World;
 public:
-	ComponentMask m_componentSubscription;
 
 	virtual void UpdateEntity(EntityID id) = 0;
-	virtual void Subscribe() = 0;
+	virtual void SetSubscriptions() = 0;
+
+protected:
+	template <typename T>
+	void Subscribe()
+	{
+		m_componentSubscription.set(gGameWorld.GetComponentTypeId<T>());
+	}
+
+private:
+	ComponentMask m_componentSubscription;
 };
 
 // ********************************************
@@ -84,7 +148,7 @@ public:
 	{
 		T* newSystem = new T();
 		m_systems.push_back(newSystem);
-		newSystem->Subscribe();
+		newSystem->SetSubscriptions();
 	}
 
 	// Assigns a component to an entity, optionally making a new memory pool for a new component

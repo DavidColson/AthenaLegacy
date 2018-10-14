@@ -206,15 +206,14 @@ public:
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		// loop over interested entities
 		Transform* pTransform = gGameWorld.GetComponent<Transform>(id);
 
 		pTransform->pos.x += 0.01f;
 	}
 
-	virtual void Subscribe() override
+	virtual void SetSubscriptions() override
 	{
-		m_componentSubscription.set(gGameWorld.GetComponentTypeId<Transform>());
+		Subscribe<Transform>();
 	}
 };
 
