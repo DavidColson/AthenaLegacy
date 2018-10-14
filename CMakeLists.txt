@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project (hello)
+project (Engine)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/")
 
@@ -22,9 +22,22 @@ set (DIRECTX11_LIB_DIR $ENV{${ProgramFiles_x86}}/Windows Kits/10/Lib/${CMAKE_VS_
 
 # Make an error message that complains if directx files cannot be found
 
+set(SOURCES
+    "source/main.cpp"
+    "source/maths/maths.h"
+    "source/maths/maths.cpp"
+    )
+
+set(SHADERS
+    "shaders/Shader.hlsl"
+    )
+
+# Bit of a hack to stop VS compiling the shaders
+set_source_files_properties(${SHADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
+
 # Find d3d headers and libs and set variables
 include_directories(${SDL2_INCLUDE_DIRS} ${DIRECTX11_INCLUDE_DIR})
 link_directories(${DIRECTX11_LIB_DIR})
 
-add_executable(hello WIN32 helloworld.cpp shader.hlsl)
-target_link_libraries(hello ${SDL2_LIBRARIES} d3d11 d3d10 d3dcompiler)
+add_executable(Engine WIN32 ${SOURCES} ${SHADERS})
+target_link_libraries(Engine ${SDL2_LIBRARIES} d3d11 d3d10 d3dcompiler)

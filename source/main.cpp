@@ -8,26 +8,19 @@
 #include <D3DCompiler.h>
 #include <comdef.h>
 
+#include "maths/maths.h"
+
 IDXGISwapChain *swapchain;             // the pointer to the swap chain interface
 ID3D11Device *dev;                     // the pointer to our Direct3D device interface
 ID3D11DeviceContext *devcon;           // the pointer to our Direct3D device context
 ID3D11RenderTargetView *backbuffer;    // global declaration
 
-struct Point
-{
-	Point(float x, float y, float z) : x(x), y(y), z(z) {}
-
-	float x{ 0.0f };
-	float y{ 0.0f };
-	float z{ 0.0f };
-};
-
 struct Vertex
 {
-	Vertex(Point pos, Point col) : pos(pos), col(col) {}
+	Vertex(vec3 pos, vec3 col) : pos(pos), col(col) {}
 
-	Point pos{ Point(0.0f, 0.0f, 0.0f) };
-	Point col{ Point(0.0f, 0.0f, 0.0f) };
+	vec3 pos{ vec3(0.0f, 0.0f, 0.0f) };
+	vec3 col{ vec3(0.0f, 0.0f, 0.0f) };
 };
 
 void InitScene()
@@ -38,8 +31,11 @@ void InitScene()
 	ID3DBlob* psBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 
+
+
+
 	// Runtime Compile shaders
-	hr = D3DCompileFromFile(L"Shader.hlsl", 0, 0, "VSMain", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
+	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "VSMain", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
 	if (FAILED(hr))
 	{
 		if (errorBlob)
@@ -48,7 +44,7 @@ void InitScene()
 			errorBlob->Release();
 		}
 	}
-	hr = D3DCompileFromFile(L"Shader.hlsl", 0, 0, "PSMain", "ps_5_0", 0, 0, &psBlob, &errorBlob);
+	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "PSMain", "ps_5_0", 0, 0, &psBlob, &errorBlob);
 	if (FAILED(hr))
 	{
 		if (errorBlob)
@@ -69,14 +65,21 @@ void InitScene()
 	devcon->VSSetShader(vertexShader, 0, 0);
 	devcon->PSSetShader(pixelShader, 0, 0);
 
-	// Create vertex buffer
+	// define the model to draw
 	Vertex triangle[] = {
-		Vertex(Point(0.0f, 0.5f, 0.5f), Point(1.0f, 0.0f, 0.0f)),
-		Vertex(Point(0.5f, -0.5f, 0.5f), Point(0.0f, 1.0f, 0.0f)),
-		Vertex(Point(-0.5f, -0.5f, 0.5f), Point(0.0f, 0.0f, 1.0f))
+		Vertex(vec3(0.0f, 0.5f, 0.5f), vec3(1.0f, 0.0f, 0.0f)),
+		Vertex(vec3(0.5f, -0.5f, 0.5f), vec3(0.0f, 1.0f, 0.0f)),
+		Vertex(vec3(-0.5f, -0.5f, 0.5f), vec3(0.0f, 0.0f, 1.0f))
 	};
 
-	// Describe the buffer 
+	DWORD indices[] = {
+		0, 1, 2, 0
+	};
+
+
+
+
+	// Create vertex buffer
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -99,6 +102,30 @@ void InitScene()
 	UINT offset = 0;
 	devcon->IASetVertexBuffers(0, 1, &vertBuffer, &stride, &offset);
 
+
+
+
+	// Create an index buffer
+	D3D11_BUFFER_DESC indexBufferDesc;
+	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(DWORD) * 4;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+
+	// fill the index buffer with actual data
+	D3D11_SUBRESOURCE_DATA indexBufferData;
+	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
+	indexBufferData.pSysMem = indices;
+	ID3D11Buffer* indexBuffer;
+	dev->CreateBuffer(&indexBufferDesc, &indexBufferData, &indexBuffer);
+
+	devcon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+
+
 	// Create an input layout
 	ID3D11InputLayout* vertLayout;
 	D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -112,8 +139,15 @@ void InitScene()
 	// Set the input layout as active
 	devcon->IASetInputLayout(vertLayout);
 
+
+
+
 	// Set primitive Topology
 	devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+
+
+
 
 	// Create viewport
 	D3D11_VIEWPORT viewport;
@@ -196,7 +230,7 @@ int main(int argc, char *argv[])
 		devcon->ClearRenderTargetView(backbuffer, color);
 
 		// do 3D rendering on the back buffer here
-		devcon->Draw(3, 0);
+		devcon->DrawIndexed(3, 0, 0);
 
 		// switch the back buffer and the front buffer
 		swapchain->Present(0, 0);
