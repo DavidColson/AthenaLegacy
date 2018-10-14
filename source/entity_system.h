@@ -69,6 +69,7 @@ class System
 	friend class World;
 public:
 
+	virtual void StartEntity(EntityID id) {};
 	virtual void UpdateEntity(EntityID id) = 0;
 	virtual void SetSubscriptions() = 0;
 
@@ -119,6 +120,23 @@ class World
 public:
 	// TODO Destructor, delete systems and components
 
+	// Goes through each system looping entities and calling the startup function
+	// for entities matching the subscription. Called once on scene laod
+	void StartSystems()
+	{
+		for (System* sys : m_systems)
+		{
+			for (EntityID i = 0; i < m_entities.size(); i++)
+			{
+				ComponentMask mask = m_entities[i];
+				if (sys->m_componentSubscription == (sys->m_componentSubscription & mask))
+				{
+					sys->StartEntity(i);
+				}
+			}
+		}
+	}
+
 	// Goes through each system one by one, looping through all entities and updating the
 	// system with entities that match the subscription
 	void UpdateSystems()
@@ -158,15 +176,20 @@ public:
 	T* AssignComponent(EntityID id)
 	{
 		int componentTypeId = GetComponentTypeId<T>();
-		if (componentTypeId != m_component_pools.size() - 1) // this is a never before seen component
+		if (m_component_pools.size() <= componentTypeId) // Not enough component pool
 		{
-			m_component_pools.push_back(new ComponentPool(sizeof(T)));
+			m_component_pools.resize(componentTypeId + 1, nullptr);
+		}
+		if (m_component_pools[componentTypeId] == nullptr) // New component, make a new pool
+		{
+			m_component_pools[componentTypeId] = new ComponentPool(sizeof(T));
 		}
 
 		// Check the mask so you're not overwriting a component
 		if (m_entities[id].test(componentTypeId) == false)
 		{
 			// Looks up the component in the pool, and initializes it with placement new
+			// TODO: Fatal error, trying to assign to component that has no pool
 			T* pComponent = new (static_cast<T*>(m_component_pools[componentTypeId]->get(id))) T();
 
 			// Set the bit for this component to true
@@ -184,7 +207,7 @@ public:
 		int componentTypeId = GetComponentTypeId<T>();
 #ifdef _DEBUG
 		// Check to see if the component exists first (only done when not in release builds for extra performance
-		assert(m_entities[id].test(componentTypeId));
+		assert(m_entities[id].test(componentTypeId)); // TODO: Convert to fatal
 #endif // DEBUG
 		T* pComponent = static_cast<T*>(m_component_pools[componentTypeId]->get(id));
 		return pComponent;

@@ -9,51 +9,84 @@
 #include "renderer.h"
 #include "entity_system.h"
 
-struct Transform
+struct TransformComponent
 {
-	vec3 pos;
+	vec3 m_pos;
+	float m_rot;
 };
 
-struct Shape
+struct SimpleRotateComponent
 {
-	vec3 color;
+	float m_rotSpeed{ 0.5f };
 };
 
-class MovementSystem : public System
+struct DrawableComponent
+{
+	RenderProxy* pRenderProxy;
+};
+
+class RotationSystem : public System
 {
 public:
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		Transform* pTransform = gGameWorld.GetComponent<Transform>(id);
+		TransformComponent* pTransform = gGameWorld.GetComponent<TransformComponent>(id);
+		SimpleRotateComponent* pRotate = gGameWorld.GetComponent<SimpleRotateComponent>(id);
 
-		pTransform->pos.x += 0.01f;
+		pTransform->m_rot += pRotate->m_rotSpeed;
 	}
 
 	virtual void SetSubscriptions() override
 	{
-		Subscribe<Transform>();
+		Subscribe<TransformComponent>();
+		Subscribe<SimpleRotateComponent>();
 	}
 };
 
+class DrawPolygonSystem : public System 
+{
+public:
+	virtual void StartEntity(EntityID id) override
+	{
+		TransformComponent* pTransform = gGameWorld.GetComponent<TransformComponent>(id);
+		DrawableComponent* pDrawable = gGameWorld.GetComponent<DrawableComponent>(id);
+
+		// Create a render proxy for this entity and submit it
+		pDrawable->pRenderProxy = new RenderProxy(
+			{
+				Vertex(vec3(0.0f, 0.5f, 0.5f), color(1.0f, 0.0f, 0.0f)),
+				Vertex(vec3(0.5f, -0.5f, 0.5f), color(0.0f, 1.0f, 0.0f)),
+				Vertex(vec3(-0.5f, -0.5f, 0.5f), color(0.0f, 0.0f, 1.0f))
+			}, {
+				0, 1, 2, 0
+			});
+		gRenderer.SubmitProxy(pDrawable->pRenderProxy);
+
+		pDrawable->pRenderProxy->SetTransform(pTransform->m_pos, pTransform->m_rot);
+	}
+
+	virtual void UpdateEntity(EntityID id) override
+	{
+		TransformComponent* pTransform = gGameWorld.GetComponent<TransformComponent>(id);
+		DrawableComponent* pDrawable = gGameWorld.GetComponent<DrawableComponent>(id);
+		
+		pDrawable->pRenderProxy->SetTransform(pTransform->m_pos, pTransform->m_rot);
+	}
+
+	virtual void SetSubscriptions() override
+	{
+		Subscribe<TransformComponent>();
+		Subscribe<DrawableComponent>();
+	}
+};
 
 int main(int argc, char *argv[])
 {
-	gGameWorld.RegisterSystem<MovementSystem>();
-
-	EntityID triangle = gGameWorld.NewEntity();
-	Transform* pTransform = gGameWorld.AssignComponent<Transform>(triangle);
-	Shape* pShape = gGameWorld.AssignComponent<Shape>(triangle);
-
-	EntityID circle = gGameWorld.NewEntity();
-	gGameWorld.AssignComponent<Shape>(circle);
-
-	pTransform->pos.x = 7.0f;
-	pShape->color = vec3(0.5f, 1.0f, 0.0f);
-
+	// Engine Init
+	// ***********
 
 	SDL_Init(SDL_INIT_VIDEO);
-
 
 	float width = 640.0f;
 	float height = 480.0f;
@@ -74,16 +107,36 @@ int main(int argc, char *argv[])
 
 	gRenderer.Initialize(hwnd, width, height);
 
-	// submit an object for rendering
-	RenderProxy triangleProxy(
-	{
-		Vertex(vec3(0.0f, 0.5f, 0.5f), color(1.0f, 0.0f, 0.0f)),
-		Vertex(vec3(0.5f, -0.5f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-		Vertex(vec3(-0.5f, -0.5f, 0.5f), color(0.0f, 0.0f, 1.0f))
-	}, {
-		0, 1, 2, 0
-	});
-	gRenderer.m_renderProxies.push_back(triangleProxy);
+
+
+
+	// Create our scene
+	// ****************
+
+	gGameWorld.RegisterSystem<RotationSystem>();
+	gGameWorld.RegisterSystem<DrawPolygonSystem>();
+
+	EntityID triangle = gGameWorld.NewEntity();
+	gGameWorld.AssignComponent<TransformComponent>(triangle);
+	gGameWorld.AssignComponent<DrawableComponent>(triangle);
+	gGameWorld.AssignComponent<SimpleRotateComponent>(triangle);
+
+	EntityID triangle2 = gGameWorld.NewEntity();
+	gGameWorld.AssignComponent<TransformComponent>(triangle2)->m_pos = vec3(1.0f, 0.0f, 0.0f);
+	gGameWorld.AssignComponent<DrawableComponent>(triangle2);
+
+	EntityID triangle3 = gGameWorld.NewEntity();
+	gGameWorld.AssignComponent<TransformComponent>(triangle3)->m_pos = vec3(-1.0f, 0.0f, 0.0f);
+	gGameWorld.AssignComponent<DrawableComponent>(triangle3);
+	gGameWorld.AssignComponent<SimpleRotateComponent>(triangle3)->m_rotSpeed = 1.0f;
+
+
+
+
+	// Main Loop
+	// *********
+
+	gGameWorld.StartSystems();
 
 	SDL_Event event;
 	bool bContinue = true;

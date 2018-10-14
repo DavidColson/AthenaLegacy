@@ -157,9 +157,9 @@ void Renderer::RenderFrame()
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	m_device_context->ClearRenderTargetView(m_back_buffer, color);
 
-	for (RenderProxy& proxy : m_renderProxies)
+	for (RenderProxy* proxy : m_renderProxies)
 	{
-		proxy.Draw();
+		proxy->Draw();
 	}
 
 	// switch the back buffer and the front buffer
@@ -169,4 +169,9 @@ void Renderer::RenderFrame()
 void Renderer::Shutdown()
 {
 	// TODO: Release things
+}
+
+void Renderer::SubmitProxy(RenderProxy* pRenderProxy)
+{
+	m_renderProxies.push_back(pRenderProxy);
 }

@@ -82,12 +82,10 @@ void RenderProxy::Draw()
 
 	gRenderer.m_device_context->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	static float rotation = 0.0f;
-	rotation += 0.5f;
+	mat4 posmat = MakeTranslate(m_pos);
+	mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, m_rot));
 
-	mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, rotation));
-
-	mat4 world = rotmat; // transform into world space
+	mat4 world = posmat * rotmat; // transform into world space
 	mat4 view = MakeTranslate(vec3(0.0f, 0.0f, 0.0f)); // transform into camera space
 
 	float aR = gRenderer.m_width / gRenderer.m_height;

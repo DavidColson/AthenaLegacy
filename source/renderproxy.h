@@ -22,8 +22,13 @@ public:
 
 	void Draw();
 
+	void SetTransform(vec3 pos, float rot) { m_pos = pos; m_rot = rot; }
+
 private:
 	ID3D11Buffer* m_wvpBuffer;
+
+	vec3 m_pos;
+	float m_rot;
 
 	ID3D11Buffer* m_vertBuffer;
 	std::vector<Vertex> m_vertices;

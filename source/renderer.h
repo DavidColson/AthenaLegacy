@@ -20,7 +20,9 @@ public:
 
 	void Shutdown();
 
-	std::vector<RenderProxy> m_renderProxies;
+	void SubmitProxy(RenderProxy* pRenderProxy);
+
+	std::vector<RenderProxy*> m_renderProxies;
 
 	float m_width{ 0 };
 	float m_height{ 0 };
