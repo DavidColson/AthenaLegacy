@@ -7,8 +7,11 @@
 #include <d3d10.h>
 #include <D3DCompiler.h>
 #include <comdef.h>
+#include <vector>
+#include <bitset>
 
 #include "maths/maths.h"
+#include "entity_system.h"
 
 IDXGISwapChain *swapchain;             // the pointer to the swap chain interface
 ID3D11Device *dev;                     // the pointer to our Direct3D device interface
@@ -187,8 +190,50 @@ void InitScene()
 	devcon->RSSetViewports(1, &viewport);
 }
 
+struct Transform
+{
+	vec3 pos;
+};
+
+struct Shape
+{
+	vec3 color;
+};
+
+class MovementSystem : public System
+{
+public:
+
+	virtual void UpdateEntity(EntityID id) override
+	{
+		// loop over interested entities
+		Transform* pTransform = gGameWorld.GetComponent<Transform>(id);
+
+		pTransform->pos.x += 0.01f;
+	}
+
+	virtual void Subscribe() override
+	{
+		m_componentSubscription.set(gGameWorld.GetComponentTypeId<Transform>());
+	}
+};
+
+
 int main(int argc, char *argv[])
 {
+	gGameWorld.RegisterSystem<MovementSystem>();
+
+	EntityID triangle = gGameWorld.NewEntity();
+	Transform* pTransform = gGameWorld.AssignComponent<Transform>(triangle);
+	Shape* pShape = gGameWorld.AssignComponent<Shape>(triangle);
+
+	EntityID circle = gGameWorld.NewEntity();
+	gGameWorld.AssignComponent<Shape>(circle);
+
+	pTransform->pos.x = 7.0f;
+	pShape->color = vec3(0.5f, 1.0f, 0.0f);
+
+
 	SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_Window *window = SDL_CreateWindow(
@@ -255,6 +300,8 @@ int main(int argc, char *argv[])
 		// clear the back buffer to a deep blue
 		float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 		devcon->ClearRenderTargetView(backbuffer, color);
+
+		gGameWorld.UpdateSystems();
 
 		rotation += 0.5f;
 		mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, rotation));
