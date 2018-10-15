@@ -29,6 +29,8 @@ set(SOURCES
     "source/renderer.cpp"
     "source/renderproxy.h"
     "source/renderproxy.cpp"
+	"source/InputAPI.h"
+    "source/InputAPI.cpp"
     "source/maths/maths.h"
     "source/maths/maths.cpp"
     )

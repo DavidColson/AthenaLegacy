@@ -18,6 +18,7 @@ struct Vertex
 class RenderProxy
 {
 public:
+	RenderProxy() {};
 	RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices);
 
 	void Draw();
@@ -27,13 +28,13 @@ public:
 private:
 	ID3D11Buffer* m_wvpBuffer;
 
-	vec3 m_pos;
-	float m_rot;
+	vec3 m_pos{ vec3(0,0,0) };
+	float m_rot{ 0.0f };
 
-	ID3D11Buffer* m_vertBuffer;
+	ID3D11Buffer* m_vertBuffer{ nullptr };
 	std::vector<Vertex> m_vertices;
 
-	ID3D11Buffer* m_indexBuffer;
+	ID3D11Buffer* m_indexBuffer{ nullptr };
 	std::vector<int> m_indices;
 
 	// draw states

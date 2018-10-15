@@ -55,7 +55,7 @@ gGameWorld.AssignComponent<Shape>(circle);
 
 typedef uint EntityID;
 const int MAX_COMPONENTS = 10;
-const int MAX_ENTITIES = 100;
+const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
 class World;
