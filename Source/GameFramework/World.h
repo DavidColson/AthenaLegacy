@@ -1,5 +1,4 @@
-#ifndef ENTITY_SYSTEM_
-#define ENTITY_SYSTEM_
+#pragma once
 
 /* EXAMPLE USAGE
 / **************
@@ -53,7 +52,7 @@ gGameWorld.AssignComponent<Shape>(circle);
 */
 
 
-typedef uint EntityID;
+typedef unsigned int EntityID;
 const int MAX_COMPONENTS = 10;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
@@ -95,16 +94,16 @@ struct ComponentPool
 	ComponentPool(size_t elementsize)
 	{
 		elementSize = elementsize;
-		data = new char[elementSize * MAX_ENTITIES];
+		pData = new char[elementSize * MAX_ENTITIES];
 		size = MAX_ENTITIES;
 	}
 
 	inline void* get(size_t index)
 	{
-		return data + index * elementSize;
+		return pData + index * elementSize;
 	}
 
-	char* data;
+	char* pData;
 	size_t elementSize;
 	size_t size = 0;
 };
@@ -124,14 +123,14 @@ public:
 	// for entities matching the subscription. Called once on scene laod
 	void StartSystems()
 	{
-		for (System* sys : m_systems)
+		for (System* pSys : m_systems)
 		{
 			for (EntityID i = 0; i < m_entities.size(); i++)
 			{
 				ComponentMask mask = m_entities[i];
-				if (sys->m_componentSubscription == (sys->m_componentSubscription & mask))
+				if (pSys->m_componentSubscription == (pSys->m_componentSubscription & mask))
 				{
-					sys->StartEntity(i);
+					pSys->StartEntity(i);
 				}
 			}
 		}
@@ -158,16 +157,16 @@ public:
 	EntityID NewEntity()
 	{
 		m_entities.push_back(ComponentMask());
-		return uint(m_entities.size() - 1);
+		return EntityID(m_entities.size() - 1);
 	}
 
 	// Makes a new system instance
 	template <typename T>
 	void RegisterSystem()
 	{
-		T* newSystem = new T();
-		m_systems.push_back(newSystem);
-		newSystem->SetSubscriptions();
+		T* pNewSystem = new T();
+		m_systems.push_back(pNewSystem);
+		pNewSystem->SetSubscriptions();
 	}
 
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
@@ -176,13 +175,13 @@ public:
 	T* AssignComponent(EntityID id)
 	{
 		int componentTypeId = GetComponentTypeId<T>();
-		if (m_component_pools.size() <= componentTypeId) // Not enough component pool
+		if (m_componentPools.size() <= componentTypeId) // Not enough component pool
 		{
-			m_component_pools.resize(componentTypeId + 1, nullptr);
+			m_componentPools.resize(componentTypeId + 1, nullptr);
 		}
-		if (m_component_pools[componentTypeId] == nullptr) // New component, make a new pool
+		if (m_componentPools[componentTypeId] == nullptr) // New component, make a new pool
 		{
-			m_component_pools[componentTypeId] = new ComponentPool(sizeof(T));
+			m_componentPools[componentTypeId] = new ComponentPool(sizeof(T));
 		}
 
 		// Check the mask so you're not overwriting a component
@@ -190,7 +189,7 @@ public:
 		{
 			// Looks up the component in the pool, and initializes it with placement new
 			// TODO: Fatal error, trying to assign to component that has no pool
-			T* pComponent = new (static_cast<T*>(m_component_pools[componentTypeId]->get(id))) T();
+			T* pComponent = new (static_cast<T*>(m_componentPools[componentTypeId]->get(id))) T();
 
 			// Set the bit for this component to true
 			m_entities[id].set(componentTypeId);
@@ -209,7 +208,7 @@ public:
 		// Check to see if the component exists first (only done when not in release builds for extra performance
 		assert(m_entities[id].test(componentTypeId)); // TODO: Convert to fatal
 #endif // DEBUG
-		T* pComponent = static_cast<T*>(m_component_pools[componentTypeId]->get(id));
+		T* pComponent = static_cast<T*>(m_componentPools[componentTypeId]->get(id));
 		return pComponent;
 	}
 
@@ -220,19 +219,17 @@ public:
 		// static variable will be initialized on first function call
 		// It will then continue to return the same thing, no matter how many times this is called.
 		// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
-		static int component_type_id = component_counter++;
-		return component_type_id;
+		static int componentTypeId = m_componentCounter++;
+		return componentTypeId;
 	}
 
 private:
-	int component_counter = 0;
+	int m_componentCounter = 0;
 	std::vector<System*> m_systems;
 
-	std::vector<ComponentPool*> m_component_pools;
+	std::vector<ComponentPool*> m_componentPools;
 	std::vector<ComponentMask> m_entities; // TODO: Generational Indicies
 };
 
 // Global instances of game world
 World gGameWorld;
-
-#endif

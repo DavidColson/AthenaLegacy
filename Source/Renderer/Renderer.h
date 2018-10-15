@@ -1,10 +1,8 @@
-#ifndef RENDERER_
-#define RENDERER_
+#pragma once
 
 #include <vector>
 
-#include "maths/maths.h"
-#include "renderproxy.h"
+#include "Renderer/RenderProxy.h"
 
 struct IDXGISwapChain;
 struct ID3D11Device;
@@ -14,7 +12,7 @@ struct ID3D11RenderTargetView;
 class Renderer
 {
 public:
-	void Initialize(void* nativeWindowHandle, float _width, float _height);
+	void Initialize(void* pNativeWindowHandle, float width, float height);
 
 	void RenderFrame();
 
@@ -27,11 +25,10 @@ public:
 	float m_width{ 0 };
 	float m_height{ 0 };
 
-	IDXGISwapChain* m_swap_chain;
-	ID3D11Device* m_device;
-	ID3D11DeviceContext* m_device_context;
-	ID3D11RenderTargetView* m_back_buffer;
+	IDXGISwapChain* m_pSwapChain;
+	ID3D11Device* m_pDevice;
+	ID3D11DeviceContext* m_pDeviceContext;
+	ID3D11RenderTargetView* m_pBackBuffer;
 };
 
-extern Renderer gRenderer;
-#endif
+extern Renderer g_Renderer;

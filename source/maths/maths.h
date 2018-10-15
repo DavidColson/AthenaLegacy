@@ -24,15 +24,15 @@ struct vec
 	{
 		for (uint i = 0; i < dim; i++)
 		{
-			data[i] = T();
+			m_data[i] = T();
 		}
 	}
 
-	inline T& operator[](const uint i) { assert(i < dim); return data[i]; }
-	inline const T& operator[](const uint i) const { assert(i < dim); return data[i]; }
+	inline T& operator[](const uint i) { assert(i < dim); return m_data[i]; }
+	inline const T& operator[](const uint i) const { assert(i < dim); return m_data[i]; }
 
 private:
-	T data[dim];
+	T m_data[dim];
 };
 
 template <typename T>
@@ -170,34 +170,34 @@ struct dt<1, T> {
 template<uint nrows, uint ncols, typename T>
 class mat 
 {
-	vec<ncols, T> rows[nrows];
+	vec<ncols, T> m_rows[nrows];
 public:
 	mat() {}
 
 	inline vec<ncols, T>& operator[] (const uint id)
 	{
 		assert(id < nrows);
-		return rows[id];
+		return m_rows[id];
 	}
 
 	inline const vec<ncols, T>& operator[] (const uint id) const
 	{
 		assert(id < nrows);
-		return rows[id];
+		return m_rows[id];
 	}
 
 	inline vec<nrows, T> col(const uint id) const
 	{
 		assert(id < ncols);
 		vec<nrows, T> ret;
-		for (uint i = nrows; i--; ret[i] = rows[i][id]);
+		for (uint i = nrows; i--; ret[i] = m_rows[i][id]);
 		return ret;
 	}
 
 	inline void setcol(const uint id, vec<nrows, T> v)
 	{
 		assert(id < ncols);
-		for (uint i = nrows; i--; rows[i][id] = v[i]);
+		for (uint i = nrows; i--; m_rows[i][id] = v[i]);
 	}
 
 	inline static mat<nrows, ncols, T> identity()
@@ -220,7 +220,7 @@ public:
 	{
 		mat<nrows - 1, ncols - 1, T> ret;
 		for (uint i = nrows - 1; i--;)
-			for (uint j = ncols - 1; j--; ret[i][j] = rows[i < row ? i : i + 1][j < col ? j : j + 1]);
+			for (uint j = ncols - 1; j--; ret[i][j] = m_rows[i < row ? i : i + 1][j < col ? j : j + 1]);
 		return ret;
 	}
 
@@ -241,7 +241,7 @@ public:
 	inline mat<nrows, ncols, T> invert_transpose()
 	{
 		mat<nrows, ncols, T> ret = adjugate();
-		T temp = ret[0] * rows[0];
+		T temp = ret[0] * m_rows[0];
 		return ret / temp;
 	}
 

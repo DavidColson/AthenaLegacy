@@ -1,9 +1,8 @@
-#ifndef INPUTAPI_
-#define INPUTAPI_
+#pragma once
 
 #include <bitset>
 
-class InputAPI
+class Input
 {
 public:
 	bool GetKeyDown(int keyCode);
@@ -14,10 +13,9 @@ public:
 
 private:
 #define NKEYS 512
-	std::bitset<NKEYS> keyDowns;
-	std::bitset<NKEYS> keyUps;
-	std::bitset<NKEYS> keyStates;
+	std::bitset<NKEYS> m_keyDowns;
+	std::bitset<NKEYS> m_keyUps;
+	std::bitset<NKEYS> m_keyStates;
 };
 
-extern InputAPI gInputAPI;
-#endif
+extern Input g_Input;

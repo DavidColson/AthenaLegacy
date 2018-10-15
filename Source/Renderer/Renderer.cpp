@@ -1,21 +1,20 @@
 
 #include "renderer.h"
 
-#include <DirectXPackedVector.h>
-#include <stdio.h>
+#include <D3DCompiler.h>
 #include <d3d11.h>
 #include <d3d10.h>
-#include <D3DCompiler.h>
+#include <stdio.h>
 
-#include "maths/maths.h"
+#include "Maths/Maths.h"
 
-Renderer gRenderer;
+Renderer g_Renderer;
 
-void Renderer::Initialize(void* nativeWindowHandle, float _width, float _height)
+void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 {
-	HWND hwnd = (HWND)nativeWindowHandle;
-	m_width = _width;
-	m_height = _height;
+	HWND hwnd = (HWND)pNativeWindowHandle;
+	m_width = width;
+	m_height = height;
 
 
 
@@ -44,21 +43,21 @@ void Renderer::Initialize(void* nativeWindowHandle, float _width, float _height)
 		NULL,
 		D3D11_SDK_VERSION,
 		&scd,
-		&m_swap_chain,
-		&m_device,
+		&m_pSwapChain,
+		&m_pDevice,
 		NULL,
-		&m_device_context);
+		&m_pDeviceContext);
 
 	// get the address of the back buffer
 	ID3D11Texture2D *pBackBuffer;
-	m_swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
 	// use the back buffer address to create the render target
-	m_device->CreateRenderTargetView(pBackBuffer, NULL, &m_back_buffer);
+	m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pBackBuffer);
 	pBackBuffer->Release();
 
 	// set the render target as the back buffer
-	m_device_context->OMSetRenderTargets(1, &m_back_buffer, NULL);
+	m_pDeviceContext->OMSetRenderTargets(1, &m_pBackBuffer, NULL);
 
 
 
@@ -69,40 +68,40 @@ void Renderer::Initialize(void* nativeWindowHandle, float _width, float _height)
 
 	HRESULT hr;
 
-	ID3DBlob* vsBlob = nullptr;
-	ID3DBlob* psBlob = nullptr;
-	ID3DBlob* errorBlob = nullptr;
+	ID3DBlob* pVsBlob = nullptr;
+	ID3DBlob* pPsBlob = nullptr;
+	ID3DBlob* pErrorBlob = nullptr;
 
 	// TODO: Shaders should be considered a material, kept somewhere so objects can share materials
-	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "VSMain", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
+	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
-		if (errorBlob)
+		if (pErrorBlob)
 		{
-			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			errorBlob->Release();
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
 		}
 	}
-	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "PSMain", "ps_5_0", 0, 0, &psBlob, &errorBlob);
+	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
-		if (errorBlob)
+		if (pErrorBlob)
 		{
-			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-			errorBlob->Release();
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
 		}
 	}
 
-	ID3D11VertexShader* vertexShader;
-	ID3D11PixelShader* pixelShader;
+	ID3D11VertexShader* pVertexShader;
+	ID3D11PixelShader* pPixelShader;
 
 	// Create shader objects
-	hr = m_device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &vertexShader);
-	hr = m_device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &pixelShader);
+	hr = m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &pVertexShader);
+	hr = m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &pPixelShader);
 
 	// Set Shaders to active
-	m_device_context->VSSetShader(vertexShader, 0, 0);
-	m_device_context->PSSetShader(pixelShader, 0, 0);
+	m_pDeviceContext->VSSetShader(pVertexShader, 0, 0);
+	m_pDeviceContext->PSSetShader(pPixelShader, 0, 0);
 
 
 
@@ -111,17 +110,17 @@ void Renderer::Initialize(void* nativeWindowHandle, float _width, float _height)
 	// **********************
 
 	// TODO Input layouts should be part of shader programs
-	ID3D11InputLayout* vertLayout;
+	ID3D11InputLayout* pVertLayout;
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numElements = ARRAYSIZE(layout);
-	hr = m_device->CreateInputLayout(layout, numElements, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &vertLayout);
+	hr = m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &pVertLayout);
 
 	// Set the input layout as active
-	m_device_context->IASetInputLayout(vertLayout);
+	m_pDeviceContext->IASetInputLayout(pVertLayout);
 
 
 
@@ -129,7 +128,7 @@ void Renderer::Initialize(void* nativeWindowHandle, float _width, float _height)
 	// **********************
 
 	// TODO: Should be set per object
-	m_device_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 
 
@@ -147,7 +146,7 @@ void Renderer::Initialize(void* nativeWindowHandle, float _width, float _height)
 	viewport.Height = m_height;
 
 	// Set Viewport as active
-	m_device_context->RSSetViewports(1, &viewport);
+	m_pDeviceContext->RSSetViewports(1, &viewport);
 }
 
 
@@ -155,7 +154,7 @@ void Renderer::RenderFrame()
 {
 	// clear the back buffer to a deep blue
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	m_device_context->ClearRenderTargetView(m_back_buffer, color);
+	m_pDeviceContext->ClearRenderTargetView(m_pBackBuffer, color);
 
 	for (RenderProxy* proxy : m_renderProxies)
 	{
@@ -163,7 +162,7 @@ void Renderer::RenderFrame()
 	}
 
 	// switch the back buffer and the front buffer
-	m_swap_chain->Present(0, 0);
+	m_pSwapChain->Present(0, 0);
 }
 
 void Renderer::Shutdown()

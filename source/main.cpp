@@ -5,86 +5,86 @@
 #include <vector>
 #include <bitset>
 
-#include "maths/maths.h"
-#include "renderer.h"
-#include "InputAPI.h"
-#include "entity_system.h"
+#include "GameFramework/World.h"
+#include "Input/Input.h"
+#include "Maths/Maths.h"
+#include "Renderer/Renderer.h"
 
-struct TransformComponent
+struct CTransform
 {
 	vec3 m_pos;
 	float m_rot;
 };
 
-struct SimpleRotateComponent
+struct CSimpleRotate
 {
 	float m_rotSpeed{ 0.5f };
 };
 
-struct DrawableComponent
+struct CDrawable
 {
-	RenderProxy renderProxy;
+	RenderProxy m_renderProxy;
 };
 
-struct PlayerControlComponent
+struct CPlayerControl
 {
 	vec3 m_moveSpeed{ vec3(0.02f, 0.02f, 0.02f) };
 };
 
-class RotationSystem : public System
+class SRotation : public System
 {
 public:
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		TransformComponent* pTransform = gGameWorld.GetComponent<TransformComponent>(id);
-		SimpleRotateComponent* pRotate = gGameWorld.GetComponent<SimpleRotateComponent>(id);
+		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
+		CSimpleRotate* pRotate = gGameWorld.GetComponent<CSimpleRotate>(id);
 
 		pTransform->m_rot += pRotate->m_rotSpeed;
 	}
 
 	virtual void SetSubscriptions() override
 	{
-		Subscribe<TransformComponent>();
-		Subscribe<SimpleRotateComponent>();
+		Subscribe<CTransform>();
+		Subscribe<CSimpleRotate>();
 	}
 };
 
-class MovementSystem : public System
+class SMovement : public System
 {
 public:
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		TransformComponent* pTransform = gGameWorld.GetComponent<TransformComponent>(id);
-		PlayerControlComponent* pControl = gGameWorld.GetComponent<PlayerControlComponent>(id);
-		if (gInputAPI.GetKeyHeld(SDL_SCANCODE_D))
+		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
+		CPlayerControl* pControl = gGameWorld.GetComponent<CPlayerControl>(id);
+		if (g_Input.GetKeyHeld(SDL_SCANCODE_D))
 			pTransform->m_pos.x += pControl->m_moveSpeed.x;
-		if (gInputAPI.GetKeyHeld(SDL_SCANCODE_A))
+		if (g_Input.GetKeyHeld(SDL_SCANCODE_A))
 			pTransform->m_pos.x -= pControl->m_moveSpeed.x;
-		if (gInputAPI.GetKeyHeld(SDL_SCANCODE_W))
+		if (g_Input.GetKeyHeld(SDL_SCANCODE_W))
 			pTransform->m_pos.y += pControl->m_moveSpeed.y;
-		if (gInputAPI.GetKeyHeld(SDL_SCANCODE_S))
+		if (g_Input.GetKeyHeld(SDL_SCANCODE_S))
 			pTransform->m_pos.y -= pControl->m_moveSpeed.y;
 	}
 
 	virtual void SetSubscriptions() override
 	{
-		Subscribe<TransformComponent>();
-		Subscribe<PlayerControlComponent>();
+		Subscribe<CTransform>();
+		Subscribe<CPlayerControl>();
 	}
 };
 
-class DrawPolygonSystem : public System 
+class SDrawPolygon : public System 
 {
 public:
 	virtual void StartEntity(EntityID id) override
 	{
-		TransformComponent* pTransform = gGameWorld.GetComponent<TransformComponent>(id);
-		DrawableComponent* pDrawable = gGameWorld.GetComponent<DrawableComponent>(id);
+		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
+		CDrawable* pDrawable = gGameWorld.GetComponent<CDrawable>(id);
 
 		// Create a render proxy for this entity and submit it
-		pDrawable->renderProxy = RenderProxy(
+		pDrawable->m_renderProxy = RenderProxy(
 			{
 				Vertex(vec3(0.0f, 0.5f, 0.5f), color(1.0f, 0.0f, 0.0f)),
 				Vertex(vec3(0.5f, -0.5f, 0.5f), color(0.0f, 1.0f, 0.0f)),
@@ -92,23 +92,23 @@ public:
 			}, {
 				0, 1, 2, 0
 			});
-		gRenderer.SubmitProxy(&pDrawable->renderProxy);
+		g_Renderer.SubmitProxy(&pDrawable->m_renderProxy);
 
-		pDrawable->renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot);
+		pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot);
 	}
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		TransformComponent* pTransform = gGameWorld.GetComponent<TransformComponent>(id);
-		DrawableComponent* pDrawable = gGameWorld.GetComponent<DrawableComponent>(id);
+		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
+		CDrawable* pDrawable = gGameWorld.GetComponent<CDrawable>(id);
 		
-		pDrawable->renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot);
+		pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot);
 	}
 
 	virtual void SetSubscriptions() override
 	{
-		Subscribe<TransformComponent>();
-		Subscribe<DrawableComponent>();
+		Subscribe<CTransform>();
+		Subscribe<CDrawable>();
 	}
 };
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 	SDL_GetWindowWMInfo(window, &wmInfo);
 	HWND hwnd = wmInfo.info.win.window;
 
-	gRenderer.Initialize(hwnd, width, height);
+	g_Renderer.Initialize(hwnd, width, height);
 
 
 
@@ -144,23 +144,23 @@ int main(int argc, char *argv[])
 	// Create our scene
 	// ****************
 
-	gGameWorld.RegisterSystem<RotationSystem>();
-	gGameWorld.RegisterSystem<DrawPolygonSystem>();
-	gGameWorld.RegisterSystem<MovementSystem>();
+	gGameWorld.RegisterSystem<SRotation>();
+	gGameWorld.RegisterSystem<SDrawPolygon>();
+	gGameWorld.RegisterSystem<SMovement>();
 
 	EntityID triangle = gGameWorld.NewEntity();
-	gGameWorld.AssignComponent<TransformComponent>(triangle);
-	gGameWorld.AssignComponent<DrawableComponent>(triangle);
-	gGameWorld.AssignComponent<SimpleRotateComponent>(triangle);
+	gGameWorld.AssignComponent<CTransform>(triangle);
+	gGameWorld.AssignComponent<CDrawable>(triangle);
+	gGameWorld.AssignComponent<CSimpleRotate>(triangle);
 
 	EntityID triangle2 = gGameWorld.NewEntity();
-	gGameWorld.AssignComponent<TransformComponent>(triangle2)->m_pos = vec3(1.0f, 0.0f, 0.0f);
-	gGameWorld.AssignComponent<DrawableComponent>(triangle2);
+	gGameWorld.AssignComponent<CTransform>(triangle2)->m_pos = vec3(1.0f, 0.0f, 0.0f);
+	gGameWorld.AssignComponent<CDrawable>(triangle2);
 
 	EntityID triangle3 = gGameWorld.NewEntity();
-	gGameWorld.AssignComponent<TransformComponent>(triangle3)->m_pos = vec3(-1.0f, 0.0f, 0.0f);
-	gGameWorld.AssignComponent<DrawableComponent>(triangle3);
-	gGameWorld.AssignComponent<PlayerControlComponent>(triangle3);
+	gGameWorld.AssignComponent<CTransform>(triangle3)->m_pos = vec3(-1.0f, 0.0f, 0.0f);
+	gGameWorld.AssignComponent<CDrawable>(triangle3);
+	gGameWorld.AssignComponent<CPlayerControl>(triangle3);
 
 
 
@@ -175,14 +175,14 @@ int main(int argc, char *argv[])
 	bool shutdown = false;
 	while (!shutdown)
 	{
-		gInputAPI.Update(shutdown);
+		g_Input.Update(shutdown);
 
 		gGameWorld.UpdateSystems();
 
-		gRenderer.RenderFrame();
+		g_Renderer.RenderFrame();
 	}
 
-	gRenderer.Shutdown();
+	g_Renderer.Shutdown();
 
 	SDL_DestroyWindow(window);
 	SDL_Quit();

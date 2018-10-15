@@ -1,21 +1,19 @@
 
 #include "renderproxy.h"
 
-#include <DirectXPackedVector.h>
-#include <stdio.h>
+#include <D3DCompiler.h>
 #include <d3d11.h>
 #include <d3d10.h>
-#include <D3DCompiler.h>
+#include <stdio.h>
 
-#include "renderer.h"
-#include "maths/maths.h"
+#include "Maths/Maths.h"
+#include "Renderer/Renderer.h"
 
 struct cbPerObject
 {
-	mat4 wvp;
+	mat4 m_wvp;
 };
 cbPerObject perObject;
-
 
 RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 	: m_vertices(vertices), m_indices(indices)
@@ -37,7 +35,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = m_vertices.data();
 
-	gRenderer.m_device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertBuffer);
+	g_Renderer.m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_pVertBuffer);
 
 	// Create an index buffer
 	// **********************
@@ -55,7 +53,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
 	indexBufferData.pSysMem = m_indices.data();
-	gRenderer.m_device->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer);
+	g_Renderer.m_pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_pIndexBuffer);
 
 
 
@@ -69,7 +67,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	wvpBufferDesc.CPUAccessFlags = 0;
 	wvpBufferDesc.MiscFlags = 0;
-	gRenderer.m_device->CreateBuffer(&wvpBufferDesc, nullptr, &m_wvpBuffer);
+	g_Renderer.m_pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &m_pWVPBuffer);
 	
 }
 
@@ -78,9 +76,9 @@ void RenderProxy::Draw()
 	// Set vertex buffer as active
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	gRenderer.m_device_context->IASetVertexBuffers(0, 1, &m_vertBuffer, &stride, &offset);
+	g_Renderer.m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertBuffer, &stride, &offset);
 
-	gRenderer.m_device_context->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	g_Renderer.m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	mat4 posmat = MakeTranslate(m_pos);
 	mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, m_rot));
@@ -88,15 +86,15 @@ void RenderProxy::Draw()
 	mat4 world = posmat * rotmat; // transform into world space
 	mat4 view = MakeTranslate(vec3(0.0f, 0.0f, 0.0f)); // transform into camera space
 
-	float aR = gRenderer.m_width / gRenderer.m_height;
+	float aR = g_Renderer.m_width / g_Renderer.m_height;
 	mat4 projection = MakeOrthographic(-1.0f * aR, 1.0f * aR, -1.0f, 1.0f, 0.1f, 10.0f); // transform into screen space
 
 	mat4 wvp = projection * view * world;
 
-	perObject.wvp = wvp;
-	gRenderer.m_device_context->UpdateSubresource(m_wvpBuffer, 0, nullptr, &perObject, 0, 0);
-	gRenderer.m_device_context->VSSetConstantBuffers(0, 1, &(m_wvpBuffer));
+	perObject.m_wvp = wvp;
+	g_Renderer.m_pDeviceContext->UpdateSubresource(m_pWVPBuffer, 0, nullptr, &perObject, 0, 0);
+	g_Renderer.m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pWVPBuffer));
 
 	// do 3D rendering on the back buffer here
-	gRenderer.m_device_context->DrawIndexed(3, 0, 0);
+	g_Renderer.m_pDeviceContext->DrawIndexed(3, 0, 0);
 }
