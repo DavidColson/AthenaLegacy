@@ -76,7 +76,7 @@ protected:
 	template <typename T>
 	void Subscribe()
 	{
-		m_componentSubscription.set(gGameWorld.GetComponentTypeId<T>());
+		m_componentSubscription.set(g_GameWorld.GetComponentTypeId<T>());
 	}
 
 private:
@@ -232,4 +232,4 @@ private:
 };
 
 // Global instances of game world
-World gGameWorld;
+World g_GameWorld;

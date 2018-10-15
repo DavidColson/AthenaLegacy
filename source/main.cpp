@@ -37,8 +37,8 @@ public:
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
-		CSimpleRotate* pRotate = gGameWorld.GetComponent<CSimpleRotate>(id);
+		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
+		CSimpleRotate* pRotate = g_GameWorld.GetComponent<CSimpleRotate>(id);
 
 		pTransform->m_rot += pRotate->m_rotSpeed;
 	}
@@ -56,8 +56,8 @@ public:
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
-		CPlayerControl* pControl = gGameWorld.GetComponent<CPlayerControl>(id);
+		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
+		CPlayerControl* pControl = g_GameWorld.GetComponent<CPlayerControl>(id);
 		if (g_Input.GetKeyHeld(SDL_SCANCODE_D))
 			pTransform->m_pos.x += pControl->m_moveSpeed.x;
 		if (g_Input.GetKeyHeld(SDL_SCANCODE_A))
@@ -80,8 +80,8 @@ class SDrawPolygon : public System
 public:
 	virtual void StartEntity(EntityID id) override
 	{
-		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
-		CDrawable* pDrawable = gGameWorld.GetComponent<CDrawable>(id);
+		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
+		CDrawable* pDrawable = g_GameWorld.GetComponent<CDrawable>(id);
 
 		// Create a render proxy for this entity and submit it
 		pDrawable->m_renderProxy = RenderProxy(
@@ -99,8 +99,8 @@ public:
 
 	virtual void UpdateEntity(EntityID id) override
 	{
-		CTransform* pTransform = gGameWorld.GetComponent<CTransform>(id);
-		CDrawable* pDrawable = gGameWorld.GetComponent<CDrawable>(id);
+		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
+		CDrawable* pDrawable = g_GameWorld.GetComponent<CDrawable>(id);
 		
 		pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot);
 	}
@@ -144,23 +144,23 @@ int main(int argc, char *argv[])
 	// Create our scene
 	// ****************
 
-	gGameWorld.RegisterSystem<SRotation>();
-	gGameWorld.RegisterSystem<SDrawPolygon>();
-	gGameWorld.RegisterSystem<SMovement>();
+	g_GameWorld.RegisterSystem<SRotation>();
+	g_GameWorld.RegisterSystem<SDrawPolygon>();
+	g_GameWorld.RegisterSystem<SMovement>();
 
-	EntityID triangle = gGameWorld.NewEntity();
-	gGameWorld.AssignComponent<CTransform>(triangle);
-	gGameWorld.AssignComponent<CDrawable>(triangle);
-	gGameWorld.AssignComponent<CSimpleRotate>(triangle);
+	EntityID triangle = g_GameWorld.NewEntity();
+	g_GameWorld.AssignComponent<CTransform>(triangle);
+	g_GameWorld.AssignComponent<CDrawable>(triangle);
+	g_GameWorld.AssignComponent<CSimpleRotate>(triangle);
 
-	EntityID triangle2 = gGameWorld.NewEntity();
-	gGameWorld.AssignComponent<CTransform>(triangle2)->m_pos = vec3(1.0f, 0.0f, 0.0f);
-	gGameWorld.AssignComponent<CDrawable>(triangle2);
+	EntityID triangle2 = g_GameWorld.NewEntity();
+	g_GameWorld.AssignComponent<CTransform>(triangle2)->m_pos = vec3(1.0f, 0.0f, 0.0f);
+	g_GameWorld.AssignComponent<CDrawable>(triangle2);
 
-	EntityID triangle3 = gGameWorld.NewEntity();
-	gGameWorld.AssignComponent<CTransform>(triangle3)->m_pos = vec3(-1.0f, 0.0f, 0.0f);
-	gGameWorld.AssignComponent<CDrawable>(triangle3);
-	gGameWorld.AssignComponent<CPlayerControl>(triangle3);
+	EntityID triangle3 = g_GameWorld.NewEntity();
+	g_GameWorld.AssignComponent<CTransform>(triangle3)->m_pos = vec3(-1.0f, 0.0f, 0.0f);
+	g_GameWorld.AssignComponent<CDrawable>(triangle3);
+	g_GameWorld.AssignComponent<CPlayerControl>(triangle3);
 
 
 
@@ -170,14 +170,14 @@ int main(int argc, char *argv[])
 	// Main Loop
 	// *********
 
-	gGameWorld.StartSystems();
+	g_GameWorld.StartSystems();
 
 	bool shutdown = false;
 	while (!shutdown)
 	{
 		g_Input.Update(shutdown);
 
-		gGameWorld.UpdateSystems();
+		g_GameWorld.UpdateSystems();
 
 		g_Renderer.RenderFrame();
 	}
