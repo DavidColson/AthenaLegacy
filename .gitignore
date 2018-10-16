@@ -1,2 +1,8 @@
 build/*
 !build/FindSDL2.cmake
+.vs/
+*.obj
+*.exp
+*.ilk
+freetype.tlog/
+*.pdb

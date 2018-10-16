@@ -1,0 +1,71 @@
+﻿cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  autofit.c
+  ftbase.c
+  ftbbox.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftbdf.c
+  ftbitmap.c
+  ftcid.c
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftfntfmt.c
+  ftfstype.c
+  ftgasp.c
+  ftglyph.c
+  ftgxval.c
+  ftinit.c
+  ftlcdfil.c
+  ftmm.c
+  ftotval.c
+  ftpatent.c
+  ftpfr.c
+  ftstroke.c
+  ftsynth.c
+  ftsystem.c
+  fttype1.c
+  ftwinfnt.c
+  bdf.c
+  ftcache.c
+  cff.c
+  type1cid.c
+  ftgzip.c
+  ftlzw.c
+  pcf.c
+  pfr.c
+  psaux.c
+  pshinter.c
+  psmodule.c
+  raster.c
+d:\dev\engine\thirdparty\freetype-2.9\src\psaux\psintrp.c(1001): warning C4267: '=': conversion from 'size_t' to 'FT_Fast', possible loss of data (compiling source file ..\..\..\src\psaux\psaux.c)
+  sfnt.c
+  smooth.c
+  type1.c
+  truetype.c
+d:\dev\engine\thirdparty\freetype-2.9\src\sfnt\sfdriver.c(838): warning C4267: '=': conversion from 'size_t' to 'FT_UInt', possible loss of data (compiling source file ..\..\..\src\sfnt\sfnt.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\sfnt\sfdriver.c(989): warning C4244: 'function': conversion from '__int64' to 'const unsigned int', possible loss of data (compiling source file ..\..\..\src\sfnt\sfnt.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\smooth\ftgrays.c(1773): warning C4267: '+=': conversion from 'size_t' to 'TCoord', possible loss of data (compiling source file ..\..\..\src\smooth\smooth.c)
+  type42.c
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(273): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(293): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(325): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(355): warning C4267: '=': conversion from 'size_t' to 'FT_UInt', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(562): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(568): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(574): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(580): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1driver.c(586): warning C4267: '=': conversion from 'size_t' to 'FT_ULong', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\truetype\ttgload.c(1797): warning C4312: 'type cast': conversion from 'unsigned long' to 'void *' of greater size (compiling source file ..\..\..\src\truetype\truetype.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1load.c(1581): warning C4244: '=': conversion from '__int64' to 'FT_Int', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\type1\t1load.c(1742): warning C4244: '=': conversion from '__int64' to 'FT_Int', possible loss of data (compiling source file ..\..\..\src\type1\type1.c)
+  winfnt.c
+d:\dev\engine\thirdparty\freetype-2.9\src\type42\t42parse.c(821): warning C4244: '=': conversion from '__int64' to 'FT_Int', possible loss of data (compiling source file ..\..\..\src\type42\type42.c)
+d:\dev\engine\thirdparty\freetype-2.9\src\truetype\ttgxvar.c(2137): warning C4701: potentially uninitialized local variable 'fvar_head' used
+cl : Command line warning D9002: ignoring unknown option '/arch:SSE2'
+  ftdebug.c
+     Creating library ..\..\..\objs\x64\Release\freetype.lib and object ..\..\..\objs\x64\Release\freetype.exp
+  freetype.vcxproj -> D:\Dev\Engine\ThirdParty\freetype-2.9\builds\windows\vc2010\..\..\..\objs\x64\Release\freetype.dll
