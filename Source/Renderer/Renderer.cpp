@@ -92,17 +92,9 @@ void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 		}
 	}
 
-	ID3D11VertexShader* pVertexShader;
-	ID3D11PixelShader* pPixelShader;
-
 	// Create shader objects
-	hr = m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &pVertexShader);
-	hr = m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &pPixelShader);
-
-	// Set Shaders to active
-	m_pDeviceContext->VSSetShader(pVertexShader, 0, 0);
-	m_pDeviceContext->PSSetShader(pPixelShader, 0, 0);
-
+	hr = m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &m_pVertexShader);
+	hr = m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &m_pPixelShader);
 
 
 
@@ -110,27 +102,14 @@ void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 	// **********************
 
 	// TODO Input layouts should be part of shader programs
-	ID3D11InputLayout* pVertLayout;
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numElements = ARRAYSIZE(layout);
-	hr = m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &pVertLayout);
-
-	// Set the input layout as active
-	m_pDeviceContext->IASetInputLayout(pVertLayout);
-
-
-
-	// Set primitive Topology
-	// **********************
-
-	// TODO: Should be set per object
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-
+	hr = m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &m_pVertLayout);
 
 
 
@@ -147,6 +126,8 @@ void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 
 	// Set Viewport as active
 	m_pDeviceContext->RSSetViewports(1, &viewport);
+
+	m_pFontRender = new RenderFont("Resources/Fonts/OpenSans/OpenSans-Regular.ttf", 12);
 }
 
 
@@ -156,10 +137,20 @@ void Renderer::RenderFrame()
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	m_pDeviceContext->ClearRenderTargetView(m_pBackBuffer, color);
 
+	// Set Shaders to active
+	m_pDeviceContext->VSSetShader(m_pVertexShader, 0, 0);
+	m_pDeviceContext->PSSetShader(m_pPixelShader, 0, 0);
+
+	m_pDeviceContext->IASetInputLayout(m_pVertLayout);
+
+	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
 	for (RenderProxy* proxy : m_renderProxies)
 	{
 		proxy->Draw();
 	}
+	
+	m_pFontRender->Draw("Kiya is a boob", 5, 5);
 
 	// switch the back buffer and the front buffer
 	m_pSwapChain->Present(0, 0);

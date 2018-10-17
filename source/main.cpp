@@ -86,9 +86,9 @@ public:
 		// Create a render proxy for this entity and submit it
 		pDrawable->m_renderProxy = RenderProxy(
 			{
-				Vertex(vec3(0.0f, 0.5f, 0.5f), color(1.0f, 0.0f, 0.0f)),
-				Vertex(vec3(0.5f, -0.5f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-				Vertex(vec3(-0.5f, -0.5f, 0.5f), color(0.0f, 0.0f, 1.0f))
+				Vertex(vec3(100.0f, 100.0f, 0.5f), color(1.0f, 0.0f, 0.0f)),
+				Vertex(vec3(150.f, 150.f, 0.5f), color(0.0f, 1.0f, 0.0f)),
+				Vertex(vec3(200.f, 100.f, 0.5f), color(0.0f, 0.0f, 1.0f))
 			}, {
 				0, 1, 2, 0
 			});
@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
 	SDL_GetWindowWMInfo(window, &wmInfo);
 	HWND hwnd = wmInfo.info.win.window;
 
+
 	g_Renderer.Initialize(hwnd, width, height);
 
 
@@ -148,20 +149,8 @@ int main(int argc, char *argv[])
 	g_GameWorld.RegisterSystem<SDrawPolygon>();
 	g_GameWorld.RegisterSystem<SMovement>();
 
-	EntityID triangle = g_GameWorld.NewEntity();
-	g_GameWorld.AssignComponent<CTransform>(triangle);
-	g_GameWorld.AssignComponent<CDrawable>(triangle);
-	g_GameWorld.AssignComponent<CSimpleRotate>(triangle);
-
 	EntityID triangle2 = g_GameWorld.NewEntity();
 	g_GameWorld.AssignComponent<CTransform>(triangle2)->m_pos = vec3(1.0f, 0.0f, 0.0f);
-	g_GameWorld.AssignComponent<CDrawable>(triangle2);
-
-	EntityID triangle3 = g_GameWorld.NewEntity();
-	g_GameWorld.AssignComponent<CTransform>(triangle3)->m_pos = vec3(-1.0f, 0.0f, 0.0f);
-	g_GameWorld.AssignComponent<CDrawable>(triangle3);
-	g_GameWorld.AssignComponent<CPlayerControl>(triangle3);
-
 
 
 
@@ -180,6 +169,7 @@ int main(int argc, char *argv[])
 		g_GameWorld.UpdateSystems();
 
 		g_Renderer.RenderFrame();
+
 	}
 
 	g_Renderer.Shutdown();

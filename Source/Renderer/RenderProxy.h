@@ -12,6 +12,7 @@ struct Vertex
 
 	vec3 m_pos{ vec3(0.0f, 0.0f, 0.0f) };
 	vec3 m_col{ vec3(0.0f, 0.0f, 0.0f) };
+	vec2 m_texCoords{ vec2(0.0f, 0.0f) };
 };
 
 class RenderProxy

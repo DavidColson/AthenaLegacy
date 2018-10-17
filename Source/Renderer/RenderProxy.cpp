@@ -87,7 +87,7 @@ void RenderProxy::Draw()
 	mat4 view = MakeTranslate(vec3(0.0f, 0.0f, 0.0f)); // transform into camera space
 
 	float aR = g_Renderer.m_width / g_Renderer.m_height;
-	mat4 projection = MakeOrthographic(-1.0f * aR, 1.0f * aR, -1.0f, 1.0f, 0.1f, 10.0f); // transform into screen space
+	mat4 projection = MakeOrthographic(0, g_Renderer.m_width, 0.0f, g_Renderer.m_height, 0.1f, 10.0f); // transform into screen space
 
 	mat4 wvp = projection * view * world;
 
