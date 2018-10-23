@@ -57,8 +57,8 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	hr = D3DCompile(fontShader.c_str(), fontShader.size(), NULL, 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
 
 	// Create shader objects
-	hr = g_Renderer.m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &m_pVertexShader);
-	hr = g_Renderer.m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &m_pPixelShader);
+	hr = Graphics::GetContext()->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &m_pVertexShader);
+	hr = Graphics::GetContext()->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &m_pPixelShader);
 
 
 
@@ -72,7 +72,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numElements = ARRAYSIZE(layout);
-	hr = g_Renderer.m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &m_pVertLayout);
+	hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &m_pVertLayout);
 
 
 	std::vector<Vertex> quadVertices = {
@@ -108,7 +108,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = quadVertices.data();
 
-	g_Renderer.m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_pQuadVertBuffer);
+	Graphics::GetContext()->m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_pQuadVertBuffer);
 
 	// Create an index buffer
 	// **********************
@@ -126,7 +126,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
 	indexBufferData.pSysMem = quadIndices.data();
-	g_Renderer.m_pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_pQuadIndexBuffer);
+	Graphics::GetContext()->m_pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_pQuadIndexBuffer);
 
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
@@ -138,7 +138,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	wvpBufferDesc.CPUAccessFlags = 0;
 	wvpBufferDesc.MiscFlags = 0;
-	g_Renderer.m_pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &m_pQuadWVPBuffer);
+	Graphics::GetContext()->m_pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &m_pQuadWVPBuffer);
 
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(blendDesc));
@@ -158,7 +158,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	blendDesc.AlphaToCoverageEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
-	g_Renderer.m_pDevice->CreateBlendState(&blendDesc, &m_transparency);
+	Graphics::GetContext()->m_pDevice->CreateBlendState(&blendDesc, &m_transparency);
 
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -170,7 +170,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	g_Renderer.m_pDevice->CreateSamplerState(&sampDesc, &m_charTextureSampler);
+	Graphics::GetContext()->m_pDevice->CreateSamplerState(&sampDesc, &m_charTextureSampler);
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -202,10 +202,10 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		textureBufferData.SysMemPitch = face->glyph->bitmap.width;
 
 		ID3D11Texture2D* pTexture = nullptr;
-		g_Renderer.m_pDevice->CreateTexture2D(&desc, &textureBufferData, &pTexture);
+		Graphics::GetContext()->m_pDevice->CreateTexture2D(&desc, &textureBufferData, &pTexture);
 
 		ID3D11ShaderResourceView* pTextureResourceView;
-		g_Renderer.m_pDevice->CreateShaderResourceView(pTexture, NULL, &pTextureResourceView);
+		Graphics::GetContext()->m_pDevice->CreateShaderResourceView(pTexture, NULL, &pTextureResourceView);
 
 		Character character;
 		character.m_charTexture = pTextureResourceView;
@@ -225,19 +225,19 @@ void RenderFont::Draw(std::string text, int x, int y)
 	// Set vertex buffer as active
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	g_Renderer.m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pQuadVertBuffer, &stride, &offset);
+	Graphics::GetContext()->m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pQuadVertBuffer, &stride, &offset);
 
-	g_Renderer.m_pDeviceContext->IASetIndexBuffer(m_pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Graphics::GetContext()->m_pDeviceContext->IASetIndexBuffer(m_pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	g_Renderer.m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pQuadWVPBuffer));
+	Graphics::GetContext()->m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pQuadWVPBuffer));
 
 	// Set Shaders to active
-	g_Renderer.m_pDeviceContext->VSSetShader(m_pVertexShader, 0, 0);
-	g_Renderer.m_pDeviceContext->PSSetShader(m_pPixelShader, 0, 0);
+	Graphics::GetContext()->m_pDeviceContext->VSSetShader(m_pVertexShader, 0, 0);
+	Graphics::GetContext()->m_pDeviceContext->PSSetShader(m_pPixelShader, 0, 0);
 
-	g_Renderer.m_pDeviceContext->IASetInputLayout(m_pVertLayout);
+	Graphics::GetContext()->m_pDeviceContext->IASetInputLayout(m_pVertLayout);
 
-	g_Renderer.m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	Graphics::GetContext()->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	for (char& c : text) {
 		// Draw a font character
@@ -248,22 +248,22 @@ void RenderFont::Draw(std::string text, int x, int y)
 
 
 		mat4 world = posmat * scalemat; // transform into world space
-		mat4 projection = MakeOrthographic(0, g_Renderer.m_width, 0.0f, g_Renderer.m_height, 0.1f, 10.0f); // transform into screen space
+		mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth, 0.0f, Graphics::GetContext()->m_windowHeight, 0.1f, 10.0f); // transform into screen space
 
 		mat4 wvp = projection * world;
 
 		m_cbCharTransform.m_wvp = wvp;
-		g_Renderer.m_pDeviceContext->UpdateSubresource(m_pQuadWVPBuffer, 0, nullptr, &m_cbCharTransform, 0, 0);
+		Graphics::GetContext()->m_pDeviceContext->UpdateSubresource(m_pQuadWVPBuffer, 0, nullptr, &m_cbCharTransform, 0, 0);
 
-		g_Renderer.m_pDeviceContext->PSSetShaderResources(0, 1, &(m_characters[c].m_charTexture));
-		g_Renderer.m_pDeviceContext->PSSetSamplers(0, 1, &m_charTextureSampler);
+		Graphics::GetContext()->m_pDeviceContext->PSSetShaderResources(0, 1, &(m_characters[c].m_charTexture));
+		Graphics::GetContext()->m_pDeviceContext->PSSetSamplers(0, 1, &m_charTextureSampler);
 
 		float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
 
-		g_Renderer.m_pDeviceContext->OMSetBlendState(m_transparency, blendFactor, 0xffffffff);
+		Graphics::GetContext()->m_pDeviceContext->OMSetBlendState(m_transparency, blendFactor, 0xffffffff);
 
 		// do 3D rendering on the back buffer here
-		g_Renderer.m_pDeviceContext->DrawIndexed(5, 0, 0);
+		Graphics::GetContext()->m_pDeviceContext->DrawIndexed(5, 0, 0);
 
 		x += ch.m_advance;
 	}

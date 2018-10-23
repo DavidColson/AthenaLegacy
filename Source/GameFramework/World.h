@@ -57,7 +57,19 @@ const int MAX_COMPONENTS = 10;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
-class World;
+struct Space;
+
+// Gives you the id within this world for a given component type
+static int s_componentCounter = 0;
+template <class T>
+int GetComponentTypeId()
+{
+	// static variable will be initialized on first function call
+	// It will then continue to return the same thing, no matter how many times this is called.
+	// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
+	static int s_componentTypeId = s_componentCounter++;
+	return s_componentTypeId;
+}
 
 // *****************************************
 // Base class for systems
@@ -65,18 +77,18 @@ class World;
 
 class System
 {
-	friend class World;
+	friend struct Space;
 public:
 
-	virtual void StartEntity(EntityID id) {};
-	virtual void UpdateEntity(EntityID id) = 0;
+	virtual void StartEntity(EntityID id, Space* space) {};
+	virtual void UpdateEntity(EntityID id, Space* space) = 0;
 	virtual void SetSubscriptions() = 0;
 
 protected:
 	template <typename T>
 	void Subscribe()
 	{
-		m_componentSubscription.set(g_GameWorld.GetComponentTypeId<T>());
+		m_componentSubscription.set(GetComponentTypeId<T>());
 	}
 
 private:
@@ -109,14 +121,14 @@ struct ComponentPool
 };
 
 // *****************************************
-// The game world, holds enties and systems
+// A game space, holds enties and systems
 // Updates systems and manages creation and
 // deletion of entities and components
+// You should be able to maintain multiple spaces at once
 // *****************************************
 
-class World
+struct Space
 {
-public:
 	// TODO Destructor, delete systems and components
 
 	// Goes through each system looping entities and calling the startup function
@@ -130,7 +142,7 @@ public:
 				ComponentMask mask = m_entities[i];
 				if (pSys->m_componentSubscription == (pSys->m_componentSubscription & mask))
 				{
-					pSys->StartEntity(i);
+					pSys->StartEntity(i, this);
 				}
 			}
 		}
@@ -147,7 +159,7 @@ public:
 				ComponentMask mask = m_entities[i];
 				if (sys->m_componentSubscription == (sys->m_componentSubscription & mask))
 				{
-					sys->UpdateEntity(i);
+					sys->UpdateEntity(i, this);
 				}
 			}
 		}
@@ -212,24 +224,8 @@ public:
 		return pComponent;
 	}
 
-	// Gives you the id within this world for a given component type
-	template <class T>
-	int GetComponentTypeId()
-	{
-		// static variable will be initialized on first function call
-		// It will then continue to return the same thing, no matter how many times this is called.
-		// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
-		static int componentTypeId = m_componentCounter++;
-		return componentTypeId;
-	}
-
-private:
-	int m_componentCounter = 0;
 	std::vector<System*> m_systems;
 
 	std::vector<ComponentPool*> m_componentPools;
 	std::vector<ComponentMask> m_entities; // TODO: Generational Indicies
 };
-
-// Global instances of game world
-World g_GameWorld;

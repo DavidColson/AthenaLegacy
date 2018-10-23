@@ -28,17 +28,17 @@ struct CDrawable
 
 struct CPlayerControl
 {
-	vec3 m_moveSpeed{ vec3(0.02f, 0.02f, 0.02f) };
+	vec3 m_moveSpeed{ vec3(5.f, 5.f, 5.f) };
 };
 
 class SRotation : public System
 {
 public:
 
-	virtual void UpdateEntity(EntityID id) override
+	virtual void UpdateEntity(EntityID id, Space* space) override
 	{
-		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
-		CSimpleRotate* pRotate = g_GameWorld.GetComponent<CSimpleRotate>(id);
+		CTransform* pTransform = space->GetComponent<CTransform>(id);
+		CSimpleRotate* pRotate = space->GetComponent<CSimpleRotate>(id);
 
 		pTransform->m_rot += pRotate->m_rotSpeed;
 	}
@@ -54,17 +54,17 @@ class SMovement : public System
 {
 public:
 
-	virtual void UpdateEntity(EntityID id) override
+	virtual void UpdateEntity(EntityID id, Space* space) override
 	{
-		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
-		CPlayerControl* pControl = g_GameWorld.GetComponent<CPlayerControl>(id);
-		if (g_Input.GetKeyHeld(SDL_SCANCODE_D))
+		CTransform* pTransform = space->GetComponent<CTransform>(id);
+		CPlayerControl* pControl = space->GetComponent<CPlayerControl>(id);
+		if (Input::GetKeyHeld(SDL_SCANCODE_D))
 			pTransform->m_pos.x += pControl->m_moveSpeed.x;
-		if (g_Input.GetKeyHeld(SDL_SCANCODE_A))
+		if (Input::GetKeyHeld(SDL_SCANCODE_A))
 			pTransform->m_pos.x -= pControl->m_moveSpeed.x;
-		if (g_Input.GetKeyHeld(SDL_SCANCODE_W))
+		if (Input::GetKeyHeld(SDL_SCANCODE_W))
 			pTransform->m_pos.y += pControl->m_moveSpeed.y;
-		if (g_Input.GetKeyHeld(SDL_SCANCODE_S))
+		if (Input::GetKeyHeld(SDL_SCANCODE_S))
 			pTransform->m_pos.y -= pControl->m_moveSpeed.y;
 	}
 
@@ -78,29 +78,29 @@ public:
 class SDrawPolygon : public System 
 {
 public:
-	virtual void StartEntity(EntityID id) override
+	virtual void StartEntity(EntityID id, Space* space) override
 	{
-		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
-		CDrawable* pDrawable = g_GameWorld.GetComponent<CDrawable>(id);
+		CTransform* pTransform = space->GetComponent<CTransform>(id);
+		CDrawable* pDrawable = space->GetComponent<CDrawable>(id);
 
 		// Create a render proxy for this entity and submit it
 		pDrawable->m_renderProxy = RenderProxy(
 			{
-				Vertex(vec3(100.0f, 100.0f, 0.5f), color(1.0f, 0.0f, 0.0f)),
+				Vertex(vec3(0.0f, 0.0f, 0.5f), color(1.0f, 0.0f, 0.0f)),
 				Vertex(vec3(150.f, 150.f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-				Vertex(vec3(200.f, 100.f, 0.5f), color(0.0f, 0.0f, 1.0f))
+				Vertex(vec3(300.f, 0.f, 0.5f), color(0.0f, 0.0f, 1.0f))
 			}, {
 				0, 1, 2, 0
 			});
-		g_Renderer.SubmitProxy(&pDrawable->m_renderProxy);
+		Graphics::SubmitProxy(&pDrawable->m_renderProxy);
 
 		pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot);
 	}
 
-	virtual void UpdateEntity(EntityID id) override
+	virtual void UpdateEntity(EntityID id, Space* space) override
 	{
-		CTransform* pTransform = g_GameWorld.GetComponent<CTransform>(id);
-		CDrawable* pDrawable = g_GameWorld.GetComponent<CDrawable>(id);
+		CTransform* pTransform = space->GetComponent<CTransform>(id);
+		CDrawable* pDrawable = space->GetComponent<CDrawable>(id);
 		
 		pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot);
 	}
@@ -137,20 +137,23 @@ int main(int argc, char *argv[])
 	HWND hwnd = wmInfo.info.win.window;
 
 
-	g_Renderer.Initialize(hwnd, width, height);
-
+	Graphics::CreateContext(hwnd, width, height);
+	Input::CreateInputState();
 
 
 
 	// Create our scene
 	// ****************
+	Space* currentSpace = new Space();
 
-	g_GameWorld.RegisterSystem<SRotation>();
-	g_GameWorld.RegisterSystem<SDrawPolygon>();
-	g_GameWorld.RegisterSystem<SMovement>();
+	currentSpace->RegisterSystem<SRotation>();
+	currentSpace->RegisterSystem<SDrawPolygon>();
+	currentSpace->RegisterSystem<SMovement>();
 
-	EntityID triangle2 = g_GameWorld.NewEntity();
-	g_GameWorld.AssignComponent<CTransform>(triangle2)->m_pos = vec3(1.0f, 0.0f, 0.0f);
+	EntityID triangle2 = currentSpace->NewEntity();
+	currentSpace->AssignComponent<CTransform>(triangle2)->m_pos = vec3(100.0f, 100.0f, 0.0f);
+	currentSpace->AssignComponent<CDrawable>(triangle2);
+	currentSpace->AssignComponent<CPlayerControl>(triangle2);
 
 
 
@@ -159,20 +162,20 @@ int main(int argc, char *argv[])
 	// Main Loop
 	// *********
 
-	g_GameWorld.StartSystems();
+	currentSpace->StartSystems();
 
 	bool shutdown = false;
 	while (!shutdown)
 	{
-		g_Input.Update(shutdown);
+		Input::Update(shutdown);
 
-		g_GameWorld.UpdateSystems();
+		currentSpace->UpdateSystems();
 
-		g_Renderer.RenderFrame();
+		Graphics::RenderFrame();
 
 	}
 
-	g_Renderer.Shutdown();
+	Graphics::Shutdown();
 
 	SDL_DestroyWindow(window);
 	SDL_Quit();

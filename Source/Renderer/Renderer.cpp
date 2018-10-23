@@ -8,13 +8,20 @@
 
 #include "Maths/Maths.h"
 
-Renderer g_Renderer;
+RenderContext* pCtx = nullptr;
 
-void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
+RenderContext* Graphics::GetContext()
 {
+	return pCtx;
+}
+
+void Graphics::CreateContext(void* pNativeWindowHandle, float width, float height)
+{
+	pCtx = new RenderContext();
+
 	HWND hwnd = (HWND)pNativeWindowHandle;
-	m_width = width;
-	m_height = height;
+	pCtx->m_windowWidth = width;
+	pCtx->m_windowHeight = height;
 
 
 
@@ -43,21 +50,21 @@ void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 		NULL,
 		D3D11_SDK_VERSION,
 		&scd,
-		&m_pSwapChain,
-		&m_pDevice,
+		&pCtx->m_pSwapChain,
+		&pCtx->m_pDevice,
 		NULL,
-		&m_pDeviceContext);
+		&pCtx->m_pDeviceContext);
 
 	// get the address of the back buffer
 	ID3D11Texture2D *pBackBuffer;
-	m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	pCtx->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
 	// use the back buffer address to create the render target
-	m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pBackBuffer);
+	pCtx->m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->m_pBackBuffer);
 	pBackBuffer->Release();
 
 	// set the render target as the back buffer
-	m_pDeviceContext->OMSetRenderTargets(1, &m_pBackBuffer, NULL);
+	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pBackBuffer, NULL);
 
 
 
@@ -93,8 +100,8 @@ void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 	}
 
 	// Create shader objects
-	hr = m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &m_pVertexShader);
-	hr = m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &m_pPixelShader);
+	hr = pCtx->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &pCtx->m_pVertexShader);
+	hr = pCtx->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &pCtx->m_pPixelShader);
 
 
 
@@ -109,7 +116,7 @@ void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numElements = ARRAYSIZE(layout);
-	hr = m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &m_pVertLayout);
+	hr = pCtx->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &pCtx->m_pVertLayout);
 
 
 
@@ -121,47 +128,47 @@ void Renderer::Initialize(void* pNativeWindowHandle, float width, float height)
 
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
-	viewport.Width = m_width;
-	viewport.Height = m_height;
+	viewport.Width = pCtx->m_windowWidth;
+	viewport.Height = pCtx->m_windowHeight;
 
 	// Set Viewport as active
-	m_pDeviceContext->RSSetViewports(1, &viewport);
+	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
 
-	m_pFontRender = new RenderFont("Resources/Fonts/OpenSans/OpenSans-Regular.ttf", 12);
+	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/OpenSans/OpenSans-Regular.ttf", 50);
 }
 
 
-void Renderer::RenderFrame()
+void Graphics::RenderFrame()
 {
 	// clear the back buffer to a deep blue
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	m_pDeviceContext->ClearRenderTargetView(m_pBackBuffer, color);
+	pCtx->m_pDeviceContext->ClearRenderTargetView(pCtx->m_pBackBuffer, color);
 
 	// Set Shaders to active
-	m_pDeviceContext->VSSetShader(m_pVertexShader, 0, 0);
-	m_pDeviceContext->PSSetShader(m_pPixelShader, 0, 0);
+	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_pVertexShader, 0, 0);
+	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_pPixelShader, 0, 0);
 
-	m_pDeviceContext->IASetInputLayout(m_pVertLayout);
+	pCtx->m_pDeviceContext->IASetInputLayout(pCtx->m_pVertLayout);
 
-	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 
-	for (RenderProxy* proxy : m_renderProxies)
+	for (RenderProxy* proxy : pCtx->m_renderProxies)
 	{
 		proxy->Draw();
 	}
 	
-	m_pFontRender->Draw("Kiya is a boob", 5, 5);
+	pCtx->m_pFontRender->Draw("Hello World", 100, 100);
 
 	// switch the back buffer and the front buffer
-	m_pSwapChain->Present(0, 0);
+	pCtx->m_pSwapChain->Present(0, 0);
 }
 
-void Renderer::Shutdown()
+void Graphics::Shutdown()
 {
 	// TODO: Release things
 }
 
-void Renderer::SubmitProxy(RenderProxy* pRenderProxy)
+void Graphics::SubmitProxy(RenderProxy* pRenderProxy)
 {
-	m_renderProxies.push_back(pRenderProxy);
+	pCtx->m_renderProxies.push_back(pRenderProxy);
 }

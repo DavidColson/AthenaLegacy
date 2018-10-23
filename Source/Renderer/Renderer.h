@@ -13,22 +13,8 @@ struct ID3D11VertexShader;
 struct ID3D11PixelShader;
 struct ID3D11InputLayout;
 
-class Renderer
+struct RenderContext
 {
-public:
-	void Initialize(void* pNativeWindowHandle, float width, float height);
-
-	void RenderFrame();
-
-	void Shutdown();
-
-	void SubmitProxy(RenderProxy* pRenderProxy);
-
-	std::vector<RenderProxy*> m_renderProxies;
-
-	float m_width{ 0 };
-	float m_height{ 0 };
-
 	IDXGISwapChain* m_pSwapChain;
 	ID3D11Device* m_pDevice;
 	ID3D11DeviceContext* m_pDeviceContext;
@@ -39,6 +25,22 @@ public:
 	ID3D11InputLayout* m_pVertLayout;
 
 	RenderFont* m_pFontRender;
+
+	float m_windowWidth{ 0 };
+	float m_windowHeight{ 0 };
+
+	std::vector<RenderProxy*> m_renderProxies;
 };
 
-extern Renderer g_Renderer;
+namespace Graphics
+{
+	void CreateContext(void* pNativeWindowHandle, float width, float height);
+
+	RenderContext* GetContext();
+
+	void RenderFrame();
+
+	void Shutdown();
+
+	void SubmitProxy(RenderProxy* pRenderProxy);
+};
