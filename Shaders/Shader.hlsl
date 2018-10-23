@@ -15,7 +15,7 @@ VS_OUTPUT VSMain(float4 inPos : POSITION, float4 inCol : COLOR, float2 inTex : T
 	VS_OUTPUT output;
 
 	output.Pos = mul(inPos, WVP);
-	output.Col = inCol;
+	output.Col = float4(1, 1, 1, 1);
 
     return output;
 }

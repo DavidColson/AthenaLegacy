@@ -134,14 +134,14 @@ void Graphics::CreateContext(void* pNativeWindowHandle, float width, float heigh
 	// Set Viewport as active
 	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
 
-	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/OpenSans/OpenSans-Regular.ttf", 50);
+	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 30);
 }
 
 
 void Graphics::RenderFrame()
 {
 	// clear the back buffer to a deep blue
-	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
 	pCtx->m_pDeviceContext->ClearRenderTargetView(pCtx->m_pBackBuffer, color);
 
 	// Set Shaders to active
@@ -157,7 +157,7 @@ void Graphics::RenderFrame()
 		proxy->Draw();
 	}
 	
-	pCtx->m_pFontRender->Draw("Hello World", 100, 100);
+	pCtx->m_pFontRender->Draw("Asteroids", pCtx->m_windowWidth * 0.5f, pCtx->m_windowHeight - 33.0f);
 
 	// switch the back buffer and the front buffer
 	pCtx->m_pSwapChain->Present(0, 0);

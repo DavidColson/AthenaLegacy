@@ -49,7 +49,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	float4 PSMain(VS_OUTPUT input) : SV_TARGET\
 	{\
 		float4 textureColor;\
-		textureColor = float4(0.0, 1.0, 0.0, shaderTexture.Sample(SampleType, input.Tex).r);\
+		textureColor = float4(1.0, 1.0, 1.0, shaderTexture.Sample(SampleType, input.Tex).r);\
 		return textureColor;\
 	}";
 
@@ -239,11 +239,18 @@ void RenderFont::Draw(std::string text, int x, int y)
 
 	Graphics::GetContext()->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
+	float textWidth = 0.0f;
+	for (char& c : text)
+	{
+		Character ch = m_characters[c];
+		textWidth += ch.m_advance;
+	}
+
 	for (char& c : text) {
 		// Draw a font character
 		Character ch = m_characters[c];
 
-		mat4 posmat = MakeTranslate(vec3(float(x + ch.m_bearing.x), float(y - (ch.m_size.y - ch.m_bearing.y)), 0.0f));
+		mat4 posmat = MakeTranslate(vec3(float(x + ch.m_bearing.x - textWidth*0.5f), float(y - (ch.m_size.y - ch.m_bearing.y)), 0.0f));
 		mat4 scalemat = MakeScale(vec3(ch.m_size.x / 10.0f, ch.m_size.y / 10.0f, 1.0f));
 
 

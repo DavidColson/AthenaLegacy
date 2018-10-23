@@ -15,20 +15,19 @@ struct Vertex
 	vec2 m_texCoords{ vec2(0.0f, 0.0f) };
 };
 
-class RenderProxy
+struct RenderProxy
 {
-public:
 	RenderProxy() {};
 	RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices);
 
 	void Draw();
 
-	void SetTransform(vec3 pos, float rot) { m_pos = pos; m_rot = rot; }
+	void SetTransform(vec3 pos, float rot, vec3 sca) { m_pos = pos; m_rot = rot; m_sca = sca; }
 
-private:
 	ID3D11Buffer* m_pWVPBuffer;
 
 	vec3 m_pos{ vec3(0,0,0) };
+	vec3 m_sca{ vec3(1.f, 1.f, 1.f) };
 	float m_rot{ 0.0f };
 
 	ID3D11Buffer* m_pVertBuffer{ nullptr };
