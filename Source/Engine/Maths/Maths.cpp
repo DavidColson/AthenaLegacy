@@ -28,9 +28,9 @@ mat4 MakeTranslate(vec3 translate)
 
 mat4 MakeRotate(vec3 rotation)
 {
-	float x = ToRadian(rotation.x);
-	float y = ToRadian(rotation.y);
-	float z = ToRadian(rotation.z);
+	float x = rotation.x;
+	float y = rotation.y;
+	float z = rotation.z;
 
 	mat4 rx = mat4::identity();
 	rx[0] = vec4(1.f, 0.f,		0.f,		0.f);

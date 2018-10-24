@@ -6,3 +6,4 @@ build/*
 *.ilk
 freetype.tlog/
 *.pdb
+freetype.dll

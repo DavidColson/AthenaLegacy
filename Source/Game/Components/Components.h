@@ -18,6 +18,7 @@ struct CDrawable
 
 struct CPlayerControl
 {
-	vec3 m_moveSpeed{ vec3(5.f, 5.f, 5.f) };
-	float m_rotateSpeed = 1.0f;
+	float m_thrust{ 80.f };
+	float m_rotateSpeed{ 0.1f };
+	float m_dampening{ 0.1f };
 };
