@@ -30,18 +30,25 @@ set(FREETYPE_LIB_DIR "ThirdParty/freetype-2.9/objs/x64/Release")
 
 
 set(SOURCES
-    "Source/main.cpp"
-    "Source/GameFramework/World.h"
-    "Source/Renderer/Renderer.h"
-    "Source/Renderer/Renderer.cpp"
-    "Source/Renderer/RenderProxy.h"
-    "Source/Renderer/RenderProxy.cpp"
-    "Source/Renderer/RenderFont.h"
-    "Source/Renderer/RenderFont.cpp"
-	"Source/Input/Input.h"
-    "Source/Input/Input.cpp"
-    "Source/Maths/Maths.h"
-    "Source/Maths/Maths.cpp"
+    "Source/Engine/main.cpp"
+    "Source/Engine/GameFramework/World.h"
+    "Source/Engine/Renderer/Renderer.h"
+    "Source/Engine/Renderer/Renderer.cpp"
+    "Source/Engine/Renderer/RenderProxy.h"
+    "Source/Engine/Renderer/RenderProxy.cpp"
+    "Source/Engine/Renderer/RenderFont.h"
+    "Source/Engine/Renderer/RenderFont.cpp"
+	"Source/Engine/Input/Input.h"
+    "Source/Engine/Input/Input.cpp"
+    "Source/Engine/Maths/Maths.h"
+    "Source/Engine/Maths/Maths.cpp"
+    "Source/Game/Asteroids.h"
+    "Source/Game/Asteroids.cpp"
+    "Source/Game/Systems/DrawPolygon.h"
+    "Source/Game/Systems/DrawPolygon.cpp"
+    "Source/Game/Systems/Movement.h"
+    "Source/Game/Systems/Movement.cpp"
+    "Source/Game/Components/Components.h"
     )
 
 set(SHADERS
@@ -59,7 +66,7 @@ endforeach()
 set_source_files_properties(${SHADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
 
 # Find d3d headers and libs and set variables
-include_directories(${SDL2_INCLUDE_DIRS} ${DIRECTX11_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIR} "Source/")
+include_directories(${SDL2_INCLUDE_DIRS} ${DIRECTX11_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIR} "Source/Engine/" "Source/Game")
 link_directories(${DIRECTX11_LIB_DIR} ${FREETYPE_LIB_DIR})
 
 add_executable(Engine WIN32 ${SOURCES} ${SHADERS})

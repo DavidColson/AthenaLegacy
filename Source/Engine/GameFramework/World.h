@@ -51,6 +51,9 @@ gGameWorld.AssignComponent<Shape>(circle);
 
 */
 
+#include <bitset>
+#include <vector>
+#include <cassert>
 
 typedef unsigned int EntityID;
 const int MAX_COMPONENTS = 10;
