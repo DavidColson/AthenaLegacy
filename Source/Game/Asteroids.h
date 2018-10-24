@@ -4,5 +4,5 @@ namespace Game
 {
 	void Startup();
 
-	void Update();
+	void Update(float deltaTime);
 }

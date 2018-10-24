@@ -44,14 +44,30 @@ int main(int argc, char *argv[])
 	// Main Loop
 	// *********
 
+
+	float frameTime = 0.016f;
+	float targetFrameTime = 0.016f;
 	bool shutdown = false;
 	while (!shutdown)
 	{
+		unsigned int frameStart = SDL_GetTicks();
 		Input::Update(shutdown);
 
-		Game::Update();
+		Game::Update(frameTime);
 
 		Graphics::RenderFrame();
+
+		float realframeTime = float(SDL_GetTicks() - frameStart) / 1000.f;
+		if (realframeTime < targetFrameTime)
+		{
+			frameTime = targetFrameTime;
+			unsigned int waitTime = int((targetFrameTime - realframeTime) * 1000.f);
+			SDL_Delay(waitTime);
+		}
+		else
+		{
+			frameTime = realframeTime;
+		}
 	}
 
 	Graphics::Shutdown();

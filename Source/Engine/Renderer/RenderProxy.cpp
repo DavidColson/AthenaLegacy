@@ -83,8 +83,9 @@ void RenderProxy::Draw()
 	mat4 posmat = MakeTranslate(m_pos);
 	mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, m_rot));
 	mat4 scamat = MakeScale(m_sca);
+	mat4 pivotAdjust = MakeTranslate(vec3(-50.f, -50.f, 0.0f));
 
-	mat4 world = posmat * rotmat * scamat; // transform into world space
+	mat4 world = posmat * rotmat * scamat * pivotAdjust; // transform into world space
 	mat4 view = MakeTranslate(vec3(0.0f, 0.0f, 0.0f)); // transform into camera space
 
 	mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth, 0.0f, Graphics::GetContext()->m_windowHeight, 0.1f, 10.0f); // transform into screen space

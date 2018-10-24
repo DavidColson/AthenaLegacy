@@ -4,18 +4,17 @@
 
 #include <Input/Input.h>
 
-void SMovement::UpdateEntity(EntityID id, Space * space)
+void SMovement::UpdateEntity(EntityID id, Space * space, float deltaTime)
 {
 	CTransform* pTransform = space->GetComponent<CTransform>(id);
 	CPlayerControl* pControl = space->GetComponent<CPlayerControl>(id);
-	if (Input::GetKeyHeld(SDL_SCANCODE_D))
-		pTransform->m_pos.x += pControl->m_moveSpeed.x;
-	if (Input::GetKeyHeld(SDL_SCANCODE_A))
-		pTransform->m_pos.x -= pControl->m_moveSpeed.x;
-	if (Input::GetKeyHeld(SDL_SCANCODE_W))
-		pTransform->m_pos.y += pControl->m_moveSpeed.y;
-	if (Input::GetKeyHeld(SDL_SCANCODE_S))
-		pTransform->m_pos.y -= pControl->m_moveSpeed.y;
+	
+	if (Input::GetKeyHeld(SDL_SCANCODE_LEFT))
+		pTransform->m_rot += pControl->m_rotateSpeed;
+	if (Input::GetKeyHeld(SDL_SCANCODE_RIGHT))
+		pTransform->m_rot -= pControl->m_rotateSpeed;
+
+	pTransform->m_pos = pTransform->m_pos + pTransform->m_vel * deltaTime;
 }
 
 void SMovement::SetSubscriptions()

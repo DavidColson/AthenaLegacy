@@ -15,7 +15,7 @@ void SDrawPolygon::StartEntity(EntityID id, Space * space)
 	pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot, pTransform->m_sca);
 }
 
-void SDrawPolygon::UpdateEntity(EntityID id, Space * space)
+void SDrawPolygon::UpdateEntity(EntityID id, Space * space, float deltaTime)
 {
 	CTransform* pTransform = space->GetComponent<CTransform>(id);
 	CDrawable* pDrawable = space->GetComponent<CDrawable>(id);

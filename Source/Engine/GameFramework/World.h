@@ -84,7 +84,7 @@ class System
 public:
 
 	virtual void StartEntity(EntityID id, Space* space) {};
-	virtual void UpdateEntity(EntityID id, Space* space) = 0;
+	virtual void UpdateEntity(EntityID id, Space* space, float deltaTime) = 0;
 	virtual void SetSubscriptions() = 0;
 
 protected:
@@ -153,7 +153,7 @@ struct Space
 
 	// Goes through each system one by one, looping through all entities and updating the
 	// system with entities that match the subscription
-	void UpdateSystems()
+	void UpdateSystems(float deltaTime)
 	{
 		for (System* sys : m_systems)
 		{
@@ -162,7 +162,7 @@ struct Space
 				ComponentMask mask = m_entities[i];
 				if (sys->m_componentSubscription == (sys->m_componentSubscription & mask))
 				{
-					sys->UpdateEntity(i, this);
+					sys->UpdateEntity(i, this, deltaTime);
 				}
 			}
 		}

@@ -57,7 +57,7 @@ void Game::Startup()
 	g_pCurrentSpace->StartSystems();
 }
 
-void Game::Update()
+void Game::Update(float deltaTime)
 {
-	g_pCurrentSpace->UpdateSystems();
+	g_pCurrentSpace->UpdateSystems(deltaTime);
 }
