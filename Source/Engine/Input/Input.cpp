@@ -2,6 +2,8 @@
 #include "Input.h"
 
 #include <windows.h>
+#include <ThirdParty/Imgui/imgui.h>
+#include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
 #include "SDL.h"
 
@@ -50,6 +52,7 @@ void Input::Update(bool& shutdownEngine)
 	SDL_Event event;
 	if (SDL_PollEvent(&event)) {
 		/* an event was found */
+		ImGui_ImplSDL2_ProcessEvent(&event);
 		switch (event.type) {
 		case SDL_QUIT:
 			shutdownEngine = true;

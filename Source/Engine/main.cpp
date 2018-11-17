@@ -3,6 +3,8 @@
 
 #include <comdef.h>
 #include <vector>
+#include <ThirdParty/Imgui/imgui.h>
+#include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
 #include "GameFramework/World.h"
 #include "Input/Input.h"
@@ -21,7 +23,7 @@ int main(int argc, char *argv[])
 	float width = 1000.0f;
 	float height = 600.0f;
 
-	SDL_Window *window = SDL_CreateWindow(
+	SDL_Window* pWindow = SDL_CreateWindow(
 		"DirectX",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
@@ -30,13 +32,7 @@ int main(int argc, char *argv[])
 		0
 	);
 
-	SDL_SysWMinfo wmInfo;
-	SDL_VERSION(&wmInfo.version);
-	SDL_GetWindowWMInfo(window, &wmInfo);
-	HWND hwnd = wmInfo.info.win.window;
-
-
-	Graphics::CreateContext(hwnd, width, height);
+	Graphics::CreateContext(pWindow, width, height);
 	Input::CreateInputState();
 
 	Game::Startup();
@@ -72,7 +68,7 @@ int main(int argc, char *argv[])
 
 	Graphics::Shutdown();
 
-	SDL_DestroyWindow(window);
+	SDL_DestroyWindow(pWindow);
 	SDL_Quit();
 
 	return 0;

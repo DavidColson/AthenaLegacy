@@ -1,10 +1,15 @@
 
 #include "renderer.h"
 
+#include <SDL.h>
+#include <SDL_syswm.h>
 #include <D3DCompiler.h>
 #include <d3d11.h>
 #include <d3d10.h>
 #include <stdio.h>
+#include <ThirdParty/Imgui/imgui.h>
+#include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
+#include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
 
 #include "Maths/Maths.h"
 
@@ -15,11 +20,16 @@ RenderContext* Graphics::GetContext()
 	return pCtx;
 }
 
-void Graphics::CreateContext(void* pNativeWindowHandle, float width, float height)
+void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 {
 	pCtx = new RenderContext();
+	pCtx->m_pWindow = pWindow;
 
-	HWND hwnd = (HWND)pNativeWindowHandle;
+	SDL_SysWMinfo wmInfo;
+	SDL_VERSION(&wmInfo.version);
+	SDL_GetWindowWMInfo(pWindow, &wmInfo);
+	HWND hwnd = wmInfo.info.win.window;
+
 	pCtx->m_windowWidth = width;
 	pCtx->m_windowHeight = height;
 
@@ -135,6 +145,14 @@ void Graphics::CreateContext(void* pNativeWindowHandle, float width, float heigh
 	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
 
 	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 30);
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui_ImplSDL2_InitForVulkan(pWindow);
+	ImGui_ImplDX11_Init(pCtx->m_pDevice, pCtx->m_pDeviceContext);
+
+	ImGui::StyleColorsDark();
 }
 
 
@@ -157,8 +175,17 @@ void Graphics::RenderFrame()
 		proxy->Draw();
 	}
 	
-	pCtx->m_pFontRender->Draw("Asteroids", pCtx->m_windowWidth * 0.5f, pCtx->m_windowHeight - 33.0f);
+	pCtx->m_pFontRender->Draw("Asteroids", int(pCtx->m_windowWidth * 0.5f), int(pCtx->m_windowHeight - 33.0f));
 
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplSDL2_NewFrame(pCtx->m_pWindow);
+	ImGui::NewFrame();
+
+	ImGui::ShowDemoWindow();
+
+	ImGui::Render();
+
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	// switch the back buffer and the front buffer
 	pCtx->m_pSwapChain->Present(0, 0);
 }

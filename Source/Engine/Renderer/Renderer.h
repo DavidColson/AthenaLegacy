@@ -5,6 +5,7 @@
 #include "Renderer/RenderProxy.h"
 #include "RenderFont.h"
 
+struct SDL_Window;
 struct IDXGISwapChain;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
@@ -15,6 +16,8 @@ struct ID3D11InputLayout;
 
 struct RenderContext
 {
+	SDL_Window* m_pWindow;
+
 	IDXGISwapChain* m_pSwapChain;
 	ID3D11Device* m_pDevice;
 	ID3D11DeviceContext* m_pDeviceContext;
@@ -34,7 +37,7 @@ struct RenderContext
 
 namespace Graphics
 {
-	void CreateContext(void* pNativeWindowHandle, float width, float height);
+	void CreateContext(SDL_Window* pWindow, float width, float height);
 
 	RenderContext* GetContext();
 
