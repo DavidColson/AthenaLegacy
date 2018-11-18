@@ -11,6 +11,7 @@
 #include "Maths/Maths.h"
 #include "Renderer/Renderer.h"
 #include "Editor/Editor.h"
+#include "Log.h"
 
 #include "Asteroids.h"
 
@@ -32,6 +33,9 @@ int main(int argc, char *argv[])
 		int(height),
 		0
 	);
+
+	Log::Print(Log::EMsg, "Engine starting up");
+	Log::Print(Log::EMsg, "Window size W: %.1f H: %.1f", width, height);
 
 	Graphics::CreateContext(pWindow, width, height);
 	Input::CreateInputState();

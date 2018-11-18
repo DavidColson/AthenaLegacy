@@ -31,6 +31,8 @@ set(FREETYPE_LIB_DIR "ThirdParty/freetype-2.9/objs/x64/Release")
 
 set(SOURCES
     "Source/Engine/main.cpp"
+    "Source/Engine/Log.h"
+    "Source/Engine/Log.cpp"
     "Source/Engine/GameFramework/World.h"
     "Source/Engine/Renderer/Renderer.h"
     "Source/Engine/Renderer/Renderer.cpp"
