@@ -155,6 +155,12 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	ImGui::StyleColorsDark();
 }
 
+void Graphics::NewFrame()
+{
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplSDL2_NewFrame(pCtx->m_pWindow);
+	ImGui::NewFrame();
+}
 
 void Graphics::RenderFrame()
 {
@@ -177,15 +183,12 @@ void Graphics::RenderFrame()
 	
 	pCtx->m_pFontRender->Draw("Asteroids", int(pCtx->m_windowWidth * 0.5f), int(pCtx->m_windowHeight - 33.0f));
 
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplSDL2_NewFrame(pCtx->m_pWindow);
-	ImGui::NewFrame();
+	//ImGui::ShowDemoWindow();
 
-	ImGui::ShowDemoWindow();
-
+	// Draw Imgui
 	ImGui::Render();
-
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
 	// switch the back buffer and the front buffer
 	pCtx->m_pSwapChain->Present(0, 0);
 }

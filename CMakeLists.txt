@@ -38,6 +38,8 @@ set(SOURCES
     "Source/Engine/Renderer/RenderProxy.cpp"
     "Source/Engine/Renderer/RenderFont.h"
     "Source/Engine/Renderer/RenderFont.cpp"
+    "Source/Engine/Editor/Editor.h"
+    "Source/Engine/Editor/Editor.cpp"
 	"Source/Engine/Input/Input.h"
     "Source/Engine/Input/Input.cpp"
     "Source/Engine/Maths/Maths.h"

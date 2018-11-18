@@ -2,6 +2,8 @@
 
 #include <bitset>
 
+#include <SDL.h> // remove this and replace with custom keycodes
+
 struct InputState
 {
 #define NKEYS 512

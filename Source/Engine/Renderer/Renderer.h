@@ -41,6 +41,8 @@ namespace Graphics
 
 	RenderContext* GetContext();
 
+	void NewFrame();
+
 	void RenderFrame();
 
 	void Shutdown();

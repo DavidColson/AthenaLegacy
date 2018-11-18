@@ -5,8 +5,6 @@
 #include <ThirdParty/Imgui/imgui.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
-#include "SDL.h"
-
 InputState* pInput;
 
 void Input::CreateInputState()

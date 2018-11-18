@@ -10,6 +10,7 @@
 #include "Input/Input.h"
 #include "Maths/Maths.h"
 #include "Renderer/Renderer.h"
+#include "Editor/Editor.h"
 
 #include "Asteroids.h"
 
@@ -20,8 +21,8 @@ int main(int argc, char *argv[])
 
 	SDL_Init(SDL_INIT_VIDEO);
 
-	float width = 1000.0f;
-	float height = 600.0f;
+	float width = 1800.0f;
+	float height = 1000.0f;
 
 	SDL_Window* pWindow = SDL_CreateWindow(
 		"DirectX",
@@ -46,10 +47,14 @@ int main(int argc, char *argv[])
 	bool shutdown = false;
 	while (!shutdown)
 	{
+		Graphics::NewFrame();
+
 		unsigned int frameStart = SDL_GetTicks();
 		Input::Update(shutdown);
 
 		Game::Update(frameTime);
+
+		Editor::ShowEditor(shutdown);
 
 		Graphics::RenderFrame();
 
