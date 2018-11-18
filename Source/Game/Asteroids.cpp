@@ -2,7 +2,6 @@
 
 #include "Systems/DrawPolygon.h"
 #include "Systems/Movement.h"
-
 #include "Components/Components.h"
 
 #include <GameFramework/World.h>
@@ -11,6 +10,23 @@ Space* g_pCurrentSpace;
 
 void Game::Startup()
 {
+	CPlayerControl playerControl;
+
+	// We can now for loop over the properties, printing the name and value of each one. 
+	// Without knowing their names
+	for (std::pair<std::string, Member_Base*> member : CPlayerControl::GetTypeData()->m_memberList)
+	{
+		float value = member.second->get_value<float>(&playerControl);
+		Log::Print(Log::EMsg, "Member Name: %s Member Value %f", member.first.c_str(), value);
+	}
+
+	vec2 myPos = CPlayerControl::GetTypeData()->m_memberList["m_pos"]->get_value<vec2>(&playerControl);
+	Log::Print(Log::EMsg, "retrieved vector X: %f Y: %f", myPos.x, myPos.y);
+
+	TypeDatabase::GetTypeData("vec2")->m_memberList["x"]->set_value(&myPos, 22.0f);
+
+	Log::Print(Log::EMsg, "changed vector X: %f Y: %f", myPos.x, myPos.y);
+
 	// Create our scene
 	// ****************
 	g_pCurrentSpace = new Space();

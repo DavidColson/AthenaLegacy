@@ -116,3 +116,10 @@ void GetAxesFromRotation(vec3 Rotation, vec3 &Forward, vec3 &Right, vec3 & Up)
 	Right = vec3(rotMat[0][0], rotMat[1][0], rotMat[2][0]);
 	Up = vec3(rotMat[0][1], rotMat[1][1], rotMat[2][1]);
 }
+
+REGISTRATION
+{
+	TypeDatabase::RegisterNewType("vec2")
+	->RegisterMember("x", &vec2::x)
+	->RegisterMember("y", &vec2::y);
+}

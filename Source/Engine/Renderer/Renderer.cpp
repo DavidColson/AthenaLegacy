@@ -152,6 +152,8 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	ImGui_ImplSDL2_InitForVulkan(pWindow);
 	ImGui_ImplDX11_Init(pCtx->m_pDevice, pCtx->m_pDeviceContext);
 
+	io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
+
 	ImGui::StyleColorsDark();
 }
 
