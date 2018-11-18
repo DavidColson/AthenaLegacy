@@ -2,6 +2,7 @@
 
 #include "Components/Components.h"
 
+#include <Log.h>
 #include <Input/Input.h>
 #include <Renderer/Renderer.h>
 
@@ -28,6 +29,9 @@ void SMovement::UpdateEntity(EntityID id, Space * space, float deltaTime)
 
 	pTransform->m_vel = pTransform->m_vel + accel * deltaTime;
 	pTransform->m_pos = pTransform->m_pos + pTransform->m_vel * deltaTime;
+
+	Log::Print(Log::EMsg, "Player Position %f %f", pTransform->m_pos.x, pTransform->m_pos.y);
+
 
 	if (pTransform->m_pos.x < 0.0f)
 		pTransform->m_pos.x = Graphics::GetContext()->m_windowWidth;

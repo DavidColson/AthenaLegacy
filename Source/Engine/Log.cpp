@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 FILE* pFile{ nullptr };
+std::vector<std::string> logHistory;
 
 void Log::Print(LogType type, const char* text, ...)
 {
@@ -34,4 +35,10 @@ void Log::Print(LogType type, const char* text, ...)
 
 	fprintf(pFile, message.c_str());
 	OutputDebugString(message.c_str());
+	logHistory.push_back(message);
+}
+
+std::vector<std::string> Log::GetLogHistory()
+{
+	return logHistory;
 }

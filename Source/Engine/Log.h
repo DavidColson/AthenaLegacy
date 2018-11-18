@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 namespace Log
 {
 	enum LogType
@@ -10,4 +12,6 @@ namespace Log
 	};
 
 	void Print(LogType type, const char* text, ...);
+
+	std::vector<std::string> GetLogHistory();
 }
