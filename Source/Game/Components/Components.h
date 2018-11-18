@@ -30,9 +30,9 @@ struct CPlayerControl
 
 REGISTRATION
 {
-	TypeDatabase::RegisterNewType("CPlayerControl")
-		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
-		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
-		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
-		->RegisterMember("m_pos", &CPlayerControl::m_pos);
+	TypeDatabase::RegisterNewType<CPlayerControl>("CPlayerControl")
+		->RegisterMember<float>("m_thrust", &CPlayerControl::m_thrust)
+		->RegisterMember<float>("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
+		->RegisterMember<float>("m_dampening", &CPlayerControl::m_dampening)
+		->RegisterMember<vec2>("m_pos", &CPlayerControl::m_pos);
 }

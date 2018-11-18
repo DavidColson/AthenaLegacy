@@ -14,18 +14,31 @@ void Game::Startup()
 
 	// We can now for loop over the properties, printing the name and value of each one. 
 	// Without knowing their names
-	for (std::pair<std::string, Member_Base*> member : CPlayerControl::GetTypeData()->m_memberList)
+	for (std::pair<std::string, TypeDatabase::Member*> member : CPlayerControl::GetType()->m_memberList)
 	{
-		float value = member.second->get_value<float>(&playerControl);
-		Log::Print(Log::EMsg, "Member Name: %s Member Value %f", member.first.c_str(), value);
+		if (member.second->m_type == TypeDatabase::GetType<float>())
+		{
+			float value = member.second->GetValue<float>(playerControl);
+			Log::Print(Log::EMsg, "Name: %s Value: %f Typename: %s Typeid %i", member.first.c_str(), value, member.second->m_type->m_name, member.second->m_type->m_id);
+		}
+		else if (member.second->m_type == TypeDatabase::GetType<vec2>())
+		{
+			TypeDatabase::Type* vecType = member.second->m_type;
+
+			vec2 vect = member.second->GetValue<vec2>(playerControl);
+
+			float x = vecType->GetMember("x")->GetValue<float>(vect);
+			float y = vecType->GetMember("y")->GetValue<float>(vect);
+
+			Log::Print(Log::EMsg, "Name: %s Value: { %f %f } Typename: %s Typeid %i", member.first.c_str(), x, y, member.second->m_type->m_name, member.second->m_type->m_id);
+		}
 	}
 
-	vec2 myPos = CPlayerControl::GetTypeData()->m_memberList["m_pos"]->get_value<vec2>(&playerControl);
-	Log::Print(Log::EMsg, "retrieved vector X: %f Y: %f", myPos.x, myPos.y);
 
-	TypeDatabase::GetTypeData("vec2")->m_memberList["x"]->set_value(&myPos, 22.0f);
+	TypeDatabase::Member* member = TypeDatabase::GetType(playerControl)->GetMember("m_thrust");
+	member->SetValue(playerControl, 51.0f);
 
-	Log::Print(Log::EMsg, "changed vector X: %f Y: %f", myPos.x, myPos.y);
+	Log::Print(Log::EMsg, "playerControl thrust %f", playerControl.m_thrust);
 
 	// Create our scene
 	// ****************

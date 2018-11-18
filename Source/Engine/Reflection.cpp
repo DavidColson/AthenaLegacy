@@ -1,14 +1,9 @@
 #include "Reflection.h"
 
-std::unordered_map<std::string, TypeData> m_typeDatabase;
+std::unordered_map<TypeId, TypeDatabase::Type> TypeDatabase::Detail::typeDatabase;
 
-TypeData* TypeDatabase::GetTypeData(std::string typeName)
+REGISTRATION
 {
-	return &m_typeDatabase[typeName];
-}
-
-TypeData* TypeDatabase::RegisterNewType(std::string typeName)
-{
-	m_typeDatabase.emplace(typeName, TypeData());
-	return &m_typeDatabase[typeName];
+	TypeDatabase::RegisterNewType<float>("float");
+	TypeDatabase::RegisterNewType<int>("int");
 }
