@@ -20,7 +20,8 @@ struct CDrawable
 
 struct CPlayerControl
 {
-	REFLECTABLE(CPlayerControl)
+	REFLECTABLE(CPlayerControl) // idea for initialization. Instead of relying on before main statics. Have a static GetType function in here
+		// This will be a singleton creator for the Type object, creating or retrieving it. That way things are created in the order they're needed
 
 	float m_thrust{ 80.f };
 	float m_rotateSpeed{ 0.1f };
@@ -31,8 +32,8 @@ struct CPlayerControl
 REGISTRATION
 {
 	TypeDatabase::RegisterNewType<CPlayerControl>("CPlayerControl")
-		->RegisterMember<float>("m_thrust", &CPlayerControl::m_thrust)
-		->RegisterMember<float>("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
-		->RegisterMember<float>("m_dampening", &CPlayerControl::m_dampening)
-		->RegisterMember<vec2>("m_pos", &CPlayerControl::m_pos);
+		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
+		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
+		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
+		->RegisterMember("m_pos", &CPlayerControl::m_pos);
 }

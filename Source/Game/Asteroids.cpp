@@ -11,6 +11,13 @@ Space* g_pCurrentSpace;
 void Game::Startup()
 {
 	CPlayerControl playerControl;
+	
+	TypeDatabase::Member* member = TypeDatabase::GetType(playerControl)->GetMember("m_thrust");
+	member->SetValue(playerControl, 51.0f);
+
+	Log::Print(Log::EMsg, "playerControl thrust %f", playerControl.m_thrust);
+
+
 
 	// We can now for loop over the properties, printing the name and value of each one. 
 	// Without knowing their names
@@ -23,22 +30,12 @@ void Game::Startup()
 		}
 		else if (member.second->m_type == TypeDatabase::GetType<vec2>())
 		{
-			TypeDatabase::Type* vecType = member.second->m_type;
-
-			vec2 vect = member.second->GetValue<vec2>(playerControl);
-
-			float x = vecType->GetMember("x")->GetValue<float>(vect);
-			float y = vecType->GetMember("y")->GetValue<float>(vect);
-
-			Log::Print(Log::EMsg, "Name: %s Value: { %f %f } Typename: %s Typeid %i", member.first.c_str(), x, y, member.second->m_type->m_name, member.second->m_type->m_id);
+			vec2 vec = member.second->GetValue<vec2>(playerControl);
+			Log::Print(Log::EMsg, "Name: %s Value: { %f %f } Typename: %s Typeid %i", member.first.c_str(), vec.x, vec.y, member.second->m_type->m_name, member.second->m_type->m_id);
 		}
 	}
 
 
-	TypeDatabase::Member* member = TypeDatabase::GetType(playerControl)->GetMember("m_thrust");
-	member->SetValue(playerControl, 51.0f);
-
-	Log::Print(Log::EMsg, "playerControl thrust %f", playerControl.m_thrust);
 
 	// Create our scene
 	// ****************

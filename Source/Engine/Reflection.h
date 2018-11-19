@@ -11,7 +11,7 @@
 #define REGISTRATION									\
 static void _register();								\
 namespace { struct temp { temp() { _register(); } }; }	\
-static const temp CAT(temp, __LINE__);									\
+static const temp CAT(temp, __LINE__);					\
 static void _register()
 
 // Adds a convienience function to structs and classes allowing you to retrieve the type from within a class
@@ -43,10 +43,11 @@ namespace TypeDatabase
 		Type() : m_name(""), m_id(0) {}
 		Type(const char* name, TypeId id) : m_name(name), m_id(id) {}
 
-		template<typename T, typename A>
-		Type* RegisterMember(const char* name, A accessor)
+		template<typename T, typename I>
+		Type* RegisterMember(const char* name, T I::*accessor)
 		{
-			Detail::Member_Internal<T, A>* member = new Detail::Member_Internal<T, A>(accessor);
+			Detail::Member_Internal<T I::*>* member = new Detail::Member_Internal<T I::*>(accessor);
+			member->m_type = TypeDatabase::GetType<T>();
 			m_memberList.insert({ name, member });
 			return this;
 		}
@@ -79,13 +80,13 @@ namespace TypeDatabase
 		template<typename I, typename T>
 		void SetValue(I& instance, T value)
 		{
-			((Detail::Member_Internal<T, T I::*>*)this)->SetValue(instance, value);
+			((Detail::Member_Internal<T I::*>*)this)->SetValue(instance, value);
 		}
 
 		template<typename T, typename I>
 		T GetValue(I& instance)
 		{
-			return ((Detail::Member_Internal<T, T I::*>*)this)->GetValue<T>(instance);
+			return ((Detail::Member_Internal<T I::*>*)this)->GetValue<T>(instance);
 		}
 	};
 
@@ -129,12 +130,12 @@ namespace TypeDatabase
 
 		// Internal representation of members (it's a subclass so Member doesn't need to be a template)
 		// Stores the accessor for members and sets up the internal type value
-		template<typename T, typename A>
+		template<typename A>
 		struct Member_Internal : public Member
 		{
 			A m_pPointer;
 
-			Member_Internal(A pointer) { m_pPointer = pointer; m_type = TypeDatabase::GetType<T>(); }
+			Member_Internal(A pointer) { m_pPointer = pointer;  }
 
 			template<typename T, typename I>
 			void SetValue(I& obj, T value)
