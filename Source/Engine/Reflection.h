@@ -17,6 +17,9 @@ static void _register()
 // Adds a convienience function to structs and classes allowing you to retrieve the type from within a class
 #define REFLECTABLE(CLASSNAME) static TypeDatabase::Type* GetType() { return TypeDatabase::GetType<CLASSNAME>(); }
 
+// Convienience macro for registering a type without specifying a string
+#define RegisterNewType(Type) TypeDatabase::Detail::RegisterNewType_Internal<Type>(#Type)
+
 typedef uintptr_t TypeId;
 
 namespace TypeDatabase
@@ -110,14 +113,7 @@ namespace TypeDatabase
 		return &Detail::typeDatabase[id];
 	}
 
-	// Registers a new type to the database
-	template<typename T>
-	Type* RegisterNewType(const char* typeName)
-	{
-		TypeId id = TypeIdGenerator<T>::Id();
-		Detail::typeDatabase.emplace(id, Type(typeName, id));
-		return &Detail::typeDatabase[id];
-	}
+	
 
 
 
@@ -127,6 +123,15 @@ namespace TypeDatabase
 	{
 		// Actual storage of type information
 		extern std::unordered_map<TypeId, Type> typeDatabase;
+
+		// Registers a new type to the database
+		template<typename T>
+		Type* RegisterNewType_Internal(const char* typeName)
+		{
+			TypeId id = TypeIdGenerator<T>::Id();
+			Detail::typeDatabase.emplace(id, Type(typeName, id));
+			return &Detail::typeDatabase[id];
+		}
 
 		// Internal representation of members (it's a subclass so Member doesn't need to be a template)
 		// Stores the accessor for members and sets up the internal type value

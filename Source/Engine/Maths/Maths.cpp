@@ -119,7 +119,7 @@ void GetAxesFromRotation(vec3 Rotation, vec3 &Forward, vec3 &Right, vec3 & Up)
 
 REGISTRATION
 {
-	TypeDatabase::RegisterNewType<vec2>("vec2")
+	RegisterNewType(vec2)
 	->RegisterMember("x", &vec2::x)
 	->RegisterMember("y", &vec2::y);
 }

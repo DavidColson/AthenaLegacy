@@ -31,7 +31,7 @@ struct CPlayerControl
 
 REGISTRATION
 {
-	TypeDatabase::RegisterNewType<CPlayerControl>("CPlayerControl")
+	RegisterNewType(CPlayerControl)
 		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
 		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
 		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
