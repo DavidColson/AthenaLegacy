@@ -4,6 +4,7 @@ std::unordered_map<TypeId, TypeDatabase::Type> TypeDatabase::Detail::typeDatabas
 
 REGISTRATION
 {
+	RegisterNewType(std::string);
 	RegisterNewType(float);
 	RegisterNewType(int);
 }

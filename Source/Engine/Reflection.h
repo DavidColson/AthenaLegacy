@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <assert.h>
+#include "Log.h"
 
 // CONVIENIENCE MACROS
 #define CAT(a, b) a##b
@@ -38,18 +39,81 @@ namespace TypeDatabase
 	};
 
 
+
+
+	struct Variant
+	{
+		Variant() {}
+
+		template<typename T>
+		Variant(T inValue) : m_impl(new VariantImpl<T>(inValue)), m_typeId(TypeDatabase::TypeIdGenerator<T>::Id()) {}
+
+		// Copy constructor
+		Variant(const Variant& other)  
+		{
+			m_impl = other.m_impl->Clone();
+			m_typeId = other.m_typeId;
+		}
+
+		~Variant() { if (m_typeId != 0) delete m_impl; Log::Print(Log::EMsg, "Deleting Variant"); }
+
+		template<typename T>
+		Variant& operator=(T value)
+		{
+			if (TypeDatabase::TypeIdGenerator<T>::Id() != m_typeId && m_typeId != 0)
+				delete m_impl;
+			m_impl = new VariantImpl<T>(value);
+			m_typeId = TypeDatabase::TypeIdGenerator<T>::Id();
+			return *this;
+		}
+
+		template<typename T>
+		T& Get() const
+		{
+			assert(m_typeId == TypeDatabase::TypeIdGenerator<T>::Id()); // You're trying to get a data type from a variant that doesn't hold that datatype
+			return static_cast<VariantImpl<T>*>(m_impl)->GetValue();
+		}
+
+		struct AbstractVariantImpl
+		{
+			virtual ~AbstractVariantImpl() {}
+			virtual AbstractVariantImpl* Clone() = 0;
+		};
+
+		template<typename T>
+		struct VariantImpl : public AbstractVariantImpl
+		{
+			VariantImpl(T inValue) : m_value(inValue) {}
+			~VariantImpl() {}
+			virtual AbstractVariantImpl* Clone() { return new VariantImpl<T>(m_value);  }
+			T& GetValue() { return m_value; }
+			T m_value;
+		};
+
+		AbstractVariantImpl* m_impl;
+		TypeId m_typeId{ 0 };
+	};
+
+
+	// Make a ref variant
+	// Ref variant is basically a wrapper around a pointer
+	// Data is now not a new VariantImpl, but rather a const_cast<T *> into a pointer.
+	// Data stores a pointer to a 
+
+
+
 	// The core of the reflection system is the type
 	// It represents any kind of type, from basic ints to classes
 	// It stores the id, name and a map of members in the type
 	struct Type
 	{
-		Type() : m_name(""), m_id(0) {}
-		Type(const char* name, TypeId id) : m_name(name), m_id(id) {}
+		Type() : m_name(""), m_id(0), m_size(0) {}
+		Type(const char* name, TypeId id, size_t size) : m_name(name), m_id(id), m_size(size) {}
 
 		template<typename T, typename I>
 		Type* RegisterMember(const char* name, T I::*accessor)
 		{
-			Detail::Member_Internal<T I::*>* member = new Detail::Member_Internal<T I::*>(accessor);
+			Detail::Member_Internal<T, I>* member = new Detail::Member_Internal<T, I>(accessor);
 			member->m_type = TypeDatabase::GetType<T>();
 			m_memberList.insert({ name, member });
 			return this;
@@ -68,8 +132,11 @@ namespace TypeDatabase
 
 		const char* m_name;
 		TypeId m_id;
+		size_t m_size;
 		std::unordered_map <std::string, Member* > m_memberList;
 	};
+
+
 
 
 
@@ -80,17 +147,9 @@ namespace TypeDatabase
 	{
 		Type* m_type;
 
-		template<typename I, typename T>
-		void SetValue(I& instance, T value)
-		{
-			((Detail::Member_Internal<T I::*>*)this)->SetValue(instance, value);
-		}
+		virtual void SetValue(Variant& instance, Variant value) = 0;
 
-		template<typename T, typename I>
-		T GetValue(I& instance)
-		{
-			return ((Detail::Member_Internal<T I::*>*)this)->GetValue<T>(instance);
-		}
+		virtual Variant GetValue(Variant& instance) = 0;
 	};
 
 
@@ -129,29 +188,28 @@ namespace TypeDatabase
 		Type* RegisterNewType_Internal(const char* typeName)
 		{
 			TypeId id = TypeIdGenerator<T>::Id();
-			Detail::typeDatabase.emplace(id, Type(typeName, id));
+			Detail::typeDatabase.emplace(id, Type(typeName, id, sizeof(T)));
 			return &Detail::typeDatabase[id];
 		}
 
 		// Internal representation of members (it's a subclass so Member doesn't need to be a template)
 		// Stores the accessor for members and sets up the internal type value
-		template<typename A>
+		template<typename T, typename I>
 		struct Member_Internal : public Member
 		{
-			A m_pPointer;
+			T I::* m_pPointer;
 
-			Member_Internal(A pointer) { m_pPointer = pointer;  }
+			Member_Internal(T I::* pointer) { m_pPointer = pointer;  }
 
-			template<typename T, typename I>
-			void SetValue(I& obj, T value)
+			virtual void SetValue(Variant& obj, Variant value) override
 			{
-				obj.*m_pPointer = value;
+				// TODO assert if value.is_a<T> == false
+				obj.Get<I>().*m_pPointer = value.Get<T>();
 			}
 
-			template<typename T, typename I>
-			T& GetValue(I& obj)
+			virtual Variant GetValue(Variant& obj) override
 			{
-				return obj.*m_pPointer;
+				return Variant(obj.Get<I>().*m_pPointer);
 			}
 		};
 	}
