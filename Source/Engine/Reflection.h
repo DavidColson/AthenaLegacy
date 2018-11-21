@@ -5,6 +5,9 @@
 #include <assert.h>
 #include "Log.h"
 
+
+// TODO: Put template function implementation at the bottom underneath definitions
+
 // CONVIENIENCE MACROS
 #define CAT(a, b) a##b
 
@@ -38,68 +41,95 @@ namespace TypeDatabase
 		static TypeId Id() { return reinterpret_cast<TypeId>(&Id); }
 	};
 
+	struct Type;
+
+	struct VariantBase
+	{
+		template<typename T>
+		T& Get()
+		{
+			return *reinterpret_cast<T*>(m_data);
+		}
+
+		template<typename T>
+		bool IsA()
+		{
+			return TypeIdGenerator<T>::Id() == m_type->m_id;
+		}
+
+		Type* m_type;
+		void* m_data;
+	};
 
 
-
-	struct Variant
+	struct Variant : public VariantBase
 	{
 		Variant() {}
 
 		template<typename T>
-		Variant(T inValue) : m_impl(new VariantImpl<T>(inValue)), m_typeId(TypeDatabase::TypeIdGenerator<T>::Id()) {}
-
-		// Copy constructor
-		Variant(const Variant& other)  
+		Variant(const T& value)
 		{
-			m_impl = other.m_impl->Clone();
-			m_typeId = other.m_typeId;
-		}
-
-		~Variant() { if (m_typeId != 0) delete m_impl; Log::Print(Log::EMsg, "Deleting Variant"); }
-
-		template<typename T>
-		Variant& operator=(T value)
-		{
-			if (TypeDatabase::TypeIdGenerator<T>::Id() != m_typeId && m_typeId != 0)
-				delete m_impl;
-			m_impl = new VariantImpl<T>(value);
-			m_typeId = TypeDatabase::TypeIdGenerator<T>::Id();
-			return *this;
+			size_t size = TypeDatabase::GetType<T>()->m_size;
+			m_data = new char[size];
+			m_type = TypeDatabase::GetType<T>();
+			memcpy(m_data, &value, size);
 		}
 
 		template<typename T>
-		T& Get() const
+		Variant& operator=(const T& value)
 		{
-			assert(m_typeId == TypeDatabase::TypeIdGenerator<T>::Id()); // You're trying to get a data type from a variant that doesn't hold that datatype
-			return static_cast<VariantImpl<T>*>(m_impl)->GetValue();
+			if (m_typeId != TypeIdGenerator<T>::Id() && m_typeId != 0)
+			{
+				delete[] reinterpret_cast<char *>(data);
+
+				size_t size = TypeDatabase::GetType<T>()->m_size;
+				m_data = new char[size];
+				m_type = TypeDatabase::GetType<T>();
+				memcpy(m_data, &value, size);
+			}
+			else
+			{
+				size_t size = TypeDatabase::GetType<T>()->m_size;
+				memcpy(m_data, &value, size);
+			}
 		}
-
-		struct AbstractVariantImpl
-		{
-			virtual ~AbstractVariantImpl() {}
-			virtual AbstractVariantImpl* Clone() = 0;
-		};
-
-		template<typename T>
-		struct VariantImpl : public AbstractVariantImpl
-		{
-			VariantImpl(T inValue) : m_value(inValue) {}
-			~VariantImpl() {}
-			virtual AbstractVariantImpl* Clone() { return new VariantImpl<T>(m_value);  }
-			T& GetValue() { return m_value; }
-			T m_value;
-		};
-
-		AbstractVariantImpl* m_impl;
-		TypeId m_typeId{ 0 };
 	};
 
+	struct RefVariant : VariantBase
+	{
+		template<typename T>
+		RefVariant(const T& value)
+		{
+			m_type = TypeDatabase::GetType<T>();
+			m_data = const_cast<T*>(&value);
+		}
 
-	// Make a ref variant
-	// Ref variant is basically a wrapper around a pointer
-	// Data is now not a new VariantImpl, but rather a const_cast<T *> into a pointer.
-	// Data stores a pointer to a 
+		RefVariant(const VariantBase& copy)
+		{
+			m_type = copy.m_type;
+			m_data = copy.m_data;
+		}
 
+		RefVariant(const Variant& copy)
+		{
+			m_type = copy.m_type;
+			m_data = copy.m_data;
+		}
+
+		RefVariant(const RefVariant& copy)
+		{
+			m_type = copy.m_type;
+			m_data = copy.m_data;
+		}
+
+		template<typename T>
+		RefVariant& operator=(const T& value)
+		{
+			m_type = TypeDatabase::GetType<T>();
+			m_data = const_cast<T*>(&value);
+			return *this;
+		}
+	};
 
 
 	// The core of the reflection system is the type
@@ -147,9 +177,10 @@ namespace TypeDatabase
 	{
 		Type* m_type;
 
-		virtual void SetValue(Variant& instance, Variant value) = 0;
+		virtual void SetValue(RefVariant&& instance, RefVariant value) = 0;
 
-		virtual Variant GetValue(Variant& instance) = 0;
+		virtual Variant GetValue(RefVariant&& instance) = 0;
+		virtual Variant GetValue(RefVariant& instance) = 0;
 	};
 
 
@@ -201,14 +232,22 @@ namespace TypeDatabase
 
 			Member_Internal(T I::* pointer) { m_pPointer = pointer;  }
 
-			virtual void SetValue(Variant& obj, Variant value) override
+			virtual void SetValue(RefVariant&& obj, RefVariant value) override
 			{
-				// TODO assert if value.is_a<T> == false
+				assert(value.IsA<T>()); // The value you supplied isn't the correct type TODO: Get the type that value actually is and print it's name as an error i.e. "value is a float but we expected a vec2"
+				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
 				obj.Get<I>().*m_pPointer = value.Get<T>();
 			}
 
-			virtual Variant GetValue(Variant& obj) override
+			virtual Variant GetValue(RefVariant&& obj) override
 			{
+				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				return Variant(obj.Get<I>().*m_pPointer);
+			}
+
+			virtual Variant GetValue(RefVariant& obj) override
+			{
+				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
 		};

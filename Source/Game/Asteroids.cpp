@@ -6,34 +6,59 @@
 
 #include <GameFramework/World.h>
 
+#include <functional>
+
 Space* g_pCurrentSpace;
 
 void Game::Startup()
 {
-	CPlayerControl playerControl;
+	// Create a player control struct
+	CPlayerControl player;
 	
-	TypeDatabase::Member* member = TypeDatabase::GetType(playerControl)->GetMember("m_thrust");
-	member->SetValue(playerControl, 51.0f);
+	// Retrieve the type of player, and then get the m_pos member from it
+	TypeDatabase::Member* posmember = TypeDatabase::GetType(player)->GetMember("m_pos");
 
-	Log::Print(Log::EMsg, "playerControl thrust %f", playerControl.m_thrust);
+	// Get type of m_pos, and then get the "x" member of it
+	TypeDatabase::Member* xmember = posmember->m_type->GetMember("x");
+
+	// Get whatever the actual value of the position is (don't care what type it is)
+	TypeDatabase::VariantBase position = posmember->GetValue(player);
+
+	// Set the x member to 1337
+	xmember->SetValue(position, 1337.0f);
+
+	// Set the m_pos vector to the new vector we made
+	posmember->SetValue(player, position);
 
 
+	Log::Print(Log::EMsg, "------- Serialization Attempt -------");
 
-	// We can now for loop over the properties, printing the name and value of each one. 
-	// Without knowing their names
-	for (std::pair<std::string, TypeDatabase::Member*> member : CPlayerControl::GetType()->m_memberList)
+	
+
+	std::function<void(std::string, std::string, TypeDatabase::RefVariant&&)> stringifyStruct = [&](std::string indent, std::string name, TypeDatabase::RefVariant&& theStruct)
 	{
-		if (member.second->m_type == TypeDatabase::GetType<float>())
+		Log::Print(Log::EMsg, "%s%s %s = {", indent.c_str(), theStruct.m_type->m_name, name.c_str());
+
+		for (std::pair<std::string, TypeDatabase::Member*> member : theStruct.m_type->m_memberList)
 		{
-			float value = member.second->GetValue<float>(playerControl);
-			Log::Print(Log::EMsg, "Name: %s Value: %f Typename: %s Typeid %i", member.first.c_str(), value, member.second->m_type->m_name, member.second->m_type->m_id);
+			if (member.second->m_type == TypeDatabase::GetType<float>())
+			{
+				float value = member.second->GetValue(theStruct).Get<float>();
+				Log::Print(Log::EMsg, "%s    %s %s = %s", indent.c_str(), member.second->m_type->m_name, member.first.c_str(), std::to_string(value).c_str());
+			}
+			else
+			{
+				stringifyStruct(indent + "    ", member.first, member.second->GetValue(theStruct));
+			}
 		}
-		else if (member.second->m_type == TypeDatabase::GetType<vec2>())
-		{
-			vec2 vec = member.second->GetValue<vec2>(playerControl);
-			Log::Print(Log::EMsg, "Name: %s Value: { %f %f } Typename: %s Typeid %i", member.first.c_str(), vec.x, vec.y, member.second->m_type->m_name, member.second->m_type->m_id);
-		}
-	}
+		Log::Print(Log::EMsg, "%s}", indent.c_str());
+	};
+
+
+
+
+	stringifyStruct("", "player", player);
+
 
 
 
