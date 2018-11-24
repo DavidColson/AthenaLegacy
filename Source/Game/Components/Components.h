@@ -20,9 +20,6 @@ struct CDrawable
 
 struct CPlayerControl
 {
-	REFLECTABLE(CPlayerControl) // idea for initialization. Instead of relying on before main statics. Have a static GetType function in here
-		// This will be a singleton creator for the Type object, creating or retrieving it. That way things are created in the order they're needed
-
 	float m_thrust{ 80.f };
 	float m_rotateSpeed{ 0.1f };
 	float m_dampening{ 2.f };

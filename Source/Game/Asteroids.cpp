@@ -12,17 +12,20 @@ Space* g_pCurrentSpace;
 
 void Game::Startup()
 {
-	// Create a player control struct
-	CPlayerControl player;
-	
-	// Retrieve the type of player, and then get the m_pos member from it
-	TypeDatabase::Member* posmember = TypeDatabase::GetType(player)->GetMember("m_pos");
+	// Get the type of CPlayerControl
+	TypeDB::Type* playerType = TypeDB::GetTypeFromString("CPlayerControl");
+
+	// Create an instance of the player struct
+	TypeDB::Variant player = playerType->New();
+
+	// Get the m_pos member from it
+	TypeDB::Member* posmember = playerType->GetMember("m_pos");
 
 	// Get type of m_pos, and then get the "x" member of it
-	TypeDatabase::Member* xmember = posmember->m_type->GetMember("x");
+	TypeDB::Member* xmember = posmember->m_type->GetMember("x");
 
 	// Get whatever the actual value of the position is (don't care what type it is)
-	TypeDatabase::VariantBase position = posmember->GetValue(player);
+	TypeDB::Variant position = posmember->GetValue(player);
 
 	// Set the x member to 1337
 	xmember->SetValue(position, 1337.0f);
@@ -30,18 +33,24 @@ void Game::Startup()
 	// Set the m_pos vector to the new vector we made
 	posmember->SetValue(player, position);
 
+	// Get the real value from the player variant
+	CPlayerControl realPlayer = player.Get<CPlayerControl>();
+
+	// Prints "realPlayer.m_pos.x 1337.0"
+	Log::Print(Log::EMsg, "realPlayer.m_pos.x %f", realPlayer.m_pos.x);
+
 
 	Log::Print(Log::EMsg, "------- Serialization Attempt -------");
 
 	
 
-	std::function<void(std::string, std::string, TypeDatabase::RefVariant&&)> stringifyStruct = [&](std::string indent, std::string name, TypeDatabase::RefVariant&& theStruct)
+	std::function<void(std::string, std::string, TypeDB::RefVariant&&)> stringifyStruct = [&](std::string indent, std::string name, TypeDB::RefVariant&& theStruct)
 	{
 		Log::Print(Log::EMsg, "%s%s %s = {", indent.c_str(), theStruct.m_type->m_name, name.c_str());
 
-		for (std::pair<std::string, TypeDatabase::Member*> member : theStruct.m_type->m_memberList)
+		for (std::pair<std::string, TypeDB::Member*> member : theStruct.m_type->m_memberList)
 		{
-			if (member.second->m_type == TypeDatabase::GetType<float>())
+			if (member.second->m_type == TypeDB::GetType<float>())
 			{
 				float value = member.second->GetValue(theStruct).Get<float>();
 				Log::Print(Log::EMsg, "%s    %s %s = %s", indent.c_str(), member.second->m_type->m_name, member.first.c_str(), std::to_string(value).c_str());
