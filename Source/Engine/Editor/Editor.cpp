@@ -73,13 +73,21 @@ void ShowEntityInspector()
 					if (member.second->m_type == TypeDB::GetType<float>())
 					{
 						float* number = (float*)member.second->GetRefValue(component).m_data;
-						ImGui::DragFloat(member.first.c_str(), number);
+						ImGui::DragFloat(member.first.c_str(), number, 0.1f);
 					}
 					else if (member.second->m_type == TypeDB::GetType<vec2>())
 					{
 						vec2* vec = (vec2*)member.second->GetRefValue(component).m_data;
 						float list[2] = { vec->x, vec->y };
-						ImGui::DragFloat2(member.first.c_str(), list);
+						ImGui::DragFloat2(member.first.c_str(), list, 0.1f);
+						vec->x = list[0]; vec->y = list[1];
+					}
+					else if (member.second->m_type == TypeDB::GetType<vec3>())
+					{
+						vec3* vec = (vec3*)member.second->GetRefValue(component).m_data;
+						float list[3] = { vec->x, vec->y, vec->z };
+						ImGui::DragFloat3(member.first.c_str(), list, 0.1f);
+						vec->x = list[0]; vec->y = list[1]; vec->z = list[2];
 					}
 				}
 			}

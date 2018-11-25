@@ -22,5 +22,5 @@ struct CPlayerControl
 	float m_thrust{ 80.f };
 	float m_rotateSpeed{ 0.1f };
 	float m_dampening{ 2.f };
-	vec2 m_pos{ vec2(5.0f, 2.0f) };
+	vec2 m_someVec{ vec2(5.0f, 2.0f) };
 };

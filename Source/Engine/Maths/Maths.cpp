@@ -122,4 +122,9 @@ REGISTRATION
 	RegisterNewType(vec2)
 	->RegisterMember("x", &vec2::x)
 	->RegisterMember("y", &vec2::y);
+
+	RegisterNewType(vec3)
+	->RegisterMember("x", &vec3::x)
+	->RegisterMember("y", &vec3::y)
+	->RegisterMember("z", &vec3::z);
 }

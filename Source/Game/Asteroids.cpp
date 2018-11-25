@@ -23,7 +23,7 @@ void Game::Startup()
 	TypeDB::Variant player = playerType->New();
 
 	// Get the m_pos member from it
-	TypeDB::Member* posmember = playerType->GetMember("m_pos");
+	TypeDB::Member* posmember = playerType->GetMember("m_someVec");
 
 	// Get type of m_pos, and then get the "x" member of it
 	TypeDB::Member* xmember = posmember->m_type->GetMember("x");
@@ -41,7 +41,7 @@ void Game::Startup()
 	CPlayerControl realPlayer = player.Get<CPlayerControl>();
 
 	// Prints "realPlayer.m_pos.x 1337.0"
-	Log::Print(Log::EMsg, "realPlayer.m_pos.x %f", realPlayer.m_pos.x);
+	Log::Print(Log::EMsg, "realPlayer.m_pos.x %f", realPlayer.m_someVec.x);
 
 
 	Log::Print(Log::EMsg, "------- Serialization Attempt -------");
