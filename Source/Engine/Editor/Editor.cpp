@@ -13,6 +13,8 @@ namespace {
 	bool showEditor = true;
 	bool showLog = false;
 	bool showEntityInspector = true;
+	bool showEntityList = true;
+	EntityID selectedEntity = -1;
 	static Space* pCurrentSpace;
 }
 
@@ -43,20 +45,21 @@ void ShowEntityInspector()
 	if (!showEntityInspector)
 		return;
 
-	static float test = 5.0f;
-	static vec2 test2 = vec2(5.0f, 2.0f);
-
 	ImGui::Begin("Entity Inspector", &showEntityInspector);
 
+	if (selectedEntity > pCurrentSpace->m_entities.size())
+	{
+		ImGui::End();
+		return;
+	}
 	// We have the entity Id
-	int entity = 1;
 	for (int i = 0; i < MAX_COMPONENTS; i++)
 	{
 		// For each component ID, check the bitmask, if no, continue, if yes, save the ID and proceed to access that components data
 		std::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
-		if (mask == (pCurrentSpace->m_entities[entity] & mask))
+		if (mask == (pCurrentSpace->m_entities[selectedEntity] & mask))
 		{
 			// Lookup the type object for that component ID (need a new accessor in TypeDB)
 			Type* componentType = TypeDB::GetType(g_componentTypeMap.LookupTypeId(i));
@@ -65,7 +68,7 @@ void ShowEntityInspector()
 				// Directly access componentPools and put the pointer to that component in a RefVariant's m_data, and save the type as well
 				VariantBase component;
 				component.m_type = componentType;
-				component.m_data = pCurrentSpace->m_componentPools[i]->get(entity);
+				component.m_data = pCurrentSpace->m_componentPools[i]->get(selectedEntity);
 
 				// Loop the memberlist of the type, creating editors for each type, getting from the RefVariant of the component
 				for (std::pair<std::string, TypeDB::Member*> member : component.m_type->m_memberList)
@@ -97,6 +100,29 @@ void ShowEntityInspector()
 	ImGui::End();
 }
 
+void ShowEntityList()
+{
+	if (!showEntityList)
+		return;
+
+	ImGui::Begin("Entity List", &showEntityList);
+
+	// We have the entity Id
+	int entity = 1;
+	for (int i = 0; i < pCurrentSpace->m_entities.size(); i++)
+	{
+		EntityID entity = i;
+		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+		if (selectedEntity == entity)
+			node_flags |= ImGuiTreeNodeFlags_Selected;
+
+		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "Entity(%i)", entity);
+		if (ImGui::IsItemClicked())
+			selectedEntity = entity;
+	}
+	ImGui::End();
+}
 
 void Editor::ShowEditor(bool& shutdown)
 {
@@ -117,6 +143,7 @@ void Editor::ShowEditor(bool& shutdown)
 		}
 		if (ImGui::BeginMenu("Editors"))
 		{
+			if (ImGui::MenuItem("Entity List")) { showEntityList = !showEntityList; }
 			if (ImGui::MenuItem("Entity Inspector")) { showEntityInspector = !showEntityInspector; }
 			if (ImGui::MenuItem("Console")) { showLog = !showLog; }
 			ImGui::EndMenu();
@@ -126,6 +153,7 @@ void Editor::ShowEditor(bool& shutdown)
 
 	ShowLog();
 	ShowEntityInspector();
+	ShowEntityList();
 }
 
 void Editor::SetCurrentSpace(Space* pSpace)
