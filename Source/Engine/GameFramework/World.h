@@ -51,6 +51,10 @@ gGameWorld.AssignComponent<Shape>(circle);
 
 */
 
+// TODO: Move some of this to a cpp file
+
+#include "Reflection.h"
+
 #include <bitset>
 #include <vector>
 #include <cassert>
@@ -62,17 +66,35 @@ typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
 struct Space;
 
+
 // Gives you the id within this world for a given component type
 static int s_componentCounter = 0;
 template <class T>
-int GetComponentTypeId()
+int GetComponentId()
 {
 	// static variable will be initialized on first function call
 	// It will then continue to return the same thing, no matter how many times this is called.
 	// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
-	static int s_componentTypeId = s_componentCounter++;
-	return s_componentTypeId;
+	static int s_componentId = s_componentCounter++;
+	return s_componentId;
+	return s_componentId;
 }
+
+// Used to relate components to the Type objects in the reflection database
+struct ComponentIdToTypeIdMap
+{
+	void AddRelation(TypeId typeId, int componentId)
+	{
+		m_typeToComponent[typeId] = componentId;
+		m_componentToType[componentId] = typeId;
+	}
+	int LookupComponentId(TypeId typeId) { return m_typeToComponent[typeId]; }
+	TypeId LookupTypeId(int componentId) { return m_componentToType[componentId]; }
+private:
+	std::unordered_map<TypeId, int> m_typeToComponent;
+	std::unordered_map<int, TypeId> m_componentToType;
+};
+extern ComponentIdToTypeIdMap g_componentTypeMap;
 
 // *****************************************
 // Base class for systems
@@ -91,7 +113,7 @@ protected:
 	template <typename T>
 	void Subscribe()
 	{
-		m_componentSubscription.set(GetComponentTypeId<T>());
+		m_componentSubscription.set(GetComponentId<T>());
 	}
 
 private:
@@ -189,25 +211,25 @@ struct Space
 	template<typename T>
 	T* AssignComponent(EntityID id)
 	{
-		int componentTypeId = GetComponentTypeId<T>();
-		if (m_componentPools.size() <= componentTypeId) // Not enough component pool
+		int componentId = GetComponentId<T>();
+		if (m_componentPools.size() <= componentId) // Not enough component pool
 		{
-			m_componentPools.resize(componentTypeId + 1, nullptr);
+			m_componentPools.resize(componentId + 1, nullptr);
 		}
-		if (m_componentPools[componentTypeId] == nullptr) // New component, make a new pool
+		if (m_componentPools[componentId] == nullptr) // New component, make a new pool
 		{
-			m_componentPools[componentTypeId] = new ComponentPool(sizeof(T));
+			m_componentPools[componentId] = new ComponentPool(sizeof(T));
 		}
 
 		// Check the mask so you're not overwriting a component
-		if (m_entities[id].test(componentTypeId) == false)
+		if (m_entities[id].test(componentId) == false)
 		{
 			// Looks up the component in the pool, and initializes it with placement new
 			// TODO: Fatal error, trying to assign to component that has no pool
-			T* pComponent = new (static_cast<T*>(m_componentPools[componentTypeId]->get(id))) T();
+			T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(id))) T();
 
 			// Set the bit for this component to true
-			m_entities[id].set(componentTypeId);
+			m_entities[id].set(componentId);
 			return pComponent;
 		}
 		return nullptr;
@@ -218,12 +240,12 @@ struct Space
 	template<typename T>
 	T* GetComponent(EntityID id)
 	{
-		int componentTypeId = GetComponentTypeId<T>();
+		int componentId = GetComponentId<T>();
 #ifdef _DEBUG
 		// Check to see if the component exists first (only done when not in release builds for extra performance
-		assert(m_entities[id].test(componentTypeId)); // TODO: Convert to fatal
+		assert(m_entities[id].test(componentId)); // TODO: Convert to fatal
 #endif // DEBUG
-		T* pComponent = static_cast<T*>(m_componentPools[componentTypeId]->get(id));
+		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(id));
 		return pComponent;
 	}
 

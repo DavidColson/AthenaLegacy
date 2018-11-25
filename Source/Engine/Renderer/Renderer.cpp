@@ -13,7 +13,9 @@
 
 #include "Maths/Maths.h"
 
-RenderContext* pCtx = nullptr;
+namespace {
+	RenderContext* pCtx = nullptr;
+}
 
 RenderContext* Graphics::GetContext()
 {

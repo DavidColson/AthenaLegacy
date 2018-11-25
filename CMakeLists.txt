@@ -36,6 +36,7 @@ set(SOURCES
 	"Source/Engine/Reflection.h"
     "Source/Engine/Reflection.cpp"
     "Source/Engine/GameFramework/World.h"
+    "Source/Engine/GameFramework/World.cpp"
     "Source/Engine/Renderer/Renderer.h"
     "Source/Engine/Renderer/Renderer.cpp"
     "Source/Engine/Renderer/RenderProxy.h"
@@ -55,6 +56,7 @@ set(SOURCES
     "Source/Game/Systems/Movement.h"
     "Source/Game/Systems/Movement.cpp"
     "Source/Game/Components/Components.h"
+    "Source/Game/Components/Components.cpp"
     )
 
 set(SHADERS

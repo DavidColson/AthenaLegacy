@@ -4,14 +4,18 @@
 #include "Systems/Movement.h"
 #include "Components/Components.h"
 
+#include <Editor/Editor.h>
 #include <GameFramework/World.h>
 
 #include <functional>
 
-Space* g_pCurrentSpace;
+namespace {
+	Space* pCurrentSpace;
+}
 
 void Game::Startup()
 {
+
 	// Get the type of CPlayerControl
 	TypeDB::Type* playerType = TypeDB::GetTypeFromString("CPlayerControl");
 
@@ -73,14 +77,14 @@ void Game::Startup()
 
 	// Create our scene
 	// ****************
-	g_pCurrentSpace = new Space();
+	pCurrentSpace = new Space();
 
-	g_pCurrentSpace->RegisterSystem<SDrawPolygon>();
-	g_pCurrentSpace->RegisterSystem<SMovement>();
+	pCurrentSpace->RegisterSystem<SDrawPolygon>();
+	pCurrentSpace->RegisterSystem<SMovement>();
 
-	EntityID asteroid = g_pCurrentSpace->NewEntity();
-	g_pCurrentSpace->AssignComponent<CTransform>(asteroid)->m_pos = vec3(100.0f, 100.0f, 0.0f);
-	g_pCurrentSpace->AssignComponent<CDrawable>(asteroid)->m_renderProxy = RenderProxy(
+	EntityID asteroid = pCurrentSpace->NewEntity();
+	pCurrentSpace->AssignComponent<CTransform>(asteroid)->m_pos = vec3(100.0f, 100.0f, 0.0f);
+	pCurrentSpace->AssignComponent<CDrawable>(asteroid)->m_renderProxy = RenderProxy(
 		{
 			Vertex(vec3(49.6f, 90.6f, 0.5f), color(1.0f, 0.0f, 0.0f)),
 			Vertex(vec3(39.f, 51.6f, 0.5f), color(0.0f, 1.0f, 0.0f)),
@@ -96,14 +100,14 @@ void Game::Startup()
 		});
 
 
-	EntityID ship = g_pCurrentSpace->NewEntity();
-	CTransform* pTransform = g_pCurrentSpace->AssignComponent<CTransform>(ship);
+	EntityID ship = pCurrentSpace->NewEntity();
+	CTransform* pTransform = pCurrentSpace->AssignComponent<CTransform>(ship);
 
 	pTransform->m_pos = vec3(500.0f, 300.0f, 0.0f);
 	pTransform->m_sca = vec3(0.2f, 0.25f, 1.0f);
 
-	g_pCurrentSpace->AssignComponent<CPlayerControl>(ship);
-	g_pCurrentSpace->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
+	pCurrentSpace->AssignComponent<CPlayerControl>(ship);
+	pCurrentSpace->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
 		{
 			Vertex(vec3(0.f, 50.f, 0.5f), color(1.0f, 0.0f, 0.0f)),
 			Vertex(vec3(100.f, 80.f, 0.5f), color(0.0f, 1.0f, 0.0f)),
@@ -114,10 +118,11 @@ void Game::Startup()
 			0, 1, 2, 3, 4, 0
 		});
 
-	g_pCurrentSpace->StartSystems();
+	pCurrentSpace->StartSystems();
+	Editor::SetCurrentSpace(pCurrentSpace);
 }
 
 void Game::Update(float deltaTime)
 {
-	g_pCurrentSpace->UpdateSystems(deltaTime);
+	pCurrentSpace->UpdateSystems(deltaTime);
 }

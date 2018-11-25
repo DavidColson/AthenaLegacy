@@ -1,9 +1,10 @@
 #pragma once
 
+#include "Log.h"
+
 #include <string>
 #include <unordered_map>
 #include <assert.h>
-#include "Log.h"
 
 // CONVIENIENCE MACROS
 #define CAT(a, b) a##b
@@ -17,6 +18,7 @@ static void _register()
 
 // Convienience macro for registering a type without specifying a string
 #define RegisterNewType(Type) TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
+#define RegisterNewTypeAsComponent(Type) g_componentTypeMap.AddRelation(TypeIdGenerator<Type>::Id(), GetComponentId<Type>()); TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
 
 typedef uintptr_t TypeId;
 
@@ -122,10 +124,13 @@ namespace TypeDB
 	{
 		Type* m_type;
 
-		virtual void SetValue(RefVariant&& instance, RefVariant value) = 0;
+		virtual void SetValue(RefVariant&& obj, RefVariant value) = 0;
 
-		virtual Variant GetValue(RefVariant&& instance) = 0;
-		virtual Variant GetValue(RefVariant& instance) = 0;
+		virtual Variant GetValue(RefVariant&& obj) = 0;
+		virtual Variant GetValue(RefVariant& obj) = 0;
+
+		virtual RefVariant GetRefValue(RefVariant& obj) = 0;
+		virtual RefVariant GetRefValue(RefVariant&& obj) = 0;
 	};
 
 	Type* GetTypeFromString(std::string typeName);
@@ -135,6 +140,8 @@ namespace TypeDB
 
 	template<typename T>
 	Type* GetType(T& obj);
+
+	Type* GetType(TypeId typeId);
 
 	namespace Detail
 	{
@@ -176,11 +183,21 @@ namespace TypeDB
 				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
-
 			virtual Variant GetValue(RefVariant& obj) override
 			{
 				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
 				return Variant(obj.Get<I>().*m_pPointer);
+			}
+
+			virtual RefVariant GetRefValue(RefVariant& obj)
+			{
+				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				return RefVariant(obj.Get<I>().*m_pPointer);
+			}
+			virtual RefVariant GetRefValue(RefVariant&& obj)
+			{
+				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				return RefVariant(obj.Get<I>().*m_pPointer);
 			}
 		};
 	}

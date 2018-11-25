@@ -73,6 +73,12 @@ Type* TypeDB::GetTypeFromString(std::string typeName)
 	return &Detail::typeDatabase[Detail::typeNames[typeName]];
 }
 
+Type* TypeDB::GetType(TypeId typeId)
+{
+	assert(Detail::typeDatabase.count(typeId) == 1); // The type you are querying does not exist in the database, please register it
+	return &Detail::typeDatabase[typeId];
+}
+
 REGISTRATION
 {
 	RegisterNewType(std::string);

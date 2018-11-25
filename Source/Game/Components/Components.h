@@ -2,7 +2,6 @@
 #include <Maths/Maths.h>
 #include <Renderer/RenderProxy.h>
 #include <Log.h>
-#include <Reflection.h>
 
 struct CTransform
 {
@@ -25,12 +24,3 @@ struct CPlayerControl
 	float m_dampening{ 2.f };
 	vec2 m_pos{ vec2(5.0f, 2.0f) };
 };
-
-REGISTRATION
-{
-	RegisterNewType(CPlayerControl)
-		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
-		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
-		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
-		->RegisterMember("m_pos", &CPlayerControl::m_pos);
-}
