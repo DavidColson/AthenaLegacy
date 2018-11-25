@@ -60,6 +60,7 @@ set(SOURCES
     )
 
 set(SHADERS
+    "Shaders/PostProcessing.hlsl"
     "Shaders/Shader.hlsl"
     )
 
@@ -80,4 +81,4 @@ link_directories(${DIRECTX11_LIB_DIR} ${FREETYPE_LIB_DIR})
 add_subdirectory(Source/Engine/ThirdParty/Imgui)
 
 add_executable(Engine WIN32 ${SOURCES} ${SHADERS})
-target_link_libraries(Engine ${SDL2_LIBRARIES} d3d11 d3d10 d3dcompiler freetype Imgui)
+target_link_libraries(Engine ${SDL2_LIBRARIES} d3d11 d3d10 d3dcompiler dxguid freetype Imgui)

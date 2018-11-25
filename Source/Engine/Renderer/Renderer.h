@@ -23,12 +23,23 @@ struct RenderContext
 	ID3D11DeviceContext* m_pDeviceContext;
 	ID3D11RenderTargetView* m_pBackBuffer;
 
+	// Scene is rendered into the preprocessed frame render target, 
+	// where it'll then be re-rendered for post processing
+	ID3D11ShaderResourceView* m_pPreprocessedFrameResourceView;
+	ID3D11SamplerState* m_frameTextureSampler;
+	ID3D11RenderTargetView* m_pPreprocessedFrameView;
+	ID3D11Buffer * m_pFullScreenVertBuffer{ nullptr };
+	ID3D11Buffer* m_pFullScreenIndexBuffer{ nullptr };
+	ID3D11VertexShader* m_pPPVertexShader;
+	ID3D11PixelShader* m_pPPPixelShader;
+
 	ID3D11VertexShader* m_pVertexShader;
 	ID3D11PixelShader* m_pPixelShader;
 	ID3D11InputLayout* m_pVertLayout;
 
 	RenderFont* m_pFontRender;
 
+	float m_pixelScale = 2.0f;
 	float m_windowWidth{ 0 };
 	float m_windowHeight{ 0 };
 

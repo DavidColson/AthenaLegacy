@@ -203,6 +203,9 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 		ID3D11Texture2D* pTexture = nullptr;
 		Graphics::GetContext()->m_pDevice->CreateTexture2D(&desc, &textureBufferData, &pTexture);
+		std::string words = "Texture2D " + fontFile + " letter " + char(i);
+		if (pTexture)
+			pTexture->SetPrivateData(WKPDID_D3DDebugObjectName, words.size(), words.c_str());
 
 		ID3D11ShaderResourceView* pTextureResourceView;
 		Graphics::GetContext()->m_pDevice->CreateShaderResourceView(pTexture, NULL, &pTextureResourceView);
@@ -255,7 +258,7 @@ void RenderFont::Draw(std::string text, int x, int y)
 
 
 		mat4 world = posmat * scalemat; // transform into world space
-		mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth, 0.0f, Graphics::GetContext()->m_windowHeight, 0.1f, 10.0f); // transform into screen space
+		mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, 0.1f, 10.0f); // transform into screen space
 
 		mat4 wvp = projection * world;
 

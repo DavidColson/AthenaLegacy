@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <assert.h>
 
+// TODO: Consider inlining a lot of these smaller funtions
+
 // CONVIENIENCE MACROS
 #define CAT(a, b) a##b
 

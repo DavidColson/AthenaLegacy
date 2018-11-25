@@ -103,7 +103,7 @@ void Game::Startup()
 	EntityID ship = pCurrentSpace->NewEntity();
 	CTransform* pTransform = pCurrentSpace->AssignComponent<CTransform>(ship);
 
-	pTransform->m_pos = vec3(500.0f, 300.0f, 0.0f);
+	pTransform->m_pos = vec3(450.0f, 250.0f, 0.0f);
 	pTransform->m_sca = vec3(0.2f, 0.25f, 1.0f);
 
 	pCurrentSpace->AssignComponent<CPlayerControl>(ship);
