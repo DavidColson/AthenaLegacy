@@ -35,6 +35,8 @@ set(SOURCES
     "Source/Engine/Log.cpp"
 	"Source/Engine/Reflection.h"
     "Source/Engine/Reflection.cpp"
+	"Source/Engine/ErrorHandling.h"
+    "Source/Engine/ErrorHandling.cpp"
     "Source/Engine/GameFramework/World.h"
     "Source/Engine/GameFramework/World.cpp"
     "Source/Engine/Renderer/Renderer.h"

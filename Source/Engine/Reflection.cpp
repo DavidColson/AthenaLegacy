@@ -57,7 +57,7 @@ bool Type::operator==(const Type* other)
 
 Member* Type::GetMember(const char* name)
 {
-	assert(m_memberList.count(name) == 1); // The member you're trying to access doesn't exist
+	ASSERT(m_memberList.count(name) == 1, "The member you're trying to access doesn't exist");
 	return m_memberList[name];
 }
 
@@ -69,13 +69,13 @@ Variant Type::New()
 
 Type* TypeDB::GetTypeFromString(std::string typeName)
 {
-	assert(Detail::typeNames.count(typeName) == 1); // The type you are querying does not exist in the database, please register it
+	ASSERT(Detail::typeNames.count(typeName) == 1, "The type you are querying does not exist in the database, please register it");
 	return &Detail::typeDatabase[Detail::typeNames[typeName]];
 }
 
 Type* TypeDB::GetType(TypeId typeId)
 {
-	assert(Detail::typeDatabase.count(typeId) == 1); // The type you are querying does not exist in the database, please register it
+	ASSERT(Detail::typeDatabase.count(typeId) == 1, "The type you are querying does not exist in the database, please register it");
 	return &Detail::typeDatabase[typeId];
 }
 

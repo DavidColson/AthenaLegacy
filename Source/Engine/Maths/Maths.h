@@ -1,8 +1,9 @@
 #ifndef MATHS_
 #define MATHS_
 
-#include "SDL.h"
-#include <cassert>
+#include <SDL.h>
+
+#include "ErrorHandling.h"
 #include "Reflection.h"
 
 #define ToRadian(x) ((x) * 3.14159f /180.0f)
@@ -29,8 +30,8 @@ struct vec
 		}
 	}
 
-	inline T& operator[](const uint i) { assert(i < dim); return m_data[i]; }
-	inline const T& operator[](const uint i) const { assert(i < dim); return m_data[i]; }
+	inline T& operator[](const uint i) { ASSERT(i < dim, "You're accessing an element not in this vector"); return m_data[i]; }
+	inline const T& operator[](const uint i) const { ASSERT(i < dim, "You're accessing an element not in this vector"); return m_data[i]; }
 
 private:
 	T m_data[dim];
@@ -46,8 +47,8 @@ struct vec<2, T>
 	template <class U>
 	vec<2, T>(const vec<2, U> &v);
 
-	inline T& operator[](const uint i) { assert(i < 2); return i <= 0 ? x : y; }
-	inline const T& operator[](const uint i) const { assert(i < 2); return i <= 0 ? x : y; }
+	inline T& operator[](const uint i) { ASSERT(i < 2, "You're accessing an element not in this vector"); return i <= 0 ? x : y; }
+	inline const T& operator[](const uint i) const { ASSERT(i < 2, "You're accessing an element not in this vector"); return i <= 0 ? x : y; }
 
 	T x, y;
 };
@@ -61,8 +62,8 @@ struct vec<3, T>
 
 	template <class U> vec<3, T>(const vec<3, U> &v);
 
-	inline T& operator[](const uint i) { assert(i < 3); return i <= 0 ? x : (1 == i ? y : z); }
-	inline const T& operator[](const uint i) const { assert(i < 3); return i <= 0 ? x : (1 == i ? y : z); }
+	inline T& operator[](const uint i) { ASSERT(i < 3, "You're accessing an element not in this vector"); return i <= 0 ? x : (1 == i ? y : z); }
+	inline const T& operator[](const uint i) const { ASSERT(i < 3, "You're accessing an element not in this vector"); return i <= 0 ? x : (1 == i ? y : z); }
 
 	inline float mag() { return sqrtf(x*x + y*y + z*z); }
 	inline vec<3, T>& normalise() { *this = (*this)*(1 / mag()); return *this; }
@@ -77,8 +78,8 @@ struct vec<4, T>
 
 	vec(T X, T Y, T Z, T W) : x(X), y(Y), z(Z), w(W) {}
 
-	inline T& operator[](const uint i) { assert(i < 4); return i <= 0 ? x : (1 == i ? y : (2 == i ? z : w)); }
-	inline const T& operator[](const uint i) const { assert(i < 4); return i <= 0 ? x : (1 == i ? y : (2 == i ? z : w)); }
+	inline T& operator[](const uint i) { ASSERT(i < 4, "You're accessing an element not in this vector"); return i <= 0 ? x : (1 == i ? y : (2 == i ? z : w)); }
+	inline const T& operator[](const uint i) const { ASSERT(i < 4, "You're accessing an element not in this vector"); return i <= 0 ? x : (1 == i ? y : (2 == i ? z : w)); }
 
 	inline float mag() { return sqrt(x*x + y*y + z*z + w*w); }
 	inline vec<4, T>& normalise() { *this = (*this)*(1 / mag()); return *this; }
@@ -177,19 +178,19 @@ public:
 
 	inline vec<ncols, T>& operator[] (const uint id)
 	{
-		assert(id < nrows);
+		ASSERT(id < nrows, "Invalid row index for this matrix");
 		return m_rows[id];
 	}
 
 	inline const vec<ncols, T>& operator[] (const uint id) const
 	{
-		assert(id < nrows);
+		ASSERT(id < nrows, "Invalid row index for this matrix");
 		return m_rows[id];
 	}
 
 	inline vec<nrows, T> col(const uint id) const
 	{
-		assert(id < ncols);
+		ASSERT(id < nrows, "Invalid column index for this matrix");
 		vec<nrows, T> ret;
 		for (uint i = nrows; i--; ret[i] = m_rows[i][id]);
 		return ret;
@@ -197,7 +198,7 @@ public:
 
 	inline void setcol(const uint id, vec<nrows, T> v)
 	{
-		assert(id < ncols);
+		ASSERT(id < nrows, "Invalid column index for this matrix");
 		for (uint i = nrows; i--; m_rows[i][id] = v[i]);
 	}
 
@@ -213,7 +214,7 @@ public:
 	{
 		// Determinants only work for square matrices
 		// TODO: Memory assignment here is slow, can be optimised
-		assert(nrows == ncols);
+		ASSERT(id < nrows, "Determinants only for square matrices");
 		return dt<ncols, T>::det(*this);
 	}
 

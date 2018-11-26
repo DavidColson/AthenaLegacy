@@ -57,7 +57,6 @@ gGameWorld.AssignComponent<Shape>(circle);
 
 #include <bitset>
 #include <vector>
-#include <cassert>
 
 typedef unsigned int EntityID;
 const int MAX_COMPONENTS = 10;
@@ -241,10 +240,7 @@ struct Space
 	T* GetComponent(EntityID id)
 	{
 		int componentId = GetComponentId<T>();
-#ifdef _DEBUG
-		// Check to see if the component exists first (only done when not in release builds for extra performance
-		assert(m_entities[id].test(componentId)); // TODO: Convert to fatal
-#endif // DEBUG
+		ASSERT(m_entities[id].test(componentId), "The component you're trying to access is not assigned to this entity);
 		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(id));
 		return pComponent;
 	}

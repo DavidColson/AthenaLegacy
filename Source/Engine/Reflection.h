@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Log.h"
 
 #include <string>
 #include <unordered_map>
-#include <assert.h>
 
+#include "Log.h"
+#include "ErrorHandling.h"
 // TODO: Consider inlining a lot of these smaller funtions
 
 // CONVIENIENCE MACROS
@@ -175,30 +175,31 @@ namespace TypeDB
 
 			virtual void SetValue(RefVariant&& obj, RefVariant value) override
 			{
-				assert(value.IsA<T>()); // The value you supplied isn't the correct type TODO: Get the type that value actually is and print it's name as an error i.e. "value is a float but we expected a vec2"
-				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				// TODO: Get the type that value actually is and print it's name as an error i.e. 'value is a float but we expected a vec2'
+				ASSERT(value.IsA<T>(), "The value you supplied isn't the correct type");
+				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				obj.Get<I>().*m_pPointer = value.Get<T>();
 			}
 
 			virtual Variant GetValue(RefVariant&& obj) override
 			{
-				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
 			virtual Variant GetValue(RefVariant& obj) override
 			{
-				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
 
 			virtual RefVariant GetRefValue(RefVariant& obj)
 			{
-				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return RefVariant(obj.Get<I>().*m_pPointer);
 			}
 			virtual RefVariant GetRefValue(RefVariant&& obj)
 			{
-				assert(obj.IsA<I>()); // The instance you supplied isn't the correct type
+				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return RefVariant(obj.Get<I>().*m_pPointer);
 			}
 		};
@@ -312,7 +313,7 @@ template<typename T>
 Type* TypeDB::GetType()
 {
 	TypeId id = TypeIdGenerator<T>::Id();
-	assert(Detail::typeDatabase.count(id) == 1); // The type you are querying does not exist in the database, please register it
+	ASSERT(Detail::typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
 	return &Detail::typeDatabase[id];
 }
 
@@ -320,7 +321,7 @@ template<typename T>
 Type* TypeDB::GetType(T& obj)
 {
 	TypeId id = TypeIdGenerator<T>::Id();
-	assert(Detail::typeDatabase.count(id) == 1); // The type you are querying does not exist in the database, please register it
+	ASSERT(Detail::typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
 	return &Detail::typeDatabase[id];
 }
 

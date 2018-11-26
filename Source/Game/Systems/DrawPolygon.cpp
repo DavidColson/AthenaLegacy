@@ -9,7 +9,6 @@ void SDrawPolygon::StartEntity(EntityID id, Space * space)
 	CTransform* pTransform = space->GetComponent<CTransform>(id);
 	CDrawable* pDrawable = space->GetComponent<CDrawable>(id);
 
-	assert(pDrawable->m_renderProxy.m_pWVPBuffer != nullptr);
 	Graphics::SubmitProxy(&pDrawable->m_renderProxy);
 
 	pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot, pTransform->m_sca);
