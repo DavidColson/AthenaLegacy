@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Maths/Maths.h"
+#include "Renderer/Renderer.h"
 
 #include <string>
 #include <vector>
@@ -44,9 +45,7 @@ private:
 
 	ID3D11BlendState* m_transparency;
 
-	ID3D11VertexShader* m_pVertexShader;
-	ID3D11PixelShader* m_pPixelShader;
-	ID3D11InputLayout* m_pVertLayout;
+	Graphics::Shader m_fontShader;
 
 	std::vector<Character> m_characters;
 };

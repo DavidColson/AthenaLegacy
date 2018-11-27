@@ -15,16 +15,6 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	FT_Library freetype;
 	FT_Init_FreeType(&freetype);
 
-
-	// Runtime Compile shaders
-	// ***********************
-
-	HRESULT hr;
-
-	ID3DBlob* pVsBlob = nullptr;
-	ID3DBlob* pPsBlob = nullptr;
-	ID3DBlob* pErrorBlob = nullptr;
-
 	std::string fontShader = "\
 		cbuffer cbTransform\
 	{\
@@ -53,26 +43,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		return textureColor;\
 	}";
 
-	hr = D3DCompile(fontShader.c_str(), fontShader.size(), NULL, 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
-	hr = D3DCompile(fontShader.c_str(), fontShader.size(), NULL, 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
-
-	// Create shader objects
-	hr = Graphics::GetContext()->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &m_pVertexShader);
-	hr = Graphics::GetContext()->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &m_pPixelShader);
-
-
-
-	// Create an input layout
-	// **********************
-
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	UINT numElements = ARRAYSIZE(layout);
-	hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &m_pVertLayout);
+	m_fontShader = Graphics::LoadShaderFromText(fontShader);
 
 
 	std::vector<Vertex> quadVertices = {
@@ -181,37 +152,16 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 		FT_Load_Char(face, i, FT_LOAD_RENDER);
 
-		// Create a texture for characters
-		// **********************************************
-
-		D3D11_TEXTURE2D_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		desc.Width = face->glyph->bitmap.width;
-		desc.Height = face->glyph->bitmap.rows;
-		desc.MipLevels = desc.ArraySize = 1;
-		desc.Format = DXGI_FORMAT_R8_UNORM;
-		desc.SampleDesc.Count = 1;
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		desc.MiscFlags = 0;
-
-		D3D11_SUBRESOURCE_DATA textureBufferData;
-		ZeroMemory(&indexBufferData, sizeof(indexBufferData));
-		textureBufferData.pSysMem = face->glyph->bitmap.buffer;
-		textureBufferData.SysMemPitch = face->glyph->bitmap.width;
-
-		ID3D11Texture2D* pTexture = nullptr;
-		Graphics::GetContext()->m_pDevice->CreateTexture2D(&desc, &textureBufferData, &pTexture);
-		std::string words = "Texture2D " + fontFile + " letter " + char(i);
-		if (pTexture)
-			pTexture->SetPrivateData(WKPDID_D3DDebugObjectName, words.size(), words.c_str());
-
-		ID3D11ShaderResourceView* pTextureResourceView;
-		Graphics::GetContext()->m_pDevice->CreateShaderResourceView(pTexture, NULL, &pTextureResourceView);
+		Graphics::Texture2D texture = Graphics::CreateTexture2D(
+			face->glyph->bitmap.width,
+			face->glyph->bitmap.rows,
+			DXGI_FORMAT_R8_UNORM,
+			face->glyph->bitmap.buffer,
+			D3D11_BIND_SHADER_RESOURCE
+		);
 
 		Character character;
-		character.m_charTexture = pTextureResourceView;
+		character.m_charTexture = texture.m_pShaderResourceView;
 		character.m_size = vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
 		character.m_bearing = vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
 		character.m_advance = (face->glyph->advance.x) >> 6;
@@ -235,10 +185,10 @@ void RenderFont::Draw(std::string text, int x, int y)
 	Graphics::GetContext()->m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pQuadWVPBuffer));
 
 	// Set Shaders to active
-	Graphics::GetContext()->m_pDeviceContext->VSSetShader(m_pVertexShader, 0, 0);
-	Graphics::GetContext()->m_pDeviceContext->PSSetShader(m_pPixelShader, 0, 0);
+	Graphics::GetContext()->m_pDeviceContext->VSSetShader(m_fontShader.m_pVertexShader, 0, 0);
+	Graphics::GetContext()->m_pDeviceContext->PSSetShader(m_fontShader.m_pPixelShader, 0, 0);
 
-	Graphics::GetContext()->m_pDeviceContext->IASetInputLayout(m_pVertLayout);
+	Graphics::GetContext()->m_pDeviceContext->IASetInputLayout(m_fontShader.m_pVertLayout);
 
 	Graphics::GetContext()->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 

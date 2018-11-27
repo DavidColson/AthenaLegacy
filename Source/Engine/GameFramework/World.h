@@ -240,7 +240,7 @@ struct Space
 	T* GetComponent(EntityID id)
 	{
 		int componentId = GetComponentId<T>();
-		ASSERT(m_entities[id].test(componentId), "The component you're trying to access is not assigned to this entity);
+		ASSERT(m_entities[id].test(componentId), "The component you're trying to access is not assigned to this entity");
 		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(id));
 		return pComponent;
 	}

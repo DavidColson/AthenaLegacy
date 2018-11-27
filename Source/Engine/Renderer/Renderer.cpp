@@ -12,6 +12,7 @@
 #include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
 
 #include "Maths/Maths.h"
+#include "Renderer/RenderFont.h"
 
 namespace {
 	RenderContext* pCtx = nullptr;
@@ -83,38 +84,26 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	// *****************
 
 	// Create a texture for the pre-processed frame
-	D3D11_TEXTURE2D_DESC textureDesc;
-	ZeroMemory(&textureDesc, sizeof(textureDesc));
-	textureDesc.Width = 900;
-	textureDesc.Height = 500;
-	textureDesc.MipLevels = textureDesc.ArraySize = 1;
-	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	textureDesc.SampleDesc.Count = 1;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	textureDesc.CPUAccessFlags = 0;
-	textureDesc.MiscFlags = 0;
-	ID3D11Texture2D* pPreprocessingFrame = nullptr;
-	Graphics::GetContext()->m_pDevice->CreateTexture2D(&textureDesc, nullptr, &pPreprocessingFrame);
-	pPreprocessingFrame->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("Texture 2D Preprocessed Frame"), "Texture 2D Preprocessed Frame");
+	pCtx->m_preprocessedFrame = CreateTexture2D(
+		1800,
+		1000,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		nullptr,
+		D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
+	);
 
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
-	pCtx->m_pDevice->CreateRenderTargetView(pPreprocessingFrame, &renderTargetViewDesc, &pCtx->m_pPreprocessedFrameView);
-	pCtx->m_pDevice->CreateRenderTargetView(pPreprocessingFrame, &renderTargetViewDesc, &pCtx->m_pPreprocessedFrameView);
+	pCtx->m_pDevice->CreateRenderTargetView(pCtx->m_preprocessedFrame.m_pTexture2D, &renderTargetViewDesc, &pCtx->m_pPreprocessedFrameView);
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-	shaderResourceViewDesc.Format = textureDesc.Format;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-	shaderResourceViewDesc.Texture2D.MipLevels = 1;
-	pCtx->m_pDevice->CreateShaderResourceView(pPreprocessingFrame, &shaderResourceViewDesc, &pCtx->m_pPreprocessedFrameResourceView);
+
+	// D3D11_FILTER_MIN_MAG_MIP_POINT
 
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -126,18 +115,14 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	// Create a quad to render onto
 	std::vector<Vertex> quadVertices = {
 		Vertex(vec3(-1.0f, -1.0f, 0.5f), color(1.0f, 0.0f, 0.0f)),
-		Vertex(vec3(-1.0f, 1.0f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-		Vertex(vec3(1.0f, 1.0f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-		Vertex(vec3(1.0f, -1.0f, 0.5f), color(0.0f, 0.0f, 1.0f))
-	};
-	std::vector<int> quadIndices = {
-		0, 1, 2,
-		3, 0
+		Vertex(vec3(-1.f, 1.f, 0.5f), color(0.0f, 1.0f, 0.0f)),
+		Vertex(vec3(1.f, -1.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
+		Vertex(vec3(1.f, 1.f, 0.5f), color(0.0f, 0.0f, 1.0f))
 	};
 	quadVertices[0].m_texCoords = vec2(0.0f, 1.0f);
 	quadVertices[1].m_texCoords = vec2(0.0f, 0.0f);
-	quadVertices[2].m_texCoords = vec2(1.0f, 0.0f);
-	quadVertices[3].m_texCoords = vec2(1.0f, 1.0f);
+	quadVertices[2].m_texCoords = vec2(1.0f, 1.0f);
+	quadVertices[3].m_texCoords = vec2(1.0f, 0.0f);
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
@@ -152,94 +137,12 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	vertexBufferData.pSysMem = quadVertices.data();
 	Graphics::GetContext()->m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->m_pFullScreenVertBuffer);
 
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * UINT(quadIndices.size());
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-	D3D11_SUBRESOURCE_DATA indexBufferData;
-	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
-	indexBufferData.pSysMem = quadIndices.data();
-	Graphics::GetContext()->m_pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pCtx->m_pFullScreenIndexBuffer);
-	
 	// Compile and create post processing shaders
-	HRESULT hr;
-	ID3DBlob* pVsBlob = nullptr;
-	ID3DBlob* pPsBlob = nullptr;
-	ID3DBlob* pErrorBlob = nullptr;
-	hr = D3DCompileFromFile(L"shaders/PostProcessing.hlsl", 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
-	if (FAILED(hr))
-	{
-		if (pErrorBlob)
-		{
-			Log::Print(Log::EErr, "Vert Shader Compile Error: %s", (char*)pErrorBlob->GetBufferPointer());
-			pErrorBlob->Release();
-		}
-	}
-	hr = D3DCompileFromFile(L"shaders/PostProcessing.hlsl", 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
-	if (FAILED(hr))
-	{
-		if (pErrorBlob)
-		{
-			Log::Print(Log::EErr, "Pixel Shader Compile Error: %s", (char*)pErrorBlob->GetBufferPointer());
-			pErrorBlob->Release();
-		}
-	}
-
-	// Create shader objects
-	hr = pCtx->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &pCtx->m_pPPVertexShader);
-	hr = pCtx->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &pCtx->m_pPPPixelShader);
-	
-
-
-	// Runtime Compile shaders
-	// ***********************
-
-	pVsBlob = nullptr;
-	pPsBlob = nullptr;
-	pErrorBlob = nullptr;
-
-	// TODO: Shaders should be considered a material, kept somewhere so objects can share materials
-	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
-	if (FAILED(hr))
-	{
-		if (pErrorBlob)
-		{
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-			pErrorBlob->Release();
-		}
-	}
-	hr = D3DCompileFromFile(L"shaders/Shader.hlsl", 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
-	if (FAILED(hr))
-	{
-		if (pErrorBlob)
-		{
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-			pErrorBlob->Release();
-		}
-	}
-
-	// Create shader objects
-	hr = pCtx->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &pCtx->m_pVertexShader);
-	hr = pCtx->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &pCtx->m_pPixelShader);
+	pCtx->m_postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl");
 
 
 
-	// Create an input layout
-	// **********************
-
-	// TODO Input layouts should be part of shader programs
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	UINT numElements = ARRAYSIZE(layout);
-	hr = pCtx->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &pCtx->m_pVertLayout);
-
+	pCtx->m_baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl");
 
 	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 30);
 
@@ -253,6 +156,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	ImGui::StyleColorsDark();
 }
+
 
 void Graphics::NewFrame()
 {
@@ -279,8 +183,8 @@ void Graphics::RenderFrame()
 	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
 
 	// Set Shaders to active
-	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_pVertexShader, 0, 0);
-	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_pPixelShader, 0, 0);
+	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_baseShader.m_pVertexShader, 0, 0);
+	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_baseShader.m_pPixelShader, 0, 0);
 
 	pCtx->m_pDeviceContext->IASetInputLayout(pCtx->m_pVertLayout);
 
@@ -303,15 +207,15 @@ void Graphics::RenderFrame()
 	viewport.Height = pCtx->m_windowHeight;
 	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
 
-	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_pPPVertexShader, 0, 0);
-	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_pPPPixelShader, 0, 0);
+	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_postProcessShader.m_pVertexShader, 0, 0);
+	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_postProcessShader.m_pPixelShader, 0, 0);
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	Graphics::GetContext()->m_pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->m_pFullScreenVertBuffer, &stride, &offset);
-	Graphics::GetContext()->m_pDeviceContext->IASetIndexBuffer(pCtx->m_pFullScreenIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	Graphics::GetContext()->m_pDeviceContext->PSSetShaderResources(0, 1, &pCtx->m_pPreprocessedFrameResourceView);
-	Graphics::GetContext()->m_pDeviceContext->PSSetSamplers(0, 1, &pCtx->m_frameTextureSampler);
-	Graphics::GetContext()->m_pDeviceContext->DrawIndexed(6, 0, 0);
+	pCtx->m_pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->m_pFullScreenVertBuffer, &stride, &offset);
+	pCtx->m_pDeviceContext->PSSetShaderResources(0, 1, &pCtx->m_preprocessedFrame.m_pShaderResourceView);
+	pCtx->m_pDeviceContext->PSSetSamplers(0, 1, &pCtx->m_frameTextureSampler);
+	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pCtx->m_pDeviceContext->Draw(4, 0);
 
 	// Draw Imgui
 	ImGui::Render();
@@ -329,4 +233,122 @@ void Graphics::Shutdown()
 void Graphics::SubmitProxy(RenderProxy* pRenderProxy)
 {
 	pCtx->m_renderProxies.push_back(pRenderProxy);
+}
+
+Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName)
+{
+	HRESULT hr;
+	ID3DBlob* pVsBlob = nullptr;
+	ID3DBlob* pPsBlob = nullptr;
+	ID3DBlob* pErrorBlob = nullptr;
+
+	// TODO: Shaders should be considered a material, kept somewhere so objects can share materials
+	hr = D3DCompileFromFile(shaderName, 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
+	if (FAILED(hr))
+	{
+		if (pErrorBlob)
+		{
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+			Log::Print(Log::EErr, "Vertex Shader Compile Error\n\n%s", (char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
+		}
+	}
+	hr = D3DCompileFromFile(shaderName, 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
+	if (FAILED(hr))
+	{
+		if (pErrorBlob)
+		{
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+			Log::Print(Log::EErr, "Pixel Shader Compile Error\n\n%s", (char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
+		}
+	}
+
+	Shader shader;
+
+	// Create shader objects
+	hr = pCtx->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.m_pVertexShader);
+	hr = pCtx->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.m_pPixelShader);
+
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	UINT numElements = ARRAYSIZE(layout);
+	hr = pCtx->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
+
+	return shader;
+}
+
+Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents)
+{
+	HRESULT hr;
+
+	ID3DBlob* pVsBlob = nullptr;
+	ID3DBlob* pPsBlob = nullptr;
+	ID3DBlob* pErrorBlob = nullptr;
+
+	hr = D3DCompile(shaderContents.c_str(), shaderContents.size(), NULL, 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
+	hr = D3DCompile(shaderContents.c_str(), shaderContents.size(), NULL, 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
+
+	Shader shader;
+
+	// Create shader objects
+	hr = Graphics::GetContext()->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.m_pVertexShader);
+	hr = Graphics::GetContext()->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.m_pPixelShader);
+
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+	UINT numElements = ARRAYSIZE(layout);
+	hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
+	
+	return shader;
+}
+
+Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, uint bindflags)
+{
+	D3D11_TEXTURE2D_DESC textureDesc;
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
+	textureDesc.Width = width;
+	textureDesc.Height = height;
+	textureDesc.MipLevels = textureDesc.ArraySize = 1;
+	textureDesc.Format = format;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = bindflags;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+	ID3D11Texture2D* pTexture = nullptr;
+	if (data == nullptr)
+	{
+		pCtx->m_pDevice->CreateTexture2D(&textureDesc, nullptr, &pTexture);
+	}
+	else
+	{
+		D3D11_SUBRESOURCE_DATA textureBufferData;
+		ZeroMemory(&textureBufferData, sizeof(textureBufferData));
+		textureBufferData.pSysMem = data;
+		textureBufferData.SysMemPitch = width;
+		pCtx->m_pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &pTexture);
+	}
+	
+	//pPreprocessingFrame->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("Texture 2D Preprocessed Frame"), "Texture 2D Preprocessed Frame");
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+	ID3D11ShaderResourceView* pShaderResourceView = nullptr;
+	pCtx->m_pDevice->CreateShaderResourceView(pTexture, &shaderResourceViewDesc, &pShaderResourceView);
+
+	return { pShaderResourceView, pTexture };
 }
