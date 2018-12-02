@@ -52,6 +52,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
 	scd.OutputWindow = hwnd;                                // the window to be used
 	scd.SampleDesc.Count = 4;                               // how many multisamples
+	scd.SampleDesc.Quality = 0;                    
 	scd.Windowed = TRUE;                                    // windowed/full-screen mode
 
 															// create a device, device context and swap chain using the information in the scd struct
@@ -76,6 +77,28 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	pCtx->m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->m_pBackBuffer);
 	pBackBuffer->Release();
 
+	D3D11_TEXTURE2D_DESC depthStencilDesc;
+	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	depthStencilDesc.Width = UINT(width);
+	depthStencilDesc.Height = UINT(height);
+	depthStencilDesc.MipLevels = 1;
+	depthStencilDesc.ArraySize = 1;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilDesc.SampleDesc.Count = 8;
+	depthStencilDesc.SampleDesc.Quality = 0;
+	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilDesc.CPUAccessFlags = 0;
+	depthStencilDesc.MiscFlags = 0;
+	pCtx->m_pDevice->CreateTexture2D(&depthStencilDesc, NULL, &pCtx->m_pDepthStencilBuffer);
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	depthStencilViewDesc.Texture2D.MipSlice = 0;
+	pCtx->m_pDevice->CreateDepthStencilView(pCtx->m_pDepthStencilBuffer, &depthStencilViewDesc, &pCtx->m_pDepthStencilView);
+
 	// RENDER TO TEXTURE
 	// *****************
 
@@ -90,7 +113,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	pCtx->m_pDevice->CreateRenderTargetView(pCtx->m_preprocessedFrame.m_pTexture2D, &renderTargetViewDesc, &pCtx->m_pPreprocessedFrameView);
 
@@ -164,11 +187,12 @@ void Graphics::NewFrame()
 void Graphics::RenderFrame()
 {
 	// First we draw the scene into a render target
-	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pPreprocessedFrameView, NULL);
+	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pPreprocessedFrameView, pCtx->m_pDepthStencilView);
 
 	// clear the back buffer to a deep blue
 	float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
 	pCtx->m_pDeviceContext->ClearRenderTargetView(pCtx->m_pPreprocessedFrameView, color);
+	pCtx->m_pDeviceContext->ClearDepthStencilView(pCtx->m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	D3D11_VIEWPORT viewport;
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
@@ -176,6 +200,8 @@ void Graphics::RenderFrame()
 	viewport.TopLeftY = 0;
 	viewport.Width = pCtx->m_windowWidth /  pCtx->m_pixelScale;
 	viewport.Height = pCtx->m_windowHeight / pCtx->m_pixelScale;
+	viewport.MaxDepth = 1.0f;
+	viewport.MinDepth = 0.0f;
 	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
 
 	// Set Shaders to active
@@ -202,6 +228,8 @@ void Graphics::RenderFrame()
 	viewport.TopLeftY = 0;
 	viewport.Width = pCtx->m_windowWidth;
 	viewport.Height = pCtx->m_windowHeight;
+	viewport.MaxDepth = 1.0f;
+	viewport.MinDepth = 0.0f;
 	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
 
 	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_postProcessShader.m_pVertexShader, 0, 0);
@@ -353,7 +381,8 @@ Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT
 	textureDesc.Height = height;
 	textureDesc.MipLevels = textureDesc.ArraySize = 1;
 	textureDesc.Format = format;
-	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Count = 8;
+	textureDesc.SampleDesc.Quality = 0;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;
 	textureDesc.BindFlags = bindflags;
 	textureDesc.CPUAccessFlags = 0;
@@ -377,7 +406,7 @@ Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = textureDesc.Format;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 

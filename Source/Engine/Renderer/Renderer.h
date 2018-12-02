@@ -12,6 +12,7 @@ struct ID3D11DeviceContext;
 struct ID3D11ShaderResourceView;
 struct ID3D11SamplerState;
 struct ID3D11RenderTargetView;
+struct ID3D11DepthStencilView;
 struct ID3D11VertexShader;
 struct ID3D11PixelShader;
 struct ID3D11GeometryShader;
@@ -64,6 +65,9 @@ struct RenderContext
 	ID3D11Device* m_pDevice;
 	ID3D11DeviceContext* m_pDeviceContext;
 	ID3D11RenderTargetView* m_pBackBuffer;
+
+	ID3D11DepthStencilView* m_pDepthStencilView;
+	ID3D11Texture2D* m_pDepthStencilBuffer;
 
 	// Scene is rendered into the preprocessed frame render target, 
 	// where it'll then be re-rendered for post processing
