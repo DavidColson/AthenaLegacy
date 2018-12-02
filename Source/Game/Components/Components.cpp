@@ -6,12 +6,13 @@
 REGISTRATION
 {
 	RegisterNewTypeAsComponent(CPlayerControl)
-	->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
-	->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
-	->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
-	->RegisterMember("m_someVec", &CPlayerControl::m_someVec);
+		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
+		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
+		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
+		->RegisterMember("m_someVec", &CPlayerControl::m_someVec);
 
-	RegisterNewTypeAsComponent(CDrawable);
+	RegisterNewTypeAsComponent(CDrawable)
+		->RegisterMember("m_lineThickness", &CDrawable::m_lineThickness);
 
 	RegisterNewTypeAsComponent(CTransform)
 		->RegisterMember("m_pos", &CTransform::m_pos)

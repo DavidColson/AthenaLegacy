@@ -29,6 +29,7 @@ struct RenderProxy
 	vec3 m_pos{ vec3(0,0,0) };
 	vec3 m_sca{ vec3(1.f, 1.f, 1.f) };
 	float m_rot{ 0.0f };
+	float m_lineThickness{ 1.0f };
 
 	ID3D11Buffer* m_pVertBuffer{ nullptr };
 	std::vector<Vertex> m_vertices;

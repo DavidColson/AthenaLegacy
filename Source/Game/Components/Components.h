@@ -15,12 +15,13 @@ struct CTransform
 struct CDrawable
 {
 	RenderProxy m_renderProxy;
+	float m_lineThickness{ 5.0f };
 };
 
 struct CPlayerControl
 {
 	float m_thrust{ 80.f };
 	float m_rotateSpeed{ 0.1f };
-	float m_dampening{ 2.f };
+	float m_dampening{ 0.f };
 	vec2 m_someVec{ vec2(5.0f, 2.0f) };
 };

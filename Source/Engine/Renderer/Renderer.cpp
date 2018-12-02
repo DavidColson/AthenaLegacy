@@ -58,7 +58,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	D3D11CreateDeviceAndSwapChain(NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
-		NULL,
+		D3D11_CREATE_DEVICE_DEBUG,
 		NULL,
 		NULL,
 		D3D11_SDK_VERSION,
@@ -75,10 +75,6 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	// use the back buffer address to create the render target
 	pCtx->m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->m_pBackBuffer);
 	pBackBuffer->Release();
-
-	// set the render target as the back buffer
-	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pBackBuffer, NULL);
-
 
 	// RENDER TO TEXTURE
 	// *****************
@@ -138,11 +134,11 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	Graphics::GetContext()->m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->m_pFullScreenVertBuffer);
 
 	// Compile and create post processing shaders
-	pCtx->m_postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl");
+	pCtx->m_postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
 
 
 
-	pCtx->m_baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl");
+	pCtx->m_baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
 
 	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 30);
 
@@ -185,10 +181,11 @@ void Graphics::RenderFrame()
 	// Set Shaders to active
 	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_baseShader.m_pVertexShader, 0, 0);
 	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_baseShader.m_pPixelShader, 0, 0);
+	pCtx->m_pDeviceContext->GSSetShader(pCtx->m_baseShader.m_pGeometryShader, 0, 0);
 
-	pCtx->m_pDeviceContext->IASetInputLayout(pCtx->m_pVertLayout);
+	pCtx->m_pDeviceContext->IASetInputLayout(pCtx->m_baseShader.m_pVertLayout);
 
-	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
 
 	for (RenderProxy* proxy : pCtx->m_renderProxies)
 	{
@@ -209,6 +206,8 @@ void Graphics::RenderFrame()
 
 	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_postProcessShader.m_pVertexShader, 0, 0);
 	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_postProcessShader.m_pPixelShader, 0, 0);
+	pCtx->m_pDeviceContext->GSSetShader(pCtx->m_postProcessShader.m_pGeometryShader, 0, 0);
+	pCtx->m_pDeviceContext->IASetInputLayout(pCtx->m_postProcessShader.m_pVertLayout);
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	pCtx->m_pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->m_pFullScreenVertBuffer, &stride, &offset);
@@ -220,6 +219,10 @@ void Graphics::RenderFrame()
 	// Draw Imgui
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	
+	// TODO: should probably clear all render state that we set after rendering
+	ID3D11ShaderResourceView* pSRV = nullptr;
+	pCtx->m_pDeviceContext->PSSetShaderResources(0, 1, &pSRV);
 
 	// switch the back buffer and the front buffer
 	pCtx->m_pSwapChain->Present(0, 0);
@@ -235,15 +238,16 @@ void Graphics::SubmitProxy(RenderProxy* pRenderProxy)
 	pCtx->m_renderProxies.push_back(pRenderProxy);
 }
 
-Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName)
+Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader)
 {
 	HRESULT hr;
 	ID3DBlob* pVsBlob = nullptr;
 	ID3DBlob* pPsBlob = nullptr;
+	ID3DBlob* pGsBlob = nullptr;
 	ID3DBlob* pErrorBlob = nullptr;
 
 	// TODO: Shaders should be considered a material, kept somewhere so objects can share materials
-	hr = D3DCompileFromFile(shaderName, 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
+	hr = D3DCompileFromFile(shaderName, 0, 0, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG, 0, &pVsBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
 		if (pErrorBlob)
@@ -253,18 +257,31 @@ Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName)
 			pErrorBlob->Release();
 		}
 	}
-	hr = D3DCompileFromFile(shaderName, 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
+	hr = D3DCompileFromFile(shaderName, 0, 0, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG, 0, &pPsBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
 		if (pErrorBlob)
 		{
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
 			Log::Print(Log::EErr, "Pixel Shader Compile Error\n\n%s", (char*)pErrorBlob->GetBufferPointer());
 			pErrorBlob->Release();
 		}
 	}
 
 	Shader shader;
+
+	if (hasGeometryShader)
+	{
+		hr = D3DCompileFromFile(shaderName, 0, 0, "GSMain", "gs_5_0", D3DCOMPILE_DEBUG, 0, &pGsBlob, &pErrorBlob);
+		if (FAILED(hr))
+		{
+			if (pErrorBlob)
+			{
+				Log::Print(Log::EErr, "Geometry Shader Compile Error\n\n%s", (char*)pErrorBlob->GetBufferPointer());
+				pErrorBlob->Release();
+			}
+		}
+		hr = pCtx->m_pDevice->CreateGeometryShader(pGsBlob->GetBufferPointer(), pGsBlob->GetBufferSize(), nullptr, &shader.m_pGeometryShader);
+	}
 
 	// Create shader objects
 	hr = pCtx->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.m_pVertexShader);
@@ -288,10 +305,27 @@ Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents)
 
 	ID3DBlob* pVsBlob = nullptr;
 	ID3DBlob* pPsBlob = nullptr;
+	ID3DBlob* pGsBlob = nullptr;
 	ID3DBlob* pErrorBlob = nullptr;
 
 	hr = D3DCompile(shaderContents.c_str(), shaderContents.size(), NULL, 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
+	if (FAILED(hr))
+	{
+		if (pErrorBlob)
+		{
+			Log::Print(Log::EErr, "Vert Shader Compile Error: %s", (char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
+		}
+	}
 	hr = D3DCompile(shaderContents.c_str(), shaderContents.size(), NULL, 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
+	if (FAILED(hr))
+	{
+		if (pErrorBlob)
+		{
+			Log::Print(Log::EErr, "Pixel Shader Compile Error: %s", (char*)pErrorBlob->GetBufferPointer());
+			pErrorBlob->Release();
+		}
+	}
 
 	Shader shader;
 

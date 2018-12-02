@@ -152,16 +152,19 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 		FT_Load_Char(face, i, FT_LOAD_RENDER);
 
-		Graphics::Texture2D texture = Graphics::CreateTexture2D(
-			face->glyph->bitmap.width,
-			face->glyph->bitmap.rows,
-			DXGI_FORMAT_R8_UNORM,
-			face->glyph->bitmap.buffer,
-			D3D11_BIND_SHADER_RESOURCE
-		);
-
 		Character character;
-		character.m_charTexture = texture.m_pShaderResourceView;
+		if (face->glyph->bitmap.width > 0 && face->glyph->bitmap.rows > 0)
+		{
+			Graphics::Texture2D texture = Graphics::CreateTexture2D(
+				face->glyph->bitmap.width,
+				face->glyph->bitmap.rows,
+				DXGI_FORMAT_R8_UNORM,
+				face->glyph->bitmap.buffer,
+				D3D11_BIND_SHADER_RESOURCE
+			);
+
+			character.m_charTexture = texture.m_pShaderResourceView;
+		}
 		character.m_size = vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
 		character.m_bearing = vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
 		character.m_advance = (face->glyph->advance.x) >> 6;
@@ -187,6 +190,7 @@ void RenderFont::Draw(std::string text, int x, int y)
 	// Set Shaders to active
 	Graphics::GetContext()->m_pDeviceContext->VSSetShader(m_fontShader.m_pVertexShader, 0, 0);
 	Graphics::GetContext()->m_pDeviceContext->PSSetShader(m_fontShader.m_pPixelShader, 0, 0);
+	Graphics::GetContext()->m_pDeviceContext->GSSetShader(m_fontShader.m_pGeometryShader, 0, 0);
 
 	Graphics::GetContext()->m_pDeviceContext->IASetInputLayout(m_fontShader.m_pVertLayout);
 

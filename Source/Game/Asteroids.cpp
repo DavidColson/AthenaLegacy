@@ -96,15 +96,15 @@ void Game::Startup()
 			Vertex(vec3(75.3f, 45.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
 			Vertex(vec3(95.f, 76.4f, 0.5f), color(0.0f, 0.0f, 1.0f)),
 		}, {
-			0, 1, 2, 3, 4, 5, 6, 7, 8, 0
+			// Note has adjacency data
+			8, 0, 1, 3, 4, 5, 6, 7, 8, 0, 1
 		});
-
 
 	EntityID ship = pCurrentSpace->NewEntity();
 	CTransform* pTransform = pCurrentSpace->AssignComponent<CTransform>(ship);
 
 	pTransform->m_pos = vec3(450.0f, 250.0f, 0.0f);
-	pTransform->m_sca = vec3(0.2f, 0.25f, 1.0f);
+	pTransform->m_sca = vec3(1.0f, 1.0f, 1.0f);
 
 	pCurrentSpace->AssignComponent<CPlayerControl>(ship);
 	pCurrentSpace->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
@@ -115,7 +115,8 @@ void Game::Startup()
 			Vertex(vec3(85.f, 30.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
 			Vertex(vec3(100.f, 20.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
 		}, {
-			0, 1, 2, 3, 4, 0
+			// Note, has adjacency data
+			4, 0, 1, 2, 3, 4, 0, 1
 		});
 
 	pCurrentSpace->StartSystems();

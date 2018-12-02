@@ -12,6 +12,10 @@
 struct cbPerObject
 {
 	mat4 m_wvp;
+	float m_lineThickness;
+	float pad1{ 0.0f };
+	float pad2{ 0.0f };
+	float pad3{ 0.0f };
 };
 cbPerObject perObject;
 
@@ -93,8 +97,10 @@ void RenderProxy::Draw()
 	mat4 wvp = projection * view * world;
 
 	perObject.m_wvp = wvp;
+	perObject.m_lineThickness = m_lineThickness;
 	Graphics::GetContext()->m_pDeviceContext->UpdateSubresource(m_pWVPBuffer, 0, nullptr, &perObject, 0, 0);
 	Graphics::GetContext()->m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pWVPBuffer));
+	Graphics::GetContext()->m_pDeviceContext->GSSetConstantBuffers(0, 1, &(m_pWVPBuffer));
 
 	// do 3D rendering on the back buffer here
 	Graphics::GetContext()->m_pDeviceContext->DrawIndexed(m_indices.size(), 0, 0);

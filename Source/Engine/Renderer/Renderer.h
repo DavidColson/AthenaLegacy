@@ -14,6 +14,7 @@ struct ID3D11SamplerState;
 struct ID3D11RenderTargetView;
 struct ID3D11VertexShader;
 struct ID3D11PixelShader;
+struct ID3D11GeometryShader;
 struct ID3D11InputLayout;
 struct ID3D11Texture2D;
 
@@ -43,12 +44,13 @@ namespace Graphics
 
 	struct Shader
 	{
-		ID3D11InputLayout* m_pVertLayout;
-		ID3D11VertexShader* m_pVertexShader;
-		ID3D11PixelShader* m_pPixelShader;
+		ID3D11InputLayout* m_pVertLayout{ nullptr };
+		ID3D11VertexShader* m_pVertexShader{ nullptr };
+		ID3D11GeometryShader* m_pGeometryShader{ nullptr };
+		ID3D11PixelShader* m_pPixelShader{ nullptr };
 	};
 
-	Shader LoadShaderFromFile(const wchar_t* shaderName);
+	Shader LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader);
 	Shader LoadShaderFromText(std::string shaderContents);
 
 	Texture2D CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, uint bindflags);
@@ -72,7 +74,6 @@ struct RenderContext
 	Graphics::Shader m_postProcessShader;
 
 	Graphics::Shader m_baseShader;
-	ID3D11InputLayout* m_pVertLayout;
 
 	RenderFont* m_pFontRender;
 
