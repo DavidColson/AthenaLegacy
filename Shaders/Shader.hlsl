@@ -60,7 +60,7 @@ void GSMain(lineadj VS_OUTPUT input[4], inout TriangleStream<VS_OUTPUT> OutputSt
 	for (int i = 0; i < 4; i++)
 	{
 		outputVert.Pos = float4(verts[i], 1.0);
-		outputVert.Col = float4(1, 0, 0, 1);
+		outputVert.Col = input[1].Col;
 		outputVert.Tex = input[1].Tex;
 
 		OutputStream.Append(outputVert);

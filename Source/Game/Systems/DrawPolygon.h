@@ -1,3 +1,4 @@
+#pragma once
 #include <GameFramework/World.h>
 
 class SDrawPolygon : public System

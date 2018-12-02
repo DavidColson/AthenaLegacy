@@ -58,6 +58,12 @@ gGameWorld.AssignComponent<Shape>(circle);
 #include <bitset>
 #include <vector>
 
+struct EntityID // You know what to do
+{
+	int id;
+	int version;
+};
+
 typedef unsigned int EntityID;
 const int MAX_COMPONENTS = 10;
 const int MAX_ENTITIES = 64;
@@ -67,20 +73,19 @@ struct Space;
 
 
 // Gives you the id within this world for a given component type
-static int s_componentCounter = 0;
+extern int s_componentCounter; // TODO: Move this to a detail namespace
 template <class T>
-int GetComponentId()
+int GetComponentId() // Move this whole function to the detail namespace
 {
 	// static variable will be initialized on first function call
 	// It will then continue to return the same thing, no matter how many times this is called.
 	// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
 	static int s_componentId = s_componentCounter++;
 	return s_componentId;
-	return s_componentId;
 }
 
 // Used to relate components to the Type objects in the reflection database
-struct ComponentIdToTypeIdMap
+struct ComponentIdToTypeIdMap // TODO: Move to detail namespace
 {
 	void AddRelation(TypeId typeId, int componentId)
 	{
@@ -125,7 +130,7 @@ private:
 // TODO: Generational indices for reuse of slots
 // ********************************************
 
-struct ComponentPool
+struct ComponentPool // TODO: Move to detail namespace
 {
 	ComponentPool(size_t elementsize)
 	{
@@ -136,6 +141,7 @@ struct ComponentPool
 
 	inline void* get(size_t index)
 	{
+		ASSERT(index < MAX_ENTITIES, "Entity overrun, delete some entities");
 		return pData + index * elementSize;
 	}
 
@@ -157,7 +163,7 @@ struct Space
 
 	// Goes through each system looping entities and calling the startup function
 	// for entities matching the subscription. Called once on scene laod
-	void StartSystems()
+	void StartSystems() // TODO: Move implementation to cpp
 	{
 		for (System* pSys : m_systems)
 		{
@@ -174,14 +180,14 @@ struct Space
 
 	// Goes through each system one by one, looping through all entities and updating the
 	// system with entities that match the subscription
-	void UpdateSystems(float deltaTime)
+	void UpdateSystems(float deltaTime)// TODO: Move implementation to cpp
 	{
 		for (System* sys : m_systems)
 		{
 			for (EntityID i = 0; i < m_entities.size(); i++)
 			{
 				ComponentMask mask = m_entities[i];
-				if (sys->m_componentSubscription == (sys->m_componentSubscription & mask))
+				if (sys->m_componentSubscription == (sys->m_componentSubscription & mask) && !sys->m_componentSubscription.none())
 				{
 					sys->UpdateEntity(i, this, deltaTime);
 				}
@@ -190,7 +196,7 @@ struct Space
 	}
 
 	// Creates an entity, simply makes a new id and mask
-	EntityID NewEntity()
+	EntityID NewEntity()// TODO: Move implementation to cpp
 	{
 		m_entities.push_back(ComponentMask());
 		return EntityID(m_entities.size() - 1);
@@ -198,7 +204,7 @@ struct Space
 
 	// Makes a new system instance
 	template <typename T>
-	void RegisterSystem()
+	void RegisterSystem() // TODO: Move implementation to lower down in the file
 	{
 		T* pNewSystem = new T();
 		m_systems.push_back(pNewSystem);
@@ -208,7 +214,7 @@ struct Space
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
 	// Will not make components on entities that already have that component
 	template<typename T>
-	T* AssignComponent(EntityID id)
+	T* AssignComponent(EntityID id) // TODO: Move implementation to lower down in the file
 	{
 		int componentId = GetComponentId<T>();
 		if (m_componentPools.size() <= componentId) // Not enough component pool
@@ -221,23 +227,21 @@ struct Space
 		}
 
 		// Check the mask so you're not overwriting a component
-		if (m_entities[id].test(componentId) == false)
-		{
-			// Looks up the component in the pool, and initializes it with placement new
-			// TODO: Fatal error, trying to assign to component that has no pool
-			T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(id))) T();
+		ASSERT(m_entities[id].test(componentId) == false, "You're trying to assign a component to an entity that already has this component");
+		
+		// Looks up the component in the pool, and initializes it with placement new
+		// TODO: Fatal error, trying to assign to component that has no pool
+		T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(id))) T();
 
-			// Set the bit for this component to true
-			m_entities[id].set(componentId);
-			return pComponent;
-		}
-		return nullptr;
+		// Set the bit for this component to true
+		m_entities[id].set(componentId);
+		return pComponent;
 	}
 
 	// Retrieves a component for a given entity
 	// Simply checks the existence using the mask, and then queries the component from the correct pool
 	template<typename T>
-	T* GetComponent(EntityID id)
+	T* GetComponent(EntityID id) // TODO: Move implementation to lower down in the file
 	{
 		int componentId = GetComponentId<T>();
 		ASSERT(m_entities[id].test(componentId), "The component you're trying to access is not assigned to this entity");

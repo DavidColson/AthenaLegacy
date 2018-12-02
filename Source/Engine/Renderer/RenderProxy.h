@@ -8,7 +8,7 @@ struct ID3D11Buffer;
 
 struct Vertex
 {
-	Vertex(vec3 pos, vec3 col) : m_pos(pos), m_col(col) {}
+	Vertex(vec3 pos) : m_pos(pos) {}
 
 	vec3 m_pos{ vec3(0.0f, 0.0f, 0.0f) };
 	vec3 m_col{ vec3(0.0f, 0.0f, 0.0f) };

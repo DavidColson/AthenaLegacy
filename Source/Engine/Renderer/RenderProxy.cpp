@@ -87,19 +87,19 @@ void RenderProxy::Draw()
 	mat4 posmat = MakeTranslate(m_pos);
 	mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, m_rot));
 	mat4 scamat = MakeScale(m_sca);
-	mat4 pivotAdjust = MakeTranslate(vec3(-50.f, -50.f, 0.0f));
+	mat4 pivotAdjust = MakeTranslate(vec3(-0.5f, -0.5f, 0.0f));
 
 	mat4 world = posmat * rotmat * scamat * pivotAdjust; // transform into world space
 	mat4 view = MakeTranslate(vec3(0.0f, 0.0f, 0.0f)); // transform into camera space
 
-	mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, 0.1f, 10.0f); // transform into screen space
+	mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, -1.0f, 10.0f); // transform into screen space
 	
 	mat4 wvp = projection * view * world;
 
 	perObject.m_wvp = wvp;
 	perObject.m_lineThickness = m_lineThickness;
 	Graphics::GetContext()->m_pDeviceContext->UpdateSubresource(m_pWVPBuffer, 0, nullptr, &perObject, 0, 0);
-	Graphics::GetContext()->m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pWVPBuffer));
+ 	Graphics::GetContext()->m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pWVPBuffer));
 	Graphics::GetContext()->m_pDeviceContext->GSSetConstantBuffers(0, 1, &(m_pWVPBuffer));
 
 	// do 3D rendering on the back buffer here

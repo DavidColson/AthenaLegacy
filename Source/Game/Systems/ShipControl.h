@@ -1,7 +1,8 @@
 #pragma once
+
 #include <GameFramework/World.h>
 
-class SMovement : public System
+class SShipControl : public System
 {
 public:
 

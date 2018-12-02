@@ -47,10 +47,10 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 
 	std::vector<Vertex> quadVertices = {
-		Vertex(vec3(0.0f, 0.0f, 0.5f), color(1.0f, 0.0f, 0.0f)),
-		Vertex(vec3(0.f, 10.f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-		Vertex(vec3(10.f, 10.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-		Vertex(vec3(10.f, 0.f, 0.5f), color(0.0f, 0.0f, 1.0f))
+		Vertex(vec3(0.0f, 0.0f, 0.5f)),
+		Vertex(vec3(0.f, 10.f, 0.5f)),
+		Vertex(vec3(10.f, 10.f, 0.5f)),
+		Vertex(vec3(10.f, 0.f, 0.5f))
 	};
 	std::vector<int> quadIndices = {
 		0, 1, 2,

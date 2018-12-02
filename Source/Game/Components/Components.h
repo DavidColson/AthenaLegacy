@@ -10,12 +10,13 @@ struct CTransform
 	float m_rot;
 	vec3 m_sca{ vec3(1.f, 1.f, 1.f) };
 	vec3 m_vel{ vec3(0.0f, 0.0f, 0.0f) };
+	vec3 m_accel{ vec3(0.0f, 0.0f, 0.0f) };
 };
 
 struct CDrawable
 {
 	RenderProxy m_renderProxy;
-	float m_lineThickness{ 5.0f };
+	float m_lineThickness{ 2.0f };
 };
 
 struct CPlayerControl

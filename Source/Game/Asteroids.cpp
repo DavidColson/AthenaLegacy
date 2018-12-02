@@ -2,12 +2,14 @@
 
 #include "Systems/DrawPolygon.h"
 #include "Systems/Movement.h"
+#include "Systems/ShipControl.h"
 #include "Components/Components.h"
 
 #include <Editor/Editor.h>
 #include <GameFramework/World.h>
 
 #include <functional>
+#include <time.h>
 
 namespace {
 	Space* pCurrentSpace;
@@ -72,48 +74,125 @@ void Game::Startup()
 
 	stringifyStruct("", "player", player);
 
+	std::vector<RenderProxy> asteroidMeshes;
 
+	asteroidMeshes.emplace_back(RenderProxy(
+		{
+			Vertex(vec3(0.03f, 0.379f, 0.0f)),
+			Vertex(vec3(0.03f, 0.64f, 0.0f)),
+			Vertex(vec3(0.314f, 0.69f, 0.0f)),
+			Vertex(vec3(0.348f, 0.96f, 0.0f)),
+			Vertex(vec3(0.673f, 0.952f, 0.0f)),
+			Vertex(vec3(0.698f, 0.724f, 0.0f)),
+			Vertex(vec3(0.97f, 0.645f, 0.0f)),
+			Vertex(vec3(0.936f, 0.228f, 0.f)),
+			Vertex(vec3(0.555f, 0.028f, 0.f)),
+			Vertex(vec3(0.22f, 0.123f, 0.f))
+		}, {
+			// Note has adjacency data
+			9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1
+		}));
 
+	asteroidMeshes.emplace_back(RenderProxy(
+		{
+			Vertex(vec3(0.05f, 0.54f, 0.0f)),
+			Vertex(vec3(0.213f, 0.78f, 0.0f)),
+			Vertex(vec3(0.37f, 0.65f, 0.0f)),
+			Vertex(vec3(0.348f, 0.96f, 0.0f)),
+			Vertex(vec3(0.673f, 0.952f, 0.0f)),
+			Vertex(vec3(0.64f, 0.75f, 0.0f)),
+			Vertex(vec3(0.83f, 0.85f, 0.0f)),
+			Vertex(vec3(0.974f, 0.65f, 0.0f)),
+			Vertex(vec3(0.943f, 0.298f, 0.f)),
+			Vertex(vec3(0.683f, 0.086f, 0.f)),
+			Vertex(vec3(0.312f, 0.074f, 0.f)),
+			Vertex(vec3(0.056f, 0.265f, 0.f))
+		}, {
+			// Note has adjacency data
+			10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1
+		}));
+
+	asteroidMeshes.emplace_back(RenderProxy(
+		{
+			Vertex(vec3(0.066f, 0.335f, 0.0f)),
+			Vertex(vec3(0.077f, 0.683f, 0.0f)),
+			Vertex(vec3(0.3f, 0.762f, 0.0f)),
+			Vertex(vec3(0.348f, 0.96f, 0.0f)),
+			Vertex(vec3(0.673f, 0.952f, 0.0f)),
+			Vertex(vec3(0.724f, 0.752f, 0.0f)),
+			Vertex(vec3(0.967f, 0.63f, 0.0f)),
+			Vertex(vec3(0.946f, 0.312f, 0.0f)),
+			Vertex(vec3(0.706f, 0.353f, 0.f)),
+			Vertex(vec3(0.767f, 0.07f, 0.f)),
+			Vertex(vec3(0.37f, 0.07f, 0.f)),
+			Vertex(vec3(0.21f, 0.33f, 0.f))
+		}, {
+			// Note has adjacency data
+			11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
+		}));
+
+	asteroidMeshes.emplace_back(RenderProxy(
+		{
+			Vertex(vec3(0.056f, 0.284f, 0.0f)),
+			Vertex(vec3(0.064f, 0.752f, 0.0f)),
+			Vertex(vec3(0.353f, 0.762f, 0.0f)),
+			Vertex(vec3(0.286f, 0.952f, 0.0f)),
+			Vertex(vec3(0.72f, 0.944f, 0.0f)),
+			Vertex(vec3(0.928f, 0.767f, 0.0f)),
+			Vertex(vec3(0.962f, 0.604f, 0.0f)),
+			Vertex(vec3(0.568f, 0.501f, 0.0f)),
+			Vertex(vec3(0.967f, 0.366f, 0.f)),
+			Vertex(vec3(0.857f, 0.16f, 0.f)),
+			Vertex(vec3(0.563f, 0.217f, 0.f)),
+			Vertex(vec3(0.358f, 0.043f, 0.f))
+		}, {
+			// Note has adjacency data
+			11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
+		}));
 
 	// Create our scene
 	// ****************
 	pCurrentSpace = new Space();
 
 	pCurrentSpace->RegisterSystem<SDrawPolygon>();
+	pCurrentSpace->RegisterSystem<SShipControl>();
 	pCurrentSpace->RegisterSystem<SMovement>();
 
-	EntityID asteroid = pCurrentSpace->NewEntity();
-	pCurrentSpace->AssignComponent<CTransform>(asteroid)->m_pos = vec3(100.0f, 100.0f, 0.0f);
-	pCurrentSpace->AssignComponent<CDrawable>(asteroid)->m_renderProxy = RenderProxy(
-		{
-			Vertex(vec3(49.6f, 90.6f, 0.5f), color(1.0f, 0.0f, 0.0f)),
-			Vertex(vec3(39.f, 51.6f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-			Vertex(vec3(19.6f, 54.2f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(5.2f, 31.7f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(24.2f, 8.3f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(51.f, 20.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(97.f, 18.7f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(75.3f, 45.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(95.f, 76.4f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-		}, {
-			// Note has adjacency data
-			8, 0, 1, 3, 4, 5, 6, 7, 8, 0, 1
-		});
+	srand(uint(time(nullptr)));
+
+	auto randf = []() { return float(rand()) / float(RAND_MAX); };
+
+	for (int i=0; i < 15; i++)
+	{
+		vec3 randomLocation = vec3(float(rand() % 1800), float(rand() % 1000), 0.0f);
+		vec3 randomVelocity = vec3(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
+		float randomRotation = randf() * 6.282f;
+		EntityID asteroid = pCurrentSpace->NewEntity();
+		CTransform* pTranform = pCurrentSpace->AssignComponent<CTransform>(asteroid);
+		pTranform->m_pos = randomLocation;
+		pTranform->m_sca = vec3(90.0f, 90.0f, 1.0f);
+		pTranform->m_vel = randomVelocity;
+		pTranform->m_rot = randomRotation;
+
+		pCurrentSpace->AssignComponent<CDrawable>(asteroid)->m_renderProxy = asteroidMeshes[rand() % 4];
+	}
+
+	// Ship
 
 	EntityID ship = pCurrentSpace->NewEntity();
 	CTransform* pTransform = pCurrentSpace->AssignComponent<CTransform>(ship);
 
 	pTransform->m_pos = vec3(450.0f, 250.0f, 0.0f);
-	pTransform->m_sca = vec3(1.0f, 1.0f, 1.0f);
+	pTransform->m_sca = vec3(30.f, 35.f, 1.0f);
 
 	pCurrentSpace->AssignComponent<CPlayerControl>(ship);
 	pCurrentSpace->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
 		{
-			Vertex(vec3(0.f, 50.f, 0.5f), color(1.0f, 0.0f, 0.0f)),
-			Vertex(vec3(100.f, 80.f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-			Vertex(vec3(85.f, 70.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(85.f, 30.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-			Vertex(vec3(100.f, 20.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
+			Vertex(vec3(0.f, 0.5f, 0.f)),
+			Vertex(vec3(1.f, 0.8f, 0.f)),
+			Vertex(vec3(0.9f, 0.7f, 0.f)),
+			Vertex(vec3(0.9f, 0.3f, 0.f)),
+			Vertex(vec3(1.0f, 0.2f, 0.f)),
 		}, {
 			// Note, has adjacency data
 			4, 0, 1, 2, 3, 4, 0, 1

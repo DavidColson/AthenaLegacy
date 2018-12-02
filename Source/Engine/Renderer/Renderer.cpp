@@ -84,8 +84,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
 	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilDesc.SampleDesc.Count = 8;
-	depthStencilDesc.SampleDesc.Quality = 0;
+	depthStencilDesc.SampleDesc.Count = 1;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	depthStencilDesc.CPUAccessFlags = 0;
@@ -95,7 +94,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 	pCtx->m_pDevice->CreateDepthStencilView(pCtx->m_pDepthStencilBuffer, &depthStencilViewDesc, &pCtx->m_pDepthStencilView);
 
@@ -113,7 +112,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMS;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	pCtx->m_pDevice->CreateRenderTargetView(pCtx->m_preprocessedFrame.m_pTexture2D, &renderTargetViewDesc, &pCtx->m_pPreprocessedFrameView);
 
@@ -133,10 +132,10 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	// Create a quad to render onto
 	std::vector<Vertex> quadVertices = {
-		Vertex(vec3(-1.0f, -1.0f, 0.5f), color(1.0f, 0.0f, 0.0f)),
-		Vertex(vec3(-1.f, 1.f, 0.5f), color(0.0f, 1.0f, 0.0f)),
-		Vertex(vec3(1.f, -1.f, 0.5f), color(0.0f, 0.0f, 1.0f)),
-		Vertex(vec3(1.f, 1.f, 0.5f), color(0.0f, 0.0f, 1.0f))
+		Vertex(vec3(-1.0f, -1.0f, 0.5f)),
+		Vertex(vec3(-1.f, 1.f, 0.5f)),
+		Vertex(vec3(1.f, -1.f, 0.5f)),
+		Vertex(vec3(1.f, 1.f, 0.5f))
 	};
 	quadVertices[0].m_texCoords = vec2(0.0f, 1.0f);
 	quadVertices[1].m_texCoords = vec2(0.0f, 0.0f);
@@ -163,7 +162,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	pCtx->m_baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
 
-	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 30);
+	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 50);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -217,7 +216,7 @@ void Graphics::RenderFrame()
 	{
 		proxy->Draw();
 	}
-	pCtx->m_pFontRender->Draw("Asteroids", int(pCtx->m_windowWidth / pCtx->m_pixelScale * 0.5f), int(pCtx->m_windowHeight / pCtx->m_pixelScale - 33.0f));
+	pCtx->m_pFontRender->Draw("Asteroids", int(pCtx->m_windowWidth / pCtx->m_pixelScale * 0.5f), int(pCtx->m_windowHeight / pCtx->m_pixelScale - 53.0f));
 
 	// Now we change the render target to the swap chain back buffer, render onto a quad, and then render imgui
 	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pBackBuffer, NULL);
@@ -381,8 +380,7 @@ Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT
 	textureDesc.Height = height;
 	textureDesc.MipLevels = textureDesc.ArraySize = 1;
 	textureDesc.Format = format;
-	textureDesc.SampleDesc.Count = 8;
-	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.SampleDesc.Count = 1;
 	textureDesc.Usage = D3D11_USAGE_DEFAULT;
 	textureDesc.BindFlags = bindflags;
 	textureDesc.CPUAccessFlags = 0;
@@ -406,7 +404,7 @@ Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = textureDesc.Format;
-	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
