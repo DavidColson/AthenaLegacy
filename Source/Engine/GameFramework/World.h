@@ -58,11 +58,11 @@ gGameWorld.AssignComponent<Shape>(circle);
 #include <bitset>
 #include <vector>
 
-struct EntityID // You know what to do
-{
-	int id;
-	int version;
-};
+//struct EntityID // You know what to do
+//{
+//	int id;
+//	int version;
+//};
 
 typedef unsigned int EntityID;
 const int MAX_COMPONENTS = 10;
@@ -130,6 +130,7 @@ private:
 // TODO: Generational indices for reuse of slots
 // ********************************************
 
+// GENERATIONAL IDs TODO: component pool will be arranged as VERSIONNUMBER COMPONENT VERSIONNUMBER COMPONENT in memory
 struct ComponentPool // TODO: Move to detail namespace
 {
 	ComponentPool(size_t elementsize)
