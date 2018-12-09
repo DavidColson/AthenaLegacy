@@ -58,20 +58,33 @@ gGameWorld.AssignComponent<Shape>(circle);
 #include <bitset>
 #include <vector>
 
-//struct EntityID // You know what to do
-//{
-//	int id;
-//	int version;
-//};
-
-typedef unsigned int EntityID;
+typedef unsigned int EntityIndex;
+typedef unsigned int EntityVersion;
+typedef unsigned long long EntityID;
 const int MAX_COMPONENTS = 10;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
-#define NULL_ENTITY EntityID(-1)
-
 struct Space;
+
+// Move into the detail namespace
+inline EntityID CreateEntityId(EntityIndex index, EntityVersion version)
+{
+	return ((EntityID)index << 32) | ((EntityID)version);
+}
+inline EntityIndex GetEntityIndex(EntityID id)
+{
+	return id >> 32;
+}
+inline EntityVersion GetEntityVersion(EntityID id)
+{
+	return (EntityVersion)id;
+}
+inline bool IsEntityValid(EntityID id)
+{
+	return (id >> 32) != EntityIndex(-1);
+}
+
 
 
 // Gives you the id within this world for a given component type
@@ -85,6 +98,8 @@ int GetComponentId() // Move this whole function to the detail namespace
 	static int s_componentId = s_componentCounter++;
 	return s_componentId;
 }
+
+
 
 // Used to relate components to the Type objects in the reflection database
 struct ComponentIdToTypeIdMap // TODO: Move to detail namespace
@@ -101,6 +116,8 @@ private:
 	std::unordered_map<int, TypeId> m_componentToType;
 };
 extern ComponentIdToTypeIdMap g_componentTypeMap;
+
+
 
 // *****************************************
 // Base class for systems
@@ -182,12 +199,12 @@ struct Space
 	{
 		for (System* pSys : m_systems)
 		{
-			for (EntityID i = 0; i < m_entities.size(); i++)
+			for (EntityIndex i = 0; i < m_entities.size(); i++)
 			{
 				ComponentMask mask = m_entities[i].m_mask;
-				if (m_entities[i].id != NULL_ENTITY && pSys->m_componentSubscription == (pSys->m_componentSubscription & mask))
+				if (IsEntityValid(m_entities[i].m_id) && pSys->m_componentSubscription == (pSys->m_componentSubscription & mask))
 				{
-					pSys->StartEntity(i, this);
+					pSys->StartEntity(m_entities[i].m_id, this);
 				}
 			}
 		}
@@ -199,12 +216,12 @@ struct Space
 	{
 		for (System* sys : m_systems)
 		{
-			for (EntityID i = 0; i < m_entities.size(); i++)
+			for (EntityIndex i = 0; i < m_entities.size(); i++)
 			{
 				ComponentMask mask = m_entities[i].m_mask;
-				if (m_entities[i].id != NULL_ENTITY && sys->m_componentSubscription == (sys->m_componentSubscription & mask) && !sys->m_componentSubscription.none())
+				if (IsEntityValid(m_entities[i].m_id) && sys->m_componentSubscription == (sys->m_componentSubscription & mask) && !sys->m_componentSubscription.none())
 				{
-					sys->UpdateEntity(i, this, deltaTime);
+					sys->UpdateEntity(m_entities[i].m_id, this, deltaTime);
 				}
 			}
 		}
@@ -213,33 +230,32 @@ struct Space
 	// Creates an entity, simply makes a new id and mask
 	EntityID NewEntity()// TODO: Move implementation to cpp
 	{
- 		if (!m_freeEntityIds.empty())
+ 		if (!m_freeEntities.empty())
 		{
-			EntityID newId = m_freeEntityIds.back();
-			m_freeEntityIds.pop_back();
-			m_entities[newId].id = newId;
-			return newId;
+			EntityIndex newIndex = m_freeEntities.back();
+			m_freeEntities.pop_back();
+			m_entities[newIndex].m_id = CreateEntityId(newIndex, GetEntityVersion(m_entities[newIndex].m_id));
+			return m_entities[newIndex].m_id;
 		}
-		m_entities.push_back({ EntityID(m_entities.size()), ComponentMask() });
-		return EntityID(m_entities.size() - 1);
+		m_entities.push_back({ CreateEntityId(EntityIndex(m_entities.size()), 0), ComponentMask() });
+		return m_entities.back().m_id;
 	}
 
 	void DestroyEntity(EntityID id)
 	{
-		// TODO: Create an iterator to loop over the components of a specific entity
 		for (int i = 0; i < MAX_COMPONENTS; i++)
 		{
-			// For each component ID, check the bitmask, if no, continue, if yes, save the ID and proceed to destroy the component
+			// For each component ID, check the bitmask, if no, continue, if yes, destroy the component
 			std::bitset<MAX_COMPONENTS> mask;
 			mask.set(i, true);
-			if (mask == (m_entities[id].m_mask & mask))
+			if (mask == (m_entities[GetEntityIndex(id)].m_mask & mask))
 			{
-				m_componentPools[i]->destroy(id);
+				m_componentPools[i]->destroy(GetEntityIndex(id));
 			}
 		}
-		m_entities[id].id = NULL_ENTITY;
-		m_entities[id].m_mask.reset();
-		m_freeEntityIds.push_back(id);
+		m_entities[GetEntityIndex(id)].m_id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
+		m_entities[GetEntityIndex(id)].m_mask.reset(); // clear components
+		m_freeEntities.push_back(GetEntityIndex(id));
 	}
 
 	// Makes a new system instance
@@ -256,6 +272,9 @@ struct Space
 	template<typename T>
 	T* AssignComponent(EntityID id) // TODO: Move implementation to lower down in the file
 	{
+		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+			return nullptr;
+
 		int componentId = GetComponentId<T>();
 		if (m_componentPools.size() <= componentId) // Not enough component pool
 		{
@@ -270,11 +289,10 @@ struct Space
 		ASSERT(HasComponent<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
 		
 		// Looks up the component in the pool, and initializes it with placement new
-		// TODO: Fatal error, trying to assign to component that has no pool
-		T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(id))) T();
+		T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(GetEntityIndex(id)))) T();
 
 		// Set the bit for this component to true
-		m_entities[id].m_mask.set(componentId);
+		m_entities[GetEntityIndex(id)].m_mask.set(componentId);
 		return pComponent;
 	}
 
@@ -283,9 +301,12 @@ struct Space
 	template<typename T>
 	T* GetComponent(EntityID id) // TODO: Move implementation to lower down in the file
 	{
+		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+			return nullptr;
+
 		int componentId = GetComponentId<T>();
 		ASSERT(HasComponent<T>(id), "The component you're trying to access is not assigned to this entity");
-		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(id));
+		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(GetEntityIndex(id)));
 		return pComponent;
 	}
 
@@ -293,8 +314,11 @@ struct Space
 	template<typename T>
 	bool HasComponent(EntityID id)
 	{
+		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+			return false;
+
 		int componentId = GetComponentId<T>();
-		return m_entities[id].m_mask.test(componentId);
+		return m_entities[GetEntityIndex(id)].m_mask.test(componentId);
 	}
 
 	std::vector<System*> m_systems;
@@ -303,9 +327,9 @@ struct Space
 
 	struct EntityDesc
 	{
-		EntityID id;
+		EntityID m_id;
 		ComponentMask m_mask;
 	};
 	std::vector<EntityDesc> m_entities;
-	std::vector<EntityID> m_freeEntityIds;
+	std::vector<EntityIndex> m_freeEntities;
 };
