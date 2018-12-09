@@ -212,10 +212,11 @@ void Graphics::RenderFrame()
 
 	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
 
-	for (RenderProxy* proxy : pCtx->m_renderProxies)
+	for (RenderProxy* proxy : pCtx->m_renderQueue)
 	{
 		proxy->Draw();
 	}
+	pCtx->m_renderQueue.clear();
 	pCtx->m_pFontRender->Draw("Asteroids", int(pCtx->m_windowWidth / pCtx->m_pixelScale * 0.5f), int(pCtx->m_windowHeight / pCtx->m_pixelScale - 53.0f));
 
 	// Now we change the render target to the swap chain back buffer, render onto a quad, and then render imgui
@@ -262,7 +263,7 @@ void Graphics::Shutdown()
 
 void Graphics::SubmitProxy(RenderProxy* pRenderProxy)
 {
-	pCtx->m_renderProxies.push_back(pRenderProxy);
+	pCtx->m_renderQueue.push_back(pRenderProxy);
 }
 
 Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader)

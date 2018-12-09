@@ -59,7 +59,7 @@ void ShowEntityInspector()
 		std::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
-		if (mask == (pCurrentSpace->m_entities[selectedEntity] & mask))
+		if (mask == (pCurrentSpace->m_entities[selectedEntity].m_mask & mask))
 		{
 			// Lookup the type object for that component ID (need a new accessor in TypeDB)
 			Type* componentType = TypeDB::GetType(g_componentTypeMap.LookupTypeId(i));
@@ -107,11 +107,16 @@ void ShowEntityList()
 
 	ImGui::Begin("Entity List", &showEntityList);
 
+	// TODO: Make an entity iterator for the space so we can avoid having to do this null_entity check here
 	// We have the entity Id
 	int entity = 1;
 	for (int i = 0; i < pCurrentSpace->m_entities.size(); i++)
 	{
 		EntityID entity = i;
+
+		if (pCurrentSpace->m_entities[entity].id == NULL_ENTITY)
+			continue;
+
 		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
 		if (selectedEntity == entity)

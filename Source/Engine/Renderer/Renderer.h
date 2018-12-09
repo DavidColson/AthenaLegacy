@@ -85,5 +85,5 @@ struct RenderContext
 	float m_windowWidth{ 0 };
 	float m_windowHeight{ 0 };
 
-	std::vector<RenderProxy*> m_renderProxies;
+	std::vector<RenderProxy*> m_renderQueue;
 };

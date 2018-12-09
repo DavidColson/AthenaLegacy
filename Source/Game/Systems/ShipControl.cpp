@@ -24,13 +24,16 @@ void SShipControl::UpdateEntity(EntityID id, Space* space, float deltaTime)
 	if (Input::GetKeyHeld(SDL_SCANCODE_RIGHT))
 		pTransform->m_rot -= pControl->m_rotateSpeed;
 
+	// Shoot a bullet
 	if (Input::GetKeyDown(SDL_SCANCODE_SPACE))
 	{
 		EntityID bullet = space->NewEntity();
+		CBullet* pBullet = space->AssignComponent<CBullet>(bullet);
+
 		CTransform* pBulletTrans = space->AssignComponent<CTransform>(bullet);
 		pBulletTrans->m_pos = pTransform->m_pos;
 		vec3 travelDir = vec3(-cos(pTransform->m_rot), -sin(pTransform->m_rot), 0.0f);
-		pBulletTrans->m_vel = pTransform->m_vel + travelDir * 600.0f;
+		pBulletTrans->m_vel = pTransform->m_vel + travelDir * pBullet->m_speed;
 		pBulletTrans->m_rot = pTransform->m_rot;
 
 		CDrawable* pDrawable = space->AssignComponent<CDrawable>(bullet);
@@ -54,4 +57,3 @@ void SShipControl::SetSubscriptions()
 	Subscribe<CTransform>();
 	Subscribe<CPlayerControl>();
 }
-

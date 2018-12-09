@@ -8,10 +8,6 @@ void SDrawPolygon::StartEntity(EntityID id, Space * space)
 {
 	CTransform* pTransform = space->GetComponent<CTransform>(id);
 	CDrawable* pDrawable = space->GetComponent<CDrawable>(id);
-
-	Graphics::SubmitProxy(&pDrawable->m_renderProxy);
-
-	pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot, pTransform->m_sca);
 }
 
 void SDrawPolygon::UpdateEntity(EntityID id, Space * space, float deltaTime)
@@ -21,6 +17,8 @@ void SDrawPolygon::UpdateEntity(EntityID id, Space * space, float deltaTime)
 
 	pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot, pTransform->m_sca);
 	pDrawable->m_renderProxy.m_lineThickness = pDrawable->m_lineThickness;
+
+	Graphics::SubmitProxy(&pDrawable->m_renderProxy);
 }
 
 void SDrawPolygon::SetSubscriptions()

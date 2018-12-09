@@ -69,6 +69,8 @@ const int MAX_COMPONENTS = 10;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
+#define NULL_ENTITY EntityID(-1)
+
 struct Space;
 
 
@@ -127,13 +129,11 @@ private:
 // ********************************************
 // All components are stored in component pools
 // Memory is managed manually
-// TODO: Generational indices for reuse of slots
 // ********************************************
 
-// GENERATIONAL IDs TODO: component pool will be arranged as VERSIONNUMBER COMPONENT VERSIONNUMBER COMPONENT in memory
-struct ComponentPool // TODO: Move to detail namespace
+struct BaseComponentPool // TODO: Move to detail namespace
 {
-	ComponentPool(size_t elementsize)
+	BaseComponentPool(size_t elementsize)
 	{
 		elementSize = elementsize;
 		pData = new char[elementSize * MAX_ENTITIES];
@@ -142,13 +142,27 @@ struct ComponentPool // TODO: Move to detail namespace
 
 	inline void* get(size_t index)
 	{
-		ASSERT(index < MAX_ENTITIES, "Entity overrun, delete some entities");
+		ASSERT(index < size, "Entity overrun, delete some entities");
 		return pData + index * elementSize;
 	}
+
+	virtual void destroy(size_t index) = 0;
 
 	char* pData;
 	size_t elementSize;
 	size_t size = 0;
+};
+
+template <typename T>
+struct ComponentPool : public BaseComponentPool // TODO: Move to detail namespace
+{
+	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) {}
+
+	virtual void destroy(size_t index) override
+	{
+		ASSERT(index < size, "Trying to delete an entity with an ID greater than max allowed entities");
+		static_cast<T*>(get(index))->~T();
+	}
 };
 
 // *****************************************
@@ -170,8 +184,8 @@ struct Space
 		{
 			for (EntityID i = 0; i < m_entities.size(); i++)
 			{
-				ComponentMask mask = m_entities[i];
-				if (pSys->m_componentSubscription == (pSys->m_componentSubscription & mask))
+				ComponentMask mask = m_entities[i].m_mask;
+				if (m_entities[i].id != NULL_ENTITY && pSys->m_componentSubscription == (pSys->m_componentSubscription & mask))
 				{
 					pSys->StartEntity(i, this);
 				}
@@ -187,8 +201,8 @@ struct Space
 		{
 			for (EntityID i = 0; i < m_entities.size(); i++)
 			{
-				ComponentMask mask = m_entities[i];
-				if (sys->m_componentSubscription == (sys->m_componentSubscription & mask) && !sys->m_componentSubscription.none())
+				ComponentMask mask = m_entities[i].m_mask;
+				if (m_entities[i].id != NULL_ENTITY && sys->m_componentSubscription == (sys->m_componentSubscription & mask) && !sys->m_componentSubscription.none())
 				{
 					sys->UpdateEntity(i, this, deltaTime);
 				}
@@ -199,8 +213,33 @@ struct Space
 	// Creates an entity, simply makes a new id and mask
 	EntityID NewEntity()// TODO: Move implementation to cpp
 	{
-		m_entities.push_back(ComponentMask());
+ 		if (!m_freeEntityIds.empty())
+		{
+			EntityID newId = m_freeEntityIds.back();
+			m_freeEntityIds.pop_back();
+			m_entities[newId].id = newId;
+			return newId;
+		}
+		m_entities.push_back({ EntityID(m_entities.size()), ComponentMask() });
 		return EntityID(m_entities.size() - 1);
+	}
+
+	void DestroyEntity(EntityID id)
+	{
+		// TODO: Create an iterator to loop over the components of a specific entity
+		for (int i = 0; i < MAX_COMPONENTS; i++)
+		{
+			// For each component ID, check the bitmask, if no, continue, if yes, save the ID and proceed to destroy the component
+			std::bitset<MAX_COMPONENTS> mask;
+			mask.set(i, true);
+			if (mask == (m_entities[id].m_mask & mask))
+			{
+				m_componentPools[i]->destroy(id);
+			}
+		}
+		m_entities[id].id = NULL_ENTITY;
+		m_entities[id].m_mask.reset();
+		m_freeEntityIds.push_back(id);
 	}
 
 	// Makes a new system instance
@@ -224,18 +263,18 @@ struct Space
 		}
 		if (m_componentPools[componentId] == nullptr) // New component, make a new pool
 		{
-			m_componentPools[componentId] = new ComponentPool(sizeof(T));
+			m_componentPools[componentId] = new ComponentPool<T>(sizeof(T));
 		}
 
 		// Check the mask so you're not overwriting a component
-		ASSERT(m_entities[id].test(componentId) == false, "You're trying to assign a component to an entity that already has this component");
+		ASSERT(HasComponent<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
 		
 		// Looks up the component in the pool, and initializes it with placement new
 		// TODO: Fatal error, trying to assign to component that has no pool
 		T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(id))) T();
 
 		// Set the bit for this component to true
-		m_entities[id].set(componentId);
+		m_entities[id].m_mask.set(componentId);
 		return pComponent;
 	}
 
@@ -245,13 +284,28 @@ struct Space
 	T* GetComponent(EntityID id) // TODO: Move implementation to lower down in the file
 	{
 		int componentId = GetComponentId<T>();
-		ASSERT(m_entities[id].test(componentId), "The component you're trying to access is not assigned to this entity");
+		ASSERT(HasComponent<T>(id), "The component you're trying to access is not assigned to this entity");
 		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(id));
 		return pComponent;
 	}
 
+	// Checks if an entity with given Id has a component of type T assigned to it
+	template<typename T>
+	bool HasComponent(EntityID id)
+	{
+		int componentId = GetComponentId<T>();
+		return m_entities[id].m_mask.test(componentId);
+	}
+
 	std::vector<System*> m_systems;
 
-	std::vector<ComponentPool*> m_componentPools;
-	std::vector<ComponentMask> m_entities; // TODO: Generational Indicies
+	std::vector<BaseComponentPool*> m_componentPools;
+
+	struct EntityDesc
+	{
+		EntityID id;
+		ComponentMask m_mask;
+	};
+	std::vector<EntityDesc> m_entities;
+	std::vector<EntityID> m_freeEntityIds;
 };

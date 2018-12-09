@@ -19,4 +19,7 @@ REGISTRATION
 		->RegisterMember("m_rot", &CTransform::m_rot)
 		->RegisterMember("m_sca", &CTransform::m_sca)
 		->RegisterMember("m_vel", &CTransform::m_vel);
+
+	RegisterNewTypeAsComponent(CBullet)
+		->RegisterMember("m_speed", &CBullet::m_speed);
 }

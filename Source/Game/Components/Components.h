@@ -26,3 +26,8 @@ struct CPlayerControl
 	float m_dampening{ 0.f };
 	vec2 m_someVec{ vec2(5.0f, 2.0f) };
 };
+
+struct CBullet
+{
+	float m_speed = 600.0f;
+};
