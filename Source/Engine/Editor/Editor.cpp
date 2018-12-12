@@ -15,7 +15,7 @@ namespace {
 	bool showEntityInspector = true;
 	bool showEntityList = true;
 	EntityID selectedEntity = -1;
-	static Space* pCurrentSpace;
+	static Scene* pCurrentScene;
 }
 
 void ShowLog()
@@ -47,7 +47,7 @@ void ShowEntityInspector()
 
 	ImGui::Begin("Entity Inspector", &showEntityInspector);
 
-	if (GetEntityIndex(selectedEntity) > pCurrentSpace->m_entities.size())
+	if (GetEntityIndex(selectedEntity) > pCurrentScene->m_entities.size())
 	{
 		ImGui::End();
 		return;
@@ -59,18 +59,18 @@ void ShowEntityInspector()
 		std::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
-		if (mask == (pCurrentSpace->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
+		if (mask == (pCurrentScene->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
 			// Lookup the type object for that component ID (need a new accessor in TypeDB)
 			Type* componentType = TypeDB::GetType(g_componentTypeMap.LookupTypeId(i));
 			if (ImGui::CollapsingHeader(componentType->m_name))
 			{
-				// TODO: Ideally systems outside of Spaces shouldn't touch component pools, make something to hide this and ensure safety
+				// TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
 				// TODO: Create a component iterator which gives you variants on each iteration all setup for you
 				// Directly access componentPools and put the pointer to that component in a RefVariant's m_data, and save the type as well
 				VariantBase component;
 				component.m_type = componentType;
-				component.m_data = pCurrentSpace->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
+				component.m_data = pCurrentScene->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
 
 				// Loop the memberlist of the type, creating editors for each type, getting from the RefVariant of the component
 				for (std::pair<std::string, TypeDB::Member*> member : component.m_type->m_memberList)
@@ -119,7 +119,7 @@ void ShowEntityList()
 
 	ImGui::Begin("Entity List", &showEntityList);
 
-	for (EntityID entity : View<>(pCurrentSpace))
+	for (EntityID entity : SceneView<>(pCurrentScene))
 	{
 		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
@@ -167,7 +167,7 @@ void Editor::ShowEditor(bool& shutdown)
 	ShowEntityList();
 }
 
-void Editor::SetCurrentSpace(Space* pSpace)
+void Editor::SetCurrentScene(Scene* pScene)
 {
-	pCurrentSpace = pSpace;
+	pCurrentScene = pScene;
 }

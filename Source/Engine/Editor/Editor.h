@@ -1,9 +1,9 @@
 #pragma once
 
-struct Space;
+struct Scene;
 
 namespace Editor
 {
-	void SetCurrentSpace(Space* pSpace);
+	void SetCurrentScene(Scene* pScene);
 	void ShowEditor(bool& shutdown);
 }

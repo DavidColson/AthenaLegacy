@@ -3,12 +3,12 @@
 #include <GameFramework/World.h>
 
 
-void CollisionSystemUpdate(Space* space, float deltaTime);
+void CollisionSystemUpdate(Scene* scene, float deltaTime);
 
-void AsteroidSystemUpdate(Space* space, float deltaTime);
+void AsteroidSystemUpdate(Scene* scene, float deltaTime);
 
-void DrawShapeSystem(Space* space, float deltaTime);
+void DrawShapeSystem(Scene* scene, float deltaTime);
 
-void MovementSystemUpdate(Space* space, float deltaTime);
+void MovementSystemUpdate(Scene* scene, float deltaTime);
 
-void ShipControlSystemUpdate(Space* space, float deltaTime);
+void ShipControlSystemUpdate(Scene* scene, float deltaTime);

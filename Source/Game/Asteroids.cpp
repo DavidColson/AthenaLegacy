@@ -10,7 +10,7 @@
 #include <time.h>
 
 namespace {
-	Space* pCurrentSpace;
+	Scene* pCurrentScene;
 }
 
 void Game::Startup()
@@ -150,7 +150,7 @@ void Game::Startup()
 
 	// Create our scene
 	// ****************
-	pCurrentSpace = new Space();
+	pCurrentScene = new Scene();
 
 	srand(uint(time(nullptr)));
 
@@ -161,25 +161,25 @@ void Game::Startup()
 		vec3 randomLocation = vec3(float(rand() % 1800), float(rand() % 1000), 0.0f);
 		vec3 randomVelocity = vec3(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
 		float randomRotation = randf() * 6.282f;
-		EntityID asteroid = pCurrentSpace->NewEntity();
-		CTransform* pTranform = pCurrentSpace->AssignComponent<CTransform>(asteroid);
+		EntityID asteroid = pCurrentScene->NewEntity();
+		CTransform* pTranform = pCurrentScene->AssignComponent<CTransform>(asteroid);
 		pTranform->m_pos = randomLocation;
 		pTranform->m_sca = vec3(90.0f, 90.0f, 1.0f);
 		pTranform->m_vel = randomVelocity;
 		pTranform->m_rot = randomRotation;
 
-		pCurrentSpace->AssignComponent<CDrawable>(asteroid)->m_renderProxy = asteroidMeshes[rand() % 4];
+		pCurrentScene->AssignComponent<CDrawable>(asteroid)->m_renderProxy = asteroidMeshes[rand() % 4];
 	}
 
 	// Ship
-	EntityID ship = pCurrentSpace->NewEntity();
-	CTransform* pTransform = pCurrentSpace->AssignComponent<CTransform>(ship);
+	EntityID ship = pCurrentScene->NewEntity();
+	CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(ship);
 
 	pTransform->m_pos = vec3(450.0f, 250.0f, 0.0f);
 	pTransform->m_sca = vec3(30.f, 35.f, 1.0f);
 
-	pCurrentSpace->AssignComponent<CPlayerControl>(ship);
-	pCurrentSpace->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
+	pCurrentScene->AssignComponent<CPlayerControl>(ship);
+	pCurrentScene->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
 		{
 			Vertex(vec3(0.f, 0.5f, 0.f)),
 			Vertex(vec3(1.f, 0.8f, 0.f)),
@@ -191,12 +191,12 @@ void Game::Startup()
 			4, 0, 1, 2, 3, 4, 0, 1
 		});
 
-	Editor::SetCurrentSpace(pCurrentSpace);
+	Editor::SetCurrentScene(pCurrentScene);
 }
 
 void Game::Update(float deltaTime)
 {
-	ShipControlSystemUpdate(pCurrentSpace, deltaTime);
-	MovementSystemUpdate(pCurrentSpace, deltaTime);
-	DrawShapeSystem(pCurrentSpace, deltaTime);
+	ShipControlSystemUpdate(pCurrentScene, deltaTime);
+	MovementSystemUpdate(pCurrentScene, deltaTime);
+	DrawShapeSystem(pCurrentScene, deltaTime);
 }

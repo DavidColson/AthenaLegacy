@@ -65,7 +65,7 @@ const int MAX_COMPONENTS = 10;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
-struct Space;
+struct Scene;
 
 // Move into the detail namespace
 inline EntityID CreateEntityId(EntityIndex index, EntityVersion version)
@@ -158,13 +158,13 @@ struct ComponentPool : public BaseComponentPool // TODO: Move to detail namespac
 };
 
 // *****************************************
-// A game space, holds enties and systems
+// A game scene, holds enties and systems
 // Updates systems and manages creation and
 // deletion of entities and components
-// You should be able to maintain multiple spaces at once
+// You should be able to maintain multiple scenes at once
 // *****************************************
 
-struct Space
+struct Scene
 {
 	// TODO Destructor, delete systems and components
 
@@ -264,11 +264,11 @@ struct Space
 	std::vector<EntityIndex> m_freeEntities;
 };
 
-// View into the space for a given set of components
+// View into the Scene for a given set of components
 template<typename... ComponentTypes>
-struct View
+struct SceneView
 {
-	View(Space* pSpace) : m_pSpace(pSpace) {
+	SceneView(Scene* pScene) : m_pScene(pScene) {
 		if (sizeof...(ComponentTypes) == 0)
 		{
 			m_all = true;
@@ -283,9 +283,9 @@ struct View
 
 	struct Iterator
 	{
-		Iterator(Space* pSpace, EntityIndex index, ComponentMask mask, bool all) : m_pSpace(pSpace), m_index(index), m_mask(mask), m_all(all) {}
+		Iterator(Scene* pScene, EntityIndex index, ComponentMask mask, bool all) : m_pScene(pScene), m_index(index), m_mask(mask), m_all(all) {}
 
-		EntityID operator*() const { return m_pSpace->m_entities[m_index].m_id; }
+		EntityID operator*() const { return m_pScene->m_entities[m_index].m_id; }
 		bool operator==(const Iterator& other) const { return m_index == other.m_index; }
 		bool operator!=(const Iterator& other) const { return m_index != other.m_index; }
 
@@ -293,9 +293,9 @@ struct View
 		{
 			return 
 				// It's a valid entity ID
-				IsEntityValid(m_pSpace->m_entities[m_index].m_id) && 
+				IsEntityValid(m_pScene->m_entities[m_index].m_id) && 
 				// It has the correct component mask
-				(m_all || m_mask == (m_mask & m_pSpace->m_entities[m_index].m_mask));
+				(m_all || m_mask == (m_mask & m_pScene->m_entities[m_index].m_mask));
 		}
 
 		Iterator& operator++()
@@ -303,12 +303,12 @@ struct View
 			do
 			{
 				m_index++;
-			} while (m_index < m_pSpace->m_entities.size() && !ValidIndex());
+			} while (m_index < m_pScene->m_entities.size() && !ValidIndex());
 			return *this;
 		}
 
 		EntityIndex m_index;
-		Space* m_pSpace;
+		Scene* m_pScene;
 		ComponentMask m_mask;
 		bool m_all{ false };
 	};
@@ -316,19 +316,19 @@ struct View
 	const Iterator begin() const 
 	{
 		int firstIndex = 0;
-		while (m_componentMask != (m_componentMask & m_pSpace->m_entities[firstIndex].m_mask))
+		while (m_componentMask != (m_componentMask & m_pScene->m_entities[firstIndex].m_mask))
 		{
 			firstIndex++;
 		}
-		return Iterator(m_pSpace, firstIndex, m_componentMask, m_all);
+		return Iterator(m_pScene, firstIndex, m_componentMask, m_all);
 	}
 
 	const Iterator end() const
 	{
-		return Iterator(m_pSpace, EntityIndex(m_pSpace->m_entities.size()), m_componentMask, m_all);
+		return Iterator(m_pScene, EntityIndex(m_pScene->m_entities.size()), m_componentMask, m_all);
 	}
 
-	Space* m_pSpace{ nullptr };
+	Scene* m_pScene{ nullptr };
 	ComponentMask m_componentMask;
 	bool m_all{ false };
 };
