@@ -22,4 +22,9 @@ REGISTRATION
 
 	RegisterNewTypeAsComponent(CBullet)
 		->RegisterMember("m_speed", &CBullet::m_speed);
+
+	RegisterNewTypeAsComponent(CCollidable)
+		->RegisterMember("m_radius", &CCollidable::m_radius)
+		->RegisterMember("m_colliding", &CCollidable::m_colliding)
+		->RegisterMember("m_other", &CCollidable::m_other);
 }

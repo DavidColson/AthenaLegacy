@@ -1,8 +1,6 @@
 #include "Asteroids.h"
 
-#include "Systems/DrawPolygon.h"
-#include "Systems/Movement.h"
-#include "Systems/ShipControl.h"
+#include "Systems/Systems.h"
 #include "Components/Components.h"
 
 #include <Editor/Editor.h>
@@ -154,10 +152,6 @@ void Game::Startup()
 	// ****************
 	pCurrentSpace = new Space();
 
-	pCurrentSpace->RegisterSystem<SDrawPolygon>();
-	pCurrentSpace->RegisterSystem<SShipControl>();
-	pCurrentSpace->RegisterSystem<SMovement>();
-
 	srand(uint(time(nullptr)));
 
 	auto randf = []() { return float(rand()) / float(RAND_MAX); };
@@ -178,7 +172,6 @@ void Game::Startup()
 	}
 
 	// Ship
-
 	EntityID ship = pCurrentSpace->NewEntity();
 	CTransform* pTransform = pCurrentSpace->AssignComponent<CTransform>(ship);
 
@@ -198,11 +191,12 @@ void Game::Startup()
 			4, 0, 1, 2, 3, 4, 0, 1
 		});
 
-	pCurrentSpace->StartSystems();
 	Editor::SetCurrentSpace(pCurrentSpace);
 }
 
 void Game::Update(float deltaTime)
 {
-	pCurrentSpace->UpdateSystems(deltaTime);
+	ShipControlSystemUpdate(pCurrentSpace, deltaTime);
+	MovementSystemUpdate(pCurrentSpace, deltaTime);
+	DrawShapeSystem(pCurrentSpace, deltaTime);
 }

@@ -53,10 +53,8 @@ set(SOURCES
     "Source/Engine/Maths/Maths.cpp"
     "Source/Game/Asteroids.h"
     "Source/Game/Asteroids.cpp"
-    "Source/Game/Systems/DrawPolygon.h"
-    "Source/Game/Systems/DrawPolygon.cpp"
-    "Source/Game/Systems/Movement.h"
-    "Source/Game/Systems/Movement.cpp"
+	"Source/Game/Systems/Systems.h"
+    "Source/Game/Systems/Systems.cpp"
     "Source/Game/Components/Components.h"
     "Source/Game/Components/Components.cpp"
     )

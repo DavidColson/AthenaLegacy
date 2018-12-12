@@ -3,6 +3,7 @@
 #include <Maths/Maths.h>
 #include <Renderer/RenderProxy.h>
 #include <Log.h>
+#include <GameFramework/World.h>
 
 struct CTransform
 {
@@ -30,4 +31,11 @@ struct CPlayerControl
 struct CBullet
 {
 	float m_speed = 600.0f;
+};
+
+struct CCollidable
+{
+	float m_radius;
+	bool m_colliding;
+	EntityID m_other;
 };

@@ -47,7 +47,7 @@ void ShowEntityInspector()
 
 	ImGui::Begin("Entity Inspector", &showEntityInspector);
 
-	if (selectedEntity > pCurrentSpace->m_entities.size())
+	if (GetEntityIndex(selectedEntity) > pCurrentSpace->m_entities.size())
 	{
 		ImGui::End();
 		return;
@@ -59,7 +59,7 @@ void ShowEntityInspector()
 		std::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
-		if (mask == (pCurrentSpace->m_entities[selectedEntity].m_mask & mask))
+		if (mask == (pCurrentSpace->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
 			// Lookup the type object for that component ID (need a new accessor in TypeDB)
 			Type* componentType = TypeDB::GetType(g_componentTypeMap.LookupTypeId(i));
@@ -70,7 +70,7 @@ void ShowEntityInspector()
 				// Directly access componentPools and put the pointer to that component in a RefVariant's m_data, and save the type as well
 				VariantBase component;
 				component.m_type = componentType;
-				component.m_data = pCurrentSpace->m_componentPools[i]->get(selectedEntity);
+				component.m_data = pCurrentSpace->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
 
 				// Loop the memberlist of the type, creating editors for each type, getting from the RefVariant of the component
 				for (std::pair<std::string, TypeDB::Member*> member : component.m_type->m_memberList)
@@ -94,6 +94,16 @@ void ShowEntityInspector()
 						ImGui::DragFloat3(member.first.c_str(), list, 0.1f);
 						vec->x = list[0]; vec->y = list[1]; vec->z = list[2];
 					}
+					else if (member.second->m_type == TypeDB::GetType<bool>())
+					{
+						bool* boolean = (bool*)member.second->GetRefValue(component).m_data;
+						ImGui::Checkbox(member.first.c_str(), boolean);
+					}
+					else if (member.second->m_type == TypeDB::GetType<EntityID>())
+					{
+						EntityID entity = *(EntityID*)member.second->GetRefValue(component).m_data;
+						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member.first.c_str());
+					}
 				}
 			}
 		}
@@ -109,26 +119,20 @@ void ShowEntityList()
 
 	ImGui::Begin("Entity List", &showEntityList);
 
-	// TODO: Make an entity iterator for the space so we can avoid having to do this null_entity check here
-	// We have the entity Id
-	int entity = 1;
-	for (int i = 0; i < pCurrentSpace->m_entities.size(); i++)
+	for (EntityID entity : View<>(pCurrentSpace))
 	{
-		EntityID entity = i;
-
-		if (!IsEntityValid(pCurrentSpace->m_entities[entity].m_id))
-			continue;
-
 		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
 		if (selectedEntity == entity)
 			node_flags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "Entity(%i)", entity);
+		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "Entity(%i)", GetEntityIndex(entity));
 		if (ImGui::IsItemClicked())
 			selectedEntity = entity;
 	}
 	ImGui::End();
+
+	//ImGui::ShowDemoWindow();
 }
 
 void Editor::ShowEditor(bool& shutdown)

@@ -118,31 +118,6 @@ private:
 extern ComponentIdToTypeIdMap g_componentTypeMap;
 
 
-
-// *****************************************
-// Base class for systems
-// *****************************************
-
-class System
-{
-	friend struct Space;
-public:
-
-	virtual void StartEntity(EntityID id, Space* space) {};
-	virtual void UpdateEntity(EntityID id, Space* space, float deltaTime) = 0;
-	virtual void SetSubscriptions() = 0;
-
-protected:
-	template <typename T>
-	void Subscribe()
-	{
-		m_componentSubscription.set(GetComponentId<T>());
-	}
-
-private:
-	ComponentMask m_componentSubscription;
-};
-
 // ********************************************
 // All components are stored in component pools
 // Memory is managed manually
@@ -193,40 +168,6 @@ struct Space
 {
 	// TODO Destructor, delete systems and components
 
-	// Goes through each system looping entities and calling the startup function
-	// for entities matching the subscription. Called once on scene laod
-	void StartSystems() // TODO: Move implementation to cpp
-	{
-		for (System* pSys : m_systems)
-		{
-			for (EntityIndex i = 0; i < m_entities.size(); i++)
-			{
-				ComponentMask mask = m_entities[i].m_mask;
-				if (IsEntityValid(m_entities[i].m_id) && pSys->m_componentSubscription == (pSys->m_componentSubscription & mask))
-				{
-					pSys->StartEntity(m_entities[i].m_id, this);
-				}
-			}
-		}
-	}
-
-	// Goes through each system one by one, looping through all entities and updating the
-	// system with entities that match the subscription
-	void UpdateSystems(float deltaTime)// TODO: Move implementation to cpp
-	{
-		for (System* sys : m_systems)
-		{
-			for (EntityIndex i = 0; i < m_entities.size(); i++)
-			{
-				ComponentMask mask = m_entities[i].m_mask;
-				if (IsEntityValid(m_entities[i].m_id) && sys->m_componentSubscription == (sys->m_componentSubscription & mask) && !sys->m_componentSubscription.none())
-				{
-					sys->UpdateEntity(m_entities[i].m_id, this, deltaTime);
-				}
-			}
-		}
-	}
-
 	// Creates an entity, simply makes a new id and mask
 	EntityID NewEntity()// TODO: Move implementation to cpp
 	{
@@ -256,15 +197,6 @@ struct Space
 		m_entities[GetEntityIndex(id)].m_id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
 		m_entities[GetEntityIndex(id)].m_mask.reset(); // clear components
 		m_freeEntities.push_back(GetEntityIndex(id));
-	}
-
-	// Makes a new system instance
-	template <typename T>
-	void RegisterSystem() // TODO: Move implementation to lower down in the file
-	{
-		T* pNewSystem = new T();
-		m_systems.push_back(pNewSystem);
-		pNewSystem->SetSubscriptions();
 	}
 
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
@@ -321,8 +253,6 @@ struct Space
 		return m_entities[GetEntityIndex(id)].m_mask.test(componentId);
 	}
 
-	std::vector<System*> m_systems;
-
 	std::vector<BaseComponentPool*> m_componentPools;
 
 	struct EntityDesc
@@ -332,4 +262,73 @@ struct Space
 	};
 	std::vector<EntityDesc> m_entities;
 	std::vector<EntityIndex> m_freeEntities;
+};
+
+// View into the space for a given set of components
+template<typename... ComponentTypes>
+struct View
+{
+	View(Space* pSpace) : m_pSpace(pSpace) {
+		if (sizeof...(ComponentTypes) == 0)
+		{
+			m_all = true;
+		}
+		else
+		{
+			int componentIds[] = { 0, GetComponentId<ComponentTypes>() ... };
+			for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)
+				m_componentMask.set(componentIds[i]);
+		}
+	}
+
+	struct Iterator
+	{
+		Iterator(Space* pSpace, EntityIndex index, ComponentMask mask, bool all) : m_pSpace(pSpace), m_index(index), m_mask(mask), m_all(all) {}
+
+		EntityID operator*() const { return m_pSpace->m_entities[m_index].m_id; }
+		bool operator==(const Iterator& other) const { return m_index == other.m_index; }
+		bool operator!=(const Iterator& other) const { return m_index != other.m_index; }
+
+		bool ValidIndex()
+		{
+			return 
+				// It's a valid entity ID
+				IsEntityValid(m_pSpace->m_entities[m_index].m_id) && 
+				// It has the correct component mask
+				(m_all || m_mask == (m_mask & m_pSpace->m_entities[m_index].m_mask));
+		}
+
+		Iterator& operator++()
+		{
+			do
+			{
+				m_index++;
+			} while (m_index < m_pSpace->m_entities.size() && !ValidIndex());
+			return *this;
+		}
+
+		EntityIndex m_index;
+		Space* m_pSpace;
+		ComponentMask m_mask;
+		bool m_all{ false };
+	};
+
+	const Iterator begin() const 
+	{
+		int firstIndex = 0;
+		while (m_componentMask != (m_componentMask & m_pSpace->m_entities[firstIndex].m_mask))
+		{
+			firstIndex++;
+		}
+		return Iterator(m_pSpace, firstIndex, m_componentMask, m_all);
+	}
+
+	const Iterator end() const
+	{
+		return Iterator(m_pSpace, EntityIndex(m_pSpace->m_entities.size()), m_componentMask, m_all);
+	}
+
+	Space* m_pSpace{ nullptr };
+	ComponentMask m_componentMask;
+	bool m_all{ false };
 };
