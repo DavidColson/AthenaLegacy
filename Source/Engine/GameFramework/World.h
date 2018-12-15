@@ -286,8 +286,14 @@ struct SceneView
 		Iterator(Scene* pScene, EntityIndex index, ComponentMask mask, bool all) : m_pScene(pScene), m_index(index), m_mask(mask), m_all(all) {}
 
 		EntityID operator*() const { return m_pScene->m_entities[m_index].m_id; }
-		bool operator==(const Iterator& other) const { return m_index == other.m_index; }
-		bool operator!=(const Iterator& other) const { return m_index != other.m_index; }
+		bool operator==(const Iterator& other) const 
+		{
+			return m_index == other.m_index || m_index == m_pScene->m_entities.size(); 
+		}
+		bool operator!=(const Iterator& other) const 
+		{
+			return m_index != other.m_index && m_index != m_pScene->m_entities.size();
+		}
 
 		bool ValidIndex()
 		{
