@@ -44,10 +44,10 @@ namespace TypeDB
 	struct VariantBase
 	{
 		template<typename T>
-		T& Get();
+		inline T& Get();
 
 		template<typename T>
-		bool IsA();
+		inline bool IsA();
 
 		Type* m_type;
 		void* m_data;
@@ -59,18 +59,18 @@ namespace TypeDB
 		~Variant();
 
 		template<typename T>
-		Variant(const T& value);
+		inline Variant(const T& value);
 
 		Variant(const Variant& copy);
 
 		template<typename T>
-		Variant& operator=(const T& value);
+		inline Variant& operator=(const T& value);
 	};
 
 	struct RefVariant : VariantBase
 	{
 		template<typename T>
-		RefVariant(const T& value);
+		inline RefVariant(const T& value);
 
 		RefVariant(const VariantBase& copy);
 
@@ -79,7 +79,7 @@ namespace TypeDB
 		RefVariant(const RefVariant& copy);
 
 		template<typename T>
-		RefVariant& operator=(const T& value);
+		inline RefVariant& operator=(const T& value);
 	};
 	
 
@@ -173,7 +173,7 @@ namespace TypeDB
 
 			Member_Internal(T I::* pointer) { m_pPointer = pointer;  }
 
-			virtual void SetValue(RefVariant&& obj, RefVariant value) override
+			inline virtual void SetValue(RefVariant&& obj, RefVariant value) override
 			{
 				// TODO: Get the type that value actually is and print it's name as an error i.e. 'value is a float but we expected a vec2'
 				ASSERT(value.IsA<T>(), "The value you supplied isn't the correct type");
@@ -181,23 +181,23 @@ namespace TypeDB
 				obj.Get<I>().*m_pPointer = value.Get<T>();
 			}
 
-			virtual Variant GetValue(RefVariant&& obj) override
+			inline virtual Variant GetValue(RefVariant&& obj) override
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
-			virtual Variant GetValue(RefVariant& obj) override
+			inline virtual Variant GetValue(RefVariant& obj) override
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
 
-			virtual RefVariant GetRefValue(RefVariant& obj)
+			inline virtual RefVariant GetRefValue(RefVariant& obj)
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return RefVariant(obj.Get<I>().*m_pPointer);
 			}
-			virtual RefVariant GetRefValue(RefVariant&& obj)
+			inline virtual RefVariant GetRefValue(RefVariant&& obj)
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return RefVariant(obj.Get<I>().*m_pPointer);
@@ -220,13 +220,13 @@ using namespace TypeDB;
 //////////////
 
 template<typename T>
-T& VariantBase::Get()
+inline T& VariantBase::Get()
 {
 	return *reinterpret_cast<T*>(m_data);
 }
 
 template<typename T>
-bool VariantBase::IsA()
+inline bool VariantBase::IsA()
 {
 	return TypeIdGenerator<T>::Id() == m_type->m_id;
 }
@@ -239,7 +239,7 @@ bool VariantBase::IsA()
 //////////
 
 template<typename T>
-Variant::Variant(const T& value)
+inline Variant::Variant(const T& value)
 {
 	size_t size = TypeDB::GetType<T>()->m_size;
 	m_data = new char[size];
@@ -248,7 +248,7 @@ Variant::Variant(const T& value)
 }
 
 template<typename T>
-Variant& Variant::operator=(const T& value)
+inline Variant& Variant::operator=(const T& value)
 {
 	if (m_typeId != TypeIdGenerator<T>::Id() && m_typeId != 0)
 	{
@@ -273,14 +273,14 @@ Variant& Variant::operator=(const T& value)
 /////////////
 
 template<typename T>
-RefVariant::RefVariant(const T& value)
+inline RefVariant::RefVariant(const T& value)
 {
 	m_type = TypeDB::GetType<T>();
 	m_data = const_cast<T*>(&value);
 }
 
 template<typename T>
-RefVariant& RefVariant::operator=(const T& value)
+inline RefVariant& RefVariant::operator=(const T& value)
 {
 	m_type = TypeDB::GetType<T>();
 	m_data = const_cast<T*>(&value);
