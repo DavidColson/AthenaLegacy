@@ -35,7 +35,7 @@ struct CBullet
 
 struct CCollidable
 {
-	float m_radius;
-	bool m_colliding;
+	float m_radius{ 40.f };
+	bool m_colliding{ false };
 	EntityID m_other;
 };

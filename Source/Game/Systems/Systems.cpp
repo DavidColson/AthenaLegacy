@@ -2,13 +2,42 @@
 
 #include "Components/Components.h"
 
+#include <Renderer/DebugDraw.h>
 #include <Renderer/Renderer.h>
 #include <Input/Input.h>
 
 void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 {
-	// Need to compare two entities at a time?
-	// Can't do this
+	for (EntityID entity : SceneView<CCollidable>(pScene))
+	{
+		CCollidable* pCollider = pScene->GetComponent<CCollidable>(entity);
+		pCollider->m_colliding = false;
+		pCollider->m_other = INVALID_ENTITY;
+	}
+
+	for (EntityID entity1 : SceneView<CTransform, CCollidable>(pScene))
+	{
+		vec2 pos = proj<2>(pScene->GetComponent<CTransform>(entity1)->m_pos);
+		float radius = pScene->GetComponent<CCollidable>(entity1)->m_radius;
+		DebugDraw::Draw2DCircle(pos, radius, vec3(1.0f, 0.0f, 0.0f));
+
+		for (EntityID entity2 : SceneView<CTransform, CCollidable>(pScene))
+		{
+			CCollidable* pCollider1 = pScene->GetComponent<CCollidable>(entity1);
+			CCollidable* pCollider2 = pScene->GetComponent<CCollidable>(entity2);
+
+			float distance = (pScene->GetComponent<CTransform>(entity1)->m_pos - pScene->GetComponent<CTransform>(entity2)->m_pos).mag();
+			float collisionDistance = pCollider1->m_radius + pCollider2->m_radius;
+			
+			if (distance < collisionDistance && entity1 != entity2)
+			{
+				pCollider1->m_colliding = true;
+				pCollider1->m_other = entity2;
+				pCollider2->m_colliding = true;
+				pCollider2->m_other = entity1;
+			}
+		}
+	}
 }
 
 void AsteroidSystemUpdate(Scene* pScene, float deltaTime)

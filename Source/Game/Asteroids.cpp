@@ -162,6 +162,7 @@ void Game::Startup()
 		vec3 randomVelocity = vec3(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
 		float randomRotation = randf() * 6.282f;
 		EntityID asteroid = pCurrentScene->NewEntity();
+		pCurrentScene->AssignComponent<CCollidable>(asteroid);
 		CTransform* pTranform = pCurrentScene->AssignComponent<CTransform>(asteroid);
 		pTranform->m_pos = randomLocation;
 		pTranform->m_sca = vec3(90.0f, 90.0f, 1.0f);
@@ -179,6 +180,7 @@ void Game::Startup()
 	pTransform->m_sca = vec3(30.f, 35.f, 1.0f);
 
 	pCurrentScene->AssignComponent<CPlayerControl>(ship);
+	pCurrentScene->AssignComponent<CCollidable>(ship)->m_radius = 17.f;
 	pCurrentScene->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
 		{
 			Vertex(vec3(0.f, 0.5f, 0.f)),
@@ -198,5 +200,6 @@ void Game::Update(float deltaTime)
 {
 	ShipControlSystemUpdate(pCurrentScene, deltaTime);
 	MovementSystemUpdate(pCurrentScene, deltaTime);
+	CollisionSystemUpdate(pCurrentScene, deltaTime);
 	DrawShapeSystem(pCurrentScene, deltaTime);
 }

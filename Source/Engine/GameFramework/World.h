@@ -85,6 +85,8 @@ inline bool IsEntityValid(EntityID id)
 	return (id >> 32) != EntityIndex(-1);
 }
 
+#define INVALID_ENTITY CreateEntityId(EntityIndex(-1), 0)
+
 
 
 // Gives you the id within this world for a given component type
