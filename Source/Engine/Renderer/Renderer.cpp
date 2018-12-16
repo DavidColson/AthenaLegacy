@@ -12,7 +12,9 @@
 #include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
 
 #include "Maths/Maths.h"
-#include "Renderer/RenderFont.h"
+#include "RenderFont.h"
+#include "DebugDraw.h"
+
 
 namespace {
 	RenderContext* pCtx = nullptr;
@@ -164,6 +166,8 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 50);
 
+	DebugDraw::Detail::Init();
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -219,6 +223,9 @@ void Graphics::RenderFrame()
 	pCtx->m_renderQueue.clear();
 	pCtx->m_pFontRender->Draw("Asteroids", int(pCtx->m_windowWidth / pCtx->m_pixelScale * 0.5f), int(pCtx->m_windowHeight / pCtx->m_pixelScale - 53.0f));
 
+	DebugDraw::Detail::DrawQueue();
+
+
 	// Now we change the render target to the swap chain back buffer, render onto a quad, and then render imgui
 	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pBackBuffer, NULL);
 	pCtx->m_pDeviceContext->ClearRenderTargetView(pCtx->m_pBackBuffer, color);
@@ -243,6 +250,7 @@ void Graphics::RenderFrame()
 	pCtx->m_pDeviceContext->PSSetSamplers(0, 1, &pCtx->m_frameTextureSampler);
 	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	pCtx->m_pDeviceContext->Draw(4, 0);
+
 
 	// Draw Imgui
 	ImGui::Render();
@@ -327,7 +335,7 @@ Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool ha
 	return shader;
 }
 
-Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents)
+Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents, bool withTexCoords /*= true*/)
 {
 	HRESULT hr;
 
@@ -361,15 +369,27 @@ Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents)
 	hr = Graphics::GetContext()->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.m_pVertexShader);
 	hr = Graphics::GetContext()->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.m_pPixelShader);
 
-	D3D11_INPUT_ELEMENT_DESC layout[] =
+	if (withTexCoords)
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	UINT numElements = ARRAYSIZE(layout);
-	hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
-	
+		D3D11_INPUT_ELEMENT_DESC layout[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		};
+		UINT numElements = ARRAYSIZE(layout);
+		hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
+	}
+	else
+	{
+		D3D11_INPUT_ELEMENT_DESC layout[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		UINT numElements = ARRAYSIZE(layout);
+		hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
+	}
 	return shader;
 }
 

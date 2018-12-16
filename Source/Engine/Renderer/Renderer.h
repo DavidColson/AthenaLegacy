@@ -52,7 +52,7 @@ namespace Graphics
 	};
 
 	Shader LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader);
-	Shader LoadShaderFromText(std::string shaderContents);
+	Shader LoadShaderFromText(std::string shaderContents, bool withTexCoords = true);
 
 	Texture2D CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, uint bindflags);
 };
