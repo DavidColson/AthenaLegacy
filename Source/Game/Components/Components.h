@@ -30,12 +30,20 @@ struct CPlayerControl
 
 struct CBullet
 {
-	float m_speed = 600.0f;
+	float m_speed = 300.0f;
 };
 
 struct CCollidable
 {
 	float m_radius{ 40.f };
 	bool m_colliding{ false };
+	bool m_lastColliding{ false };
+	bool m_collisionEnter{ false };
+	bool m_collisionExit{ false };
 	EntityID m_other;
+};
+
+struct CAsteroid
+{
+	int m_hitCount{ 0 };
 };

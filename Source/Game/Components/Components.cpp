@@ -23,6 +23,9 @@ REGISTRATION
 	RegisterNewTypeAsComponent(CBullet)
 		->RegisterMember("m_speed", &CBullet::m_speed);
 
+	RegisterNewTypeAsComponent(CAsteroid)
+		->RegisterMember("m_hitCount", &CAsteroid::m_hitCount);
+
 	RegisterNewTypeAsComponent(CCollidable)
 		->RegisterMember("m_radius", &CCollidable::m_radius)
 		->RegisterMember("m_colliding", &CCollidable::m_colliding)

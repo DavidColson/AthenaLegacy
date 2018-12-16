@@ -248,7 +248,7 @@ struct Scene
 	template<typename T>
 	bool HasComponent(EntityID id)
 	{
-		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+		if (!IsEntityValid(id) || m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
 			return false;
 
 		int componentId = GetComponentId<T>();
@@ -324,7 +324,9 @@ struct SceneView
 	const Iterator begin() const 
 	{
 		int firstIndex = 0;
-		while (m_componentMask != (m_componentMask & m_pScene->m_entities[firstIndex].m_mask))
+		while (firstIndex < m_pScene->m_entities.size() && // Checking we're not overflowing
+			(m_componentMask != (m_componentMask & m_pScene->m_entities[firstIndex].m_mask) // Does this index have the right components?
+			|| !IsEntityValid(m_pScene->m_entities[firstIndex].m_id))) // Does this index have a valid entity?
 		{
 			firstIndex++;
 		}

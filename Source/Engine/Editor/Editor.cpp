@@ -11,7 +11,7 @@
 
 namespace {
 	bool showEditor = true;
-	bool showLog = false;
+	bool showLog = true;
 	bool showEntityInspector = true;
 	bool showEntityList = true;
 	EntityID selectedEntity = -1;
@@ -79,6 +79,11 @@ void ShowEntityInspector()
 					{
 						float* number = (float*)member.second->GetRefValue(component).m_data;
 						ImGui::DragFloat(member.first.c_str(), number, 0.1f);
+					}
+					else if (member.second->m_type == TypeDB::GetType<int>())
+					{
+						int* number = (int*)member.second->GetRefValue(component).m_data;
+						ImGui::DragInt(member.first.c_str(), number, 0.1f);
 					}
 					else if (member.second->m_type == TypeDB::GetType<vec2>())
 					{

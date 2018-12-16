@@ -13,6 +13,8 @@ namespace {
 	Scene* pCurrentScene;
 }
 
+std::vector<RenderProxy> Game::g_asteroidMeshes;
+
 void Game::Startup()
 {
 
@@ -72,9 +74,7 @@ void Game::Startup()
 
 	stringifyStruct("", "player", player);
 
-	std::vector<RenderProxy> asteroidMeshes;
-
-	asteroidMeshes.emplace_back(RenderProxy(
+	g_asteroidMeshes.emplace_back(RenderProxy(
 		{
 			Vertex(vec3(0.03f, 0.379f, 0.0f)),
 			Vertex(vec3(0.03f, 0.64f, 0.0f)),
@@ -91,7 +91,7 @@ void Game::Startup()
 			9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1
 		}));
 
-	asteroidMeshes.emplace_back(RenderProxy(
+	g_asteroidMeshes.emplace_back(RenderProxy(
 		{
 			Vertex(vec3(0.05f, 0.54f, 0.0f)),
 			Vertex(vec3(0.213f, 0.78f, 0.0f)),
@@ -110,7 +110,7 @@ void Game::Startup()
 			10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1
 		}));
 
-	asteroidMeshes.emplace_back(RenderProxy(
+	g_asteroidMeshes.emplace_back(RenderProxy(
 		{
 			Vertex(vec3(0.066f, 0.335f, 0.0f)),
 			Vertex(vec3(0.077f, 0.683f, 0.0f)),
@@ -129,7 +129,7 @@ void Game::Startup()
 			11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
 		}));
 
-	asteroidMeshes.emplace_back(RenderProxy(
+	g_asteroidMeshes.emplace_back(RenderProxy(
 		{
 			Vertex(vec3(0.056f, 0.284f, 0.0f)),
 			Vertex(vec3(0.064f, 0.752f, 0.0f)),
@@ -169,7 +169,8 @@ void Game::Startup()
 		pTranform->m_vel = randomVelocity;
 		pTranform->m_rot = randomRotation;
 
-		pCurrentScene->AssignComponent<CDrawable>(asteroid)->m_renderProxy = asteroidMeshes[rand() % 4];
+		pCurrentScene->AssignComponent<CDrawable>(asteroid)->m_renderProxy = g_asteroidMeshes[rand() % 4];
+		pCurrentScene->AssignComponent<CAsteroid>(asteroid);
 	}
 
 	// Ship
@@ -201,5 +202,6 @@ void Game::Update(float deltaTime)
 	ShipControlSystemUpdate(pCurrentScene, deltaTime);
 	MovementSystemUpdate(pCurrentScene, deltaTime);
 	CollisionSystemUpdate(pCurrentScene, deltaTime);
+	AsteroidSystemUpdate(pCurrentScene, deltaTime);
 	DrawShapeSystem(pCurrentScene, deltaTime);
 }
