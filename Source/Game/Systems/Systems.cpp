@@ -58,16 +58,18 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 
 		for (EntityID entity2 : SceneView<CTransform, CCollidable>(pScene))
 		{
+			// Need to filter out asteroid to asteroid collisions to avoid dealing with multiple collisions at once
+			// Better solution would to be to report all collisions with all entities in a given frame
+			if (pScene->HasComponent<CAsteroid>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
+				continue;
+
 			CCollidable* pCollider1 = pScene->GetComponent<CCollidable>(entity1);
 			CCollidable* pCollider2 = pScene->GetComponent<CCollidable>(entity2);
 
 			float distance = (pScene->GetComponent<CTransform>(entity1)->m_pos - pScene->GetComponent<CTransform>(entity2)->m_pos).mag();
 			float collisionDistance = pCollider1->m_radius + pCollider2->m_radius;
 			
-			// Need to filter out asteroid to asteroid collisions to avoid dealing with multiple collisions at once
-			// Better solution would to be to report all collisions with all entities in a given frame
-			bool asteroidToAsteroid = pScene->HasComponent<CAsteroid>(entity1) && pScene->HasComponent<CAsteroid>(entity2);
-			if (distance < collisionDistance && entity1 != entity2 && !asteroidToAsteroid)
+			if (distance < collisionDistance)
 			{
 				pCollider1->m_collisionEnter = pCollider1->m_lastColliding ? false : true;
 				pCollider1->m_collisionExit = false;
