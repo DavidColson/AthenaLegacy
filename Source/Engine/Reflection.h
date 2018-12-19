@@ -6,7 +6,7 @@
 
 #include "Log.h"
 #include "ErrorHandling.h"
-// TODO: Consider inlining a lot of these smaller funtions
+// #TODO: Consider inlining a lot of these smaller funtions
 
 // CONVIENIENCE MACROS
 #define CAT(a, b) a##b
@@ -175,7 +175,7 @@ namespace TypeDB
 
 			inline virtual void SetValue(RefVariant&& obj, RefVariant value) override
 			{
-				// TODO: Get the type that value actually is and print it's name as an error i.e. 'value is a float but we expected a vec2'
+				// #TODO: Get the type that value actually is and print it's name as an error i.e. 'value is a float but we expected a vec2'
 				ASSERT(value.IsA<T>(), "The value you supplied isn't the correct type");
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				obj.Get<I>().*m_pPointer = value.Get<T>();

@@ -51,7 +51,7 @@ gGameWorld.AssignComponent<Shape>(circle);
 
 */
 
-// TODO: Move some of this to a cpp file
+// #TODO: Move some of this to a cpp file
 
 #include "Reflection.h"
 
@@ -90,7 +90,7 @@ inline bool IsEntityValid(EntityID id)
 
 
 // Gives you the id within this world for a given component type
-extern int s_componentCounter; // TODO: Move this to a detail namespace
+extern int s_componentCounter; // #TODO: Move this to a detail namespace
 template <class T>
 int GetComponentId() // Move this whole function to the detail namespace
 {
@@ -104,7 +104,7 @@ int GetComponentId() // Move this whole function to the detail namespace
 
 
 // Used to relate components to the Type objects in the reflection database
-struct ComponentIdToTypeIdMap // TODO: Move to detail namespace
+struct ComponentIdToTypeIdMap // #TODO: Move to detail namespace
 {
 	void AddRelation(TypeId typeId, int componentId)
 	{
@@ -125,7 +125,7 @@ extern ComponentIdToTypeIdMap g_componentTypeMap;
 // Memory is managed manually
 // ********************************************
 
-struct BaseComponentPool // TODO: Move to detail namespace
+struct BaseComponentPool // #TODO: Move to detail namespace
 {
 	BaseComponentPool(size_t elementsize)
 	{
@@ -148,7 +148,7 @@ struct BaseComponentPool // TODO: Move to detail namespace
 };
 
 template <typename T>
-struct ComponentPool : public BaseComponentPool // TODO: Move to detail namespace
+struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespace
 {
 	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) {}
 
@@ -168,10 +168,10 @@ struct ComponentPool : public BaseComponentPool // TODO: Move to detail namespac
 
 struct Scene
 {
-	// TODO Destructor, delete systems and components
+	// #TODO Destructor, delete systems and components
 
 	// Creates an entity, simply makes a new id and mask
-	EntityID NewEntity()// TODO: Move implementation to cpp
+	EntityID NewEntity()// #TODO: Move implementation to cpp
 	{
  		if (!m_freeEntities.empty())
 		{
@@ -204,7 +204,7 @@ struct Scene
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
 	// Will not make components on entities that already have that component
 	template<typename T>
-	T* AssignComponent(EntityID id) // TODO: Move implementation to lower down in the file
+	T* AssignComponent(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
 		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
@@ -233,7 +233,7 @@ struct Scene
 	// Retrieves a component for a given entity
 	// Simply checks the existence using the mask, and then queries the component from the correct pool
 	template<typename T>
-	T* GetComponent(EntityID id) // TODO: Move implementation to lower down in the file
+	T* GetComponent(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
 		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;

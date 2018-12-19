@@ -213,7 +213,7 @@ public:
 	inline T det() const
 	{
 		// Determinants only work for square matrices
-		// TODO: Memory assignment here is slow, can be optimised
+		// #TODO: Memory assignment here is slow, can be optimised
 		ASSERT(id < nrows, "Determinants only for square matrices");
 		return dt<ncols, T>::det(*this);
 	}

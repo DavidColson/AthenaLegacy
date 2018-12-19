@@ -58,7 +58,7 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 
 		for (EntityID entity2 : SceneView<CTransform, CCollidable>(pScene))
 		{
-			// Need to filter out asteroid to asteroid collisions to avoid dealing with multiple collisions at once
+			// #TODO Need to filter out asteroid to asteroid collisions to avoid dealing with multiple collisions at once
 			// Better solution would to be to report all collisions with all entities in a given frame
 			if (pScene->HasComponent<CAsteroid>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
 				continue;

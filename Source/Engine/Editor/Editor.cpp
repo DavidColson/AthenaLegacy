@@ -65,8 +65,8 @@ void ShowEntityInspector()
 			Type* componentType = TypeDB::GetType(g_componentTypeMap.LookupTypeId(i));
 			if (ImGui::CollapsingHeader(componentType->m_name))
 			{
-				// TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
-				// TODO: Create a component iterator which gives you variants on each iteration all setup for you
+				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
+				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
 				// Directly access componentPools and put the pointer to that component in a RefVariant's m_data, and save the type as well
 				VariantBase component;
 				component.m_type = componentType;

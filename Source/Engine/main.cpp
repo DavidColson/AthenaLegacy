@@ -60,6 +60,10 @@ int main(int argc, char *argv[])
 
 	Game::Startup();
 
+	unsigned int start = SDL_GetTicks();
+
+	float time = float(SDL_GetTicks() - start) / 1000.f;
+	Log::Print(Log::EMsg, "Test Time Taken: %f", time);
 
 	// Main Loop
 	// *********
@@ -81,7 +85,8 @@ int main(int argc, char *argv[])
 		Graphics::RenderFrame();
 
 		float realframeTime = float(SDL_GetTicks() - frameStart) / 1000.f;
-		if (realframeTime < targetFrameTime)
+		//if (realframeTime < targetFrameTime)
+		if (false)
 		{
 			frameTime = targetFrameTime;
 			unsigned int waitTime = int((targetFrameTime - realframeTime) * 1000.f);

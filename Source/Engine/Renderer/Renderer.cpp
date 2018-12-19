@@ -256,7 +256,7 @@ void Graphics::RenderFrame()
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	
-	// TODO: should probably clear all render state that we set after rendering
+	// #TODO: should probably clear all render state that we set after rendering
 	ID3D11ShaderResourceView* pSRV = nullptr;
 	pCtx->m_pDeviceContext->PSSetShaderResources(0, 1, &pSRV);
 
@@ -266,7 +266,7 @@ void Graphics::RenderFrame()
 
 void Graphics::Shutdown()
 {
-	// TODO: Release things
+	// #TODO: Release things
 }
 
 void Graphics::SubmitProxy(RenderProxy* pRenderProxy)
@@ -282,7 +282,7 @@ Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool ha
 	ID3DBlob* pGsBlob = nullptr;
 	ID3DBlob* pErrorBlob = nullptr;
 
-	// TODO: Shaders should be considered a material, kept somewhere so objects can share materials
+	// #TODO: Shaders should be considered a material, kept somewhere so objects can share materials
 	hr = D3DCompileFromFile(shaderName, 0, 0, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG, 0, &pVsBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
