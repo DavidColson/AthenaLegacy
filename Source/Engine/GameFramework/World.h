@@ -53,7 +53,7 @@ gGameWorld.AssignComponent<Shape>(circle);
 
 // #TODO: Move some of this to a cpp file
 
-#include "Reflection.h"
+#include "TypeDB.h"
 
 #include <bitset>
 #include <vector>

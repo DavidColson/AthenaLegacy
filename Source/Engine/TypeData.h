@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Reflection.h"
+#include "TypeDB.h"
 
 #include "Maths/Maths.h"
 #include "GameFramework/World.h"

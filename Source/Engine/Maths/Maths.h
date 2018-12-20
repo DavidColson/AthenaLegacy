@@ -4,7 +4,7 @@
 #include <SDL.h>
 
 #include "ErrorHandling.h"
-#include "Reflection.h"
+#include "TypeDB.h"
 
 #define ToRadian(x) ((x) * 3.14159f /180.0f)
 #define ToDegree(x) ((x) * 180.0f / 3.14159f)
@@ -33,6 +33,15 @@ struct vec
 	inline T& operator[](const uint i) { ASSERT(i < dim, "You're accessing an element not in this vector"); return m_data[i]; }
 	inline const T& operator[](const uint i) const { ASSERT(i < dim, "You're accessing an element not in this vector"); return m_data[i]; }
 
+	inline bool operator==(const vec& other) const
+	{
+		bool res = true;
+		for (uint i = 0; i < dim; i++)
+		{
+			res = res && m_data[i] == other.m_data[i];
+		}
+	}
+
 private:
 	T m_data[dim];
 };
@@ -50,6 +59,11 @@ struct vec<2, T>
 	inline T& operator[](const uint i) { ASSERT(i < 2, "You're accessing an element not in this vector"); return i <= 0 ? x : y; }
 	inline const T& operator[](const uint i) const { ASSERT(i < 2, "You're accessing an element not in this vector"); return i <= 0 ? x : y; }
 
+	inline bool operator==(const vec<2, T>& other) const
+	{
+		return x == other.x && y == other.y;
+	}
+
 	T x, y;
 };
 
@@ -64,6 +78,11 @@ struct vec<3, T>
 
 	inline T& operator[](const uint i) { ASSERT(i < 3, "You're accessing an element not in this vector"); return i <= 0 ? x : (1 == i ? y : z); }
 	inline const T& operator[](const uint i) const { ASSERT(i < 3, "You're accessing an element not in this vector"); return i <= 0 ? x : (1 == i ? y : z); }
+
+	inline bool operator==(const vec<3, T>& other) const
+	{
+		return x == other.x && y == other.y && z == other.z;
+	}
 
 	inline float mag() { return sqrtf(x*x + y*y + z*z); }
 	inline vec<3, T>& normalise() { *this = (*this)*(1 / mag()); return *this; }

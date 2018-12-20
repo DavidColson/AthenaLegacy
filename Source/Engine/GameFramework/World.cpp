@@ -1,6 +1,6 @@
 #include "GameFramework/World.h"
 
-#include "Reflection.h"
+#include "TypeDB.h"
 #include "TypeData.h"
 
 int s_componentCounter = 0;

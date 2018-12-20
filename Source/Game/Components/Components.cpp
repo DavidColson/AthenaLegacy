@@ -1,7 +1,7 @@
 #include "Components/Components.h"
 
 #include <GameFramework/World.h>
-#include <Reflection.h>
+#include <TypeDB.h>
 
 REGISTER(CPlayerControl)
 {

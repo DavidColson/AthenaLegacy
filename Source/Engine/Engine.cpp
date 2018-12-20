@@ -20,6 +20,7 @@ namespace
 	IGame* g_pGame{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
 }
+
 char* readFile(const char* filename)
 {
 	SDL_RWops* rw = SDL_RWFromFile(filename, "r+");

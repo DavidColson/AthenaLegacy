@@ -1,6 +1,6 @@
 #include "TypeData.h"
 
-#include "Reflection.h"
+#include "TypeDB.h"
 #include "Systems/Systems.h"
 #include "Components/Components.h"
 

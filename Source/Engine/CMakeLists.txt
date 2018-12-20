@@ -3,8 +3,8 @@ project(Engine)
 set(SOURCES
     "Log.h"
     "Log.cpp"
-    "Reflection.h"
-    "Reflection.cpp"
+    "TypeDB.h"
+    "TypeDB.cpp"
     "ErrorHandling.h"
     "ErrorHandling.cpp"
     "GameFramework/World.h"
