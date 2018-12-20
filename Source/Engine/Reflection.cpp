@@ -1,11 +1,7 @@
 #include "Reflection.h"
+#include "TypeData.h"
 
 using namespace TypeDB;
-
-std::unordered_map<TypeId, Type> Detail::typeDatabase;
-std::unordered_map<std::string, TypeId> Detail::typeNames;
-
-
 
 // Variant
 //////////
@@ -66,25 +62,26 @@ Variant Type::New()
 	return m_constructor->Invoke();
 }
 
-
 Type* TypeDB::GetTypeFromString(std::string typeName)
 {
-	ASSERT(Detail::typeNames.count(typeName) == 1, "The type you are querying does not exist in the database, please register it");
-	return &Detail::typeDatabase[Detail::typeNames[typeName]];
+	ASSERT(Detail::Data::Get().typeNames.count(typeName) == 1, "The type you are querying does not exist in the database, please register it");
+	return &Detail::Data::Get().typeDatabase[Detail::Data::Get().typeNames[typeName]];
 }
 
 Type* TypeDB::GetType(TypeId typeId)
 {
-	ASSERT(Detail::typeDatabase.count(typeId) == 1, "The type you are querying does not exist in the database, please register it");
-	return &Detail::typeDatabase[typeId];
+	ASSERT(Detail::Data::Get().typeDatabase.count(typeId) == 1, "The type you are querying does not exist in the database, please register it");
+	return &Detail::Data::Get().typeDatabase[typeId];
 }
 
-REGISTRATION
+REGISTER(float)
 {
-	RegisterNewType(std::string);
-	RegisterNewType(float);
-	RegisterNewType(float*);
-	RegisterNewType(int);
-	RegisterNewType(int*);
-	RegisterNewType(bool);
+	NewType(std::string);
+	NewType(float);
+	NewType(float*);
+	NewType(int);
+	NewType(int*);
+	NewType(bool);
 }
+
+TypeDB::Detail::Data* TypeDB::Detail::Data::pInstance{ nullptr };

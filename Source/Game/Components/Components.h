@@ -1,9 +1,11 @@
 #pragma once
 
+#include <TypeData.h>
 #include <Maths/Maths.h>
 #include <Renderer/RenderProxy.h>
 #include <Log.h>
 #include <GameFramework/World.h>
+
 
 struct CTransform
 {
@@ -13,12 +15,14 @@ struct CTransform
 	vec3 m_vel{ vec3(0.0f, 0.0f, 0.0f) };
 	vec3 m_accel{ vec3(0.0f, 0.0f, 0.0f) };
 };
+REGISTER_EXTERN(CTransform);
 
 struct CDrawable
 {
 	RenderProxy m_renderProxy;
 	float m_lineThickness{ 2.0f };
 };
+REGISTER_EXTERN(CDrawable);
 
 struct CPlayerControl
 {
@@ -27,11 +31,13 @@ struct CPlayerControl
 	float m_dampening{ 0.f };
 	vec2 m_someVec{ vec2(5.0f, 2.0f) };
 };
+REGISTER_EXTERN(CPlayerControl);
 
 struct CBullet
 {
 	float m_speed = 300.0f;
 };
+REGISTER_EXTERN(CBullet);
 
 struct CCollidable
 {
@@ -42,8 +48,10 @@ struct CCollidable
 	bool m_collisionExit{ false };
 	EntityID m_other;
 };
+REGISTER_EXTERN(CCollidable);
 
 struct CAsteroid
 {
 	int m_hitCount{ 0 };
 };
+REGISTER_EXTERN(CAsteroid);

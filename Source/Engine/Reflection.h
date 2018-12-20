@@ -8,19 +8,37 @@
 #include "ErrorHandling.h"
 // #TODO: Consider inlining a lot of these smaller funtions
 
-// CONVIENIENCE MACROS
-#define CAT(a, b) a##b
+namespace reg_helper
+{
+	template <typename T>
+	inline int call(void(*f)())
+	{
+		static const int s = [&f]() {
+			f();
+			return 0;
+		}();
+		return s;
+	}
+}
 
-// This is used to create a function that'll be called before main() for registering types into the type database
-#define REGISTRATION									\
-static void _register();								\
-namespace { struct temp { temp() { _register(); } }; }	\
-static const temp CAT(temp, __LINE__);					\
-static void _register()
+#define CAT_IMPL(a, b) a##b
+#define CAT(a, b) CAT_IMPL(a, b)
+
+#define REGISTER_EXTERN(TYPE)\
+	template <typename T>\
+	extern void register_func();\
+	template <>\
+	void register_func<TYPE>();\
+	static const int CAT(temp, __LINE__) =\
+		reg_helper::call<TYPE>(&register_func<TYPE>)
+
+#define REGISTER(TYPE)\
+	template <> \
+	void register_func<TYPE>()
 
 // Convienience macro for registering a type without specifying a string
-#define RegisterNewType(Type) TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
-#define RegisterNewTypeAsComponent(Type) g_componentTypeMap.AddRelation(TypeIdGenerator<Type>::Id(), GetComponentId<Type>()); TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
+#define NewType(Type) TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
+#define NewTypeAsComponent(Type) ComponentIdToTypeIdMap::Get()->AddRelation(TypeIdGenerator<Type>::Id(), GetComponentId<Type>()); TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
 
 typedef uintptr_t TypeId;
 
@@ -145,11 +163,24 @@ namespace TypeDB
 
 	Type* GetType(TypeId typeId);
 
+	void RegisterBaseTypes();
+
 	namespace Detail
 	{
-		// Actual storage of type information
-		extern std::unordered_map<TypeId, Type> typeDatabase;
-		extern std::unordered_map<std::string, TypeId> typeNames;
+		struct Data
+		{
+			static Data& Get() 
+			{
+				if (pInstance == nullptr)
+					pInstance = new Data();
+				return *pInstance;
+			}
+			static Data* pInstance;
+
+			// Actual storage of type information
+			std::unordered_map<TypeId, Type> typeDatabase;
+			std::unordered_map<std::string, TypeId> typeNames;
+		};
 
 		// Registers a new type to the database
 		template<typename T>
@@ -313,16 +344,16 @@ template<typename T>
 Type* TypeDB::GetType()
 {
 	TypeId id = TypeIdGenerator<T>::Id();
-	ASSERT(Detail::typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
-	return &Detail::typeDatabase[id];
+	ASSERT(Detail::Data::Get().typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
+	return &Detail::Data::Get().typeDatabase[id];
 }
 
 template<typename T>
 Type* TypeDB::GetType(T& obj)
 {
 	TypeId id = TypeIdGenerator<T>::Id();
-	ASSERT(Detail::typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
-	return &Detail::typeDatabase[id];
+	ASSERT(Detail::Data::Get().typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
+	return &Detail::Data::Get().typeDatabase[id];
 }
 
 
@@ -335,7 +366,7 @@ template<typename T>
 Type* Detail::RegisterNewType_Internal(const char* typeName)
 {
 	TypeId id = TypeIdGenerator<T>::Id();
-	Detail::typeDatabase.emplace(id, Type(typeName, id, sizeof(T), new Constructor_Internal<T>()));
-	Detail::typeNames.emplace(typeName, id);
-	return &Detail::typeDatabase[id];
+	Detail::Data::Get().typeDatabase.emplace(id, Type(typeName, id, sizeof(T), new Constructor_Internal<T>()));
+	Detail::Data::Get().typeNames.emplace(typeName, id);
+	return &Detail::Data::Get().typeDatabase[id];
 }

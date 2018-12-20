@@ -1,3 +1,5 @@
+project(Imgui)
+
 set(SOURCES
     "imgui.cpp"
     "imgui_demo.cpp"
@@ -25,5 +27,5 @@ foreach(source IN LISTS SOURCES)
     source_group("${source_path_msvc}" FILES "${source}")
 endforeach()
 
-include_directories("/")
+include_directories("../../" "/")
 add_library (Imgui ${SOURCES})

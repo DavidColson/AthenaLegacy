@@ -1,4 +1,5 @@
 #include "Maths.h"
+#include "TypeData.h"
 
 // casting constructors
 template <> template <> vec<3, int>  ::vec(const vec<3, float> &v) : x(int(v.x + .5f)), y(int(v.y + .5f)), z(int(v.z + .5f)) {}
@@ -117,14 +118,17 @@ void GetAxesFromRotation(vec3 Rotation, vec3 &Forward, vec3 &Right, vec3 & Up)
 	Up = vec3(rotMat[0][1], rotMat[1][1], rotMat[2][1]);
 }
 
-REGISTRATION
+REGISTER(vec2)
 {
-	RegisterNewType(vec2)
-	->RegisterMember("x", &vec2::x)
-	->RegisterMember("y", &vec2::y);
+	NewType(vec2)
+		->RegisterMember("x", &vec2::x)
+		->RegisterMember("y", &vec2::y);
+}
 
-	RegisterNewType(vec3)
-	->RegisterMember("x", &vec3::x)
-	->RegisterMember("y", &vec3::y)
-	->RegisterMember("z", &vec3::z);
+REGISTER(vec3)
+{
+	NewType(vec3)
+		->RegisterMember("x", &vec3::x)
+		->RegisterMember("y", &vec3::y)
+		->RegisterMember("z", &vec3::z);
 }

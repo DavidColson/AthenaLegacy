@@ -106,6 +106,13 @@ int GetComponentId() // Move this whole function to the detail namespace
 // Used to relate components to the Type objects in the reflection database
 struct ComponentIdToTypeIdMap // #TODO: Move to detail namespace
 {
+	static ComponentIdToTypeIdMap* Get()
+	{
+		if (pInstance == nullptr)
+			pInstance = new ComponentIdToTypeIdMap();
+		return pInstance;
+	}
+
 	void AddRelation(TypeId typeId, int componentId)
 	{
 		m_typeToComponent[typeId] = componentId;
@@ -114,10 +121,11 @@ struct ComponentIdToTypeIdMap // #TODO: Move to detail namespace
 	int LookupComponentId(TypeId typeId) { return m_typeToComponent[typeId]; }
 	TypeId LookupTypeId(int componentId) { return m_componentToType[componentId]; }
 private:
+	static ComponentIdToTypeIdMap* pInstance;
+
 	std::unordered_map<TypeId, int> m_typeToComponent;
 	std::unordered_map<int, TypeId> m_componentToType;
 };
-extern ComponentIdToTypeIdMap g_componentTypeMap;
 
 
 // ********************************************

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <Renderer/RenderProxy.h>
 #include <GameFramework/World.h>
 
+extern std::vector<RenderProxy> g_asteroidMeshes;
 
 void CollisionSystemUpdate(Scene* scene, float deltaTime);
 

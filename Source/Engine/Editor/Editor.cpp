@@ -62,7 +62,7 @@ void ShowEntityInspector()
 		if (mask == (pCurrentScene->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
 			// Lookup the type object for that component ID (need a new accessor in TypeDB)
-			Type* componentType = TypeDB::GetType(g_componentTypeMap.LookupTypeId(i));
+			Type* componentType = TypeDB::GetType(ComponentIdToTypeIdMap::Get()->LookupTypeId(i));
 			if (ImGui::CollapsingHeader(componentType->m_name))
 			{
 				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety

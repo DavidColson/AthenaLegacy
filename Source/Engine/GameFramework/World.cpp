@@ -1,11 +1,12 @@
 #include "GameFramework/World.h"
 
 #include "Reflection.h"
+#include "TypeData.h"
 
 int s_componentCounter = 0;
-ComponentIdToTypeIdMap g_componentTypeMap;
+ComponentIdToTypeIdMap* ComponentIdToTypeIdMap::pInstance{ nullptr };
 
-REGISTRATION
+REGISTER(EntityID)
 {
-	RegisterNewType(EntityID);
+	NewType(EntityID);
 }

@@ -114,7 +114,7 @@ void AsteroidSystemUpdate(Scene* pScene, float deltaTime)
 				pNewTransform->m_vel = randomVelocity;
 				pNewTransform->m_rot = randomRotation;
 
-				pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
+				pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = g_asteroidMeshes[rand() % 4];
 				pScene->AssignComponent<CAsteroid>(newAsteroid)->m_hitCount = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount + 1;
 			}
 			pScene->DestroyEntity(asteroid);

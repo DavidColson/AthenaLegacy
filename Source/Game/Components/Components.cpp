@@ -3,30 +3,45 @@
 #include <GameFramework/World.h>
 #include <Reflection.h>
 
-REGISTRATION
+REGISTER(CPlayerControl)
 {
-	RegisterNewTypeAsComponent(CPlayerControl)
+	NewTypeAsComponent(CPlayerControl)
 		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
 		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
 		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
 		->RegisterMember("m_someVec", &CPlayerControl::m_someVec);
+}
 
-	RegisterNewTypeAsComponent(CDrawable)
+REGISTER(CDrawable)
+{
+	NewTypeAsComponent(CDrawable)
 		->RegisterMember("m_lineThickness", &CDrawable::m_lineThickness);
+}
 
-	RegisterNewTypeAsComponent(CTransform)
+REGISTER(CTransform)
+{
+	NewTypeAsComponent(CTransform)
 		->RegisterMember("m_pos", &CTransform::m_pos)
 		->RegisterMember("m_rot", &CTransform::m_rot)
 		->RegisterMember("m_sca", &CTransform::m_sca)
 		->RegisterMember("m_vel", &CTransform::m_vel);
+}
 
-	RegisterNewTypeAsComponent(CBullet)
+REGISTER(CBullet)
+{
+	NewTypeAsComponent(CBullet)
 		->RegisterMember("m_speed", &CBullet::m_speed);
+}
 
-	RegisterNewTypeAsComponent(CAsteroid)
+REGISTER(CAsteroid)
+{
+	NewTypeAsComponent(CAsteroid)
 		->RegisterMember("m_hitCount", &CAsteroid::m_hitCount);
+}
 
-	RegisterNewTypeAsComponent(CCollidable)
+REGISTER(CCollidable)
+{
+	NewTypeAsComponent(CCollidable)
 		->RegisterMember("m_radius", &CCollidable::m_radius)
 		->RegisterMember("m_colliding", &CCollidable::m_colliding)
 		->RegisterMember("m_other", &CCollidable::m_other);

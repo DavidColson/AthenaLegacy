@@ -1,6 +1,7 @@
-#include "SDL.h"
-#include "SDL_syswm.h"
+#include "Engine.h"
 
+#include <SDL.h>
+#include <SDL_syswm.h>
 #include <comdef.h>
 #include <vector>
 #include <ThirdParty/Imgui/imgui.h>
@@ -12,9 +13,13 @@
 #include "Renderer/Renderer.h"
 #include "Editor/Editor.h"
 #include "Log.h"
+#include "IGame.h"
 
-#include "Asteroids.h"
-
+namespace
+{
+	IGame* g_pGame{ nullptr };
+	SDL_Window* g_pWindow{ nullptr };
+}
 char* readFile(const char* filename)
 {
 	SDL_RWops* rw = SDL_RWFromFile(filename, "r+");
@@ -25,7 +30,7 @@ char* readFile(const char* filename)
 	}
 
 	size_t fileSize = SDL_RWsize(rw);
-	
+
 	char* buffer = new char[fileSize];
 	SDL_RWread(rw, buffer, sizeof(char) * fileSize, 1);
 	SDL_RWclose(rw);
@@ -33,17 +38,14 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
-int main(int argc, char *argv[])
-{
-	// Engine Init
-	// ***********
-
+void Engine::Startup(IGame* pGame)
+{	
 	SDL_Init(SDL_INIT_VIDEO);
 
 	float width = 1800.0f;
 	float height = 1000.0f;
 
-	SDL_Window* pWindow = SDL_CreateWindow(
+	g_pWindow = SDL_CreateWindow(
 		"DirectX",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
@@ -55,19 +57,15 @@ int main(int argc, char *argv[])
 	Log::Print(Log::EMsg, "Engine starting up");
 	Log::Print(Log::EMsg, "Window size W: %.1f H: %.1f", width, height);
 
-	Graphics::CreateContext(pWindow, width, height);
+	Graphics::CreateContext(g_pWindow, width, height);
 	Input::CreateInputState();
 
-	Game::Startup();
+	g_pGame = pGame;
+	pGame->OnStart();
+}
 
-	unsigned int start = SDL_GetTicks();
-
-	float time = float(SDL_GetTicks() - start) / 1000.f;
-	Log::Print(Log::EMsg, "Test Time Taken: %f", time);
-
-	// Main Loop
-	// *********
-
+void Engine::Run()
+{
 	float frameTime = 0.016f;
 	float targetFrameTime = 0.016f;
 	bool shutdown = false;
@@ -78,7 +76,7 @@ int main(int argc, char *argv[])
 		unsigned int frameStart = SDL_GetTicks();
 		Input::Update(shutdown);
 
-		Game::Update(frameTime);
+		g_pGame->OnFrame(frameTime);
 
 		Editor::ShowEditor(shutdown);
 
@@ -98,10 +96,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
+}
+
+void Engine::Shutdown()
+{
+	g_pGame->OnEnd();
 	Graphics::Shutdown();
 
-	SDL_DestroyWindow(pWindow);
+	SDL_DestroyWindow(g_pWindow);
 	SDL_Quit();
-
-	return 0;
 }
