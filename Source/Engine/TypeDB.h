@@ -6,7 +6,7 @@
 
 #include "Log.h"
 #include "ErrorHandling.h"
-// #TODO: Consider inlining a lot of these smaller funtions
+// #TodoTypeDB Consider inlining a lot of these smaller funtions
 
 namespace reg_helper
 {
@@ -122,6 +122,8 @@ namespace TypeDB
 
 		bool operator==(const Type* other);
 
+		// #TodoTypeDB Add GetMemberValue<T> and SetMemberValue functions for convenience 
+
 		Member* GetMember(const char* name);
 
 		Variant New();
@@ -144,13 +146,34 @@ namespace TypeDB
 	{
 		Type* m_type;
 
-		virtual void SetValue(RefVariant&& obj, RefVariant value) = 0;
+		Type* GetType();
+		
+		template<typename T> 
+		bool IsType();
 
-		virtual Variant GetValue(RefVariant&& obj) = 0;
-		virtual Variant GetValue(RefVariant& obj) = 0;
+		bool IsType(std::string typeName);
 
-		virtual RefVariant GetRefValue(RefVariant& obj) = 0;
-		virtual RefVariant GetRefValue(RefVariant&& obj) = 0;
+		virtual void SetValue(RefVariant&& obj, RefVariant value) const = 0;
+
+		template<typename T>
+		T GetValue(RefVariant& obj) const;
+
+		template<typename T>
+		T GetValue(RefVariant&& obj) const;
+
+		virtual Variant GetValue(RefVariant&& obj) const = 0;
+
+		virtual Variant GetValue(RefVariant& obj) const = 0;
+
+		template<typename T>
+		T& GetRefValue(RefVariant& obj) const;
+
+		template<typename T>
+		T& GetRefValue(RefVariant&& obj) const;
+
+		virtual RefVariant GetRefValue(RefVariant& obj) const = 0;
+
+		virtual RefVariant GetRefValue(RefVariant&& obj) const = 0;
 	};
 
 	Type* GetTypeFromString(std::string typeName);
@@ -204,31 +227,31 @@ namespace TypeDB
 
 			Member_Internal(T I::* pointer) { m_pPointer = pointer;  }
 
-			inline virtual void SetValue(RefVariant&& obj, RefVariant value) override
+			inline virtual void SetValue(RefVariant&& obj, RefVariant value) const override
 			{
-				// #TODO: Get the type that value actually is and print it's name as an error i.e. 'value is a float but we expected a vec2'
+				// #TodoTypeDB Get the type that value actually is and print it's name as an error i.e. 'value is a float but we expected a vec2'
 				ASSERT(value.IsA<T>(), "The value you supplied isn't the correct type");
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				obj.Get<I>().*m_pPointer = value.Get<T>();
 			}
 
-			inline virtual Variant GetValue(RefVariant&& obj) override
+			inline virtual Variant GetValue(RefVariant&& obj) const override
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
-			inline virtual Variant GetValue(RefVariant& obj) override
+			inline virtual Variant GetValue(RefVariant& obj) const override
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return Variant(obj.Get<I>().*m_pPointer);
 			}
 
-			inline virtual RefVariant GetRefValue(RefVariant& obj)
+			inline virtual RefVariant GetRefValue(RefVariant& obj) const override
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return RefVariant(obj.Get<I>().*m_pPointer);
 			}
-			inline virtual RefVariant GetRefValue(RefVariant&& obj)
+			inline virtual RefVariant GetRefValue(RefVariant&& obj) const override
 			{
 				ASSERT(obj.IsA<I>(), "The instance you supplied isn't the correct type");
 				return RefVariant(obj.Get<I>().*m_pPointer);
@@ -334,7 +357,37 @@ Type* Type::RegisterMember(const char* name, T I::*accessor)
 }
 
 
+// Member
+/////////
 
+template<typename T>
+bool TypeDB::Member::IsType()
+{
+	TypeId testId = TypeIdGenerator<T>::Id();
+	return testId == m_type->m_id;
+}
+
+template<typename T>
+T TypeDB::Member::GetValue(RefVariant& obj) const
+{
+	return GetValue(obj).Get<T>();
+}
+template<typename T>
+T TypeDB::Member::GetValue(RefVariant&& obj) const
+{
+	return GetValue(obj).Get<T>();
+}
+
+template<typename T>
+T& TypeDB::Member::GetRefValue(RefVariant& obj) const
+{
+	return GetRefValue(obj).Get<T>();
+}
+template<typename T>
+T& TypeDB::Member::GetRefValue(RefVariant&& obj) const
+{
+	return GetRefValue(obj).Get<T>();
+}
 
 // TypeDB
 /////////

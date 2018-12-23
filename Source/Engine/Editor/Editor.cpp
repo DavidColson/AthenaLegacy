@@ -75,38 +75,38 @@ void ShowEntityInspector()
 				// Loop the memberlist of the type, creating editors for each type, getting from the RefVariant of the component
 				for (std::pair<std::string, TypeDB::Member*> member : component.m_type->m_memberList)
 				{
-					if (member.second->m_type == TypeDB::GetType<float>())
+					if (member.second->IsType<float>())
 					{
-						float* number = (float*)member.second->GetRefValue(component).m_data;
-						ImGui::DragFloat(member.first.c_str(), number, 0.1f);
+						float& number = member.second->GetRefValue<float>(component);
+						ImGui::DragFloat(member.first.c_str(), &number, 0.1f);
 					}
-					else if (member.second->m_type == TypeDB::GetType<int>())
+					else if (member.second->IsType<int>())
 					{
-						int* number = (int*)member.second->GetRefValue(component).m_data;
-						ImGui::DragInt(member.first.c_str(), number, 0.1f);
+						int& number = member.second->GetRefValue<int>(component);
+						ImGui::DragInt(member.first.c_str(), &number, 0.1f);
 					}
-					else if (member.second->m_type == TypeDB::GetType<vec2>())
+					else if (member.second->IsType<vec2>())
 					{
-						vec2* vec = (vec2*)member.second->GetRefValue(component).m_data;
-						float list[2] = { vec->x, vec->y };
+						vec2& vec = member.second->GetRefValue<vec2>(component);
+						float list[2] = { vec.x, vec.y };
 						ImGui::DragFloat2(member.first.c_str(), list, 0.1f);
-						vec->x = list[0]; vec->y = list[1];
+						vec.x = list[0]; vec.y = list[1];
 					}
-					else if (member.second->m_type == TypeDB::GetType<vec3>())
+					else if (member.second->IsType<vec3>())
 					{
-						vec3* vec = (vec3*)member.second->GetRefValue(component).m_data;
-						float list[3] = { vec->x, vec->y, vec->z };
+						vec3& vec = member.second->GetRefValue<vec3>(component);
+						float list[3] = { vec.x, vec.y, vec.z };
 						ImGui::DragFloat3(member.first.c_str(), list, 0.1f);
-						vec->x = list[0]; vec->y = list[1]; vec->z = list[2];
+						vec.x = list[0]; vec.y = list[1]; vec.z = list[2];
 					}
-					else if (member.second->m_type == TypeDB::GetType<bool>())
+					else if (member.second->IsType<bool>())
 					{
-						bool* boolean = (bool*)member.second->GetRefValue(component).m_data;
-						ImGui::Checkbox(member.first.c_str(), boolean);
+						bool& boolean = member.second->GetRefValue<bool>(component);
+						ImGui::Checkbox(member.first.c_str(), &boolean);
 					}
-					else if (member.second->m_type == TypeDB::GetType<EntityID>())
+					else if (member.second->IsType<EntityID>())
 					{
-						EntityID entity = *(EntityID*)member.second->GetRefValue(component).m_data;
+						EntityID& entity = member.second->GetRefValue<EntityID>(component);
 						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member.first.c_str());
 					}
 				}

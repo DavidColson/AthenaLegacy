@@ -42,6 +42,20 @@ RefVariant::RefVariant(const RefVariant& copy)
 }
 
 
+// Member
+/////////
+
+Type* TypeDB::Member::GetType()
+{
+	return m_type;
+}
+
+bool TypeDB::Member::IsType(std::string typeName)
+{
+	return TypeDB::GetTypeFromString(typeName) == m_type;
+}
+
+
 // Type
 ///////
 

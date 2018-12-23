@@ -32,7 +32,7 @@ struct Asteroids : public IGame
 		TypeDB::Member* posmember = playerType->GetMember("m_someVec");
 
 		// Get type of m_pos, and then get the "x" member of it
-		TypeDB::Member* xmember = posmember->m_type->GetMember("x");
+		TypeDB::Member* xmember = posmember->GetType()->GetMember("x");
 
 		// Get whatever the actual value of the position is (don't care what type it is)
 		TypeDB::Variant position = posmember->GetValue(player);

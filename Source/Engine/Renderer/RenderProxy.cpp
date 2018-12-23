@@ -103,5 +103,5 @@ void RenderProxy::Draw()
 	Graphics::GetContext()->m_pDeviceContext->GSSetConstantBuffers(0, 1, &(m_pWVPBuffer));
 
 	// do 3D rendering on the back buffer here
-	Graphics::GetContext()->m_pDeviceContext->DrawIndexed(m_indices.size(), 0, 0);
+	Graphics::GetContext()->m_pDeviceContext->DrawIndexed((UINT)m_indices.size(), 0, 0);
 }
