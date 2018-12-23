@@ -17,26 +17,14 @@ struct Shape
 
 // Define systems like this:
 
-class MovementSystem : public System
+void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 {
-public:
 
-	virtual void UpdateEntity(EntityID id) override
-	{
-		Transform* pTransform = gGameWorld.GetComponent<Transform>(id);
+}
 
-		pTransform->pos.x += 0.01f;
-	}
+// Update the system by simply calling it with the current scene
 
-	virtual void SetSubscriptions() override
-	{
-		Subscribe<Transform>();
-	}
-};
-
-// You will need to register the system with the game world like this:
-
-gGameWorld.RegisterSystem<MovementSystem>();
+ShipControlSystem(pScene, deltaTime);
 
 // To create entities and assign entities to them do this:
 

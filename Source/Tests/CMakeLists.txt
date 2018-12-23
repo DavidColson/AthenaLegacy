@@ -3,6 +3,7 @@ project(Tests)
 set(SOURCES
     "main.cpp"
 	"TestsTypeDB.cpp"
+	"TestsECS.cpp"
     "Catch/catch.hpp"
     )
 
