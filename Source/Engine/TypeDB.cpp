@@ -3,28 +3,6 @@
 
 using namespace TypeDB;
 
-// RefVariant
-/////////////
-
-
-RefVariant::RefVariant(const VariantBase& copy)
-{
-	m_type = copy.m_type;
-	m_data = copy.m_data;
-}
-
-RefVariant::RefVariant(const Variant& copy)
-{
-	m_type = copy.m_type;
-	m_data = copy.m_data;
-}
-
-RefVariant::RefVariant(const RefVariant& copy)
-{
-	m_type = copy.m_type;
-	m_data = copy.m_data;
-}
-
 
 // Member
 /////////

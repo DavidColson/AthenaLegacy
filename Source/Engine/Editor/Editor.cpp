@@ -61,6 +61,8 @@ void ShowEntityInspector()
 			
 		if (mask == (pCurrentScene->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
+			using namespace TypeDB;
+
 			// Lookup the type object for that component ID (need a new accessor in TypeDB)
 			Type* componentType = TypeDB::GetType(ComponentIdToTypeIdMap::Get()->LookupTypeId(i));
 			if (ImGui::CollapsingHeader(componentType->m_name))

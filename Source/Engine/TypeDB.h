@@ -38,7 +38,7 @@ namespace reg_helper
 
 // Convienience macro for registering a type without specifying a string
 #define NewType(Type) TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
-#define NewTypeAsComponent(Type) ComponentIdToTypeIdMap::Get()->AddRelation(TypeIdGenerator<Type>::Id(), GetComponentId<Type>()); TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
+#define NewTypeAsComponent(Type) ComponentIdToTypeIdMap::Get()->AddRelation(TypeDB::TypeIdGenerator<Type>::Id(), GetComponentId<Type>()); TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
 
 typedef uintptr_t TypeId;
 
@@ -92,11 +92,11 @@ namespace TypeDB
 		template<typename T>
 		inline RefVariant(const T& value);
 
-		RefVariant(const VariantBase& copy);
+		inline RefVariant(const VariantBase& copy);
 
-		RefVariant(const Variant& copy);
+		inline RefVariant(const Variant& copy);
 
-		RefVariant(const RefVariant& copy);
+		inline RefVariant(const RefVariant& copy);
 
 		template<typename T>
 		inline RefVariant& operator=(const T& value);
@@ -163,9 +163,9 @@ namespace TypeDB
 		template<typename T>
 		T GetValue(RefVariant&& obj) const;
 
-		virtual Variant GetValue(RefVariant&& obj) const = 0;
-
 		virtual Variant GetValue(RefVariant& obj) const = 0;
+
+		virtual Variant GetValue(RefVariant&& obj) const = 0;
 
 		template<typename T>
 		T& GetRefValue(RefVariant& obj) const;
@@ -260,192 +260,204 @@ namespace TypeDB
 			}
 		};
 	}
-}
-
-
-// *******************************
-// IMPLEMENTATIONS ***************
-//********************************
-
-using namespace TypeDB;
 
 
 
 
-// VariantBase
-//////////////
+	// *******************************
+	// IMPLEMENTATIONS ***************
+	//********************************
 
-template<typename T>
-inline T& VariantBase::Get()
-{
-	ASSERT(IsA<T>(), "Incorrect Type passed to variant Get");
-	return *reinterpret_cast<T*>(m_data);
-}
+	// VariantBase
+	//////////////
 
-template<typename T>
-inline bool VariantBase::IsA()
-{
-	return TypeIdGenerator<T>::Id() == m_type->m_id;
-}
+	template<typename T>
+	inline T& VariantBase::Get()
+	{
+		ASSERT(IsA<T>(), "Incorrect Type passed to variant Get");
+		return *reinterpret_cast<T*>(m_data);
+	}
+
+	template<typename T>
+	inline bool VariantBase::IsA()
+	{
+		return TypeIdGenerator<T>::Id() == m_type->m_id;
+	}
 
 
 
 
 
-// Variant
-//////////
+	// Variant
+	//////////
 
-// Variant
-//////////
-
-inline Variant::~Variant()
-{
-	delete[] reinterpret_cast<char *>(m_data);
-}
-
-inline Variant::Variant(const Variant& copy)
-{
-	m_type = copy.m_type;
-	m_data = new char[m_type->m_size];
-	memcpy(m_data, copy.m_data, m_type->m_size);
-}
-
-template<typename T>
-inline Variant::Variant(const T& value)
-{
-	size_t size = TypeDB::GetType<T>()->m_size;
-	m_data = new char[size];
-	m_type = TypeDB::GetType<T>();
-	memcpy(m_data, &value, size);
-}
-
-template<typename T>
-inline Variant& Variant::operator=(const T& value)
-{
-	if (m_type->m_id != TypeIdGenerator<T>::Id() && m_type->m_id != 0)
+	inline Variant::~Variant()
 	{
 		delete[] reinterpret_cast<char *>(m_data);
+	}
 
+	inline Variant::Variant(const Variant& copy)
+	{
+		m_type = copy.m_type;
+		m_data = new char[m_type->m_size];
+		memcpy(m_data, copy.m_data, m_type->m_size);
+	}
+
+	template<typename T>
+	inline Variant::Variant(const T& value)
+	{
 		size_t size = TypeDB::GetType<T>()->m_size;
 		m_data = new char[size];
 		m_type = TypeDB::GetType<T>();
 		memcpy(m_data, &value, size);
 	}
-	else
+
+	template<typename T>
+	inline Variant& Variant::operator=(const T& value)
 	{
-		size_t size = TypeDB::GetType<T>()->m_size;
-		memcpy(m_data, &value, size);
+		if (m_type->m_id != TypeIdGenerator<T>::Id() && m_type->m_id != 0)
+		{
+			delete[] reinterpret_cast<char *>(m_data);
+
+			size_t size = TypeDB::GetType<T>()->m_size;
+			m_data = new char[size];
+			m_type = TypeDB::GetType<T>();
+			memcpy(m_data, &value, size);
+		}
+		else
+		{
+			size_t size = TypeDB::GetType<T>()->m_size;
+			memcpy(m_data, &value, size);
+		}
+		return *this;
 	}
-	return *this;
-}
 
-inline Variant& Variant::operator=(const Variant& value)
-{
-	m_type = value.m_type;
-	m_data = new char[m_type->m_size];
-	memcpy(m_data, value.m_data, m_type->m_size);
-	return *this;
-}
+	inline Variant& Variant::operator=(const Variant& value)
+	{
+		m_type = value.m_type;
+		m_data = new char[m_type->m_size];
+		memcpy(m_data, value.m_data, m_type->m_size);
+		return *this;
+	}
 
 
 
-// RefVariant
-/////////////
+	// RefVariant
+	/////////////
 
-template<typename T>
-inline RefVariant::RefVariant(const T& value)
-{
-	m_type = TypeDB::GetType<T>();
-	m_data = const_cast<T*>(&value);
-}
+	inline RefVariant::RefVariant(const VariantBase& copy)
+	{
+		m_type = copy.m_type;
+		m_data = copy.m_data;
+	}
 
-template<typename T>
-inline RefVariant& RefVariant::operator=(const T& value)
-{
-	m_type = TypeDB::GetType<T>();
-	m_data = const_cast<T*>(&value);
-	return *this;
-}
+	inline RefVariant::RefVariant(const Variant& copy)
+	{
+		m_type = copy.m_type;
+		m_data = copy.m_data;
+	}
 
+	inline RefVariant::RefVariant(const RefVariant& copy)
+	{
+		m_type = copy.m_type;
+		m_data = copy.m_data;
+	}
 
+	template<typename T>
+	inline RefVariant::RefVariant(const T& value)
+	{
+		m_type = TypeDB::GetType<T>();
+		m_data = const_cast<T*>(&value);
+	}
 
-
-// Type
-///////
-
-template<typename T, typename I>
-Type* Type::RegisterMember(const char* name, T I::*accessor)
-{
-	Detail::Member_Internal<T, I>* member = new Detail::Member_Internal<T, I>(accessor);
-	member->m_type = TypeDB::GetType<T>();
-	m_memberList.insert({ name, member });
-	return this;
-}
-
-
-// Member
-/////////
-
-template<typename T>
-bool TypeDB::Member::IsType()
-{
-	TypeId testId = TypeIdGenerator<T>::Id();
-	return testId == m_type->m_id;
-}
-
-template<typename T>
-T TypeDB::Member::GetValue(RefVariant& obj) const
-{
-	return GetValue(obj).Get<T>();
-}
-template<typename T>
-T TypeDB::Member::GetValue(RefVariant&& obj) const
-{
-	return GetValue(obj).Get<T>();
-}
-
-template<typename T>
-T& TypeDB::Member::GetRefValue(RefVariant& obj) const
-{
-	return GetRefValue(obj).Get<T>();
-}
-template<typename T>
-T& TypeDB::Member::GetRefValue(RefVariant&& obj) const
-{
-	return GetRefValue(obj).Get<T>();
-}
-
-// TypeDB
-/////////
-
-
-template<typename T>
-Type* TypeDB::GetType()
-{
-	TypeId id = TypeIdGenerator<T>::Id();
-	ASSERT(Detail::Data::Get().typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
-	return &Detail::Data::Get().typeDatabase[id];
-}
-
-template<typename T>
-Type* TypeDB::GetType(T& obj)
-{
-	TypeId id = TypeIdGenerator<T>::Id();
-	ASSERT(Detail::Data::Get().typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
-	return &Detail::Data::Get().typeDatabase[id];
-}
+	template<typename T>
+	inline RefVariant& RefVariant::operator=(const T& value)
+	{
+		m_type = TypeDB::GetType<T>();
+		m_data = const_cast<T*>(&value);
+		return *this;
+	}
 
 
 
 
-// TypeDB::Detail
-/////////////////
+	// Type
+	///////
 
-template<typename T>
-Type* Detail::RegisterNewType_Internal(const char* typeName)
-{
-	TypeId id = TypeIdGenerator<T>::Id();
-	Detail::Data::Get().typeDatabase.emplace(id, Type(typeName, id, sizeof(T), new Constructor_Internal<T>()));
-	Detail::Data::Get().typeNames.emplace(typeName, id);
-	return &Detail::Data::Get().typeDatabase[id];
+	template<typename T, typename I>
+	Type* Type::RegisterMember(const char* name, T I::*accessor)
+	{
+		Detail::Member_Internal<T, I>* member = new Detail::Member_Internal<T, I>(accessor);
+		member->m_type = TypeDB::GetType<T>();
+		m_memberList.insert({ name, member });
+		return this;
+	}
+
+
+	// Member
+	/////////
+
+	template<typename T>
+	bool TypeDB::Member::IsType()
+	{
+		TypeId testId = TypeIdGenerator<T>::Id();
+		return testId == m_type->m_id;
+	}
+
+	template<typename T>
+	T TypeDB::Member::GetValue(RefVariant& obj) const
+	{
+		return GetValue(obj).Get<T>();
+	}
+	template<typename T>
+	T TypeDB::Member::GetValue(RefVariant&& obj) const
+	{
+		return GetValue(obj).Get<T>();
+	}
+
+	template<typename T>
+	T& TypeDB::Member::GetRefValue(RefVariant& obj) const
+	{
+		return GetRefValue(obj).Get<T>();
+	}
+	template<typename T>
+	T& TypeDB::Member::GetRefValue(RefVariant&& obj) const
+	{
+		return GetRefValue(obj).Get<T>();
+	}
+
+	// TypeDB
+	/////////
+
+
+	template<typename T>
+	Type* TypeDB::GetType()
+	{
+		TypeId id = TypeIdGenerator<T>::Id();
+		ASSERT(Detail::Data::Get().typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
+		return &Detail::Data::Get().typeDatabase[id];
+	}
+
+	template<typename T>
+	Type* TypeDB::GetType(T& obj)
+	{
+		TypeId id = TypeIdGenerator<T>::Id();
+		ASSERT(Detail::Data::Get().typeDatabase.count(id) == 1, "The type you are querying does not exist in the database, please register it");
+		return &Detail::Data::Get().typeDatabase[id];
+	}
+
+
+
+
+	// TypeDB::Detail
+	/////////////////
+
+	template<typename T>
+	Type* Detail::RegisterNewType_Internal(const char* typeName)
+	{
+		TypeId id = TypeIdGenerator<T>::Id();
+		Detail::Data::Get().typeDatabase.emplace(id, Type(typeName, id, sizeof(T), new Constructor_Internal<T>()));
+		Detail::Data::Get().typeNames.emplace(typeName, id);
+		return &Detail::Data::Get().typeDatabase[id];
+	}
 }
