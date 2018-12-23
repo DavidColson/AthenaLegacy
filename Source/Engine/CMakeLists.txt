@@ -5,6 +5,7 @@ set(SOURCES
     "Log.cpp"
     "TypeDB.h"
     "TypeDB.cpp"
+    "TypeData.h"
     "ErrorHandling.h"
     "ErrorHandling.cpp"
     "GameFramework/World.h"

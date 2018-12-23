@@ -3,22 +3,6 @@
 
 using namespace TypeDB;
 
-// Variant
-//////////
-
-Variant::~Variant()
-{
-	delete[] reinterpret_cast<char *>(m_data);
-}
-
-Variant::Variant(const Variant& copy)
-{
-	m_type = copy.m_type;
-	memcpy(m_data, copy.m_data, m_type->m_size);
-}
-
-
-
 // RefVariant
 /////////////
 

@@ -73,16 +73,18 @@ namespace TypeDB
 
 	struct Variant : public VariantBase
 	{
-		Variant() {}
-		~Variant();
+		inline Variant() {}
+		inline ~Variant();
 
 		template<typename T>
 		inline Variant(const T& value);
 
-		Variant(const Variant& copy);
+		inline Variant(const Variant& copy);
 
 		template<typename T>
 		inline Variant& operator=(const T& value);
+
+		inline Variant& operator=(const Variant& value);
 	};
 
 	struct RefVariant : VariantBase
@@ -276,6 +278,7 @@ using namespace TypeDB;
 template<typename T>
 inline T& VariantBase::Get()
 {
+	ASSERT(IsA<T>(), "Incorrect Type passed to variant Get");
 	return *reinterpret_cast<T*>(m_data);
 }
 
@@ -292,6 +295,21 @@ inline bool VariantBase::IsA()
 // Variant
 //////////
 
+// Variant
+//////////
+
+inline Variant::~Variant()
+{
+	delete[] reinterpret_cast<char *>(m_data);
+}
+
+inline Variant::Variant(const Variant& copy)
+{
+	m_type = copy.m_type;
+	m_data = new char[m_type->m_size];
+	memcpy(m_data, copy.m_data, m_type->m_size);
+}
+
 template<typename T>
 inline Variant::Variant(const T& value)
 {
@@ -304,7 +322,7 @@ inline Variant::Variant(const T& value)
 template<typename T>
 inline Variant& Variant::operator=(const T& value)
 {
-	if (m_typeId != TypeIdGenerator<T>::Id() && m_typeId != 0)
+	if (m_type->m_id != TypeIdGenerator<T>::Id() && m_type->m_id != 0)
 	{
 		delete[] reinterpret_cast<char *>(m_data);
 
@@ -318,8 +336,16 @@ inline Variant& Variant::operator=(const T& value)
 		size_t size = TypeDB::GetType<T>()->m_size;
 		memcpy(m_data, &value, size);
 	}
+	return *this;
 }
 
+inline Variant& Variant::operator=(const Variant& value)
+{
+	m_type = value.m_type;
+	m_data = new char[m_type->m_size];
+	memcpy(m_data, value.m_data, m_type->m_size);
+	return *this;
+}
 
 
 
