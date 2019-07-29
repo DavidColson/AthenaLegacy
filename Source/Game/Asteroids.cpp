@@ -4,6 +4,7 @@
 #include "Systems/Systems.h"
 #include "Components/Components.h"
 
+#include "Maths/Vec2.h"
 #include <Editor/Editor.h>
 #include <GameFramework/World.h>
 #include <Engine.h>

@@ -3,6 +3,8 @@ project(Engine)
 set(SOURCES
     "Log.h"
     "Log.cpp"
+    "Utility.h"
+    "Utility.cpp"
     "TypeDB.h"
     "TypeDB.cpp"
     "TypeData.h"
@@ -24,6 +26,8 @@ set(SOURCES
     "Input/Input.cpp"
     "Maths/Maths.h"
     "Maths/Maths.cpp"
+    "Maths/Vec2.h"
+    "Maths/Vec2.cpp"
     "Engine.h"
     "Engine.cpp"
     "IGame.h"

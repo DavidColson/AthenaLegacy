@@ -55,6 +55,8 @@ REGISTER(float)
 	NewType(std::string);
 	NewType(float);
 	NewType(float*);
+	NewType(double);
+	NewType(double*);
 	NewType(int);
 	NewType(int*);
 	NewType(bool);

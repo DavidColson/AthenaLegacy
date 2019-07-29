@@ -9,7 +9,8 @@ REGISTER(CPlayerControl)
 		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
 		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
 		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
-		->RegisterMember("m_someVec", &CPlayerControl::m_someVec);
+		->RegisterMember("m_someVec", &CPlayerControl::m_someVec)
+		->RegisterMember("m_newVec", &CPlayerControl::m_newVec);
 }
 
 REGISTER(CDrawable)

@@ -4,6 +4,7 @@ set(SOURCES
     "main.cpp"
 	"TestsTypeDB.cpp"
 	"TestsECS.cpp"
+	"TestsMaths.cpp"
     "Catch/catch.hpp"
     )
 

@@ -2,6 +2,7 @@
 
 #include <TypeData.h>
 #include <Maths/Maths.h>
+#include <Maths/Vec2.h>
 #include <Renderer/RenderProxy.h>
 #include <Log.h>
 #include <GameFramework/World.h>
@@ -30,6 +31,7 @@ struct CPlayerControl
 	float m_rotateSpeed{ 0.1f };
 	float m_dampening{ 0.f };
 	vec2 m_someVec{ vec2(5.0f, 2.0f) };
+	Vec2f m_newVec{ Vec2f(3.0f, 1.0f) };
 };
 REGISTER_EXTERN(CPlayerControl);
 
