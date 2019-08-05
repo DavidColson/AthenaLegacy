@@ -124,7 +124,7 @@ namespace TypeDB
 
 		bool operator==(const Type* other);
 
-		// #TodoTypeDB Add GetMemberValue<T> and SetMemberValue functions for convenience 
+		// #TodoTypeDB Add GetMemberValue<T> and SetMemberValue functions for convenience (also GetMemberType)
 
 		Member* GetMember(const char* name);
 
