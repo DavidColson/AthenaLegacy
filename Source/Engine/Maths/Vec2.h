@@ -1,6 +1,14 @@
 #pragma once
 
 #include "Utility.h"
+//#include "Vec3.h"
+//#include "Vec4.h"
+
+template<typename T>
+struct Vec3;
+
+template<typename T>
+struct Vec4;
 
 #include <string>
 
@@ -267,7 +275,8 @@ struct Vec2
 	**/
 	inline T& operator[](int index) 
 	{
-		return index == 0 ? x : y;
+		ASSERT(index < 2, "Out of bounds index for vector component");
+		return (&x)[index];
 	}
 
 	/**
@@ -278,7 +287,8 @@ struct Vec2
 	**/
 	inline T operator[](int index) const
 	{
-		return index == 0 ? x : y;
+		ASSERT(index < 2, "Out of bounds index for vector component");
+		return (&x)[index];
 	}
 
 	/**
@@ -289,6 +299,28 @@ struct Vec2
 	inline std::string ToString() const
 	{
 		return StringFormat("{ %.5f, %.5f }", x, y);
+	}
+
+	/**
+	* Projects a 4D vector into 2D space
+	*
+	* @param  vec The target 4D vector
+	* @return The 2D vector
+	**/
+	inline static Vec2 Project4D(const Vec4<T>& vec)
+	{
+		return Vec2(vec.x, vec.y);
+	}
+
+	/**
+	* Projects a 3D vector into 2D space
+	*
+	* @param  vec The target 3D vector
+	* @return The 2D vector
+	**/
+	inline static Vec2 Project3D(const Vec3<T>& vec)
+	{
+		return Vec2(vec.x, vec.y);
 	}
 };
 

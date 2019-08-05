@@ -5,6 +5,8 @@
 #include "Components/Components.h"
 
 #include "Maths/Vec2.h"
+#include "Maths/Vec3.h"
+#include "Maths/Vec4.h"
 #include <Editor/Editor.h>
 #include <GameFramework/World.h>
 #include <Engine.h>

@@ -2,11 +2,9 @@
 
 #include "Utility.h"
 #include "ErrorHandling.h"
-//#include "Vec2.h"
-//#include "Vec4.h"
 
 template<typename T>
-struct Vec4;
+struct Vec3;
 
 template<typename T>
 struct Vec2;
@@ -14,15 +12,16 @@ struct Vec2;
 #include <string>
 
 template<typename T>
-struct Vec3
+struct Vec4
 {
-	Vec3() : x(T()), y(T()), z(T()) {}
-	Vec3(T val) : x(val), y(val), z(val) {}
-	Vec3(T x, T y, T z) : x(x), y(y), z(z) {}
+	Vec4() : x(T()), y(T()), z(T()), w(T()) {}
+	Vec4(T val) : x(val), y(val), z(val), w(val) {}
+	Vec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
 
 	T x;
 	T y;
 	T z;
+	T w;
 
 	/**
 	* Add a scalar to each component of this vector and return the result
@@ -30,9 +29,9 @@ struct Vec3
 	* @param  scalar The scalar to add
 	* @return The result of adding the scalar
 	**/
-	inline Vec3 operator+(const T& scalar) const
+	inline Vec4 operator+(const T& scalar) const
 	{
-		return Vec3(x + scalar, y + scalar, z + scalar);
+		return Vec4(x + scalar, y + scalar, z + scalar, w + scalar);
 	}
 
 	/**
@@ -41,9 +40,9 @@ struct Vec3
 	* @param  scalar The scalar to subtract
 	* @return The result of subtracting the scalar
 	**/
-	inline Vec3 operator-(const T& scalar) const
+	inline Vec4 operator-(const T& scalar) const
 	{
-		return Vec3(x - scalar, y - scalar, z - scalar);
+		return Vec4(x - scalar, y - scalar, z - scalar, w - scalar);
 	}
 
 	/**
@@ -52,9 +51,9 @@ struct Vec3
 	* @param  scalar The scalar to multiply
 	* @return The result of multiplying by the scalar
 	**/
-	inline Vec3 operator*(const T& scalar) const
+	inline Vec4 operator*(const T& scalar) const
 	{
-		return Vec3(x * scalar, y * scalar, z * scalar);
+		return Vec4(x * scalar, y * scalar, z * scalar, w * scalar);
 	}
 
 	/**
@@ -63,9 +62,9 @@ struct Vec3
 	* @param  scalar The scalar to divide with
 	* @return The result of dividing the vector
 	**/
-	inline Vec3 operator/(const T& scalar) const
+	inline Vec4 operator/(const T& scalar) const
 	{
-		return Vec3(x / scalar, y / scalar, z / scalar);
+		return Vec4(x / scalar, y / scalar, z / scalar, w / scalar);
 	}
 
 	/**
@@ -74,9 +73,9 @@ struct Vec3
 	* @param  rhs The vector to add to this
 	* @return The result of adding the two vectors
 	**/
-	inline Vec3 operator+(const Vec3& rhs) const
+	inline Vec4 operator+(const Vec4& rhs) const
 	{
-		return Vec3(x + rhs.x, y + rhs.y, z + rhs.z);
+		return Vec4(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
 	}
 
 	/**
@@ -85,9 +84,9 @@ struct Vec3
 	* @param  rhs The vector to take away from this
 	* @return The result of the subtraction
 	**/
-	inline Vec3 operator-(const Vec3& rhs) const
+	inline Vec4 operator-(const Vec4& rhs) const
 	{
-		return Vec3(x - rhs.x, y - rhs.y, z - rhs.z);
+		return Vec4(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
 	}
 
 	/**
@@ -95,9 +94,9 @@ struct Vec3
 	*
 	* @return The negated vector
 	**/
-	inline Vec3 operator-() const
+	inline Vec4 operator-() const
 	{
-		return Vec3(-x, -y, -z);
+		return Vec4(-x, -y, -z, -w);
 	}
 
 	/**
@@ -107,9 +106,9 @@ struct Vec3
 	* @param  rhs The right vector
 	* @return The result of the component multiplication
 	**/
-	inline static Vec3 CompMul(const Vec3& lhs, const Vec3& rhs)
+	inline static Vec4 CompMul(const Vec4& lhs, const Vec4& rhs)
 	{
-		return Vec3(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z);
+		return Vec4(lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, lhs.w * rhs.w);
 	}
 
 	/**
@@ -119,37 +118,50 @@ struct Vec3
 	* @param  rhs The right vector
 	* @return The result of the component division
 	**/
-	inline static Vec3 CompDiv(const Vec3& lhs, const Vec3& rhs)
+	inline static Vec4 CompDiv(const Vec4& lhs, const Vec4& rhs)
 	{
-		return Vec3(lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z);
+		return Vec4(lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z, lhs.w / rhs.w);
 	}
 
 	/**
-	* Take the dot product of two vectors and return the result
+	* Take the 3D dot product of two 4D vectors and return the result
 	*
 	* @param  lhs The left vector
 	* @param  rhs The right vector
 	* @return The dot of the two vectors
 	**/
-	inline static T Dot(const Vec3& lhs, const Vec3& rhs)
+	inline static T Dot3(const Vec4& lhs, const Vec4& rhs)
 	{
 		return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
 	}
 
 	/**
-	* Calculate the cross product of two vectors. 
+	* Take the 4D dot product of two 4D vectors and return the result
+	*
+	* @param  lhs The left vector
+	* @param  rhs The right vector
+	* @return The dot of the two vectors
+	**/
+	inline static T Dot(const Vec4& lhs, const Vec4& rhs)
+	{
+		return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
+	}
+
+	/**
+	* Calculate the 3D cross product of two vectors (the w component is ignored).
 	*
 	* @param  lhs The left vector
 	* @param  rhs The right vector
 	* @return The cross product of the two vectors
 	**/
-	inline static Vec3 Cross(const Vec3& lhs, const Vec3& rhs)
+	inline static Vec4 Cross(const Vec4& lhs, const Vec4& rhs)
 	{
-		return Vec3(
+		return Vec4(
 			lhs.y * rhs.z - lhs.z * rhs.y,
 			lhs.z * rhs.x - lhs.x * rhs.z,
-			lhs.x * rhs.y - lhs.y * rhs.x
-			);
+			lhs.x * rhs.y - lhs.y * rhs.x,
+			0.0f
+		);
 	}
 
 	/**
@@ -158,9 +170,9 @@ struct Vec3
 	* @param  rhs The other vector to compare against
 	* @return True if the vectors are exactly equal
 	**/
-	inline bool operator==(const Vec3& rhs) const
+	inline bool operator==(const Vec4& rhs) const
 	{
-		return x == rhs.x && y == rhs.y && z == rhs.z;
+		return x == rhs.x && y == rhs.y && z == rhs.z && w == rhs.w;
 	}
 
 	/**
@@ -169,9 +181,9 @@ struct Vec3
 	* @param  rhs The other vector to compare against
 	* @return True if the vectors are not equal
 	**/
-	inline bool operator!=(const Vec3& rhs) const
+	inline bool operator!=(const Vec4& rhs) const
 	{
-		return x != rhs.x && y != rhs.y && z != rhs.z;
+		return x != rhs.x && y != rhs.y && z != rhs.z && w != rhs.w;
 	}
 
 	/**
@@ -180,11 +192,12 @@ struct Vec3
 	* @param  scalar The scalar to add
 	* @return This vector after the addition
 	**/
-	inline Vec3 operator+=(const T& scalar)
+	inline Vec4 operator+=(const T& scalar)
 	{
 		x += scalar;
 		y += scalar;
 		z += scalar;
+		w += scalar;
 		return *this;
 	}
 
@@ -194,11 +207,12 @@ struct Vec3
 	* @param  scalar The scalar to subtract
 	* @return This vector after the subtraction
 	**/
-	inline Vec3 operator-=(const T& scalar)
+	inline Vec4 operator-=(const T& scalar)
 	{
 		x -= scalar;
 		y -= scalar;
 		z -= scalar;
+		w -= scalar;
 		return *this;
 	}
 
@@ -208,11 +222,12 @@ struct Vec3
 	* @param  scalar The scalar to multiply by
 	* @return This vector after the multiplication
 	**/
-	inline Vec3 operator*=(const T& scalar)
+	inline Vec4 operator*=(const T& scalar)
 	{
 		x *= scalar;
 		y *= scalar;
 		z *= scalar;
+		w *= scalar;
 		return *this;
 	}
 
@@ -222,11 +237,12 @@ struct Vec3
 	* @param  scalar The scalar to divide by
 	* @return This vector after the division
 	**/
-	inline Vec3 operator/=(const T& scalar)
+	inline Vec4 operator/=(const T& scalar)
 	{
 		x /= scalar;
 		y /= scalar;
 		z /= scalar;
+		w /= scalar;
 		return *this;
 	}
 
@@ -236,11 +252,12 @@ struct Vec3
 	* @param  rhs The vector to to add
 	* @return This vector after the addition
 	**/
-	inline Vec3 operator+=(const Vec3& rhs)
+	inline Vec4 operator+=(const Vec4& rhs)
 	{
 		x += rhs.x;
 		y += rhs.y;
 		z += rhs.z;
+		w += rhs.w;
 		return *this;
 	}
 
@@ -250,11 +267,12 @@ struct Vec3
 	* @param  rhs The vector to to subtract
 	* @return This vector after the subtraction
 	**/
-	inline Vec3 operator-=(const Vec3& rhs)
+	inline Vec4 operator-=(const Vec4& rhs)
 	{
 		x -= rhs.x;
 		y -= rhs.y;
 		z -= rhs.z;
+		w -= rhs.w;
 		return *this;
 	}
 
@@ -265,7 +283,7 @@ struct Vec3
 	**/
 	inline T GetLength() const
 	{
-		return sqrt(x * x + y * y + z * z);
+		return sqrt(x * x + y * y + z * z + w * w);
 	}
 
 	/**
@@ -273,9 +291,9 @@ struct Vec3
 	*
 	* @return The normalized vector
 	**/
-	inline Vec3 GetNormalized() const
+	inline Vec4 GetNormalized() const
 	{
-		return Vec3(x, y, z) / GetLength();
+		return Vec4(x, y, z, w) / GetLength();
 	}
 
 	/**
@@ -286,7 +304,7 @@ struct Vec3
 	**/
 	inline T& operator[](int index)
 	{
-		ASSERT(index < 3, "Out of bounds index for vector component");
+		ASSERT(index < 4, "Out of bounds index for vector component");
 		return (&x)[index];
 	}
 
@@ -298,7 +316,7 @@ struct Vec3
 	**/
 	inline T operator[](int index) const
 	{
-		ASSERT(index < 3, "Out of bounds index for vector component");
+		ASSERT(index < 4, "Out of bounds index for vector component");
 		return (&x)[index];
 	}
 
@@ -309,18 +327,18 @@ struct Vec3
 	**/
 	inline std::string ToString() const
 	{
-		return StringFormat("{ %.5f, %.5f, %.5f }", x, y, z);
+		return StringFormat("{ %.5f, %.5f, %.5f, %.5f }", x, y, z, w);
 	}
 
 	/**
-	* Projects a 4D vector into 3D space
+	* Embeds a 3D vector into 4D space
 	*
-	* @param  vec The target 4D vector
-	* @return The 3D vector
+	* @param  vec The target 3D vector
+	* @return The 4D vector
 	**/
-	inline static Vec3 Project4D(const Vec4<T>& vec)
+	inline static Vec4 Embed3D(const Vec3<T>& vec)
 	{
-		return Vec3(vec.x, vec.y, vec.z);
+		return Vec4(vec.x, vec.y, vec.z, 0.0f);
 	}
 
 	/**
@@ -329,11 +347,11 @@ struct Vec3
 	* @param  vec The target 3D vector
 	* @return The 4D vector
 	**/
-	inline static Vec3 Embed2D(const Vec2<T>& vec)
+	inline static Vec4 Embed2D(const Vec2<T>& vec)
 	{
-		return Vec3(vec.x, vec.y, 0.0f);
+		return Vec4(vec.x, vec.y, 0.0f, 0.0f);
 	}
 };
 
-typedef Vec3<float> Vec3f;
-typedef Vec3<double> Vec3d;
+typedef Vec4<float> Vec4f;
+typedef Vec4<double> Vec4d;
