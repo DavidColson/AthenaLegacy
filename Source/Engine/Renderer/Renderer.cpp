@@ -11,7 +11,7 @@
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
 
-#include "Maths/Maths.h"
+#include "Log.h"
 #include "RenderFont.h"
 #include "DebugDraw.h"
 
@@ -134,15 +134,15 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	// Create a quad to render onto
 	std::vector<Vertex> quadVertices = {
-		Vertex(vec3(-1.0f, -1.0f, 0.5f)),
-		Vertex(vec3(-1.f, 1.f, 0.5f)),
-		Vertex(vec3(1.f, -1.f, 0.5f)),
-		Vertex(vec3(1.f, 1.f, 0.5f))
+		Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
+		Vertex(Vec3f(-1.f, 1.f, 0.5f)),
+		Vertex(Vec3f(1.f, -1.f, 0.5f)),
+		Vertex(Vec3f(1.f, 1.f, 0.5f))
 	};
-	quadVertices[0].m_texCoords = vec2(0.0f, 1.0f);
-	quadVertices[1].m_texCoords = vec2(0.0f, 0.0f);
-	quadVertices[2].m_texCoords = vec2(1.0f, 1.0f);
-	quadVertices[3].m_texCoords = vec2(1.0f, 0.0f);
+	quadVertices[0].m_texCoords = Vec2f(0.0f, 1.0f);
+	quadVertices[1].m_texCoords = Vec2f(0.0f, 0.0f);
+	quadVertices[2].m_texCoords = Vec2f(1.0f, 1.0f);
+	quadVertices[3].m_texCoords = Vec2f(1.0f, 0.0f);
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
@@ -393,7 +393,7 @@ Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents, bool w
 	return shader;
 }
 
-Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, uint bindflags)
+Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags)
 {
 	D3D11_TEXTURE2D_DESC textureDesc;
 	ZeroMemory(&textureDesc, sizeof(textureDesc));

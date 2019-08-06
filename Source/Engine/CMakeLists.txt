@@ -24,8 +24,6 @@ set(SOURCES
     "Editor/Editor.cpp"
     "Input/Input.h"
     "Input/Input.cpp"
-    "Maths/Maths.h"
-    "Maths/Maths.cpp"
     "Maths/Vec2.h"
     "Maths/Vec2.cpp"
     "Maths/Vec3.h"

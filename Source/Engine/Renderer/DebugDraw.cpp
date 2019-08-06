@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <d3d10.h>
 
+#include "Maths/Matrix.h"
 #include "Renderer.h"
 
 namespace
@@ -16,8 +17,8 @@ namespace
 	
 	struct DebugVertex
 	{
-		vec3 m_pos{ vec3(0.0f, 0.0f, 0.0f) };
-		vec3 m_col{ vec3(0.0f, 0.0f, 0.0f) };
+		Vec3f m_pos{ Vec3f(0.0f, 0.0f, 0.0f) };
+		Vec3f m_col{ Vec3f(0.0f, 0.0f, 0.0f) };
 	};
 	std::vector<DebugVertex> vertBufferData;
 	int vertBufferSize = 0;
@@ -30,18 +31,18 @@ namespace
 
 	struct cbTransform
 	{
-		mat4 m_wvp;
+		Matrixf m_wvp;
 	};
 	ID3D11Buffer* pConstBuffer;
 }
 
-void DebugDraw::Draw2DCircle(vec2 pos, float radius, vec3 color)
+void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec3f color)
 {
 	float div = 6.282f / 20.f;
 	for (int i = 0; i < 20; i++)
 	{
 		float x = div * (float)i;
-		vec3 point = vec3(radius*cos(x), radius*sin(x), 0.0f) + embed<3>(pos);
+		Vec3f point = Vec3f(radius*cos(x), radius*sin(x), 0.0f) + Vec3f::Embed2D(pos);
 		vertBufferData.emplace_back(DebugVertex{ point, color });
 		indexBufferData.push_back(i);
 	}
@@ -49,10 +50,10 @@ void DebugDraw::Draw2DCircle(vec2 pos, float radius, vec3 color)
 	drawQueue.emplace_back(DrawCall{20, 21});
 }
 
-void DebugDraw::Draw2DLine(vec2 start, vec2 end, vec3 color)
+void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec3f color)
 {
-	vertBufferData.emplace_back(DebugVertex{ embed<3>(start), color });
-	vertBufferData.emplace_back(DebugVertex{ embed<3>(end), color });
+	vertBufferData.emplace_back(DebugVertex{ Vec3f::Embed2D(start), color });
+	vertBufferData.emplace_back(DebugVertex{ Vec3f::Embed2D(end), color });
 	indexBufferData.push_back(0);
 	indexBufferData.push_back(1);
 
@@ -149,7 +150,7 @@ void DebugDraw::Detail::DrawQueue()
 	ZeroMemory(&constResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	pCtx->m_pDeviceContext->Map(pConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constResource);
 	cbTransform* transform = (cbTransform*)constResource.pData;
-	mat4 wvp = MakeOrthographic(0, pCtx->m_windowWidth / pCtx->m_pixelScale, 0.0f, pCtx->m_windowHeight / pCtx->m_pixelScale, 0.1f, 10.0f);
+	Matrixf wvp = Matrixf::Orthographic(0.f, pCtx->m_windowWidth / pCtx->m_pixelScale, 0.0f, pCtx->m_windowHeight / pCtx->m_pixelScale, 0.1f, 10.0f);
 	memcpy(&transform->m_wvp, &wvp, sizeof(wvp));
 	pCtx->m_pDeviceContext->Unmap(pConstBuffer, 0);
 

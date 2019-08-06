@@ -7,6 +7,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include "Maths/Matrix.h"
+#include "Maths/Vec3.h"
 #include "RenderProxy.h"
 #include "Renderer.h"
 
@@ -47,20 +49,20 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 
 	std::vector<Vertex> quadVertices = {
-		Vertex(vec3(0.0f, 0.0f, 0.5f)),
-		Vertex(vec3(0.f, 10.f, 0.5f)),
-		Vertex(vec3(10.f, 10.f, 0.5f)),
-		Vertex(vec3(10.f, 0.f, 0.5f))
+		Vertex(Vec3f(0.0f, 0.0f, 0.5f)),
+		Vertex(Vec3f(0.f, 10.f, 0.5f)),
+		Vertex(Vec3f(10.f, 10.f, 0.5f)),
+		Vertex(Vec3f(10.f, 0.f, 0.5f))
 	};
 	std::vector<int> quadIndices = {
 		0, 1, 2,
 		3, 0
 	};
 
-	quadVertices[0].m_texCoords = vec2(0.0f, 1.0f);
-	quadVertices[1].m_texCoords = vec2(0.0f, 0.0f);
-	quadVertices[2].m_texCoords = vec2(1.0f, 0.0f);
-	quadVertices[3].m_texCoords = vec2(1.0f, 1.0f);
+	quadVertices[0].m_texCoords = Vec2f(0.0f, 1.0f);
+	quadVertices[1].m_texCoords = Vec2f(0.0f, 0.0f);
+	quadVertices[2].m_texCoords = Vec2f(1.0f, 0.0f);
+	quadVertices[3].m_texCoords = Vec2f(1.0f, 1.0f);
 
 	// Create vertex buffer
 	// ********************
@@ -165,8 +167,8 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 			character.m_charTexture = texture.m_pShaderResourceView;
 		}
-		character.m_size = vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
-		character.m_bearing = vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
+		character.m_size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
+		character.m_bearing = Vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
 		character.m_advance = (face->glyph->advance.x) >> 6;
 
 		int size = sizeof(character);
@@ -207,14 +209,14 @@ void RenderFont::Draw(std::string text, int x, int y)
 		// Draw a font character
 		Character ch = m_characters[c];
 
-		mat4 posmat = MakeTranslate(vec3(float(x + ch.m_bearing.x - textWidth*0.5f), float(y - (ch.m_size.y - ch.m_bearing.y)), 0.0f));
-		mat4 scalemat = MakeScale(vec3(ch.m_size.x / 10.0f, ch.m_size.y / 10.0f, 1.0f));
+		Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.m_bearing.x - textWidth*0.5f), float(y - (ch.m_size.y - ch.m_bearing.y)), 0.0f));
+		Matrixf scalemat = Matrixf::Scale(Vec3f(ch.m_size.x / 10.0f, ch.m_size.y / 10.0f, 1.0f));
 
 
-		mat4 world = posmat * scalemat; // transform into world space
-		mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, 0.1f, 10.0f); // transform into screen space
+		Matrixf world = posmat * scalemat; // transform into world space
+		Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, 0.1f, 10.0f); // transform into screen space
 
-		mat4 wvp = projection * world;
+		Matrixf wvp = projection * world;
 
 		m_cbCharTransform.m_wvp = wvp;
 		Graphics::GetContext()->m_pDeviceContext->UpdateSubresource(m_pQuadWVPBuffer, 0, nullptr, &m_cbCharTransform, 0, 0);

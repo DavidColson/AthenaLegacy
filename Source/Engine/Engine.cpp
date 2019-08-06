@@ -9,7 +9,6 @@
 
 #include "GameFramework/World.h"
 #include "Input/Input.h"
-#include "Maths/Maths.h"
 #include "Renderer/Renderer.h"
 #include "Editor/Editor.h"
 #include "Log.h"
@@ -94,6 +93,8 @@ void Engine::Run()
 		else
 		{
 			frameTime = realframeTime;
+			Log::Print(Log::EMsg, "FrameTime %.6f", frameTime);
+
 		}
 	}
 

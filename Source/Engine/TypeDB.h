@@ -29,7 +29,7 @@ namespace reg_helper
 	extern void register_func();\
 	template <>\
 	void register_func<TYPE>();\
-	static const int CAT(temp, __LINE__) =\
+	static const int CAT(TYPE, __LINE__) =\
 		reg_helper::call<TYPE>(&register_func<TYPE>)
 
 #define REGISTER(TYPE)\

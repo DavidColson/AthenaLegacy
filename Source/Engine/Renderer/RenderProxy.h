@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Maths/Maths.h"
+#include "Maths/Vec3.h"
+#include "Maths/Vec2.h"
 
 #include <vector>
 
@@ -8,11 +9,11 @@ struct ID3D11Buffer;
 
 struct Vertex
 {
-	Vertex(vec3 pos) : m_pos(pos) {}
+	Vertex(Vec3f pos) : m_pos(pos) {}
 
-	vec3 m_pos{ vec3(0.0f, 0.0f, 0.0f) };
-	vec3 m_col{ vec3(0.0f, 0.0f, 0.0f) };
-	vec2 m_texCoords{ vec2(0.0f, 0.0f) };
+	Vec3f m_pos{ Vec3f(0.0f, 0.0f, 0.0f) };
+	Vec3f m_col{ Vec3f(0.0f, 0.0f, 0.0f) };
+	Vec2f m_texCoords{ Vec2f(0.0f, 0.0f) };
 };
 
 struct RenderProxy
@@ -22,12 +23,12 @@ struct RenderProxy
 
 	void Draw();
 
-	void SetTransform(vec3 pos, float rot, vec3 sca) { m_pos = pos; m_rot = rot; m_sca = sca; }
+	void SetTransform(Vec3f pos, float rot, Vec3f sca) { m_pos = pos; m_rot = rot; m_sca = sca; }
 
 	ID3D11Buffer* m_pWVPBuffer;
 
-	vec3 m_pos{ vec3(0,0,0) };
-	vec3 m_sca{ vec3(1.f, 1.f, 1.f) };
+	Vec3f m_pos{ Vec3f(0,0,0) };
+	Vec3f m_sca{ Vec3f(1.f, 1.f, 1.f) };
 	float m_rot{ 0.0f };
 	float m_lineThickness{ 1.0f };
 

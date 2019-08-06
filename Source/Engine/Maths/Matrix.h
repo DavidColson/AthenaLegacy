@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vec3.h"
+#include "Vec2.h"
 #include "Vec3.h"
 
 /**
@@ -145,17 +145,17 @@ struct Matrix
 
 	}
 
-	inline static Matrix Orthographic(float left, float right, float bottom, float top, float near, float far)
+	inline static Matrix Orthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
 	{
 		Matrix mat;
 		mat.m[0][0] = 2.0f / (right - left);	mat.m[0][1] = 0.0f;						mat.m[0][2] = 0.0f;					mat.m[0][3] = (-right - left) / (right - left);
 		mat.m[1][0] = 0.0f;						mat.m[1][1] = 2.0f / (top - bottom);	mat.m[1][2] = 0.0f;					mat.m[1][3] = (-top - bottom) / (top - bottom);
-		mat.m[2][0] = 0.0f;						mat.m[2][1] = 0.0f;						mat.m[2][2] = 1.0f / (far - near);	mat.m[2][3] = (-near) / (far - near);
+		mat.m[2][0] = 0.0f;						mat.m[2][1] = 0.0f;						mat.m[2][2] = 1.0f / (farPlane - nearPlane);	mat.m[2][3] = (-nearPlane) / (farPlane - nearPlane);
 		mat.m[3][0] = 0.0f;						mat.m[3][1] = 0.0f;						mat.m[3][2] = 0.0f;					mat.m[3][3] = 1.0f;
 		return mat;
 	}
 
-	inline static Matrix Viewport(float left, float right, float bottom, float top, float near, float far)
+	inline static Matrix Viewport(float left, float right, float bottom, float top, float nearPlane, float farPlane)
 	{
 
 	}

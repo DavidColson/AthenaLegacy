@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Maths/Maths.h"
+#include "Maths/Vec2.h"
+#include "Maths/Vec3.h"
 
 namespace DebugDraw
 {
-	void Draw2DCircle(vec2 pos, float radius, vec3 color);
-	void Draw2DLine(vec2 start, vec2 end, vec3 color);
+	void Draw2DCircle(Vec2f pos, float radius, Vec3f color);
+	void Draw2DLine(Vec2f start, Vec2f end, Vec3f color);
 
 	namespace Detail
 	{

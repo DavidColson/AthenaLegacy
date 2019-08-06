@@ -3,7 +3,8 @@
 #include "Input/Input.h"
 #include "Log.h"
 #include "GameFramework/World.h"
-#include "Maths/Maths.h"
+#include "Maths/Vec3.h"
+#include "Maths/Vec2.h"
 
 #include <vector>
 #include <string>
@@ -87,16 +88,16 @@ void ShowEntityInspector()
 						int& number = member.second->GetRefValue<int>(component);
 						ImGui::DragInt(member.first.c_str(), &number, 0.1f);
 					}
-					else if (member.second->IsType<vec2>())
+					else if (member.second->IsType<Vec2f>())
 					{
-						vec2& vec = member.second->GetRefValue<vec2>(component);
+						Vec2f& vec = member.second->GetRefValue<Vec2f>(component);
 						float list[2] = { vec.x, vec.y };
 						ImGui::DragFloat2(member.first.c_str(), list, 0.1f);
 						vec.x = list[0]; vec.y = list[1];
 					}
-					else if (member.second->IsType<vec3>())
+					else if (member.second->IsType<Vec3f>())
 					{
-						vec3& vec = member.second->GetRefValue<vec3>(component);
+						Vec3f& vec = member.second->GetRefValue<Vec3f>(component);
 						float list[3] = { vec.x, vec.y, vec.z };
 						ImGui::DragFloat3(member.first.c_str(), list, 0.1f);
 						vec.x = list[0]; vec.y = list[1]; vec.z = list[2];

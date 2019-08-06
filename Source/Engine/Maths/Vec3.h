@@ -324,10 +324,10 @@ struct Vec3
 	}
 
 	/**
-	* Embeds a 2D vector into 4D space
+	* Embeds a 2D vector into 3D space
 	*
-	* @param  vec The target 3D vector
-	* @return The 4D vector
+	* @param  vec The target 2D vector
+	* @return The 3D vector
 	**/
 	inline static Vec3 Embed2D(const Vec2<T>& vec)
 	{

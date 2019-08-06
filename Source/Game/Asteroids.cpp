@@ -1,12 +1,12 @@
 #include "TypeData.h"
 
+
 #include "TypeDB.h"
 #include "Systems/Systems.h"
 #include "Components/Components.h"
 
-#include "Maths/Vec2.h"
-#include "Maths/Vec3.h"
-#include "Maths/Vec4.h"
+#include <Maths/Vec4.h>
+#include <Maths/Matrix.h>
 #include <Editor/Editor.h>
 #include <GameFramework/World.h>
 #include <Engine.h>
@@ -32,7 +32,7 @@ struct Asteroids : public IGame
 		TypeDB::Variant player = playerType->New();
 
 		// Get the m_pos member from it
-		TypeDB::Member* posmember = playerType->GetMember("m_someVec");
+		TypeDB::Member* posmember = playerType->GetMember("m_newVec");
 
 		// Get type of m_pos, and then get the "x" member of it
 		TypeDB::Member* xmember = posmember->GetType()->GetMember("x");
@@ -50,7 +50,7 @@ struct Asteroids : public IGame
 		CPlayerControl realPlayer = player.Get<CPlayerControl>();
 
 		// Prints "realPlayer.m_pos.x 1337.0"
-		Log::Print(Log::EMsg, "realPlayer.m_pos.x %f", realPlayer.m_someVec.x);
+		Log::Print(Log::EMsg, "realPlayer.m_pos.x %f", realPlayer.m_newVec.x);
 
 
 		Log::Print(Log::EMsg, "------- Serialization Attempt -------");
@@ -83,16 +83,16 @@ struct Asteroids : public IGame
 
 		g_asteroidMeshes.emplace_back(RenderProxy(
 			{
-				Vertex(vec3(0.03f, 0.379f, 0.0f)),
-				Vertex(vec3(0.03f, 0.64f, 0.0f)),
-				Vertex(vec3(0.314f, 0.69f, 0.0f)),
-				Vertex(vec3(0.348f, 0.96f, 0.0f)),
-				Vertex(vec3(0.673f, 0.952f, 0.0f)),
-				Vertex(vec3(0.698f, 0.724f, 0.0f)),
-				Vertex(vec3(0.97f, 0.645f, 0.0f)),
-				Vertex(vec3(0.936f, 0.228f, 0.f)),
-				Vertex(vec3(0.555f, 0.028f, 0.f)),
-				Vertex(vec3(0.22f, 0.123f, 0.f))
+				Vertex(Vec3f(0.03f, 0.379f, 0.0f)),
+				Vertex(Vec3f(0.03f, 0.64f, 0.0f)),
+				Vertex(Vec3f(0.314f, 0.69f, 0.0f)),
+				Vertex(Vec3f(0.348f, 0.96f, 0.0f)),
+				Vertex(Vec3f(0.673f, 0.952f, 0.0f)),
+				Vertex(Vec3f(0.698f, 0.724f, 0.0f)),
+				Vertex(Vec3f(0.97f, 0.645f, 0.0f)),
+				Vertex(Vec3f(0.936f, 0.228f, 0.f)),
+				Vertex(Vec3f(0.555f, 0.028f, 0.f)),
+				Vertex(Vec3f(0.22f, 0.123f, 0.f))
 			}, {
 				// Note has adjacency data
 				9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1
@@ -100,18 +100,18 @@ struct Asteroids : public IGame
 
 		g_asteroidMeshes.emplace_back(RenderProxy(
 			{
-				Vertex(vec3(0.05f, 0.54f, 0.0f)),
-				Vertex(vec3(0.213f, 0.78f, 0.0f)),
-				Vertex(vec3(0.37f, 0.65f, 0.0f)),
-				Vertex(vec3(0.348f, 0.96f, 0.0f)),
-				Vertex(vec3(0.673f, 0.952f, 0.0f)),
-				Vertex(vec3(0.64f, 0.75f, 0.0f)),
-				Vertex(vec3(0.83f, 0.85f, 0.0f)),
-				Vertex(vec3(0.974f, 0.65f, 0.0f)),
-				Vertex(vec3(0.943f, 0.298f, 0.f)),
-				Vertex(vec3(0.683f, 0.086f, 0.f)),
-				Vertex(vec3(0.312f, 0.074f, 0.f)),
-				Vertex(vec3(0.056f, 0.265f, 0.f))
+				Vertex(Vec3f(0.05f, 0.54f, 0.0f)),
+				Vertex(Vec3f(0.213f, 0.78f, 0.0f)),
+				Vertex(Vec3f(0.37f, 0.65f, 0.0f)),
+				Vertex(Vec3f(0.348f, 0.96f, 0.0f)),
+				Vertex(Vec3f(0.673f, 0.952f, 0.0f)),
+				Vertex(Vec3f(0.64f, 0.75f, 0.0f)),
+				Vertex(Vec3f(0.83f, 0.85f, 0.0f)),
+				Vertex(Vec3f(0.974f, 0.65f, 0.0f)),
+				Vertex(Vec3f(0.943f, 0.298f, 0.f)),
+				Vertex(Vec3f(0.683f, 0.086f, 0.f)),
+				Vertex(Vec3f(0.312f, 0.074f, 0.f)),
+				Vertex(Vec3f(0.056f, 0.265f, 0.f))
 			}, {
 				// Note has adjacency data
 				10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1
@@ -119,18 +119,18 @@ struct Asteroids : public IGame
 
 		g_asteroidMeshes.emplace_back(RenderProxy(
 			{
-				Vertex(vec3(0.066f, 0.335f, 0.0f)),
-				Vertex(vec3(0.077f, 0.683f, 0.0f)),
-				Vertex(vec3(0.3f, 0.762f, 0.0f)),
-				Vertex(vec3(0.348f, 0.96f, 0.0f)),
-				Vertex(vec3(0.673f, 0.952f, 0.0f)),
-				Vertex(vec3(0.724f, 0.752f, 0.0f)),
-				Vertex(vec3(0.967f, 0.63f, 0.0f)),
-				Vertex(vec3(0.946f, 0.312f, 0.0f)),
-				Vertex(vec3(0.706f, 0.353f, 0.f)),
-				Vertex(vec3(0.767f, 0.07f, 0.f)),
-				Vertex(vec3(0.37f, 0.07f, 0.f)),
-				Vertex(vec3(0.21f, 0.33f, 0.f))
+				Vertex(Vec3f(0.066f, 0.335f, 0.0f)),
+				Vertex(Vec3f(0.077f, 0.683f, 0.0f)),
+				Vertex(Vec3f(0.3f, 0.762f, 0.0f)),
+				Vertex(Vec3f(0.348f, 0.96f, 0.0f)),
+				Vertex(Vec3f(0.673f, 0.952f, 0.0f)),
+				Vertex(Vec3f(0.724f, 0.752f, 0.0f)),
+				Vertex(Vec3f(0.967f, 0.63f, 0.0f)),
+				Vertex(Vec3f(0.946f, 0.312f, 0.0f)),
+				Vertex(Vec3f(0.706f, 0.353f, 0.f)),
+				Vertex(Vec3f(0.767f, 0.07f, 0.f)),
+				Vertex(Vec3f(0.37f, 0.07f, 0.f)),
+				Vertex(Vec3f(0.21f, 0.33f, 0.f))
 			}, {
 				// Note has adjacency data
 				11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
@@ -138,18 +138,18 @@ struct Asteroids : public IGame
 
 		g_asteroidMeshes.emplace_back(RenderProxy(
 			{
-				Vertex(vec3(0.056f, 0.284f, 0.0f)),
-				Vertex(vec3(0.064f, 0.752f, 0.0f)),
-				Vertex(vec3(0.353f, 0.762f, 0.0f)),
-				Vertex(vec3(0.286f, 0.952f, 0.0f)),
-				Vertex(vec3(0.72f, 0.944f, 0.0f)),
-				Vertex(vec3(0.928f, 0.767f, 0.0f)),
-				Vertex(vec3(0.962f, 0.604f, 0.0f)),
-				Vertex(vec3(0.568f, 0.501f, 0.0f)),
-				Vertex(vec3(0.967f, 0.366f, 0.f)),
-				Vertex(vec3(0.857f, 0.16f, 0.f)),
-				Vertex(vec3(0.563f, 0.217f, 0.f)),
-				Vertex(vec3(0.358f, 0.043f, 0.f))
+				Vertex(Vec3f(0.056f, 0.284f, 0.0f)),
+				Vertex(Vec3f(0.064f, 0.752f, 0.0f)),
+				Vertex(Vec3f(0.353f, 0.762f, 0.0f)),
+				Vertex(Vec3f(0.286f, 0.952f, 0.0f)),
+				Vertex(Vec3f(0.72f, 0.944f, 0.0f)),
+				Vertex(Vec3f(0.928f, 0.767f, 0.0f)),
+				Vertex(Vec3f(0.962f, 0.604f, 0.0f)),
+				Vertex(Vec3f(0.568f, 0.501f, 0.0f)),
+				Vertex(Vec3f(0.967f, 0.366f, 0.f)),
+				Vertex(Vec3f(0.857f, 0.16f, 0.f)),
+				Vertex(Vec3f(0.563f, 0.217f, 0.f)),
+				Vertex(Vec3f(0.358f, 0.043f, 0.f))
 			}, {
 				// Note has adjacency data
 				11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
@@ -159,20 +159,20 @@ struct Asteroids : public IGame
 		// ****************
 		pCurrentScene = new Scene();
 
-		srand(uint(time(nullptr)));
+		srand(unsigned int(time(nullptr)));
 
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
 
 		for (int i = 0; i < 15; i++)
 		{
-			vec3 randomLocation = vec3(float(rand() % 1800), float(rand() % 1000), 0.0f);
-			vec3 randomVelocity = vec3(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
+			Vec3f randomLocation = Vec3f(float(rand() % 1800), float(rand() % 1000), 0.0f);
+			Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
 			float randomRotation = randf() * 6.282f;
 			EntityID asteroid = pCurrentScene->NewEntity();
 			pCurrentScene->AssignComponent<CCollidable>(asteroid);
 			CTransform* pTranform = pCurrentScene->AssignComponent<CTransform>(asteroid);
 			pTranform->m_pos = randomLocation;
-			pTranform->m_sca = vec3(90.0f, 90.0f, 1.0f);
+			pTranform->m_sca = Vec3f(90.0f, 90.0f, 1.0f);
 			pTranform->m_vel = randomVelocity;
 			pTranform->m_rot = randomRotation;
 
@@ -184,18 +184,18 @@ struct Asteroids : public IGame
 		EntityID ship = pCurrentScene->NewEntity();
 		CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(ship);
 
-		pTransform->m_pos = vec3(450.0f, 250.0f, 0.0f);
-		pTransform->m_sca = vec3(30.f, 35.f, 1.0f);
+		pTransform->m_pos = Vec3f(450.0f, 250.0f, 0.0f);
+		pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 
 		pCurrentScene->AssignComponent<CPlayerControl>(ship);
 		pCurrentScene->AssignComponent<CCollidable>(ship)->m_radius = 17.f;
 		pCurrentScene->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
 			{
-				Vertex(vec3(0.f, 0.5f, 0.f)),
-				Vertex(vec3(1.f, 0.8f, 0.f)),
-				Vertex(vec3(0.9f, 0.7f, 0.f)),
-				Vertex(vec3(0.9f, 0.3f, 0.f)),
-				Vertex(vec3(1.0f, 0.2f, 0.f)),
+				Vertex(Vec3f(0.f, 0.5f, 0.f)),
+				Vertex(Vec3f(1.f, 0.8f, 0.f)),
+				Vertex(Vec3f(0.9f, 0.7f, 0.f)),
+				Vertex(Vec3f(0.9f, 0.3f, 0.f)),
+				Vertex(Vec3f(1.0f, 0.2f, 0.f)),
 			}, {
 				// Note, has adjacency data
 				4, 0, 1, 2, 3, 4, 0, 1
@@ -222,6 +222,21 @@ struct Asteroids : public IGame
 int main(int argc, char *argv[])
 {
 	Asteroids* pAsteroids = new Asteroids;
+
+
+	Matrixf mat;
+	mat.m[0][0] = 1.0f; mat.m[0][1] = 2.0f; mat.m[0][2] = 3.0f; mat.m[0][3] = 4.0f;
+	mat.m[1][0] = 2.0f; mat.m[1][1] = 4.0f; mat.m[1][2] = 1.0f; mat.m[1][3] = 2.0f;
+	mat.m[2][0] = 5.0f; mat.m[2][1] = 1.0f; mat.m[2][2] = 2.0f; mat.m[2][3] = 3.0f;
+	mat.m[3][0] = 3.0f; mat.m[3][1] = 3.0f; mat.m[3][2] = 1.0f; mat.m[3][3] = 1.0f;
+
+	Matrixf mat2;
+	mat2.m[0][0] = 4.0f; mat2.m[0][1] = 2.0f; mat2.m[0][2] = 2.0f; mat2.m[0][3] = 4.0f;
+	mat2.m[1][0] = 2.0f; mat2.m[1][1] = 1.0f; mat2.m[1][2] = 1.0f; mat2.m[1][3] = 3.0f;
+	mat2.m[2][0] = 7.0f; mat2.m[2][1] = 2.0f; mat2.m[2][2] = 2.0f; mat2.m[2][3] = 3.0f;
+	mat2.m[3][0] = 5.0f; mat2.m[3][1] = 3.0f; mat2.m[3][2] = 6.0f; mat2.m[3][3] = 1.0f;
+
+	Matrixf result = mat2 * mat;
 
 	Engine::Startup(pAsteroids);
 	Engine::Run();

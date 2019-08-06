@@ -15,17 +15,17 @@ void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 
 	CTransform* pBulletTrans = pScene->AssignComponent<CTransform>(bullet);
 	pBulletTrans->m_pos = pAtTransform->m_pos;
-	vec3 travelDir = vec3(-cos(pAtTransform->m_rot), -sin(pAtTransform->m_rot), 0.0f);
+	Vec3f travelDir = Vec3f(-cos(pAtTransform->m_rot), -sin(pAtTransform->m_rot), 0.0f);
 	pBulletTrans->m_vel = pAtTransform->m_vel + travelDir * pBullet->m_speed;
 	pBulletTrans->m_rot = pAtTransform->m_rot;
 
 	CDrawable* pDrawable = pScene->AssignComponent<CDrawable>(bullet);
 	pDrawable->m_renderProxy = RenderProxy(
 		{
-			Vertex(vec3(0.f, 0.0f, 0.f)),
-			Vertex(vec3(0.f, 1.0f, 0.f)),
-			Vertex(vec3(1.f, 1.0f, 0.f)),
-			Vertex(vec3(1.f, 0.0f, 0.f)),
+			Vertex(Vec3f(0.f, 0.0f, 0.f)),
+			Vertex(Vec3f(0.f, 1.0f, 0.f)),
+			Vertex(Vec3f(1.f, 1.0f, 0.f)),
+			Vertex(Vec3f(1.f, 0.0f, 0.f)),
 		}, {
 			// Note, has adjacency data
 			3, 0, 1, 2, 3, 0, 1
@@ -52,9 +52,9 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 
 	for (EntityID entity1 : SceneView<CTransform, CCollidable>(pScene))
 	{
-		vec2 pos = proj<2>(pScene->GetComponent<CTransform>(entity1)->m_pos);
+		Vec2f pos = Vec2f::Project3D(pScene->GetComponent<CTransform>(entity1)->m_pos);
 		float radius = pScene->GetComponent<CCollidable>(entity1)->m_radius;
-		//DebugDraw::Draw2DCircle(pos, radius, vec3(1.0f, 0.0f, 0.0f));
+		//DebugDraw::Draw2DCircle(pos, radius, Vec3f(1.0f, 0.0f, 0.0f));
 
 		for (EntityID entity2 : SceneView<CTransform, CCollidable>(pScene))
 		{
@@ -66,7 +66,7 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 			CCollidable* pCollider1 = pScene->GetComponent<CCollidable>(entity1);
 			CCollidable* pCollider2 = pScene->GetComponent<CCollidable>(entity2);
 
-			float distance = (pScene->GetComponent<CTransform>(entity1)->m_pos - pScene->GetComponent<CTransform>(entity2)->m_pos).mag();
+			float distance = (pScene->GetComponent<CTransform>(entity1)->m_pos - pScene->GetComponent<CTransform>(entity2)->m_pos).GetLength();
 			float collisionDistance = pCollider1->m_radius + pCollider2->m_radius;
 			
 			if (distance < collisionDistance)
@@ -104,7 +104,7 @@ void AsteroidSystemUpdate(Scene* pScene, float deltaTime)
 				auto randf = []() { return float(rand()) / float(RAND_MAX); };
 				float randomRotation = randf() * 6.282f;
 
-				vec3 randomVelocity = pTransform->m_vel + vec3(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f) * 80.0f;
+				Vec3f randomVelocity = pTransform->m_vel + Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f) * 80.0f;
 
 				EntityID newAsteroid = pScene->NewEntity();
 				pScene->AssignComponent<CCollidable>(newAsteroid)->m_radius = pCollidable->m_radius * 0.5f;
@@ -177,7 +177,7 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 		CTransform* pTransform = pScene->GetComponent<CTransform>(id);
 		CPlayerControl* pControl = pScene->GetComponent<CPlayerControl>(id);
 
-		vec3 accel(0.0f, 0.0f, 0.0f);
+		Vec3f accel(0.0f, 0.0f, 0.0f);
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_UP))
 		{

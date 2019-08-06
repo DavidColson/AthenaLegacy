@@ -6,12 +6,14 @@
 #include <d3d10.h>
 #include <stdio.h>
 
-#include "Maths/Maths.h"
+#include "Maths/Matrix.h"
+#include "Maths/Vec4.h"
+#include "Maths/Vec3.h"
 #include "Renderer/Renderer.h"
 
 struct cbPerObject
 {
-	mat4 m_wvp;
+	Matrixf m_wvp;
 	float m_lineThickness;
 	float pad1{ 0.0f };
 	float pad2{ 0.0f };
@@ -84,17 +86,17 @@ void RenderProxy::Draw()
 
 	Graphics::GetContext()->m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	mat4 posmat = MakeTranslate(m_pos);
-	mat4 rotmat = MakeRotate(vec3(0.0f, 0.0f, m_rot));
-	mat4 scamat = MakeScale(m_sca);
-	mat4 pivotAdjust = MakeTranslate(vec3(-0.5f, -0.5f, 0.0f));
+	Matrixf posMat = Matrixf::Translate(m_pos);
+	Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, m_rot));
+	Matrixf scaMat = Matrixf::Scale(m_sca);
+	Matrixf pivotAdjust = Matrixf::Translate(Vec3f(-0.5f, -0.5f, 0.0f));
 
-	mat4 world = posmat * rotmat * scamat * pivotAdjust; // transform into world space
-	mat4 view = MakeTranslate(vec3(0.0f, 0.0f, 0.0f)); // transform into camera space
+	Matrixf world = posMat * rotMat * scaMat * pivotAdjust; // transform into world space
+	Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f)); // transform into camera space
 
-	mat4 projection = MakeOrthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, -1.0f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0.f, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, -1.0f, 10.0f); // transform into screen space
 	
-	mat4 wvp = projection * view * world;
+	Matrixf wvp = projection * view * world;
 
 	perObject.m_wvp = wvp;
 	perObject.m_lineThickness = m_lineThickness;

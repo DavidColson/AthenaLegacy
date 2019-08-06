@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Maths/Maths.h"
+#include "Maths/Matrix.h"
+#include "Maths/Vec2.h"
 #include "Renderer/Renderer.h"
 
 #include <string>
@@ -17,8 +18,8 @@ struct ID3D11InputLayout;
 struct Character
 {
 	ID3D11ShaderResourceView* m_charTexture{ nullptr };
-	vec2i m_size{ vec2(0.0f, 0.0f) };
-	vec2i m_bearing{ vec2(0.0f, 0.0f) };
+	Vec2i m_size{ Vec2i(0, 0) };
+	Vec2i m_bearing{ Vec2i(0, 0) };
 	int m_advance;
 };
 
@@ -32,7 +33,7 @@ public:
 private:
 	struct cbTransform
 	{
-		mat4 m_wvp;
+		Matrixf m_wvp;
 	};
 	cbTransform m_cbCharTransform;
 
