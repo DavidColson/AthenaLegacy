@@ -32,6 +32,8 @@ set(SOURCES
     "Maths/Vec3.cpp"
     "Maths/Vec4.h"
     "Maths/Vec4.cpp"
+    "Maths/Matrix.h"
+    "Maths/Matrix.cpp"
     "Engine.h"
     "Engine.cpp"
     "IGame.h"
