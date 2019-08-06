@@ -83,7 +83,7 @@ struct Matrix
 		vec.z = m[2][0] * rhs.x + m[2][1] * rhs.y + m[2][2] * rhs.z + m[2][3] * rhs.w;
 		vec.w = m[3][0] * rhs.x + m[3][1] * rhs.y + m[3][2] * rhs.z + m[3][3] * rhs.w;
 
-		return mat;
+		return vec;
 	}
 
 	/**

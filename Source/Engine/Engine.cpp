@@ -93,7 +93,6 @@ void Engine::Run()
 		else
 		{
 			frameTime = realframeTime;
-			Log::Print(Log::EMsg, "FrameTime %.6f", frameTime);
 
 		}
 	}
