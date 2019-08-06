@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Vec3.h"
+#include "Vec3.h"
+
 /**
  * A 4x4 matrix
  */
@@ -90,6 +93,72 @@ struct Matrix
 	 * transpose
 	 */
 
+	inline static Matrix Translate(Vec3<T> translate)
+	{
+		Matrix mat;
+		mat.m[0][0] = 1.0f; mat.m[0][1] = 0.0f; mat.m[0][2] = 0.0f; mat.m[0][3] = translate.x;
+		mat.m[1][0] = 0.0f; mat.m[1][1] = 1.0f; mat.m[1][2] = 0.0f; mat.m[1][3] = translate.y;
+		mat.m[2][0] = 0.0f; mat.m[2][1] = 0.0f; mat.m[2][2] = 1.0f; mat.m[2][3] = translate.z;
+		mat.m[3][0] = 0.0f; mat.m[3][1] = 0.0f; mat.m[3][2] = 0.0f; mat.m[3][3] = 1.0f;
+		return mat;
+	}
+
+	inline static Matrix Rotate(Vec3<T> rotation)
+	{
+		float x = rotation.x;
+		float y = rotation.y;
+		float z = rotation.z;
+
+		Matrix rx;
+		rx.m[0][0] = 1.0f; rx.m[0][1] = 0.0f;	rx.m[0][2] = 0.0f;		rx.m[0][3] = 0.0f;
+		rx.m[1][0] = 0.0f; rx.m[1][1] = cos(x); rx.m[1][2] = -sin(x);	rx.m[1][3] = 0.0f;
+		rx.m[2][0] = 0.0f; rx.m[2][1] = sin(x); rx.m[2][2] = cos(x);	rx.m[2][3] = 0.0f;
+		rx.m[3][0] = 0.0f; rx.m[3][1] = 0.0f;	rx.m[3][2] = 0.0f;		rx.m[3][3] = 1.0f;
+
+		Matrix ry;
+		ry.m[0][0] = cos(y);	ry.m[0][1] = 0.0f; ry.m[0][2] = -sin(y);	ry.m[0][3] = 0.0f;
+		ry.m[1][0] = 0.0f;		ry.m[1][1] = 1.0f; ry.m[1][2] = 0.0f;		ry.m[1][3] = 0.0f;
+		ry.m[2][0] = sin(y);	ry.m[2][1] = 0.0f; ry.m[2][2] = cos(y);		ry.m[2][3] = 0.0f;
+		ry.m[3][0] = 0.0f;		ry.m[3][1] = 0.0f; ry.m[3][2] = 0.0f;		ry.m[3][3] = 1.0f;
+
+		Matrix rz;
+		rz.m[0][0] = cos(z);	rz.m[0][1] = -sin(z);	rz.m[0][2] = 0.0f; rz.m[0][3] = 0.0f;
+		rz.m[1][0] = sin(z);	rz.m[1][1] = cos(z);	rz.m[1][2] = 0.0f; rz.m[1][3] = 0.0f;
+		rz.m[2][0] = 0.0f;		rz.m[2][1] = 0.0f;		rz.m[2][2] = 1.0f; rz.m[2][3] = 0.0f;
+		rz.m[3][0] = 0.0f;		rz.m[3][1] = 0.0f;		rz.m[3][2] = 0.0f; rz.m[3][3] = 1.0f;
+
+		return rz * ry * rx;
+	}
+
+	inline static Matrix Scale(Vec3<T> scale)
+	{
+		Matrix mat;
+		mat.m[0][0] = scale.x;	mat.m[0][1] = 0.0f;		mat.m[0][2] = 0.0f;		mat.m[0][3] = 0.0f;
+		mat.m[1][0] = 0.0f;		mat.m[1][1] = scale.y;	mat.m[1][2] = 0.0f;		mat.m[1][3] = 0.0f;
+		mat.m[2][0] = 0.0f;		mat.m[2][1] = 0.0f;		mat.m[2][2] = scale.z;	mat.m[2][3] = 0.0f;
+		mat.m[3][0] = 0.0f;		mat.m[3][1] = 0.0f;		mat.m[3][2] = 0.0f;		mat.m[3][3] = 1.0f;
+		return mat;
+	}
+
+	inline static Matrix Perspective(float screenWidth, float screenHeight, float Near, float Far, float FOV)
+	{
+
+	}
+
+	inline static Matrix Orthographic(float left, float right, float bottom, float top, float near, float far)
+	{
+		Matrix mat;
+		mat.m[0][0] = 2.0f / (right - left);	mat.m[0][1] = 0.0f;						mat.m[0][2] = 0.0f;					mat.m[0][3] = (-right - left) / (right - left);
+		mat.m[1][0] = 0.0f;						mat.m[1][1] = 2.0f / (top - bottom);	mat.m[1][2] = 0.0f;					mat.m[1][3] = (-top - bottom) / (top - bottom);
+		mat.m[2][0] = 0.0f;						mat.m[2][1] = 0.0f;						mat.m[2][2] = 1.0f / (far - near);	mat.m[2][3] = (-near) / (far - near);
+		mat.m[3][0] = 0.0f;						mat.m[3][1] = 0.0f;						mat.m[3][2] = 0.0f;					mat.m[3][3] = 1.0f;
+		return mat;
+	}
+
+	inline static Matrix Viewport(float left, float right, float bottom, float top, float near, float far)
+	{
+
+	}
 };
 
 typedef Matrix<float> Matrixf;
