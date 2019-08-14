@@ -77,6 +77,7 @@ inline bool IsEntityValid(EntityID id)
 
 
 
+
 // Gives you the id within this world for a given component type
 extern int s_componentCounter; // #TODO: Move this to a detail namespace
 template <class T>
@@ -88,32 +89,6 @@ int GetComponentId() // Move this whole function to the detail namespace
 	static int s_componentId = s_componentCounter++;
 	return s_componentId;
 }
-
-
-
-// Used to relate components to the Type objects in the reflection database
-struct ComponentIdToTypeIdMap // #TODO: Move to detail namespace
-{
-	static ComponentIdToTypeIdMap* Get()
-	{
-		if (pInstance == nullptr)
-			pInstance = new ComponentIdToTypeIdMap();
-		return pInstance;
-	}
-
-	void AddRelation(TypeId typeId, int componentId)
-	{
-		m_typeToComponent[typeId] = componentId;
-		m_componentToType[componentId] = typeId;
-	}
-	int LookupComponentId(TypeId typeId) { return m_typeToComponent[typeId]; }
-	TypeId LookupTypeId(int componentId) { return m_componentToType[componentId]; }
-private:
-	static ComponentIdToTypeIdMap* pInstance;
-
-	std::unordered_map<TypeId, int> m_typeToComponent;
-	std::unordered_map<int, TypeId> m_componentToType;
-};
 
 
 // ********************************************
@@ -141,12 +116,13 @@ struct BaseComponentPool // #TODO: Move to detail namespace
 	char* pData;
 	size_t elementSize;
 	size_t size = 0;
+	TypeId componentTypeId = 0;
 };
 
 template <typename T>
 struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespace
 {
-	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) {}
+	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { componentTypeId = TypeDB::TypeIdGenerator<T>::Id(); }
 
 	virtual void destroy(size_t index) override
 	{

@@ -38,7 +38,6 @@ namespace reg_helper
 
 // Convienience macro for registering a type without specifying a string
 #define NewType(Type) TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
-#define NewTypeAsComponent(Type) ComponentIdToTypeIdMap::Get()->AddRelation(TypeDB::TypeIdGenerator<Type>::Id(), GetComponentId<Type>()); TypeDB::Detail::RegisterNewType_Internal<Type>(#Type)
 
 typedef uintptr_t TypeId;
 

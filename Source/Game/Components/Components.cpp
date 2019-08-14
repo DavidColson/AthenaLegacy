@@ -5,7 +5,7 @@
 
 REGISTER(CPlayerControl)
 {
-	NewTypeAsComponent(CPlayerControl)
+	NewType(CPlayerControl)
 		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
 		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
 		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
@@ -14,13 +14,13 @@ REGISTER(CPlayerControl)
 
 REGISTER(CDrawable)
 {
-	NewTypeAsComponent(CDrawable)
+	NewType(CDrawable)
 		->RegisterMember("m_lineThickness", &CDrawable::m_lineThickness);
 }
 
 REGISTER(CTransform)
 {
-	NewTypeAsComponent(CTransform)
+	NewType(CTransform)
 		->RegisterMember("m_pos", &CTransform::m_pos)
 		->RegisterMember("m_rot", &CTransform::m_rot)
 		->RegisterMember("m_sca", &CTransform::m_sca)
@@ -29,19 +29,19 @@ REGISTER(CTransform)
 
 REGISTER(CBullet)
 {
-	NewTypeAsComponent(CBullet)
+	NewType(CBullet)
 		->RegisterMember("m_speed", &CBullet::m_speed);
 }
 
 REGISTER(CAsteroid)
 {
-	NewTypeAsComponent(CAsteroid)
+	NewType(CAsteroid)
 		->RegisterMember("m_hitCount", &CAsteroid::m_hitCount);
 }
 
 REGISTER(CCollidable)
 {
-	NewTypeAsComponent(CCollidable)
+	NewType(CCollidable)
 		->RegisterMember("m_radius", &CCollidable::m_radius)
 		->RegisterMember("m_colliding", &CCollidable::m_colliding)
 		->RegisterMember("m_other", &CCollidable::m_other);
