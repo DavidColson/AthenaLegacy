@@ -86,6 +86,7 @@ int GetComponentId() // Move this whole function to the detail namespace
 	// static variable will be initialized on first function call
 	// It will then continue to return the same thing, no matter how many times this is called.
 	// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
+	// NOTE THIS IS NOT THREADSAFE PROBABLY DO SOMETHING ABOUT THAT
 	static int s_componentId = s_componentCounter++;
 	return s_componentId;
 }

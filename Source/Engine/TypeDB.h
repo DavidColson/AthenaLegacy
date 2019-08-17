@@ -54,8 +54,12 @@ namespace TypeDB
 	struct TypeIdGenerator
 	{
 	public:
-		static TypeId Id() { return reinterpret_cast<TypeId>(&Id); }
+		static TypeId Id() { return reinterpret_cast<TypeId>(&dummy); }
+	private:
+		static char dummy; // Prevents these template instances from being folded on MSVC compilers
 	};
+	template <typename T>
+	char TypeIdGenerator<T>::dummy;
 
 
 	struct VariantBase
