@@ -42,7 +42,5 @@ REGISTER(CAsteroid)
 REGISTER(CCollidable)
 {
 	NewType(CCollidable)
-		->RegisterMember("m_radius", &CCollidable::m_radius)
-		->RegisterMember("m_colliding", &CCollidable::m_colliding)
-		->RegisterMember("m_other", &CCollidable::m_other);
+		->RegisterMember("m_radius", &CCollidable::m_radius);
 }

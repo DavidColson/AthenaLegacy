@@ -168,7 +168,7 @@ struct Asteroids : public IGame
 			Vec3f randomLocation = Vec3f(float(rand() % 1800), float(rand() % 1000), 0.0f);
 			Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
 			float randomRotation = randf() * 6.282f;
-			EntityID asteroid = pCurrentScene->NewEntity();
+			EntityID asteroid = pCurrentScene->NewEntity("Asteroid");
 			pCurrentScene->AssignComponent<CCollidable>(asteroid);
 			CTransform* pTranform = pCurrentScene->AssignComponent<CTransform>(asteroid);
 			pTranform->m_pos = randomLocation;
@@ -181,7 +181,7 @@ struct Asteroids : public IGame
 		}
 
 		// Ship
-		EntityID ship = pCurrentScene->NewEntity();
+		EntityID ship = pCurrentScene->NewEntity("Player Ship");
 		CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(ship);
 
 		pTransform->m_pos = Vec3f(450.0f, 250.0f, 0.0f);
@@ -209,7 +209,6 @@ struct Asteroids : public IGame
 		ShipControlSystemUpdate(pCurrentScene, deltaTime);
 		MovementSystemUpdate(pCurrentScene, deltaTime);
 		CollisionSystemUpdate(pCurrentScene, deltaTime);
-		AsteroidSystemUpdate(pCurrentScene, deltaTime);
 		DrawShapeSystem(pCurrentScene, deltaTime);
 	}
 

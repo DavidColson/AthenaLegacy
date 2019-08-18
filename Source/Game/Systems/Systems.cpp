@@ -10,7 +10,7 @@
 
 void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 {
-	EntityID bullet = pScene->NewEntity();
+	EntityID bullet = pScene->NewEntity("Bullet");
 	CBullet* pBullet = pScene->AssignComponent<CBullet>(bullet);
 
 	CTransform* pBulletTrans = pScene->AssignComponent<CTransform>(bullet);
@@ -39,17 +39,51 @@ void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 // SYSTEMS
 // **********
 
+void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid)
+{
+	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), pScene->GetEntityName(bullet), GetEntityIndex(asteroid), pScene->GetEntityName(asteroid));
+
+	// Asteroid vs bullet collision
+	if (pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount >= 2) // Smallest type asteroid, destroy and return
+	{
+		pScene->DestroyEntity(asteroid);
+		return;
+	}
+
+	CTransform* pTransform = pScene->GetComponent<CTransform>(asteroid);
+	CCollidable* pCollidable = pScene->GetComponent<CCollidable>(asteroid);
+	for (int i = 0; i < 2; i++)
+	{
+		auto randf = []() { return float(rand()) / float(RAND_MAX); };
+		float randomRotation = randf() * 6.282f;
+
+		Vec3f randomVelocity = pTransform->m_vel + Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f) * 80.0f;
+
+		EntityID newAsteroid = pScene->NewEntity("Asteroid");
+		pScene->AssignComponent<CCollidable>(newAsteroid)->m_radius = pCollidable->m_radius * 0.5f;
+		CTransform* pNewTransform = pScene->AssignComponent<CTransform>(newAsteroid);
+		pNewTransform->m_pos = pTransform->m_pos;
+		pNewTransform->m_sca = pTransform->m_sca * 0.5f;
+		pNewTransform->m_vel = randomVelocity;
+		pNewTransform->m_rot = randomRotation;
+
+		pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = g_asteroidMeshes[rand() % 4];
+		pScene->AssignComponent<CAsteroid>(newAsteroid)->m_hitCount = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount + 1;
+	}
+	pScene->DestroyEntity(asteroid);
+	pScene->DestroyEntity(bullet);
+}
+
+void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid)
+{
+	// Log::Print(Log::EMsg, "Player touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(player), pScene->GetEntityName(player), GetEntityIndex(asteroid), pScene->GetEntityName(asteroid));
+
+	// Doesn't do anything yet
+}
 
 void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 {
-	for (EntityID entity : SceneView<CTransform, CCollidable>(pScene))
-	{
-		CCollidable* pCollider = pScene->GetComponent<CCollidable>(entity);
-		pCollider->m_lastColliding = pCollider->m_colliding;
-		pCollider->m_colliding = false;
-		pCollider->m_collisionExit = pCollider->m_lastColliding ? true : false;
-	}
-
+	bool continueOuter = false;
 	for (EntityID entity1 : SceneView<CTransform, CCollidable>(pScene))
 	{
 		Vec2f pos = Vec2f::Project3D(pScene->GetComponent<CTransform>(entity1)->m_pos);
@@ -58,8 +92,10 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 
 		for (EntityID entity2 : SceneView<CTransform, CCollidable>(pScene))
 		{
-			// #TODO Need to filter out asteroid to asteroid collisions to avoid dealing with multiple collisions at once
-			// Better solution would to be to report all collisions with all entities in a given frame
+			// Don't collide with yourself
+			if (entity1 == entity2)
+				continue;
+			// Asteroids don't collide with each other
 			if (pScene->HasComponent<CAsteroid>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
 				continue;
 
@@ -71,55 +107,20 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 			
 			if (distance < collisionDistance)
 			{
-				pCollider1->m_collisionEnter = pCollider1->m_lastColliding ? false : true;
-				pCollider1->m_collisionExit = false;
-				pCollider1->m_colliding = true;
-				pCollider1->m_other = entity2;
+				if (pScene->HasComponent<CBullet>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
+				{
+					OnBulletAsteroidCollision(pScene, entity1, entity2);
+					continueOuter = true; break; // the bullet will have been deleted, so skip this iteration
+				}
 
-				pCollider2->m_collisionEnter = pCollider2->m_lastColliding ? false : true;
-				pCollider2->m_collisionExit = false;
-				pCollider2->m_colliding = true;
-				pCollider2->m_other = entity1;
+				if (pScene->HasComponent<CPlayerControl>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
+				{
+					OnPlayerAsteroidCollision(pScene, entity1, entity2);
+				}
 			}
 		}
-	}
-}
-
-void AsteroidSystemUpdate(Scene* pScene, float deltaTime)
-{
-	for (EntityID asteroid : SceneView<CAsteroid, CCollidable, CTransform>(pScene))
-	{
-		CCollidable* pCollidable = pScene->GetComponent<CCollidable>(asteroid);
-		CTransform* pTransform = pScene->GetComponent<CTransform>(asteroid);
-
-		if (pCollidable->m_colliding && pScene->HasComponent<CBullet>(pCollidable->m_other))
-		{
-			if (pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount >= 2)
-			{
-				pScene->DestroyEntity(asteroid);
-				continue;
-			}
-			for (int i = 0; i < 2; i++)
-			{
-				auto randf = []() { return float(rand()) / float(RAND_MAX); };
-				float randomRotation = randf() * 6.282f;
-
-				Vec3f randomVelocity = pTransform->m_vel + Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f) * 80.0f;
-
-				EntityID newAsteroid = pScene->NewEntity();
-				pScene->AssignComponent<CCollidable>(newAsteroid)->m_radius = pCollidable->m_radius * 0.5f;
-				CTransform* pNewTransform = pScene->AssignComponent<CTransform>(newAsteroid);
-				pNewTransform->m_pos = pTransform->m_pos;
-				pNewTransform->m_sca = pTransform->m_sca * 0.5f;
-				pNewTransform->m_vel = randomVelocity;
-				pNewTransform->m_rot = randomRotation;
-
-				pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = g_asteroidMeshes[rand() % 4];
-				pScene->AssignComponent<CAsteroid>(newAsteroid)->m_hitCount = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount + 1;
-			}
-			pScene->DestroyEntity(asteroid);
-			pScene->DestroyEntity(pCollidable->m_other);
-		}
+		if (continueOuter)
+			continue;
 	}
 }
 

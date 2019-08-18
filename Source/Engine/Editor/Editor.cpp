@@ -133,7 +133,7 @@ void ShowEntityList()
 		if (selectedEntity == entity)
 			node_flags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "%i - %s", GetEntityIndex(entity), pCurrentScene->GetEntityName(GetEntityIndex(entity)));
+		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "%i - %s", GetEntityIndex(entity), pCurrentScene->GetEntityName(entity));
 		if (ImGui::IsItemClicked())
 			selectedEntity = entity;
 	}

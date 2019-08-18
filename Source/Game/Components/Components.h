@@ -43,11 +43,6 @@ REGISTER_EXTERN(CBullet);
 struct CCollidable
 {
 	float m_radius{ 40.f };
-	bool m_colliding{ false };
-	bool m_lastColliding{ false };
-	bool m_collisionEnter{ false };
-	bool m_collisionExit{ false };
-	EntityID m_other;
 };
 REGISTER_EXTERN(CCollidable);
 

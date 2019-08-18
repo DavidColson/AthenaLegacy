@@ -231,7 +231,7 @@ struct Scene
 
 	const char* GetEntityName(EntityID entity) const
 	{
-		return m_entities[entity].m_name;
+		return m_entities[GetEntityIndex(entity)].m_name;
 	}
 
 	std::vector<BaseComponentPool*> m_componentPools;
