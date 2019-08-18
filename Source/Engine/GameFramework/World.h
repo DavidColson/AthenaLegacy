@@ -144,16 +144,17 @@ struct Scene
 	// #TODO Destructor, delete systems and components
 
 	// Creates an entity, simply makes a new id and mask
-	EntityID NewEntity()// #TODO: Move implementation to cpp
+	EntityID NewEntity(const char* name)// #TODO: Move implementation to cpp
 	{
  		if (!m_freeEntities.empty())
 		{
 			EntityIndex newIndex = m_freeEntities.back();
 			m_freeEntities.pop_back();
 			m_entities[newIndex].m_id = CreateEntityId(newIndex, GetEntityVersion(m_entities[newIndex].m_id));
+			m_entities[newIndex].m_name = name;
 			return m_entities[newIndex].m_id;
 		}
-		m_entities.push_back({ CreateEntityId(EntityIndex(m_entities.size()), 0), ComponentMask() });
+		m_entities.push_back({ CreateEntityId(EntityIndex(m_entities.size()), 0), name, ComponentMask() });
 		return m_entities.back().m_id;
 	}
 
@@ -228,11 +229,17 @@ struct Scene
 		return m_entities[GetEntityIndex(id)].m_mask.test(componentId);
 	}
 
+	const char* GetEntityName(EntityID entity) const
+	{
+		return m_entities[entity].m_name;
+	}
+
 	std::vector<BaseComponentPool*> m_componentPools;
 
 	struct EntityDesc
 	{
 		EntityID m_id;
+		const char* m_name;
 		ComponentMask m_mask;
 	};
 	std::vector<EntityDesc> m_entities;
