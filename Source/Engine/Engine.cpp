@@ -16,6 +16,10 @@
 
 namespace
 {
+	// Frame stats
+	double g_observedFrameTime;
+	double g_realFrameTime;
+
 	IGame* g_pGame{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
 }
@@ -66,36 +70,36 @@ void Engine::Startup(IGame* pGame)
 
 void Engine::Run()
 {
-	float frameTime = 0.016f;
-	float targetFrameTime = 0.016f;
+	double frameTime = 0.016f;
+	double targetFrameTime = 0.016f;
 	bool shutdown = false;
 	while (!shutdown)
 	{
 		Graphics::NewFrame();
 
-		unsigned int frameStart = SDL_GetTicks();
+		Uint64 frameStart = SDL_GetPerformanceCounter();
 		Input::Update(shutdown);
 
-		g_pGame->OnFrame(frameTime);
+		g_pGame->OnFrame((float)frameTime);
 
-		Editor::ShowEditor(shutdown);
+		Editor::ShowEditor(shutdown, g_realFrameTime, g_observedFrameTime);
 
 		Graphics::RenderFrame();
 
-		float realframeTime = float(SDL_GetTicks() - frameStart) / 1000.f;
+		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
 		if (realframeTime < targetFrameTime)
 		{
 			frameTime = targetFrameTime;
-			unsigned int waitTime = int((targetFrameTime - realframeTime) * 1000.f);
+			unsigned int waitTime = int((targetFrameTime - realframeTime) * 1000.0);
 			SDL_Delay(waitTime);
 		}
 		else
 		{
 			frameTime = realframeTime;
-
 		}
+		g_realFrameTime = realframeTime;
+		g_observedFrameTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
 	}
-
 }
 
 void Engine::Shutdown()

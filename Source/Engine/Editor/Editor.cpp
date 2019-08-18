@@ -15,7 +15,13 @@ namespace {
 	bool showLog = true;
 	bool showEntityInspector = true;
 	bool showEntityList = true;
+	bool showFrameStats = true;
 	EntityID selectedEntity = -1;
+
+	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
+	double oldRealFrameTime;
+	double oldObservedFrameTime;
+
 	static Scene* pCurrentScene;
 }
 
@@ -141,7 +147,27 @@ void ShowEntityList()
 	ImGui::End();
 }
 
-void Editor::ShowEditor(bool& shutdown)
+void ShowFrameStats(double realFrameTime, double observedFrameTime)
+{
+	if (!showFrameStats)
+		return;
+
+	if (++frameStatsCounter > 30)
+	{
+		oldRealFrameTime = realFrameTime;
+		oldObservedFrameTime = observedFrameTime;
+		frameStatsCounter = 0;
+	}
+
+	ImGui::Begin("Frame Stats", &showFrameStats);
+
+  ImGui::Text("Real frame time %.6f ms/frame (%.3f FPS)", oldRealFrameTime * 1000.0, 1.0 / oldRealFrameTime);
+  ImGui::Text("Observed frame time %.6f ms/frame (%.3f FPS)", oldObservedFrameTime * 1000.0, 1.0 / oldObservedFrameTime);
+
+	ImGui::End();
+}
+
+void Editor::ShowEditor(bool& shutdown, double realFrameTime, double observedFrameTime)
 {
 	if (Input::GetKeyDown(SDL_SCANCODE_F8))
 		showEditor = !showEditor;
@@ -163,6 +189,7 @@ void Editor::ShowEditor(bool& shutdown)
 			if (ImGui::MenuItem("Entity List")) { showEntityList = !showEntityList; }
 			if (ImGui::MenuItem("Entity Inspector")) { showEntityInspector = !showEntityInspector; }
 			if (ImGui::MenuItem("Console")) { showLog = !showLog; }
+			if (ImGui::MenuItem("FrameStats")) { showFrameStats = !showFrameStats; }
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -171,6 +198,7 @@ void Editor::ShowEditor(bool& shutdown)
 	ShowLog();
 	ShowEntityInspector();
 	ShowEntityList();
+	ShowFrameStats(realFrameTime, observedFrameTime);
 	//ImGui::ShowDemoWindow();
 }
 
