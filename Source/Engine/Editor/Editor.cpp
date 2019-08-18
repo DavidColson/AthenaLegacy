@@ -124,7 +124,7 @@ void ShowEntityList()
 	if (!showEntityList)
 		return;
 
-	ImGui::Begin("Entity List", &showEntityList);
+	ImGui::Begin("Entity Editor", &showEntityList);
 
 	for (EntityID entity : SceneView<>(pCurrentScene))
 	{
@@ -137,9 +137,8 @@ void ShowEntityList()
 		if (ImGui::IsItemClicked())
 			selectedEntity = entity;
 	}
-	ImGui::End();
 
-	//ImGui::ShowDemoWindow();
+	ImGui::End();
 }
 
 void Editor::ShowEditor(bool& shutdown)
@@ -172,6 +171,7 @@ void Editor::ShowEditor(bool& shutdown)
 	ShowLog();
 	ShowEntityInspector();
 	ShowEntityList();
+	//ImGui::ShowDemoWindow();
 }
 
 void Editor::SetCurrentScene(Scene* pScene)

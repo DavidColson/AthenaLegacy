@@ -83,8 +83,7 @@ void Engine::Run()
 		Graphics::RenderFrame();
 
 		float realframeTime = float(SDL_GetTicks() - frameStart) / 1000.f;
-		//if (realframeTime < targetFrameTime)
-		if (false)
+		if (realframeTime < targetFrameTime)
 		{
 			frameTime = targetFrameTime;
 			unsigned int waitTime = int((targetFrameTime - realframeTime) * 1000.f);
