@@ -10,6 +10,7 @@
 #include "Maths/Matrix.h"
 #include "Maths/Vec3.h"
 #include "RenderProxy.h"
+#include "Log.h"
 #include "Renderer.h"
 
 RenderFont::RenderFont(std::string fontFile, int size)
@@ -178,7 +179,12 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	}
 }
 
-void RenderFont::Draw(std::string text, int x, int y)
+void RenderFont::SubmitText(const char* text, Vec2f pos)
+{
+	m_textQueue.emplace_back(text, pos);
+}
+
+void RenderFont::DrawQueue()
 {
 	// Set vertex buffer as active
 	UINT stride = sizeof(Vertex);
@@ -198,40 +204,48 @@ void RenderFont::Draw(std::string text, int x, int y)
 
 	Graphics::GetContext()->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	float textWidth = 0.0f;
-	for (char& c : text)
+	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
+	Graphics::GetContext()->m_pDeviceContext->OMSetBlendState(m_transparency, blendFactor, 0xffffffff);
+
+	Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, 0.1f, 10.0f); // transform into screen space
+	
+	Graphics::GetContext()->m_pDeviceContext->PSSetSamplers(0, 1, &m_charTextureSampler);
+
+	for (QueueElement const& element : m_textQueue)
 	{
-		Character ch = m_characters[c];
-		textWidth += ch.m_advance;
+		float textWidth = 0.0f;
+		float x = element.m_pos.x;
+		float y = element.m_pos.y;
+
+
+		for (char const& c : element.m_text)
+		{
+			Character ch = m_characters[c];
+			textWidth += ch.m_advance;
+		}
+
+		for (char const& c : element.m_text) {
+			// Draw a font character
+			Character ch = m_characters[c];
+
+			Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.m_bearing.x - textWidth*0.5f), float(y - (ch.m_size.y - ch.m_bearing.y)), 0.0f));
+			Matrixf scalemat = Matrixf::Scale(Vec3f(ch.m_size.x / 10.0f, ch.m_size.y / 10.0f, 1.0f));
+
+			Matrixf world = posmat * scalemat; // transform into world space
+			Matrixf wvp = projection * world;
+
+			m_cbCharTransform.m_wvp = wvp;
+			Graphics::GetContext()->m_pDeviceContext->UpdateSubresource(m_pQuadWVPBuffer, 0, nullptr, &m_cbCharTransform, 0, 0);
+
+			Graphics::GetContext()->m_pDeviceContext->PSSetShaderResources(0, 1, &(m_characters[c].m_charTexture));
+
+			// do 3D rendering on the back buffer here
+			// Instance render the entire string
+			Graphics::GetContext()->m_pDeviceContext->DrawIndexed(5, 0, 0);
+
+			x += ch.m_advance;
+		}
 	}
-
-	for (char& c : text) {
-		// Draw a font character
-		Character ch = m_characters[c];
-
-		Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.m_bearing.x - textWidth*0.5f), float(y - (ch.m_size.y - ch.m_bearing.y)), 0.0f));
-		Matrixf scalemat = Matrixf::Scale(Vec3f(ch.m_size.x / 10.0f, ch.m_size.y / 10.0f, 1.0f));
-
-
-		Matrixf world = posmat * scalemat; // transform into world space
-		Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, 0.1f, 10.0f); // transform into screen space
-
-		Matrixf wvp = projection * world;
-
-		m_cbCharTransform.m_wvp = wvp;
-		Graphics::GetContext()->m_pDeviceContext->UpdateSubresource(m_pQuadWVPBuffer, 0, nullptr, &m_cbCharTransform, 0, 0);
-
-		Graphics::GetContext()->m_pDeviceContext->PSSetShaderResources(0, 1, &(m_characters[c].m_charTexture));
-		Graphics::GetContext()->m_pDeviceContext->PSSetSamplers(0, 1, &m_charTextureSampler);
-
-		float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
-
-		Graphics::GetContext()->m_pDeviceContext->OMSetBlendState(m_transparency, blendFactor, 0xffffffff);
-
-		// do 3D rendering on the back buffer here
-		Graphics::GetContext()->m_pDeviceContext->DrawIndexed(5, 0, 0);
-
-		x += ch.m_advance;
-	}
+	m_textQueue.clear();
 }
 

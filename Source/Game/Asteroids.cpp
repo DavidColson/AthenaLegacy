@@ -31,31 +31,10 @@ struct Asteroids : public IGame
 		// Create an instance of the player struct
 		TypeDB::Variant player = playerType->New();
 
-		// Get the m_pos member from it
-		TypeDB::Member* posmember = playerType->GetMember("m_newVec");
-
-		// Get type of m_pos, and then get the "x" member of it
-		TypeDB::Member* xmember = posmember->GetType()->GetMember("x");
-
-		// Get whatever the actual value of the position is (don't care what type it is)
-		TypeDB::Variant position = posmember->GetValue(player);
-
-		// Set the x member to 1337
-		xmember->SetValue(position, 1337.0f);
-
-		// Set the m_pos vector to the new vector we made
-		posmember->SetValue(player, position);
-
 		// Get the real value from the player variant
 		CPlayerControl realPlayer = player.Get<CPlayerControl>();
 
-		// Prints "realPlayer.m_pos.x 1337.0"
-		Log::Print(Log::EMsg, "realPlayer.m_pos.x %f", realPlayer.m_newVec.x);
-
-
 		Log::Print(Log::EMsg, "------- Serialization Attempt -------");
-
-
 
 		std::function<void(std::string, std::string, TypeDB::RefVariant&&)> stringifyStruct = [&](std::string indent, std::string name, TypeDB::RefVariant&& theStruct)
 		{
@@ -75,9 +54,6 @@ struct Asteroids : public IGame
 			}
 			Log::Print(Log::EMsg, "%s}", indent.c_str());
 		};
-
-
-
 
 		stringifyStruct("", "player", player);
 
@@ -221,21 +197,6 @@ struct Asteroids : public IGame
 int main(int argc, char *argv[])
 {
 	Asteroids* pAsteroids = new Asteroids;
-
-
-	Matrixf mat;
-	mat.m[0][0] = 1.0f; mat.m[0][1] = 2.0f; mat.m[0][2] = 3.0f; mat.m[0][3] = 4.0f;
-	mat.m[1][0] = 2.0f; mat.m[1][1] = 4.0f; mat.m[1][2] = 1.0f; mat.m[1][3] = 2.0f;
-	mat.m[2][0] = 5.0f; mat.m[2][1] = 1.0f; mat.m[2][2] = 2.0f; mat.m[2][3] = 3.0f;
-	mat.m[3][0] = 3.0f; mat.m[3][1] = 3.0f; mat.m[3][2] = 1.0f; mat.m[3][3] = 1.0f;
-
-	Matrixf mat2;
-	mat2.m[0][0] = 4.0f; mat2.m[0][1] = 2.0f; mat2.m[0][2] = 2.0f; mat2.m[0][3] = 4.0f;
-	mat2.m[1][0] = 2.0f; mat2.m[1][1] = 1.0f; mat2.m[1][2] = 1.0f; mat2.m[1][3] = 3.0f;
-	mat2.m[2][0] = 7.0f; mat2.m[2][1] = 2.0f; mat2.m[2][2] = 2.0f; mat2.m[2][3] = 3.0f;
-	mat2.m[3][0] = 5.0f; mat2.m[3][1] = 3.0f; mat2.m[3][2] = 6.0f; mat2.m[3][3] = 1.0f;
-
-	Matrixf result = mat2 * mat;
 
 	Engine::Startup(pAsteroids);
 	Engine::Run();

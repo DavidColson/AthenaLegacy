@@ -5,8 +5,9 @@
 
 #include <Renderer/DebugDraw.h>
 #include <Renderer/Renderer.h>
+#include <Renderer/RenderFont.h>
 #include <Input/Input.h>
-
+#include <Utility.h>
 
 void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 {
@@ -43,6 +44,20 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 {
 	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), pScene->GetEntityName(bullet), GetEntityIndex(asteroid), pScene->GetEntityName(asteroid));
 
+	// Do scoring for the player
+	for (EntityID playerEnt : SceneView<CPlayerControl>(pScene))
+	{
+		int hits = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount;
+		if (hits == 0)
+			pScene->GetComponent<CPlayerControl>(playerEnt)->m_score += 20;
+
+		if (hits == 1)
+			pScene->GetComponent<CPlayerControl>(playerEnt)->m_score += 50;
+
+		if (hits == 2)
+			pScene->GetComponent<CPlayerControl>(playerEnt)->m_score += 100;
+	}
+
 	// Asteroid vs bullet collision
 	if (pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount >= 2) // Smallest type asteroid, destroy and return
 	{
@@ -70,6 +85,7 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 		pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = g_asteroidMeshes[rand() % 4];
 		pScene->AssignComponent<CAsteroid>(newAsteroid)->m_hitCount = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount + 1;
 	}
+
 	pScene->DestroyEntity(asteroid);
 	pScene->DestroyEntity(bullet);
 }
@@ -135,6 +151,11 @@ void DrawShapeSystem(Scene* pScene, float deltaTime)
 		pDrawable->m_renderProxy.m_lineThickness = pDrawable->m_lineThickness;
 
 		Graphics::SubmitProxy(&pDrawable->m_renderProxy);
+	}
+	for (EntityID id : SceneView<CPlayerControl>(pScene))
+	{
+		CPlayerControl* pPlayerControl = pScene->GetComponent<CPlayerControl>(id);
+		Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("Score %i", pPlayerControl->m_score).c_str(), Vec2f(Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale * 0.5f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale - 53.0f));
 	}
 }
 

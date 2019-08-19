@@ -28,7 +28,8 @@ class RenderFont
 public:
 	RenderFont(std::string fontFile, int size);
 
-	void Draw(std::string text, int x, int y);
+	void DrawQueue();
+	void SubmitText(const char* text, Vec2f pos);
 
 private:
 	struct cbTransform
@@ -49,4 +50,12 @@ private:
 	Graphics::Shader m_fontShader;
 
 	std::vector<Character> m_characters;
+
+	struct QueueElement
+	{
+		std::string m_text;
+		Vec2f m_pos;
+		QueueElement(const char* text, Vec2f pos) : m_text(text), m_pos(pos) {}
+	};
+	std::vector<QueueElement> m_textQueue;
 };

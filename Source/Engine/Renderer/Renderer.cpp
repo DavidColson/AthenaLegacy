@@ -192,7 +192,7 @@ void Graphics::RenderFrame()
 	// First we draw the scene into a render target
 	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pPreprocessedFrameView, pCtx->m_pDepthStencilView);
 
-	// clear the back buffer to a deep blue
+	// clear the back buffer to black
 	float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
 	pCtx->m_pDeviceContext->ClearRenderTargetView(pCtx->m_pPreprocessedFrameView, color);
 	pCtx->m_pDeviceContext->ClearDepthStencilView(pCtx->m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -221,8 +221,7 @@ void Graphics::RenderFrame()
 		proxy->Draw();
 	}
 	pCtx->m_renderQueue.clear();
-	pCtx->m_pFontRender->Draw("Asteroids", int(pCtx->m_windowWidth / pCtx->m_pixelScale * 0.5f), int(pCtx->m_windowHeight / pCtx->m_pixelScale - 53.0f));
-
+	pCtx->m_pFontRender->DrawQueue();
 	DebugDraw::Detail::DrawQueue();
 
 

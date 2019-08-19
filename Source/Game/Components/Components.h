@@ -30,7 +30,7 @@ struct CPlayerControl
 	float m_thrust{ 80.f };
 	float m_rotateSpeed{ 0.1f };
 	float m_dampening{ 0.f };
-	Vec2f m_newVec{ Vec2f(3.0f, 1.0f) };
+	int 	m_score{ 0 };
 };
 REGISTER_EXTERN(CPlayerControl);
 
