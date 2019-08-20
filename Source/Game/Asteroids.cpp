@@ -2,6 +2,7 @@
 
 
 #include "TypeDB.h"
+#include "Asteroids.h"
 #include "Systems/Systems.h"
 #include "Components/Components.h"
 
@@ -11,6 +12,7 @@
 #include <GameFramework/World.h>
 #include <Engine.h>
 #include <IGame.h>
+#include <Renderer/Renderer.h>
 
 #include <functional>
 #include <time.h>
@@ -19,7 +21,9 @@ namespace {
 	Scene* pCurrentScene;
 }
 
-std::vector<RenderProxy> g_asteroidMeshes;
+std::vector<RenderProxy> Game::g_asteroidMeshes;
+RenderProxy Game::g_shipMesh;
+
 
 struct Asteroids : public IGame
 {
@@ -57,7 +61,7 @@ struct Asteroids : public IGame
 
 		stringifyStruct("", "player", player);
 
-		g_asteroidMeshes.emplace_back(RenderProxy(
+		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{
 				Vertex(Vec3f(0.03f, 0.379f, 0.0f)),
 				Vertex(Vec3f(0.03f, 0.64f, 0.0f)),
@@ -74,7 +78,7 @@ struct Asteroids : public IGame
 				9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1
 			}));
 
-		g_asteroidMeshes.emplace_back(RenderProxy(
+		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{
 				Vertex(Vec3f(0.05f, 0.54f, 0.0f)),
 				Vertex(Vec3f(0.213f, 0.78f, 0.0f)),
@@ -93,7 +97,7 @@ struct Asteroids : public IGame
 				10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1
 			}));
 
-		g_asteroidMeshes.emplace_back(RenderProxy(
+		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{
 				Vertex(Vec3f(0.066f, 0.335f, 0.0f)),
 				Vertex(Vec3f(0.077f, 0.683f, 0.0f)),
@@ -112,7 +116,7 @@ struct Asteroids : public IGame
 				11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
 			}));
 
-		g_asteroidMeshes.emplace_back(RenderProxy(
+		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{
 				Vertex(Vec3f(0.056f, 0.284f, 0.0f)),
 				Vertex(Vec3f(0.064f, 0.752f, 0.0f)),
@@ -131,6 +135,18 @@ struct Asteroids : public IGame
 				11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
 			}));
 
+		Game::g_shipMesh = RenderProxy(
+			{
+				Vertex(Vec3f(0.f, 0.5f, 0.f)),
+				Vertex(Vec3f(1.f, 0.8f, 0.f)),
+				Vertex(Vec3f(0.9f, 0.7f, 0.f)),
+				Vertex(Vec3f(0.9f, 0.3f, 0.f)),
+				Vertex(Vec3f(1.0f, 0.2f, 0.f)),
+			}, {
+				// Note, has adjacency data
+				4, 0, 1, 2, 3, 4, 0, 1
+			});
+
 		// Create our scene
 		// ****************
 		pCurrentScene = new Scene();
@@ -139,6 +155,7 @@ struct Asteroids : public IGame
 
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
 
+		// Create some asteroids
 		for (int i = 0; i < 15; i++)
 		{
 			Vec3f randomLocation = Vec3f(float(rand() % 1800), float(rand() % 1000), 0.0f);
@@ -152,30 +169,41 @@ struct Asteroids : public IGame
 			pTranform->m_vel = randomVelocity;
 			pTranform->m_rot = randomRotation;
 
-			pCurrentScene->AssignComponent<CDrawable>(asteroid)->m_renderProxy = g_asteroidMeshes[rand() % 4];
+			pCurrentScene->AssignComponent<CDrawable>(asteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
 			pCurrentScene->AssignComponent<CAsteroid>(asteroid);
 		}
 
-		// Ship
+		// Create the ship
 		EntityID ship = pCurrentScene->NewEntity("Player Ship");
 		CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(ship);
 
-		pTransform->m_pos = Vec3f(450.0f, 250.0f, 0.0f);
+		float w = Graphics::GetContext()->m_windowWidth;
+		float h = Graphics::GetContext()->m_windowHeight;
+		pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 		pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 
 		pCurrentScene->AssignComponent<CPlayerControl>(ship);
 		pCurrentScene->AssignComponent<CCollidable>(ship)->m_radius = 17.f;
-		pCurrentScene->AssignComponent<CDrawable>(ship)->m_renderProxy = RenderProxy(
-			{
-				Vertex(Vec3f(0.f, 0.5f, 0.f)),
-				Vertex(Vec3f(1.f, 0.8f, 0.f)),
-				Vertex(Vec3f(0.9f, 0.7f, 0.f)),
-				Vertex(Vec3f(0.9f, 0.3f, 0.f)),
-				Vertex(Vec3f(1.0f, 0.2f, 0.f)),
-			}, {
-				// Note, has adjacency data
-				4, 0, 1, 2, 3, 4, 0, 1
-			});
+		pCurrentScene->AssignComponent<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
+
+		// Create the lives
+		// #RefactorNote: Storing current lives as literal entities is unclear and messy.
+		// rather have a lives display entity that can draw the proxy multiple times. Or have lives as parent entity
+		// With subentities as children. When the player's lives changes, it should send an event to update the UI 
+		float offset = 0.0f;
+		for (int i = 0; i < 3; ++i)
+		{
+			EntityID life = pCurrentScene->NewEntity("Life");
+			pCurrentScene->AssignComponent<CLife>(life);
+			
+			CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(life);
+			pTransform->m_pos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
+			pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
+			pTransform->m_rot = -3.14159f / 2.0f;
+			offset += 30.0f;
+			
+			pCurrentScene->AssignComponent<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
+		}
 
 		Editor::SetCurrentScene(pCurrentScene);
 	}

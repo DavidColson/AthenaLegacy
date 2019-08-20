@@ -164,7 +164,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	pCtx->m_baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
 
-	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace.otf", 50);
+	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
 	DebugDraw::Detail::Init();
 

@@ -9,6 +9,11 @@
 #include <Input/Input.h>
 #include <Utility.h>
 
+
+// **********
+// Events/Functions
+// **********
+
 void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 {
 	EntityID bullet = pScene->NewEntity("Bullet");
@@ -35,10 +40,6 @@ void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 	pScene->AssignComponent<CCollidable>(bullet)->m_radius = 4.0f;
 }
 
-
-// **********
-// SYSTEMS
-// **********
 
 void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid)
 {
@@ -82,7 +83,7 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 		pNewTransform->m_vel = randomVelocity;
 		pNewTransform->m_rot = randomRotation;
 
-		pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = g_asteroidMeshes[rand() % 4];
+		pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
 		pScene->AssignComponent<CAsteroid>(newAsteroid)->m_hitCount = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount + 1;
 	}
 
@@ -92,10 +93,44 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 
 void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid)
 {
-	// Log::Print(Log::EMsg, "Player touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(player), pScene->GetEntityName(player), GetEntityIndex(asteroid), pScene->GetEntityName(asteroid));
+	if (!pScene->HasComponent<CDrawable>(player))
+		return; // Can't kill a player who is dead
 
-	// Doesn't do anything yet
+
+	CPlayerControl* pPlayerControl = pScene->GetComponent<CPlayerControl>(player);
+	pScene->RemoveComponent<CDrawable>(player);
+	pPlayerControl->m_lives -= 1;
+	
+	Log::Print(Log::EMsg, "Player died");
+	
+	if (pPlayerControl->m_lives <= 0)
+	{
+		return; // Game over
+	} 
+
+	pPlayerControl->m_respawnTimer = 5.0f;
+	pScene->DestroyEntity(asteroid);
+
+	float w = Graphics::GetContext()->m_windowWidth;
+	float h = Graphics::GetContext()->m_windowHeight;
+	CTransform* pTransform = pScene->GetComponent<CTransform>(player);
+	pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
+	pTransform->m_rot = 0.0f;
+	pTransform->m_vel = Vec3f(0.0f, 0.0f, 0.0f);
+	pTransform->m_accel = Vec3f(0.0f, 0.0f, 0.0f);
+
+	// #RefactorNote: As per comments on CLife, this should be managed as part of a "Lives" Entity
+	// That looks up the number of lives on the entity and draws the appropriate number of ships
+	for (EntityID life : SceneView<CLife>(pScene))
+	{
+		pScene->DestroyEntity(life);
+		break;
+	}
 }
+
+// **********
+// SYSTEMS
+// **********
 
 void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 {
@@ -152,10 +187,18 @@ void DrawShapeSystem(Scene* pScene, float deltaTime)
 
 		Graphics::SubmitProxy(&pDrawable->m_renderProxy);
 	}
+
+	// #RefactorNote: Ideally we don't do this but rather have text components with visibilty and other properties
 	for (EntityID id : SceneView<CPlayerControl>(pScene))
 	{
 		CPlayerControl* pPlayerControl = pScene->GetComponent<CPlayerControl>(id);
-		Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("Score %i", pPlayerControl->m_score).c_str(), Vec2f(Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale * 0.5f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale - 53.0f));
+		float w = Graphics::GetContext()->m_windowWidth;
+		float h = Graphics::GetContext()->m_windowHeight;
+		Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("%i", pPlayerControl->m_score).c_str(), Vec2f(150.0f, h - 53.0f));
+		Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("%i", 0).c_str(), Vec2f(w - 150.f, h - 53.0f));
+
+		if (pPlayerControl->m_lives <= 0)
+			Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("Game Over", 0).c_str(), Vec2f(w / 2.0f, h / 2.0f));
 	}
 }
 
@@ -198,6 +241,21 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 	{
 		CTransform* pTransform = pScene->GetComponent<CTransform>(id);
 		CPlayerControl* pControl = pScene->GetComponent<CPlayerControl>(id);
+
+		// #RefactorNote: Probably clearer to have a "visibility" variable on drawable, and check that here instead
+		// If player entity isn't visible, don't simulate it's controls
+		if (!pScene->HasComponent<CDrawable>(id))
+		{
+			if (pControl->m_respawnTimer > 0.0f)
+			{
+				pControl->m_respawnTimer -= deltaTime;
+				if (pControl->m_respawnTimer <= 0.0f)
+				{
+					pScene->AssignComponent<CDrawable>(id)->m_renderProxy = Game::g_shipMesh;
+				}
+			}
+			return; // Player not being drawn is dead
+		}
 
 		Vec3f accel(0.0f, 0.0f, 0.0f);
 

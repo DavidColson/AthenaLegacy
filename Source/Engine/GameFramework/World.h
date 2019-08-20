@@ -204,6 +204,18 @@ struct Scene
 		return pComponent;
 	}
 
+	template<typename T>
+	void RemoveComponent(EntityID id) // #TODO: Move implementation to lower down in the file
+	{
+		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+			return;
+
+		int componentId = GetComponentId<T>();
+		ASSERT(HasComponent<T>(id), "The component you're trying to access is not assigned to this entity");
+		m_entities[GetEntityIndex(id)].m_mask.reset(componentId); // Turn off the component bit
+	}
+
+
 	// Retrieves a component for a given entity
 	// Simply checks the existence using the mask, and then queries the component from the correct pool
 	template<typename T>

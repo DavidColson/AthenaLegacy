@@ -12,6 +12,11 @@ REGISTER(CPlayerControl)
 		->RegisterMember("m_score", &CPlayerControl::m_score);
 }
 
+REGISTER(CLife)
+{
+	NewType(CLife);
+}
+
 REGISTER(CDrawable)
 {
 	NewType(CDrawable)
