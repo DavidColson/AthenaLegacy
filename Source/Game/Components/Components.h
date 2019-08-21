@@ -25,17 +25,32 @@ struct CDrawable
 };
 REGISTER_EXTERN(CDrawable);
 
+struct CText
+{
+	std::string m_text;
+	bool m_visible = true;
+};
+REGISTER_EXTERN(CText);
+
 struct CPlayerControl
 {
 	float m_thrust{ 160.f };
 	float m_rotateSpeed{ 0.1f };
 	float m_dampening{ 0.f };
-	int 	m_score{ 0 };
 	float m_respawnTimer{ 0.0f };
 	int m_lives{ 3 };
 	// #RefactorNote Store an age timer, and give the player some invincibility when they spawn
 };
 REGISTER_EXTERN(CPlayerControl);
+
+struct CGameOver
+{
+};
+
+struct CPlayerScore
+{
+	int m_score;
+};
 
 struct CLife
 {

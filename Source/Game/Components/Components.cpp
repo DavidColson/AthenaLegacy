@@ -8,8 +8,7 @@ REGISTER(CPlayerControl)
 	NewType(CPlayerControl)
 		->RegisterMember("m_thrust", &CPlayerControl::m_thrust)
 		->RegisterMember("m_rotateSpeed", &CPlayerControl::m_rotateSpeed)
-		->RegisterMember("m_dampening", &CPlayerControl::m_dampening)
-		->RegisterMember("m_score", &CPlayerControl::m_score);
+		->RegisterMember("m_dampening", &CPlayerControl::m_dampening);
 }
 
 REGISTER(CLife)
@@ -21,6 +20,13 @@ REGISTER(CDrawable)
 {
 	NewType(CDrawable)
 		->RegisterMember("m_lineThickness", &CDrawable::m_lineThickness);
+}
+
+REGISTER(CText)
+{
+	NewType(CText)
+		->RegisterMember("m_text", &CText::m_text)
+		->RegisterMember("m_visible", &CText::m_visible);
 }
 
 REGISTER(CTransform)

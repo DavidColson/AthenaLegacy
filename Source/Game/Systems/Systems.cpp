@@ -46,17 +46,23 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), pScene->GetEntityName(bullet), GetEntityIndex(asteroid), pScene->GetEntityName(asteroid));
 
 	// Do scoring for the player
-	for (EntityID playerEnt : SceneView<CPlayerControl>(pScene))
+	for (EntityID score : SceneView<CPlayerScore, CText>(pScene))
 	{
 		int hits = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount;
-		if (hits == 0)
-			pScene->GetComponent<CPlayerControl>(playerEnt)->m_score += 20;
 
+		CPlayerScore* pPlayerScore = pScene->GetComponent<CPlayerScore>(score);
+		CText* pText = pScene->GetComponent<CText>(score);
+
+		if (hits == 0)
+			pPlayerScore->m_score += 20;
+		
 		if (hits == 1)
-			pScene->GetComponent<CPlayerControl>(playerEnt)->m_score += 50;
+			pPlayerScore->m_score += 50;
 
 		if (hits == 2)
-			pScene->GetComponent<CPlayerControl>(playerEnt)->m_score += 100;
+			pPlayerScore->m_score += 100;
+			
+		pScene->GetComponent<CText>(score)->m_text = StringFormat("%i", pPlayerScore->m_score);
 	}
 
 	// Asteroid vs bullet collision
@@ -105,6 +111,10 @@ void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid
 	
 	if (pPlayerControl->m_lives <= 0)
 	{
+		for (EntityID gameOver : SceneView<CText, CGameOver>(pScene))
+		{
+			pScene->GetComponent<CText>(gameOver)->m_visible = true;
+		}
 		return; // Game over
 	} 
 
@@ -187,18 +197,18 @@ void DrawShapeSystem(Scene* pScene, float deltaTime)
 
 		Graphics::SubmitProxy(&pDrawable->m_renderProxy);
 	}
+}
 
-	// #RefactorNote: Ideally we don't do this but rather have text components with visibilty and other properties
-	for (EntityID id : SceneView<CPlayerControl>(pScene))
+void DrawTextSystem(Scene* pScene, float deltaTime)
+{
+	for (EntityID id : SceneView<CTransform, CText>(pScene))
 	{
-		CPlayerControl* pPlayerControl = pScene->GetComponent<CPlayerControl>(id);
-		float w = Graphics::GetContext()->m_windowWidth;
-		float h = Graphics::GetContext()->m_windowHeight;
-		Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("%i", pPlayerControl->m_score).c_str(), Vec2f(150.0f, h - 53.0f));
-		Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("%i", 0).c_str(), Vec2f(w - 150.f, h - 53.0f));
-
-		if (pPlayerControl->m_lives <= 0)
-			Graphics::GetContext()->m_pFontRender->SubmitText(StringFormat("Game Over", 0).c_str(), Vec2f(w / 2.0f, h / 2.0f));
+		CText* pText = pScene->GetComponent<CText>(id);
+		if (pText->m_visible)
+		{
+			CTransform* pTransform = pScene->GetComponent<CTransform>(id);
+			Graphics::GetContext()->m_pFontRender->SubmitText(pText->m_text.c_str(), Vec2f(pTransform->m_pos.x, pTransform->m_pos.y));
+		}
 	}
 }
 
@@ -242,8 +252,7 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 		CTransform* pTransform = pScene->GetComponent<CTransform>(id);
 		CPlayerControl* pControl = pScene->GetComponent<CPlayerControl>(id);
 
-		// #RefactorNote: Probably clearer to have a "visibility" variable on drawable, and check that here instead
-		// If player entity isn't visible, don't simulate it's controls
+		// #RefactorNote: Probably clearer to have an "isDead" variable on PlayerControl, and check that here instead
 		if (!pScene->HasComponent<CDrawable>(id))
 		{
 			if (pControl->m_respawnTimer > 0.0f)

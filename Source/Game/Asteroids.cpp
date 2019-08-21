@@ -177,8 +177,8 @@ struct Asteroids : public IGame
 		EntityID ship = pCurrentScene->NewEntity("Player Ship");
 		CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(ship);
 
-		float w = Graphics::GetContext()->m_windowWidth;
-		float h = Graphics::GetContext()->m_windowHeight;
+		const float w = Graphics::GetContext()->m_windowWidth;
+		const float h = Graphics::GetContext()->m_windowHeight;
 		pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 		pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 
@@ -205,6 +205,29 @@ struct Asteroids : public IGame
 			pCurrentScene->AssignComponent<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
 		}
 
+
+		// Create score counters
+		{
+			EntityID currentScoreEnt = pCurrentScene->NewEntity("Current Score");
+			pCurrentScene->AssignComponent<CText>(currentScoreEnt)->m_text = "0";
+			pCurrentScene->AssignComponent<CTransform>(currentScoreEnt)->m_pos = Vec3f(150.0f, h - 53.0f, 0.0f);
+			pCurrentScene->AssignComponent<CPlayerScore>(currentScoreEnt);
+
+			EntityID highScoreEnt = pCurrentScene->NewEntity("High Score");
+			pCurrentScene->AssignComponent<CText>(highScoreEnt)->m_text = "0";
+			pCurrentScene->AssignComponent<CTransform>(highScoreEnt)->m_pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
+		}
+
+		// Create game over text
+		{
+			EntityID gameOver = pCurrentScene->NewEntity("Game Over");
+			pCurrentScene->AssignComponent<CTransform>(gameOver)->m_pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+			pCurrentScene->AssignComponent<CGameOver>(gameOver);
+			CText* pText = pCurrentScene->AssignComponent<CText>(gameOver);
+			pText->m_text = "Game Over";
+			pText->m_visible = false;
+		}
+
 		Editor::SetCurrentScene(pCurrentScene);
 	}
 
@@ -214,6 +237,7 @@ struct Asteroids : public IGame
 		MovementSystemUpdate(pCurrentScene, deltaTime);
 		CollisionSystemUpdate(pCurrentScene, deltaTime);
 		DrawShapeSystem(pCurrentScene, deltaTime);
+		DrawTextSystem(pCurrentScene, deltaTime);
 	}
 
 	void OnEnd() override
