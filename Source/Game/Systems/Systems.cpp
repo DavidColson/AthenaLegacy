@@ -145,43 +145,41 @@ void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid
 
 void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 {
-	bool continueOuter = false;
-	for (EntityID entity1 : SceneView<CTransform, CCollidable>(pScene))
+	bool bContinueOuter = false;
+	for (EntityID asteroid : SceneView<CAsteroid>(pScene))
 	{
-		Vec2f pos = Vec2f::Project3D(pScene->Get<CTransform>(entity1)->m_pos);
-		float radius = pScene->Get<CCollidable>(entity1)->m_radius;
-		//DebugDraw::Draw2DCircle(pos, radius, Vec3f(1.0f, 0.0f, 0.0f));
-
-		for (EntityID entity2 : SceneView<CTransform, CCollidable>(pScene))
+		float asteroidRad = pScene->Get<CCollidable>(asteroid)->m_radius;
+		for (EntityID bullet : SceneView<CBullet>(pScene))
 		{
-			// Don't collide with yourself
-			if (entity1 == entity2)
-				continue;
-			// Asteroids don't collide with each other
-			if (pScene->Has<CAsteroid>(entity1) && pScene->Has<CAsteroid>(entity2))
-				continue;
+			float bulletRad = pScene->Get<CCollidable>(bullet)->m_radius;
 
-			CCollidable* pCollider1 = pScene->Get<CCollidable>(entity1);
-			CCollidable* pCollider2 = pScene->Get<CCollidable>(entity2);
-
-			float distance = (pScene->Get<CTransform>(entity1)->m_pos - pScene->Get<CTransform>(entity2)->m_pos).GetLength();
-			float collisionDistance = pCollider1->m_radius + pCollider2->m_radius;
+			float distance = (pScene->Get<CTransform>(asteroid)->m_pos - pScene->Get<CTransform>(bullet)->m_pos).GetLength();
+			float collisionDistance = asteroidRad + bulletRad;
 			
 			if (distance < collisionDistance)
 			{
-				if (pScene->Has<CBullet>(entity1) && pScene->Has<CAsteroid>(entity2))
-				{
-					OnBulletAsteroidCollision(pScene, entity1, entity2);
-					continueOuter = true; break; // the bullet will have been deleted, so skip this iteration
-				}
-
-				if (pScene->Has<CPlayerControl>(entity1) && pScene->Has<CAsteroid>(entity2))
-				{
-					OnPlayerAsteroidCollision(pScene, entity1, entity2);
-				}
+				OnBulletAsteroidCollision(pScene, bullet, asteroid);
+				bContinueOuter = true; break;
 			}
 		}
-		if (continueOuter)
+		if(bContinueOuter) // The asteroid has been deleted, so skip
+			continue;
+
+		// #RefactorNote, get the player's ID from a singleton and completely avoid this loop
+		for (EntityID player : SceneView<CPlayerControl>(pScene))
+		{
+			float playerRad = pScene->Get<CCollidable>(player)->m_radius;
+
+			float distance = (pScene->Get<CTransform>(asteroid)->m_pos - pScene->Get<CTransform>(player)->m_pos).GetLength();
+			float collisionDistance = asteroidRad + playerRad;
+			
+			if (distance < collisionDistance)
+			{
+				OnPlayerAsteroidCollision(pScene, player, asteroid);
+				bContinueOuter = true; break;
+			}
+		}
+		if(bContinueOuter) // The asteroid has been deleted, so skip
 			continue;
 	}
 }

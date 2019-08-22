@@ -39,6 +39,7 @@ struct CPlayerControl
 	float m_dampening{ 0.f };
 	float m_respawnTimer{ 0.0f };
 	int 	m_lives = 3;
+	// #RefactorNote: move this into the singleton HUD component
 	EntityID m_lifeEntities[3]; // Stores the entityID of the three lives living in the corner of the screen
 	// #RefactorNote Store an age timer, and give the player some invincibility when they spawn
 };
