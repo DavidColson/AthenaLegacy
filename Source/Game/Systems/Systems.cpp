@@ -46,6 +46,8 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), pScene->GetEntityName(bullet), GetEntityIndex(asteroid), pScene->GetEntityName(asteroid));
 
 	// Do scoring for the player
+	// #RefactorNote: Another use of single entity for loop lookup
+	// Consider player storing the entity Id of the score entity. Or a HUD singleton storing the entity ID.
 	for (EntityID score : SceneView<CPlayerScore, CText>(pScene))
 	{
 		int hits = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount;
@@ -53,6 +55,7 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 		CPlayerScore* pPlayerScore = pScene->GetComponent<CPlayerScore>(score);
 		CText* pText = pScene->GetComponent<CText>(score);
 
+		// #RefactorNote: Get rid of branching here by storing the score for an asteroid in the asteroid
 		if (hits == 0)
 			pPlayerScore->m_score += 20;
 		
@@ -106,11 +109,17 @@ void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid
 	CPlayerControl* pPlayerControl = pScene->GetComponent<CPlayerControl>(player);
 	pScene->RemoveComponent<CDrawable>(player);
 	pPlayerControl->m_lives -= 1;
+	pScene->DestroyEntity(pPlayerControl->m_lifeEntities[pPlayerControl->m_lives]);
 	
 	Log::Print(Log::EMsg, "Player died");
 	
 	if (pPlayerControl->m_lives <= 0)
 	{
+		// #RefactorNote: We're iterating the entire list of entities to find the one we want to tell it to be invisible.
+		// Maybe this isn't ideal. Maybe we should have a system for updating UI elements that can figure out when stuff
+		// Needs updating and do it there.
+		// Could have a HUD singleton component, that stores entity Ids for each hud component to update
+		// Or player's themselves store a refernece to the game over entity
 		for (EntityID gameOver : SceneView<CText, CGameOver>(pScene))
 		{
 			pScene->GetComponent<CText>(gameOver)->m_visible = true;
@@ -128,14 +137,6 @@ void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid
 	pTransform->m_rot = 0.0f;
 	pTransform->m_vel = Vec3f(0.0f, 0.0f, 0.0f);
 	pTransform->m_accel = Vec3f(0.0f, 0.0f, 0.0f);
-
-	// #RefactorNote: As per comments on CLife, this should be managed as part of a "Lives" Entity
-	// That looks up the number of lives on the entity and draws the appropriate number of ships
-	for (EntityID life : SceneView<CLife>(pScene))
-	{
-		pScene->DestroyEntity(life);
-		break;
-	}
 }
 
 // **********
@@ -204,7 +205,8 @@ void DrawTextSystem(Scene* pScene, float deltaTime)
 	for (EntityID id : SceneView<CTransform, CText>(pScene))
 	{
 		CText* pText = pScene->GetComponent<CText>(id);
-		if (pText->m_visible)
+		if (pText->m_visible) // #RefactorNote: Consider making visible a component, 
+			// and then you can just iterate over visible renderables, less branching
 		{
 			CTransform* pTransform = pScene->GetComponent<CTransform>(id);
 			Graphics::GetContext()->m_pFontRender->SubmitText(pText->m_text.c_str(), Vec2f(pTransform->m_pos.x, pTransform->m_pos.y));
@@ -260,6 +262,7 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 				pControl->m_respawnTimer -= deltaTime;
 				if (pControl->m_respawnTimer <= 0.0f)
 				{
+					// #RefactorNote: Assign and remove a visibility component instead
 					pScene->AssignComponent<CDrawable>(id)->m_renderProxy = Game::g_shipMesh;
 				}
 			}

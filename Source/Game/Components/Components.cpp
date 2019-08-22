@@ -11,11 +11,6 @@ REGISTER(CPlayerControl)
 		->RegisterMember("m_dampening", &CPlayerControl::m_dampening);
 }
 
-REGISTER(CLife)
-{
-	NewType(CLife);
-}
-
 REGISTER(CDrawable)
 {
 	NewType(CDrawable)

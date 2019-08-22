@@ -38,7 +38,8 @@ struct CPlayerControl
 	float m_rotateSpeed{ 0.1f };
 	float m_dampening{ 0.f };
 	float m_respawnTimer{ 0.0f };
-	int m_lives{ 3 };
+	int 	m_lives = 3;
+	EntityID m_lifeEntities[3]; // Stores the entityID of the three lives living in the corner of the screen
 	// #RefactorNote Store an age timer, and give the player some invincibility when they spawn
 };
 REGISTER_EXTERN(CPlayerControl);
@@ -51,16 +52,6 @@ struct CPlayerScore
 {
 	int m_score;
 };
-
-struct CLife
-{
-	// #RefactorNote
-	// This should probably store a reference to the player
-	// And have a life UI system that checks the player and enables/disables
-	// subentities attached to this to show the correct number of lives.
-	// Maybe keep a pool of UI elements for each possible life shown up to some limit
-};
-REGISTER_EXTERN(CLife);
 
 struct CBullet
 {

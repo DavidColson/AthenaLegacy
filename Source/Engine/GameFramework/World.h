@@ -251,7 +251,7 @@ struct Scene
 	struct EntityDesc
 	{
 		EntityID m_id;
-		const char* m_name;
+		const char* m_name; // #RefactorNote: Move this to a component, store no data in here that is not necessary.
 		ComponentMask m_mask;
 	};
 	std::vector<EntityDesc> m_entities;

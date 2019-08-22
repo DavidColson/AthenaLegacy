@@ -182,7 +182,7 @@ struct Asteroids : public IGame
 		pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 		pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 
-		pCurrentScene->AssignComponent<CPlayerControl>(ship);
+		CPlayerControl* pPlayer = pCurrentScene->AssignComponent<CPlayerControl>(ship);
 		pCurrentScene->AssignComponent<CCollidable>(ship)->m_radius = 17.f;
 		pCurrentScene->AssignComponent<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
 
@@ -194,7 +194,6 @@ struct Asteroids : public IGame
 		for (int i = 0; i < 3; ++i)
 		{
 			EntityID life = pCurrentScene->NewEntity("Life");
-			pCurrentScene->AssignComponent<CLife>(life);
 			
 			CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(life);
 			pTransform->m_pos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
@@ -203,6 +202,7 @@ struct Asteroids : public IGame
 			offset += 30.0f;
 			
 			pCurrentScene->AssignComponent<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
+			pPlayer->m_lifeEntities[i] = life;
 		}
 
 
