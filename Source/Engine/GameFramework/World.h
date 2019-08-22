@@ -29,11 +29,11 @@ ShipControlSystem(pScene, deltaTime);
 // To create entities and assign entities to them do this:
 
 EntityID triangle = gGameWorld.NewEntity();
-Transform* pTransform = gGameWorld.AssignComponent<Transform>(triangle);
-Shape* pShape = gGameWorld.AssignComponent<Shape>(triangle);
+Transform* pTransform = gGameWorld.Assign<Transform>(triangle);
+Shape* pShape = gGameWorld.Assign<Shape>(triangle);
 
 EntityID circle = gGameWorld.NewEntity();
-gGameWorld.AssignComponent<Shape>(circle);
+gGameWorld.Assign<Shape>(circle);
 
 // To get the whole thing running, just call gGameWorld.UpdateSystems();
 
@@ -81,7 +81,7 @@ inline bool IsEntityValid(EntityID id)
 // Gives you the id within this world for a given component type
 extern int s_componentCounter; // #TODO: Move this to a detail namespace
 template <class T>
-int GetComponentId() // Move this whole function to the detail namespace
+int GetId() // Move this whole function to the detail namespace
 {
 	// static variable will be initialized on first function call
 	// It will then continue to return the same thing, no matter how many times this is called.
@@ -178,12 +178,12 @@ struct Scene
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
 	// Will not make components on entities that already have that component
 	template<typename T>
-	T* AssignComponent(EntityID id) // #TODO: Move implementation to lower down in the file
+	T* Assign(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
 		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
 
-		int componentId = GetComponentId<T>();
+		int componentId = GetId<T>();
 		if (m_componentPools.size() <= componentId) // Not enough component pool
 		{
 			m_componentPools.resize(componentId + 1, nullptr);
@@ -194,7 +194,7 @@ struct Scene
 		}
 
 		// Check the mask so you're not overwriting a component
-		ASSERT(HasComponent<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
+		ASSERT(Has<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
 		
 		// Looks up the component in the pool, and initializes it with placement new
 		T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(GetEntityIndex(id)))) T();
@@ -205,13 +205,13 @@ struct Scene
 	}
 
 	template<typename T>
-	void RemoveComponent(EntityID id) // #TODO: Move implementation to lower down in the file
+	void Remove(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
 		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
 			return;
 
-		int componentId = GetComponentId<T>();
-		ASSERT(HasComponent<T>(id), "The component you're trying to access is not assigned to this entity");
+		int componentId = GetId<T>();
+		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
 		m_entities[GetEntityIndex(id)].m_mask.reset(componentId); // Turn off the component bit
 	}
 
@@ -219,25 +219,25 @@ struct Scene
 	// Retrieves a component for a given entity
 	// Simply checks the existence using the mask, and then queries the component from the correct pool
 	template<typename T>
-	T* GetComponent(EntityID id) // #TODO: Move implementation to lower down in the file
+	T* Get(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
 		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
 
-		int componentId = GetComponentId<T>();
-		ASSERT(HasComponent<T>(id), "The component you're trying to access is not assigned to this entity");
+		int componentId = GetId<T>();
+		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
 		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(GetEntityIndex(id)));
 		return pComponent;
 	}
 
 	// Checks if an entity with given Id has a component of type T assigned to it
 	template<typename T>
-	bool HasComponent(EntityID id)
+	bool Has(EntityID id)
 	{
 		if (!IsEntityValid(id) || m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
 			return false;
 
-		int componentId = GetComponentId<T>();
+		int componentId = GetId<T>();
 		return m_entities[GetEntityIndex(id)].m_mask.test(componentId);
 	}
 
@@ -269,7 +269,7 @@ struct SceneView
 		}
 		else
 		{
-			int componentIds[] = { 0, GetComponentId<ComponentTypes>() ... };
+			int componentIds[] = { 0, GetId<ComponentTypes>() ... };
 			for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)
 				m_componentMask.set(componentIds[i]);
 		}

@@ -162,29 +162,29 @@ struct Asteroids : public IGame
 			Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
 			float randomRotation = randf() * 6.282f;
 			EntityID asteroid = pCurrentScene->NewEntity("Asteroid");
-			pCurrentScene->AssignComponent<CCollidable>(asteroid);
-			CTransform* pTranform = pCurrentScene->AssignComponent<CTransform>(asteroid);
+			pCurrentScene->Assign<CCollidable>(asteroid);
+			CTransform* pTranform = pCurrentScene->Assign<CTransform>(asteroid);
 			pTranform->m_pos = randomLocation;
 			pTranform->m_sca = Vec3f(90.0f, 90.0f, 1.0f);
 			pTranform->m_vel = randomVelocity;
 			pTranform->m_rot = randomRotation;
 
-			pCurrentScene->AssignComponent<CDrawable>(asteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
-			pCurrentScene->AssignComponent<CAsteroid>(asteroid);
+			pCurrentScene->Assign<CDrawable>(asteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
+			pCurrentScene->Assign<CAsteroid>(asteroid);
 		}
 
 		// Create the ship
 		EntityID ship = pCurrentScene->NewEntity("Player Ship");
-		CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(ship);
+		CTransform* pTransform = pCurrentScene->Assign<CTransform>(ship);
 
 		const float w = Graphics::GetContext()->m_windowWidth;
 		const float h = Graphics::GetContext()->m_windowHeight;
 		pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 		pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 
-		CPlayerControl* pPlayer = pCurrentScene->AssignComponent<CPlayerControl>(ship);
-		pCurrentScene->AssignComponent<CCollidable>(ship)->m_radius = 17.f;
-		pCurrentScene->AssignComponent<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
+		CPlayerControl* pPlayer = pCurrentScene->Assign<CPlayerControl>(ship);
+		pCurrentScene->Assign<CCollidable>(ship)->m_radius = 17.f;
+		pCurrentScene->Assign<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
 
 		// Create the lives
 		// #RefactorNote: Storing current lives as literal entities is unclear and messy.
@@ -195,13 +195,13 @@ struct Asteroids : public IGame
 		{
 			EntityID life = pCurrentScene->NewEntity("Life");
 			
-			CTransform* pTransform = pCurrentScene->AssignComponent<CTransform>(life);
+			CTransform* pTransform = pCurrentScene->Assign<CTransform>(life);
 			pTransform->m_pos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
 			pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 			pTransform->m_rot = -3.14159f / 2.0f;
 			offset += 30.0f;
 			
-			pCurrentScene->AssignComponent<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
+			pCurrentScene->Assign<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
 			pPlayer->m_lifeEntities[i] = life;
 		}
 
@@ -209,21 +209,21 @@ struct Asteroids : public IGame
 		// Create score counters
 		{
 			EntityID currentScoreEnt = pCurrentScene->NewEntity("Current Score");
-			pCurrentScene->AssignComponent<CText>(currentScoreEnt)->m_text = "0";
-			pCurrentScene->AssignComponent<CTransform>(currentScoreEnt)->m_pos = Vec3f(150.0f, h - 53.0f, 0.0f);
-			pCurrentScene->AssignComponent<CPlayerScore>(currentScoreEnt);
+			pCurrentScene->Assign<CText>(currentScoreEnt)->m_text = "0";
+			pCurrentScene->Assign<CTransform>(currentScoreEnt)->m_pos = Vec3f(150.0f, h - 53.0f, 0.0f);
+			pCurrentScene->Assign<CPlayerScore>(currentScoreEnt);
 
 			EntityID highScoreEnt = pCurrentScene->NewEntity("High Score");
-			pCurrentScene->AssignComponent<CText>(highScoreEnt)->m_text = "0";
-			pCurrentScene->AssignComponent<CTransform>(highScoreEnt)->m_pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
+			pCurrentScene->Assign<CText>(highScoreEnt)->m_text = "0";
+			pCurrentScene->Assign<CTransform>(highScoreEnt)->m_pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
 		}
 
 		// Create game over text
 		{
 			EntityID gameOver = pCurrentScene->NewEntity("Game Over");
-			pCurrentScene->AssignComponent<CTransform>(gameOver)->m_pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
-			pCurrentScene->AssignComponent<CGameOver>(gameOver);
-			CText* pText = pCurrentScene->AssignComponent<CText>(gameOver);
+			pCurrentScene->Assign<CTransform>(gameOver)->m_pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+			pCurrentScene->Assign<CGameOver>(gameOver);
+			CText* pText = pCurrentScene->Assign<CText>(gameOver);
 			pText->m_text = "Game Over";
 			pText->m_visible = false;
 		}

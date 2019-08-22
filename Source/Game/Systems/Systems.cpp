@@ -17,15 +17,15 @@
 void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 {
 	EntityID bullet = pScene->NewEntity("Bullet");
-	CBullet* pBullet = pScene->AssignComponent<CBullet>(bullet);
+	CBullet* pBullet = pScene->Assign<CBullet>(bullet);
 
-	CTransform* pBulletTrans = pScene->AssignComponent<CTransform>(bullet);
+	CTransform* pBulletTrans = pScene->Assign<CTransform>(bullet);
 	pBulletTrans->m_pos = pAtTransform->m_pos;
 	Vec3f travelDir = Vec3f(-cos(pAtTransform->m_rot), -sin(pAtTransform->m_rot), 0.0f);
 	pBulletTrans->m_vel = pAtTransform->m_vel + travelDir * pBullet->m_speed;
 	pBulletTrans->m_rot = pAtTransform->m_rot;
 
-	CDrawable* pDrawable = pScene->AssignComponent<CDrawable>(bullet);
+	CDrawable* pDrawable = pScene->Assign<CDrawable>(bullet);
 	pDrawable->m_renderProxy = RenderProxy(
 		{
 			Vertex(Vec3f(0.f, 0.0f, 0.f)),
@@ -37,7 +37,7 @@ void SpawnBullet(Scene* pScene, const CTransform* pAtTransform)
 			3, 0, 1, 2, 3, 0, 1
 		});
 	pDrawable->m_lineThickness = 3.0f;
-	pScene->AssignComponent<CCollidable>(bullet)->m_radius = 4.0f;
+	pScene->Assign<CCollidable>(bullet)->m_radius = 4.0f;
 }
 
 
@@ -50,10 +50,10 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 	// Consider player storing the entity Id of the score entity. Or a HUD singleton storing the entity ID.
 	for (EntityID score : SceneView<CPlayerScore, CText>(pScene))
 	{
-		int hits = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount;
+		int hits = pScene->Get<CAsteroid>(asteroid)->m_hitCount;
 
-		CPlayerScore* pPlayerScore = pScene->GetComponent<CPlayerScore>(score);
-		CText* pText = pScene->GetComponent<CText>(score);
+		CPlayerScore* pPlayerScore = pScene->Get<CPlayerScore>(score);
+		CText* pText = pScene->Get<CText>(score);
 
 		// #RefactorNote: Get rid of branching here by storing the score for an asteroid in the asteroid
 		if (hits == 0)
@@ -65,18 +65,18 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 		if (hits == 2)
 			pPlayerScore->m_score += 100;
 			
-		pScene->GetComponent<CText>(score)->m_text = StringFormat("%i", pPlayerScore->m_score);
+		pScene->Get<CText>(score)->m_text = StringFormat("%i", pPlayerScore->m_score);
 	}
 
 	// Asteroid vs bullet collision
-	if (pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount >= 2) // Smallest type asteroid, destroy and return
+	if (pScene->Get<CAsteroid>(asteroid)->m_hitCount >= 2) // Smallest type asteroid, destroy and return
 	{
 		pScene->DestroyEntity(asteroid);
 		return;
 	}
 
-	CTransform* pTransform = pScene->GetComponent<CTransform>(asteroid);
-	CCollidable* pCollidable = pScene->GetComponent<CCollidable>(asteroid);
+	CTransform* pTransform = pScene->Get<CTransform>(asteroid);
+	CCollidable* pCollidable = pScene->Get<CCollidable>(asteroid);
 	for (int i = 0; i < 2; i++)
 	{
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
@@ -85,15 +85,15 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 		Vec3f randomVelocity = pTransform->m_vel + Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f) * 80.0f;
 
 		EntityID newAsteroid = pScene->NewEntity("Asteroid");
-		pScene->AssignComponent<CCollidable>(newAsteroid)->m_radius = pCollidable->m_radius * 0.5f;
-		CTransform* pNewTransform = pScene->AssignComponent<CTransform>(newAsteroid);
+		pScene->Assign<CCollidable>(newAsteroid)->m_radius = pCollidable->m_radius * 0.5f;
+		CTransform* pNewTransform = pScene->Assign<CTransform>(newAsteroid);
 		pNewTransform->m_pos = pTransform->m_pos;
 		pNewTransform->m_sca = pTransform->m_sca * 0.5f;
 		pNewTransform->m_vel = randomVelocity;
 		pNewTransform->m_rot = randomRotation;
 
-		pScene->AssignComponent<CDrawable>(newAsteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
-		pScene->AssignComponent<CAsteroid>(newAsteroid)->m_hitCount = pScene->GetComponent<CAsteroid>(asteroid)->m_hitCount + 1;
+		pScene->Assign<CDrawable>(newAsteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
+		pScene->Assign<CAsteroid>(newAsteroid)->m_hitCount = pScene->Get<CAsteroid>(asteroid)->m_hitCount + 1;
 	}
 
 	pScene->DestroyEntity(asteroid);
@@ -102,12 +102,12 @@ void OnBulletAsteroidCollision(Scene* pScene, EntityID bullet, EntityID asteroid
 
 void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid)
 {
-	if (!pScene->HasComponent<CDrawable>(player))
+	if (!pScene->Has<CDrawable>(player))
 		return; // Can't kill a player who is dead
 
 
-	CPlayerControl* pPlayerControl = pScene->GetComponent<CPlayerControl>(player);
-	pScene->RemoveComponent<CDrawable>(player);
+	CPlayerControl* pPlayerControl = pScene->Get<CPlayerControl>(player);
+	pScene->Remove<CDrawable>(player);
 	pPlayerControl->m_lives -= 1;
 	pScene->DestroyEntity(pPlayerControl->m_lifeEntities[pPlayerControl->m_lives]);
 	
@@ -122,7 +122,7 @@ void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid
 		// Or player's themselves store a refernece to the game over entity
 		for (EntityID gameOver : SceneView<CText, CGameOver>(pScene))
 		{
-			pScene->GetComponent<CText>(gameOver)->m_visible = true;
+			pScene->Get<CText>(gameOver)->m_visible = true;
 		}
 		return; // Game over
 	} 
@@ -132,7 +132,7 @@ void OnPlayerAsteroidCollision(Scene* pScene, EntityID player, EntityID asteroid
 
 	float w = Graphics::GetContext()->m_windowWidth;
 	float h = Graphics::GetContext()->m_windowHeight;
-	CTransform* pTransform = pScene->GetComponent<CTransform>(player);
+	CTransform* pTransform = pScene->Get<CTransform>(player);
 	pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 	pTransform->m_rot = 0.0f;
 	pTransform->m_vel = Vec3f(0.0f, 0.0f, 0.0f);
@@ -148,8 +148,8 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 	bool continueOuter = false;
 	for (EntityID entity1 : SceneView<CTransform, CCollidable>(pScene))
 	{
-		Vec2f pos = Vec2f::Project3D(pScene->GetComponent<CTransform>(entity1)->m_pos);
-		float radius = pScene->GetComponent<CCollidable>(entity1)->m_radius;
+		Vec2f pos = Vec2f::Project3D(pScene->Get<CTransform>(entity1)->m_pos);
+		float radius = pScene->Get<CCollidable>(entity1)->m_radius;
 		//DebugDraw::Draw2DCircle(pos, radius, Vec3f(1.0f, 0.0f, 0.0f));
 
 		for (EntityID entity2 : SceneView<CTransform, CCollidable>(pScene))
@@ -158,24 +158,24 @@ void CollisionSystemUpdate(Scene* pScene, float deltaTime)
 			if (entity1 == entity2)
 				continue;
 			// Asteroids don't collide with each other
-			if (pScene->HasComponent<CAsteroid>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
+			if (pScene->Has<CAsteroid>(entity1) && pScene->Has<CAsteroid>(entity2))
 				continue;
 
-			CCollidable* pCollider1 = pScene->GetComponent<CCollidable>(entity1);
-			CCollidable* pCollider2 = pScene->GetComponent<CCollidable>(entity2);
+			CCollidable* pCollider1 = pScene->Get<CCollidable>(entity1);
+			CCollidable* pCollider2 = pScene->Get<CCollidable>(entity2);
 
-			float distance = (pScene->GetComponent<CTransform>(entity1)->m_pos - pScene->GetComponent<CTransform>(entity2)->m_pos).GetLength();
+			float distance = (pScene->Get<CTransform>(entity1)->m_pos - pScene->Get<CTransform>(entity2)->m_pos).GetLength();
 			float collisionDistance = pCollider1->m_radius + pCollider2->m_radius;
 			
 			if (distance < collisionDistance)
 			{
-				if (pScene->HasComponent<CBullet>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
+				if (pScene->Has<CBullet>(entity1) && pScene->Has<CAsteroid>(entity2))
 				{
 					OnBulletAsteroidCollision(pScene, entity1, entity2);
 					continueOuter = true; break; // the bullet will have been deleted, so skip this iteration
 				}
 
-				if (pScene->HasComponent<CPlayerControl>(entity1) && pScene->HasComponent<CAsteroid>(entity2))
+				if (pScene->Has<CPlayerControl>(entity1) && pScene->Has<CAsteroid>(entity2))
 				{
 					OnPlayerAsteroidCollision(pScene, entity1, entity2);
 				}
@@ -190,8 +190,8 @@ void DrawShapeSystem(Scene* pScene, float deltaTime)
 {
 	for (EntityID id : SceneView<CTransform, CDrawable>(pScene))
 	{
-		CTransform* pTransform = pScene->GetComponent<CTransform>(id);
-		CDrawable* pDrawable = pScene->GetComponent<CDrawable>(id);
+		CTransform* pTransform = pScene->Get<CTransform>(id);
+		CDrawable* pDrawable = pScene->Get<CDrawable>(id);
 
 		pDrawable->m_renderProxy.SetTransform(pTransform->m_pos, pTransform->m_rot, pTransform->m_sca);
 		pDrawable->m_renderProxy.m_lineThickness = pDrawable->m_lineThickness;
@@ -204,11 +204,11 @@ void DrawTextSystem(Scene* pScene, float deltaTime)
 {
 	for (EntityID id : SceneView<CTransform, CText>(pScene))
 	{
-		CText* pText = pScene->GetComponent<CText>(id);
+		CText* pText = pScene->Get<CText>(id);
 		if (pText->m_visible) // #RefactorNote: Consider making visible a component, 
 			// and then you can just iterate over visible renderables, less branching
 		{
-			CTransform* pTransform = pScene->GetComponent<CTransform>(id);
+			CTransform* pTransform = pScene->Get<CTransform>(id);
 			Graphics::GetContext()->m_pFontRender->SubmitText(pText->m_text.c_str(), Vec2f(pTransform->m_pos.x, pTransform->m_pos.y));
 		}
 	}
@@ -218,7 +218,7 @@ void MovementSystemUpdate(Scene* pScene, float deltaTime)
 {
 	for (EntityID id : SceneView<CTransform>(pScene))
 	{
-		CTransform* pTransform = pScene->GetComponent<CTransform>(id);
+		CTransform* pTransform = pScene->Get<CTransform>(id);
 
 		pTransform->m_vel = pTransform->m_vel + pTransform->m_accel * deltaTime;
 		pTransform->m_pos = pTransform->m_pos + pTransform->m_vel * deltaTime;
@@ -226,23 +226,23 @@ void MovementSystemUpdate(Scene* pScene, float deltaTime)
 		if (pTransform->m_pos.x < 0.0f)
 		{
 			pTransform->m_pos.x = Graphics::GetContext()->m_windowWidth;
-			if (pScene->HasComponent<CBullet>(id)) pScene->DestroyEntity(id);
+			if (pScene->Has<CBullet>(id)) pScene->DestroyEntity(id);
 		}
 		else if (pTransform->m_pos.x > Graphics::GetContext()->m_windowWidth)
 		{
 			pTransform->m_pos.x = 0.0f;
-			if (pScene->HasComponent<CBullet>(id)) pScene->DestroyEntity(id);
+			if (pScene->Has<CBullet>(id)) pScene->DestroyEntity(id);
 		}
 
 		if (pTransform->m_pos.y < 0.0f)
 		{
 			pTransform->m_pos.y = Graphics::GetContext()->m_windowHeight;
-			if (pScene->HasComponent<CBullet>(id)) pScene->DestroyEntity(id);
+			if (pScene->Has<CBullet>(id)) pScene->DestroyEntity(id);
 		}
 		else if (pTransform->m_pos.y > Graphics::GetContext()->m_windowHeight)
 		{
 			pTransform->m_pos.y = 0.0f;
-			if (pScene->HasComponent<CBullet>(id)) pScene->DestroyEntity(id);
+			if (pScene->Has<CBullet>(id)) pScene->DestroyEntity(id);
 		}
 	}
 }
@@ -251,11 +251,11 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 {
 	for (EntityID id : SceneView<CTransform, CPlayerControl>(pScene))
 	{
-		CTransform* pTransform = pScene->GetComponent<CTransform>(id);
-		CPlayerControl* pControl = pScene->GetComponent<CPlayerControl>(id);
+		CTransform* pTransform = pScene->Get<CTransform>(id);
+		CPlayerControl* pControl = pScene->Get<CPlayerControl>(id);
 
 		// #RefactorNote: Probably clearer to have an "isDead" variable on PlayerControl, and check that here instead
-		if (!pScene->HasComponent<CDrawable>(id))
+		if (!pScene->Has<CDrawable>(id))
 		{
 			if (pControl->m_respawnTimer > 0.0f)
 			{
@@ -263,7 +263,7 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 				if (pControl->m_respawnTimer <= 0.0f)
 				{
 					// #RefactorNote: Assign and remove a visibility component instead
-					pScene->AssignComponent<CDrawable>(id)->m_renderProxy = Game::g_shipMesh;
+					pScene->Assign<CDrawable>(id)->m_renderProxy = Game::g_shipMesh;
 				}
 			}
 			return; // Player not being drawn is dead
