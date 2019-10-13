@@ -56,10 +56,10 @@ struct Asteroids : public IGame
 
 		myInMember->Set(&testComponent, 1337);
 
-		Log::Print(Log::EMsg, "Printing Members of type: %s", typeData->m_name);
-		for (std::pair<std::string, Member> member : typeData->m_members)
-		{
-			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.first.c_str(), member.second.m_type->m_name, *member.second.Get<int>(&testComponent));
+		Log::Print(Log::EMsg, "Iterator printing Members of type: %s", typeData->m_name);
+		for (Member* member : *typeData)
+		{			
+			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member->m_name, member->m_type->m_name, *member->Get<int>(&testComponent));
 		}
 
 		Game::g_asteroidMeshes.emplace_back(RenderProxy(

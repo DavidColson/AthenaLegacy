@@ -43,15 +43,47 @@ struct TypeData
 	  initFunc(this);
   }
   TypeData(const char* name, size_t size) : m_name{name}, m_size{size} {}
-  TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, Member>>& init)
-   : m_name{name}, m_size{size}, m_members{ init } {}
-
+  TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, Member>>& init) : m_name{name}, m_size{size}, m_members{ init } {}
 
    Member* GetMember(const char* name);
+
+   struct MemberIterator
+  {
+    MemberIterator(std::map<std::string, Member>::iterator it) : m_it(it) {}
+
+    Member* operator*() const 
+    { 
+      return &(m_it->second);
+    }
+
+    bool operator==(const MemberIterator& other) const 
+    {
+      return m_it == other.m_it;
+    }
+    bool operator!=(const MemberIterator& other) const 
+    {
+      return m_it != other.m_it;
+    }
+
+    MemberIterator& operator++()
+    {
+      ++m_it;
+      return *this;
+    }
+
+    std::map<std::string, Member>::iterator m_it;
+  };
+
+  const MemberIterator begin() 
+  {
+    return MemberIterator(m_members.begin());
+  }
+
+  const MemberIterator end()
+  {
+    return MemberIterator(m_members.end());
+  }
 };
-
-
-
 
 // Type resolving mechanism
 template<typename T>
@@ -70,12 +102,12 @@ TypeData* getPrimitiveTypeData<bool>();
 
 struct DefaultTypeResolver 
 {
-  template<typename T, typename = int>
-  struct IsReflected : std::false_type {};
   // the decltype term here may result in invalid c++ if T doesn't contain m_typeData. 
   // As such if it doesn't, this template instantiation will be completely ignored by the compiler through SNIFAE. 
   // If it does contain m_typeData, this will be instantiated and we're all good.
   // See here for deep explanation: https://stackoverflow.com/questions/1005476/how-to-detect-whether-there-is-a-specific-member-variable-in-class
+  template<typename T, typename = int>
+  struct IsReflected : std::false_type {};
   template<typename T>
   struct IsReflected<T, decltype((void) T::m_typeData, 0)> : std::true_type {};
 

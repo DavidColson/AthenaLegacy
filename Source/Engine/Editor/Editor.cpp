@@ -77,42 +77,42 @@ void ShowEntityInspector()
 				// Make a new variant to hide this void*
 				void* pComponentData = pCurrentScene->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
 
-				// Loop the memberlist of the type, creating editors for each type, getting from the RefVariant of the component
-				for (std::pair<std::string, Member> member : pComponentType->m_members)
+				// Loop through all the members of the component, showing the appropriate UI elements
+				for (Member* member : *pComponentType)
 				{
-					if (member.second.IsType<float>())
+					if (member->IsType<float>())
 					{
-						float& number = *member.second.Get<float>(pComponentData);
-						ImGui::DragFloat(member.first.c_str(), &number, 0.1f);
+						float* number = member->Get<float>(pComponentData);
+						ImGui::DragFloat(member->m_name, number, 0.1f);
 					}
-					else if (member.second.IsType<int>())
+					else if (member->IsType<int>())
 					{
-						int& number = *member.second.Get<int>(pComponentData);
-						ImGui::DragInt(member.first.c_str(), &number, 0.1f);
+						int* number = member->Get<int>(pComponentData);
+						ImGui::DragInt(member->m_name, number, 0.1f);
 					}
-					else if (member.second.IsType<Vec2f>())
+					else if (member->IsType<Vec2f>())
 					{
-						Vec2f& vec = *member.second.Get<Vec2f>(pComponentData);
+						Vec2f& vec = *member->Get<Vec2f>(pComponentData);
 						float list[2] = { vec.x, vec.y };
-						ImGui::DragFloat2(member.first.c_str(), list, 0.1f);
+						ImGui::DragFloat2(member->m_name, list, 0.1f);
 						vec.x = list[0]; vec.y = list[1];
 					}
-					else if (member.second.IsType<Vec3f>())
+					else if (member->IsType<Vec3f>())
 					{
-						Vec3f& vec = *member.second.Get<Vec3f>(pComponentData);
+						Vec3f& vec = *member->Get<Vec3f>(pComponentData);
 						float list[3] = { vec.x, vec.y, vec.z };
-						ImGui::DragFloat3(member.first.c_str(), list, 0.1f);
+						ImGui::DragFloat3(member->m_name, list, 0.1f);
 						vec.x = list[0]; vec.y = list[1]; vec.z = list[2];
 					}
-					else if (member.second.IsType<bool>())
+					else if (member->IsType<bool>())
 					{
-						bool& boolean = *member.second.Get<bool>(pComponentData);
-						ImGui::Checkbox(member.first.c_str(), &boolean);
+						bool* boolean = member->Get<bool>(pComponentData);
+						ImGui::Checkbox(member->m_name, boolean);
 					}
-					else if (member.second.IsType<EntityID>())
+					else if (member->IsType<EntityID>())
 					{
-						EntityID& entity = *member.second.Get<EntityID>(pComponentData);
-						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member.first.c_str());
+						EntityID& entity = *member->Get<EntityID>(pComponentData);
+						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member->m_name);
 					}
 				}
 			}
