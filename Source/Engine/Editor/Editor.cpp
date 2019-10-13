@@ -70,51 +70,50 @@ void ShowEntityInspector()
 		{
 			using namespace TypeDB;
 
-			Type* componentType = TypeDB::GetType(pCurrentScene->m_componentPools[i]->componentTypeId);
-			if (ImGui::CollapsingHeader(componentType->m_name))
+			TypeData* pComponentType = pCurrentScene->m_componentPools[i]->pTypeData;
+			if (ImGui::CollapsingHeader(pComponentType->m_name))
 			{
 				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
 				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
-				// Directly access componentPools and put the pointer to that component in a RefVariant's m_data, and save the type as well
-				VariantBase component;
-				component.m_type = componentType;
-				component.m_data = pCurrentScene->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
+
+				// Make a new variant to hide this void*
+				void* pComponentData = pCurrentScene->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
 
 				// Loop the memberlist of the type, creating editors for each type, getting from the RefVariant of the component
-				for (std::pair<std::string, TypeDB::Member*> member : component.m_type->m_memberList)
+				for (std::pair<std::string, TMember> member : pComponentType->m_members)
 				{
-					if (member.second->IsType<float>())
+					if (member.second.IsType<float>())
 					{
-						float& number = member.second->GetRefValue<float>(component);
+						float& number = *member.second.Get<float>(pComponentData);
 						ImGui::DragFloat(member.first.c_str(), &number, 0.1f);
 					}
-					else if (member.second->IsType<int>())
+					else if (member.second.IsType<int>())
 					{
-						int& number = member.second->GetRefValue<int>(component);
+						int& number = *member.second.Get<int>(pComponentData);
 						ImGui::DragInt(member.first.c_str(), &number, 0.1f);
 					}
-					else if (member.second->IsType<Vec2f>())
+					else if (member.second.IsType<Vec2f>())
 					{
-						Vec2f& vec = member.second->GetRefValue<Vec2f>(component);
+						Vec2f& vec = *member.second.Get<Vec2f>(pComponentData);
 						float list[2] = { vec.x, vec.y };
 						ImGui::DragFloat2(member.first.c_str(), list, 0.1f);
 						vec.x = list[0]; vec.y = list[1];
 					}
-					else if (member.second->IsType<Vec3f>())
+					else if (member.second.IsType<Vec3f>())
 					{
-						Vec3f& vec = member.second->GetRefValue<Vec3f>(component);
+						Vec3f& vec = *member.second.Get<Vec3f>(pComponentData);
 						float list[3] = { vec.x, vec.y, vec.z };
 						ImGui::DragFloat3(member.first.c_str(), list, 0.1f);
 						vec.x = list[0]; vec.y = list[1]; vec.z = list[2];
 					}
-					else if (member.second->IsType<bool>())
+					else if (member.second.IsType<bool>())
 					{
-						bool& boolean = member.second->GetRefValue<bool>(component);
+						bool& boolean = *member.second.Get<bool>(pComponentData);
 						ImGui::Checkbox(member.first.c_str(), &boolean);
 					}
-					else if (member.second->IsType<EntityID>())
+					else if (member.second.IsType<EntityID>())
 					{
-						EntityID& entity = member.second->GetRefValue<EntityID>(component);
+						EntityID& entity = *member.second.Get<EntityID>(pComponentData);
 						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member.first.c_str());
 					}
 				}

@@ -2,6 +2,7 @@
 
 #include "Utility.h"
 #include "ErrorHandling.h"
+#include "TypeSystem.h"
 
 template<typename T>
 struct Vec3;
@@ -14,6 +15,8 @@ struct Vec2;
 template<typename T>
 struct Vec4
 {
+	REFLECT()
+
 	Vec4() : x(T()), y(T()), z(T()), w(T()) {}
 	Vec4(T val) : x(val), y(val), z(val), w(val) {}
 	Vec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}

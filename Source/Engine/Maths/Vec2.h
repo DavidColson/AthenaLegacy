@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utility.h"
+#include "TypeSystem.h"
 //#include "Vec3.h"
 //#include "Vec4.h"
 
@@ -15,6 +16,8 @@ struct Vec4;
 template<typename T>
 struct Vec2
 {
+	REFLECT()
+
 	Vec2() : x(T()), y(T()) {}
 	Vec2(T val) : x(val), y(val) {}
 	Vec2(T x, T y) : x(x), y(y) {}

@@ -26,6 +26,20 @@ namespace {
 std::vector<RenderProxy> Game::g_asteroidMeshes;
 RenderProxy Game::g_shipMesh;
 
+
+struct Component
+{
+  int myInt{ 5 };
+  int mySecondInt{ 3 };
+
+  REFLECT()
+};
+
+REFLECT_BEGIN(Component)
+REFLECT_MEMBER(myInt)
+REFLECT_MEMBER(mySecondInt)
+REFLECT_END()
+
 struct Asteroids : public IGame
 {
 	void OnStart() override
@@ -40,50 +54,21 @@ struct Asteroids : public IGame
 		TypeData* sameTypeData = TypeDatabase::GetFromString("Component");
 		TypeData* intTypeData = TypeDatabase::GetFromString("int");
 
+		bool same = typeData == sameTypeData;
+		bool diff = typeData == intTypeData;
 
-		Member* myIntMember = typeData->GetMember("myInt");
+
+		TMember* myIntMember = typeData->GetMember("myInt");
+
+		bool isInt = myIntMember->IsType<int>();
+
 		myIntMember->Set(&testComponent, 1337);
 
 		Log::Print(Log::EMsg, "Printing Members of type: %s", typeData->m_name);
-		for (std::pair<std::string, Member> member : typeData->m_members)
+		for (std::pair<std::string, TMember> member : typeData->m_members)
 		{
 			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.first.c_str(), member.second.m_type->m_name, *member.second.Get<int>(&testComponent));
 		}
-
-
-
-
-		// Get the type of CPlayerControl
-		TypeDB::Type* playerType = TypeDB::GetTypeFromString("CPlayerControl");
-
-		// Create an instance of the player struct
-		TypeDB::Variant player = playerType->New();
-
-		// Get the real value from the player variant
-		CPlayerControl realPlayer = player.Get<CPlayerControl>();
-
-		Log::Print(Log::EMsg, "------- Serialization Attempt -------");
-
-		std::function<void(std::string, std::string, TypeDB::RefVariant&&)> stringifyStruct = [&](std::string indent, std::string name, TypeDB::RefVariant&& theStruct)
-		{
-			Log::Print(Log::EMsg, "%s%s %s = {", indent.c_str(), theStruct.m_type->m_name, name.c_str());
-
-			for (std::pair<std::string, TypeDB::Member*> member : theStruct.m_type->m_memberList)
-			{
-				if (member.second->m_type == TypeDB::GetType<float>())
-				{
-					float value = member.second->GetValue(theStruct).Get<float>();
-					Log::Print(Log::EMsg, "%s    %s %s = %s", indent.c_str(), member.second->m_type->m_name, member.first.c_str(), std::to_string(value).c_str());
-				}
-				else
-				{
-					stringifyStruct(indent + "    ", member.first, member.second->GetValue(theStruct));
-				}
-			}
-			Log::Print(Log::EMsg, "%s}", indent.c_str());
-		};
-
-		stringifyStruct("", "player", player);
 
 		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{

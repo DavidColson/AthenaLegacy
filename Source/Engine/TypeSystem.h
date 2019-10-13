@@ -8,11 +8,17 @@
 
 struct TypeData;
 
-struct Member
+struct TMember
 {
   const char* m_name;
   size_t m_offset;
   TypeData* m_type;
+
+  template<typename T>
+  bool IsType()
+  {
+    return m_type == TypeDatabase::Get<T>(); 
+  }
 
   template<typename T>
   T* Get(void* instance)
@@ -30,26 +36,42 @@ struct TypeData
 {
   const char* m_name;
   size_t m_size;
-  std::map<std::string, Member> m_members;
+  std::map<std::string, TMember> m_members;
 
   TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 }
   {
 	  initFunc(this);
   }
   TypeData(const char* name, size_t size) : m_name{name}, m_size{size} {}
-  TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, Member>>& init)
+  TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, TMember>>& init)
    : m_name{name}, m_size{size}, m_members{ init } {}
 
 
-   Member* GetMember(const char* name);
+   TMember* GetMember(const char* name);
 };
 
 
 
 
 // Type resolving mechanism
+
 template<typename T>
-TypeData* getPrimitiveTypeData();
+TypeData* getPrimitiveTypeData() { return nullptr; }
+
+template <>
+TypeData* getPrimitiveTypeData<int>();
+
+template <>
+TypeData* getPrimitiveTypeData<float>();
+
+template <>
+TypeData* getPrimitiveTypeData<double>();
+
+template <>
+TypeData* getPrimitiveTypeData<std::string>();
+
+template <>
+TypeData* getPrimitiveTypeData<bool>();
 
 struct DefaultTypeResolver 
 {
@@ -61,7 +83,7 @@ struct DefaultTypeResolver
   // See here for deep explanation: https://stackoverflow.com/questions/1005476/how-to-detect-whether-there-is-a-specific-member-variable-in-class
   template<typename T>
   struct IsReflected<T, decltype((void) T::m_typeData, 0)> : std::true_type {};
-  
+
   // We're switching template versions depending on whether T has been internally reflected (i.e. has an m_typeData member)
   template<typename T, typename std::enable_if<IsReflected<T>::value, int>::type = 0>
   static TypeData* Get()
@@ -113,29 +135,27 @@ namespace TypeDatabase
 #define REFLECT_BEGIN(Struct)\
   TypeData Struct::m_typeData{Struct::initReflection};\
   void Struct::initReflection(TypeData* typeData) {\
-    using T = Struct;\
+    using XX = Struct;\
     TypeDatabase::Data::Get().m_typeNames.emplace(#Struct, typeData);\
     typeData->m_name = #Struct;\
-    typeData->m_size = sizeof(T);\
-    typeData->m_members = {\
+    typeData->m_size = sizeof(XX);\
+    typeData->m_members = {
 
-
-#define REFLECT_MEMBER(Member)\
-      {#Member, {#Member, offsetof(T, Member), TypeDatabase::Get<decltype(T::Member)>()}},
+#define REFLECT_MEMBER(member)\
+      {#member, {#member, offsetof(XX, member), TypeDatabase::Get<decltype(XX::member)>()}},
 
 #define REFLECT_END()\
     };\
   }
 
 
-
-
-
-
-struct Component
-{
-  int myInt{ 5 };
-  int mySecondInt{ 3 };
-
-  REFLECT()
-};
+// Special version of the begin macro for types that are template specializations, such as Vec<float>
+#define REFLECT_TEMPLATED_BEGIN(Struct)\
+  TypeData Struct::m_typeData{Struct::initReflection};\
+  template<>\
+  void Struct::initReflection(TypeData* typeData) {\
+    using XX = Struct;\
+    TypeDatabase::Data::Get().m_typeNames.emplace(#Struct, typeData);\
+    typeData->m_name = #Struct;\
+    typeData->m_size = sizeof(XX);\
+    typeData->m_members = {

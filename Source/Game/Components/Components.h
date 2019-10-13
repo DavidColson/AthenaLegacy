@@ -1,5 +1,6 @@
 #pragma once
 
+#include <TypeSystem.h>
 #include <TypeData.h>
 #include <Maths/Vec2.h>
 #include <Maths/Vec3.h>
@@ -15,13 +16,21 @@ struct CTransform
 	Vec3f m_sca{ Vec3f(1.f, 1.f, 1.f) };
 	Vec3f m_vel{ Vec3f(0.0f, 0.0f, 0.0f) };
 	Vec3f m_accel{ Vec3f(0.0f, 0.0f, 0.0f) };
+
+	REFLECT()
 };
+
+
+
+
 REGISTER_EXTERN(CTransform);
 
 struct CDrawable
 {
 	RenderProxy m_renderProxy;
 	float m_lineThickness{ 1.5f };
+
+	REFLECT()
 };
 REGISTER_EXTERN(CDrawable);
 
@@ -29,6 +38,8 @@ struct CText
 {
 	std::string m_text;
 	bool m_visible = true;
+
+	REFLECT()
 };
 REGISTER_EXTERN(CText);
 
@@ -42,6 +53,8 @@ struct CPlayerControl
 	// #RefactorNote: move this into the singleton HUD component
 	EntityID m_lifeEntities[3]; // Stores the entityID of the three lives living in the corner of the screen
 	// #RefactorNote Store an age timer, and give the player some invincibility when they spawn
+
+	REFLECT()
 };
 REGISTER_EXTERN(CPlayerControl);
 
@@ -57,17 +70,23 @@ struct CPlayerScore
 struct CBullet
 {
 	float m_speed = 300.0f;
+
+	REFLECT()
 };
 REGISTER_EXTERN(CBullet);
 
 struct CCollidable
 {
 	float m_radius{ 40.f };
+
+	REFLECT()
 };
 REGISTER_EXTERN(CCollidable);
 
 struct CAsteroid
 {
 	int m_hitCount{ 0 };
+
+	REFLECT()
 };
 REGISTER_EXTERN(CAsteroid);
