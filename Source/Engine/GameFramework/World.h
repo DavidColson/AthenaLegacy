@@ -41,8 +41,8 @@ gGameWorld.Assign<Shape>(circle);
 
 // #TODO: Move some of this to a cpp file
 
-#include "TypeDB.h"
 #include "TypeSystem.h"
+#include "ErrorHandling.h"
 
 #include <bitset>
 #include <vector>
@@ -118,14 +118,13 @@ struct BaseComponentPool // #TODO: Move to detail namespace
 	char* pData{ nullptr };
 	size_t elementSize{ 0 };
 	size_t size{ 0 };
-	TypeId componentTypeId = 0;
 	TypeData* pTypeData{ nullptr };
 };
 
 template <typename T>
 struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespace
 {
-	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { componentTypeId = TypeDB::TypeIdGenerator<T>::Id(); pTypeData = TypeDatabase::Get<T>(); }
+	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { pTypeData = TypeDatabase::Get<T>(); }
 
 	virtual void destroy(size_t index) override
 	{

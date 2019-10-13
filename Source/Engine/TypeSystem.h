@@ -8,7 +8,7 @@
 
 struct TypeData;
 
-struct TMember
+struct Member
 {
   const char* m_name;
   size_t m_offset;
@@ -36,40 +36,35 @@ struct TypeData
 {
   const char* m_name;
   size_t m_size;
-  std::map<std::string, TMember> m_members;
+  std::map<std::string, Member> m_members;
 
   TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 }
   {
 	  initFunc(this);
   }
   TypeData(const char* name, size_t size) : m_name{name}, m_size{size} {}
-  TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, TMember>>& init)
+  TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, Member>>& init)
    : m_name{name}, m_size{size}, m_members{ init } {}
 
 
-   TMember* GetMember(const char* name);
+   Member* GeMember(const char* name);
 };
 
 
 
 
 // Type resolving mechanism
-
 template<typename T>
 TypeData* getPrimitiveTypeData() { return nullptr; }
 
 template <>
 TypeData* getPrimitiveTypeData<int>();
-
 template <>
 TypeData* getPrimitiveTypeData<float>();
-
 template <>
 TypeData* getPrimitiveTypeData<double>();
-
 template <>
 TypeData* getPrimitiveTypeData<std::string>();
-
 template <>
 TypeData* getPrimitiveTypeData<bool>();
 

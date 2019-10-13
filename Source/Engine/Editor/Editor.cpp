@@ -68,8 +68,6 @@ void ShowEntityInspector()
 			
 		if (mask == (pCurrentScene->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
-			using namespace TypeDB;
-
 			TypeData* pComponentType = pCurrentScene->m_componentPools[i]->pTypeData;
 			if (ImGui::CollapsingHeader(pComponentType->m_name))
 			{
@@ -80,7 +78,7 @@ void ShowEntityInspector()
 				void* pComponentData = pCurrentScene->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
 
 				// Loop the memberlist of the type, creating editors for each type, getting from the RefVariant of the component
-				for (std::pair<std::string, TMember> member : pComponentType->m_members)
+				for (std::pair<std::string, Member> member : pComponentType->m_members)
 				{
 					if (member.second.IsType<float>())
 					{

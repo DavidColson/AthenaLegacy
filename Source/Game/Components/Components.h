@@ -1,7 +1,6 @@
 #pragma once
 
 #include <TypeSystem.h>
-#include <TypeData.h>
 #include <Maths/Vec2.h>
 #include <Maths/Vec3.h>
 #include <Renderer/RenderProxy.h>
@@ -20,11 +19,6 @@ struct CTransform
 	REFLECT()
 };
 
-
-
-
-REGISTER_EXTERN(CTransform);
-
 struct CDrawable
 {
 	RenderProxy m_renderProxy;
@@ -32,7 +26,6 @@ struct CDrawable
 
 	REFLECT()
 };
-REGISTER_EXTERN(CDrawable);
 
 struct CText
 {
@@ -41,7 +34,6 @@ struct CText
 
 	REFLECT()
 };
-REGISTER_EXTERN(CText);
 
 struct CPlayerControl
 {
@@ -56,7 +48,6 @@ struct CPlayerControl
 
 	REFLECT()
 };
-REGISTER_EXTERN(CPlayerControl);
 
 struct CGameOver
 {
@@ -73,7 +64,6 @@ struct CBullet
 
 	REFLECT()
 };
-REGISTER_EXTERN(CBullet);
 
 struct CCollidable
 {
@@ -81,7 +71,6 @@ struct CCollidable
 
 	REFLECT()
 };
-REGISTER_EXTERN(CCollidable);
 
 struct CAsteroid
 {
@@ -89,4 +78,3 @@ struct CAsteroid
 
 	REFLECT()
 };
-REGISTER_EXTERN(CAsteroid);

@@ -1,7 +1,3 @@
-#include "TypeData.h"
-
-
-#include "TypeDB.h"
 #include "Asteroids.h"
 #include "Systems/Systems.h"
 #include "Components/Components.h"
@@ -58,14 +54,14 @@ struct Asteroids : public IGame
 		bool diff = typeData == intTypeData;
 
 
-		TMember* myIntMember = typeData->GetMember("myInt");
+		Member* myInMember = typeData->GeMember("myInt");
 
-		bool isInt = myIntMember->IsType<int>();
+		bool isInt = myInMember->IsType<int>();
 
-		myIntMember->Set(&testComponent, 1337);
+		myInMember->Set(&testComponent, 1337);
 
 		Log::Print(Log::EMsg, "Printing Members of type: %s", typeData->m_name);
-		for (std::pair<std::string, TMember> member : typeData->m_members)
+		for (std::pair<std::string, Member> member : typeData->m_members)
 		{
 			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.first.c_str(), member.second.m_type->m_name, *member.second.Get<int>(&testComponent));
 		}
