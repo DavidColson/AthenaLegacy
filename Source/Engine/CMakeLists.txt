@@ -8,6 +8,8 @@ set(SOURCES
     "TypeDB.h"
     "TypeDB.cpp"
     "TypeData.h"
+    "TypeSystem.h"
+    "TypeSystem.cpp"
     "ErrorHandling.h"
     "ErrorHandling.cpp"
     "GameFramework/World.h"

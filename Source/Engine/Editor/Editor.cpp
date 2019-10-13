@@ -11,7 +11,7 @@
 #include <ThirdParty/Imgui/imgui.h>
 
 namespace {
-	bool showEditor = false;
+	bool showEditor = true;
 	bool showLog = true;
 	bool showEntityInspector = true;
 	bool showEntityList = true;

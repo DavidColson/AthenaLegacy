@@ -13,6 +13,8 @@
 #include <Engine.h>
 #include <IGame.h>
 #include <Renderer/Renderer.h>
+#include <ThirdParty/Imgui/imgui.h>
+#include <TypeSystem.h>
 
 #include <functional>
 #include <time.h>
@@ -24,11 +26,33 @@ namespace {
 std::vector<RenderProxy> Game::g_asteroidMeshes;
 RenderProxy Game::g_shipMesh;
 
-
 struct Asteroids : public IGame
 {
 	void OnStart() override
 	{
+
+
+
+		Component testComponent;
+
+		TypeData* typeData = TypeDatabase::Get<Component>();
+
+		TypeData* sameTypeData = TypeDatabase::GetFromString("Component");
+		TypeData* intTypeData = TypeDatabase::GetFromString("int");
+
+
+		Member* myIntMember = typeData->GetMember("myInt");
+		myIntMember->Set(&testComponent, 1337);
+
+		Log::Print(Log::EMsg, "Printing Members of type: %s", typeData->m_name);
+		for (std::pair<std::string, Member> member : typeData->m_members)
+		{
+			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.first.c_str(), member.second.m_type->m_name, *member.second.Get<int>(&testComponent));
+		}
+
+
+
+
 		// Get the type of CPlayerControl
 		TypeDB::Type* playerType = TypeDB::GetTypeFromString("CPlayerControl");
 
@@ -187,9 +211,6 @@ struct Asteroids : public IGame
 		pCurrentScene->Assign<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
 
 		// Create the lives
-		// #RefactorNote: Storing current lives as literal entities is unclear and messy.
-		// rather have a lives display entity that can draw the proxy multiple times. Or have lives as parent entity
-		// With subentities as children. When the player's lives changes, it should send an event to update the UI 
 		float offset = 0.0f;
 		for (int i = 0; i < 3; ++i)
 		{
@@ -233,11 +254,39 @@ struct Asteroids : public IGame
 
 	void OnFrame(float deltaTime) override
 	{
+		//Log::Print(Log::EMsg, "----- Frame Start -----");
+
+		// #RefactorNote: Make systems into more carefully managed classes, and tidy up this performance profiling.
+		// Make into a more fleshed out imgui window
+		Uint64 start = SDL_GetPerformanceCounter();
 		ShipControlSystemUpdate(pCurrentScene, deltaTime);
+		float shipControl = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+
+		start = SDL_GetPerformanceCounter();
 		MovementSystemUpdate(pCurrentScene, deltaTime);
+		float movement = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+
+		start = SDL_GetPerformanceCounter();
 		CollisionSystemUpdate(pCurrentScene, deltaTime);
+		float collision = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+		
+		start = SDL_GetPerformanceCounter();
 		DrawShapeSystem(pCurrentScene, deltaTime);
+		float drawShape = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+		
+		start = SDL_GetPerformanceCounter();
 		DrawTextSystem(pCurrentScene, deltaTime);
+		float drawText = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+	
+		ImGui::Begin("Profiler");
+
+		ImGui::Text(StringFormat("Ship Control System %f", shipControl).c_str());
+		ImGui::Text(StringFormat("Movement System %f", movement).c_str());
+		ImGui::Text(StringFormat("Collision System %f", collision).c_str());
+		ImGui::Text(StringFormat("Draw Shape System %f", drawShape).c_str());
+		ImGui::Text(StringFormat("Draw Text System %f", drawText).c_str());
+
+		ImGui::End();
 	}
 
 	void OnEnd() override
