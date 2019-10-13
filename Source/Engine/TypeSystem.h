@@ -47,7 +47,7 @@ struct TypeData
    : m_name{name}, m_size{size}, m_members{ init } {}
 
 
-   Member* GeMember(const char* name);
+   Member* GetMember(const char* name);
 };
 
 

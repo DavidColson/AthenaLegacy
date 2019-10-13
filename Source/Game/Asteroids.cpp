@@ -40,9 +40,6 @@ struct Asteroids : public IGame
 {
 	void OnStart() override
 	{
-
-
-
 		Component testComponent;
 
 		TypeData* typeData = TypeDatabase::Get<Component>();
@@ -53,8 +50,7 @@ struct Asteroids : public IGame
 		bool same = typeData == sameTypeData;
 		bool diff = typeData == intTypeData;
 
-
-		Member* myInMember = typeData->GeMember("myInt");
+		Member* myInMember = typeData->GetMember("myInt");
 
 		bool isInt = myInMember->IsType<int>();
 
