@@ -6,7 +6,7 @@
 #include <Renderer/DebugDraw.h>
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
-#include <Input/Input.h>
+#include <Input/InputSystem.h>
 #include <Utility.h>
 
 
@@ -269,7 +269,7 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 
 		Vec3f accel(0.0f, 0.0f, 0.0f);
 
-		if (Input::GetKeyHeld(SDL_SCANCODE_UP))
+		if (Input::GetKeyHeld(pScene, SDL_SCANCODE_UP))
 		{
 			accel.x = cos(pTransform->m_rot);
 			accel.y = sin(pTransform->m_rot);
@@ -277,13 +277,13 @@ void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
 		}
 		pTransform->m_accel = accel - pTransform->m_vel * pControl->m_dampening;
 
-		if (Input::GetKeyHeld(SDL_SCANCODE_LEFT))
+		if (Input::GetKeyHeld(pScene, SDL_SCANCODE_LEFT))
 			pTransform->m_rot += pControl->m_rotateSpeed;
-		if (Input::GetKeyHeld(SDL_SCANCODE_RIGHT))
+		if (Input::GetKeyHeld(pScene, SDL_SCANCODE_RIGHT))
 			pTransform->m_rot -= pControl->m_rotateSpeed;
 
 		// Shoot a bullet
-		if (Input::GetKeyDown(SDL_SCANCODE_SPACE))
+		if (Input::GetKeyDown(pScene, SDL_SCANCODE_SPACE))
 		{
 			SpawnBullet(pScene, pTransform);
 		}

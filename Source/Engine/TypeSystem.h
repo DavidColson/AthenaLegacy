@@ -47,7 +47,7 @@ struct TypeData
 
    Member* GetMember(const char* name);
 
-   struct MemberIterator
+  struct MemberIterator
   {
     MemberIterator(std::map<std::string, Member>::iterator it) : m_it(it) {}
 
