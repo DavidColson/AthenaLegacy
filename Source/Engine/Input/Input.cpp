@@ -1,32 +1,34 @@
 
-#include "InputComponents.h"
-#include "InputSystem.h"
-#include "GameFramework/World.h"
+#include "Input.h"
 
-#include <SDL.h> // remove this and replace with custom keycodes
 #include <windows.h>
 #include <ThirdParty/Imgui/imgui.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
-bool Input::GetKeyDown(Scene* pScene, int keyCode)
+InputState* pInput;
+
+void Input::CreateInputState()
 {
-	return pScene->GetSingleton<CInputState>()->m_keyDowns[keyCode];
+	pInput = new InputState();
 }
 
-bool Input::GetKeyUp(Scene* pScene, int keyCode)
+bool Input::GetKeyDown(int keyCode)
 {
-	return pScene->GetSingleton<CInputState>()->m_keyUps[keyCode];
+	return pInput->m_keyDowns[keyCode];
 }
 
-bool Input::GetKeyHeld(Scene* pScene, int keyCode)
+bool Input::GetKeyUp(int keyCode)
 {
-	return pScene->GetSingleton<CInputState>()->m_keyStates[keyCode];
+	return pInput->m_keyUps[keyCode];
 }
 
-void Input::Update(Scene* pScene, bool& shutdownEngine)
+bool Input::GetKeyHeld(int keyCode)
 {
-	CInputState* pInput = pScene->GetSingleton<CInputState>();
+	return pInput->m_keyStates[keyCode];
+}
 
+void Input::Update(bool& shutdownEngine)
+{
 	std::bitset<NKEYS> prevKeyStates = pInput->m_keyStates;
 	
 	// Copy the SDL keystate into our own bitset

@@ -1,6 +1,6 @@
 #include "Editor.h"
 
-#include "Input/InputSystem.h"
+#include "Input/Input.h"
 #include "Log.h"
 #include "GameFramework/World.h"
 #include "Maths/Vec3.h"
@@ -69,7 +69,7 @@ void ShowEntityInspector()
 		if (mask == (pCurrentScene->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
 			TypeData* pComponentType = pCurrentScene->m_componentPools[i]->pTypeData;
-			if (pComponentType && ImGui::CollapsingHeader(pComponentType->m_name))
+			if (ImGui::CollapsingHeader(pComponentType->m_name))
 			{
 				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
 				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
@@ -164,9 +164,9 @@ void ShowFrameStats(double realFrameTime, double observedFrameTime)
 	ImGui::End();
 }
 
-void Editor::ShowEditor(Scene* pScene, bool& shutdown, double realFrameTime, double observedFrameTime)
+void Editor::ShowEditor(bool& shutdown, double realFrameTime, double observedFrameTime)
 {
-	if (Input::GetKeyDown(pScene, SDL_SCANCODE_F8))
+	if (Input::GetKeyDown(SDL_SCANCODE_F8))
 		showEditor = !showEditor;
 
 	if (!showEditor)

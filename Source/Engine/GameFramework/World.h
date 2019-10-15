@@ -142,10 +142,6 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 
 struct Scene
 {
-	Scene()
-	{
-		m_singletonID = NewEntity("singletons");
-	}
 	// #TODO Destructor, delete systems and components
 
 	// Creates an entity, simply makes a new id and mask
@@ -220,6 +216,7 @@ struct Scene
 		m_entities[GetEntityIndex(id)].m_mask.reset(componentId); // Turn off the component bit
 	}
 
+
 	// Retrieves a component for a given entity
 	// Simply checks the existence using the mask, and then queries the component from the correct pool
 	template<typename T>
@@ -245,30 +242,6 @@ struct Scene
 		return m_entities[GetEntityIndex(id)].m_mask.test(componentId);
 	}
 
-	template<typename T>
-	T* AssignSingleton()
-	{
-		return Assign<T>(m_singletonID);
-	}
-
-	template<typename T>
-	T* GetSingleton()
-	{
-		return Get<T>(m_singletonID);
-	}
-
-	template<typename T>
-	void RemoveSingleton()
-	{
-		return Remove<T>(m_singletonID);
-	}
-
-	template<typename T>
-	bool HasSingleton()
-	{
-		return Has<T>(m_singletonID);
-	}
-
 	const char* GetEntityName(EntityID entity) const
 	{
 		return m_entities[GetEntityIndex(entity)].m_name;
@@ -284,7 +257,6 @@ struct Scene
 	};
 	std::vector<EntityDesc> m_entities;
 	std::vector<EntityIndex> m_freeEntities;
-	EntityID m_singletonID{ INVALID_ENTITY };
 };
 
 // View into the Scene for a given set of components

@@ -8,8 +8,7 @@
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
 #include "GameFramework/World.h"
-#include "Input/InputSystem.h"
-#include "Input/InputComponents.h"
+#include "Input/Input.h"
 #include "Renderer/Renderer.h"
 #include "Editor/Editor.h"
 #include "Log.h"
@@ -23,8 +22,6 @@ namespace
 
 	IGame* g_pGame{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
-	Scene* g_pCurrentScene{ nullptr };
-	// Another scene for application singletons?
 }
 
 char* readFile(const char* filename)
@@ -45,10 +42,8 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
-void Engine::Startup(IGame* pGame, Scene* pInitialScene)
+void Engine::Startup(IGame* pGame)
 {	
-	SetCurrentScene(pInitialScene);
-
 	SDL_Init(SDL_INIT_VIDEO);
 
 	float width = 1800.0f;
@@ -66,11 +61,11 @@ void Engine::Startup(IGame* pGame, Scene* pInitialScene)
 	Log::Print(Log::EMsg, "Engine starting up");
 	Log::Print(Log::EMsg, "Window size W: %.1f H: %.1f", width, height);
 
-	// This will send out engine wide events, with graphics/input systems picking up on that and running their code
 	Graphics::CreateContext(g_pWindow, width, height);
+	Input::CreateInputState();
 
 	g_pGame = pGame;
-	pGame->OnStart(g_pCurrentScene);
+	pGame->OnStart();
 }
 
 void Engine::Run()
@@ -80,21 +75,15 @@ void Engine::Run()
 	bool shutdown = false;
 	while (!shutdown)
 	{
-		Uint64 frameStart = SDL_GetPerformanceCounter();
-
-		// Frame startup system (part of renderer module)
 		Graphics::NewFrame();
 
-		// Input system
-		Input::Update(g_pCurrentScene, shutdown);
+		Uint64 frameStart = SDL_GetPerformanceCounter();
+		Input::Update(shutdown);
 
-		g_pGame->OnFrame(g_pCurrentScene, (float)frameTime);
+		g_pGame->OnFrame((float)frameTime);
 
-		// Editor draw system, again stores it's data in a singleton
-		Editor::ShowEditor(g_pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
+		Editor::ShowEditor(shutdown, g_realFrameTime, g_observedFrameTime);
 
-		// For now graphics is one system, storing it's data in a singleton
-		// In future it may be several systems with phases for rendering
 		Graphics::RenderFrame();
 
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
@@ -115,18 +104,9 @@ void Engine::Run()
 
 void Engine::Shutdown()
 {
-	g_pGame->OnEnd(g_pCurrentScene);
+	g_pGame->OnEnd();
 	Graphics::Shutdown();
 
 	SDL_DestroyWindow(g_pWindow);
 	SDL_Quit();
-}
-
-void Engine::SetCurrentScene(Scene* pScene)
-{
-	g_pCurrentScene = pScene;
-	Editor::SetCurrentScene(pScene);
-
-	// Assign required scene singletons
-	pScene->AssignSingleton<CInputState>();
 }

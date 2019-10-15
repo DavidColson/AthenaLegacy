@@ -2,8 +2,8 @@
 
 struct IGame
 {
-	virtual void OnStart(Scene* pScene) = 0;
-	virtual void OnFrame(Scene* pScene, float deltaTime) = 0;
-	virtual void OnEnd(Scene* pScene) = 0;
+	virtual void OnStart() = 0;
+	virtual void OnFrame(float deltaTime) = 0;
+	virtual void OnEnd() = 0;
 };
 

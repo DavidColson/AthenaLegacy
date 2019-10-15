@@ -15,8 +15,13 @@
 #include <functional>
 #include <time.h>
 
+namespace {
+	Scene* pCurrentScene;
+}
+
 std::vector<RenderProxy> Game::g_asteroidMeshes;
 RenderProxy Game::g_shipMesh;
+
 
 struct Component
 {
@@ -33,7 +38,7 @@ REFLECT_END()
 
 struct Asteroids : public IGame
 {
-	void OnStart(Scene* pScene) override
+	void OnStart() override
 	{
 		Component testComponent;
 
@@ -143,6 +148,10 @@ struct Asteroids : public IGame
 				4, 0, 1, 2, 3, 4, 0, 1
 			});
 
+		// Create our scene
+		// ****************
+		pCurrentScene = new Scene();
+
 		srand(unsigned int(time(nullptr)));
 
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
@@ -153,98 +162,97 @@ struct Asteroids : public IGame
 			Vec3f randomLocation = Vec3f(float(rand() % 1800), float(rand() % 1000), 0.0f);
 			Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
 			float randomRotation = randf() * 6.282f;
-			EntityID asteroid = pScene->NewEntity("Asteroid");
-			pScene->Assign<CCollidable>(asteroid);
-			CTransform* pTranform = pScene->Assign<CTransform>(asteroid);
+			EntityID asteroid = pCurrentScene->NewEntity("Asteroid");
+			pCurrentScene->Assign<CCollidable>(asteroid);
+			CTransform* pTranform = pCurrentScene->Assign<CTransform>(asteroid);
 			pTranform->m_pos = randomLocation;
 			pTranform->m_sca = Vec3f(90.0f, 90.0f, 1.0f);
 			pTranform->m_vel = randomVelocity;
 			pTranform->m_rot = randomRotation;
 
-			pScene->Assign<CDrawable>(asteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
-			pScene->Assign<CAsteroid>(asteroid);
+			pCurrentScene->Assign<CDrawable>(asteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
+			pCurrentScene->Assign<CAsteroid>(asteroid);
 		}
 
 		// Create the ship
-		EntityID ship = pScene->NewEntity("Player Ship");
-		CTransform* pTransform = pScene->Assign<CTransform>(ship);
+		EntityID ship = pCurrentScene->NewEntity("Player Ship");
+		CTransform* pTransform = pCurrentScene->Assign<CTransform>(ship);
 
 		const float w = Graphics::GetContext()->m_windowWidth;
 		const float h = Graphics::GetContext()->m_windowHeight;
 		pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 		pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 
-		CPlayerControl* pPlayer = pScene->Assign<CPlayerControl>(ship);
-		pScene->Assign<CCollidable>(ship)->m_radius = 17.f;
-		pScene->Assign<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
+		CPlayerControl* pPlayer = pCurrentScene->Assign<CPlayerControl>(ship);
+		pCurrentScene->Assign<CCollidable>(ship)->m_radius = 17.f;
+		pCurrentScene->Assign<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
 
 		// Create the lives
 		float offset = 0.0f;
 		for (int i = 0; i < 3; ++i)
 		{
-			EntityID life = pScene->NewEntity("Life");
+			EntityID life = pCurrentScene->NewEntity("Life");
 			
-			CTransform* pTransform = pScene->Assign<CTransform>(life);
+			CTransform* pTransform = pCurrentScene->Assign<CTransform>(life);
 			pTransform->m_pos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
 			pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
 			pTransform->m_rot = -3.14159f / 2.0f;
 			offset += 30.0f;
 			
-			pScene->Assign<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
+			pCurrentScene->Assign<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
 			pPlayer->m_lifeEntities[i] = life;
 		}
 
 
 		// Create score counters
 		{
-			EntityID currentScoreEnt = pScene->NewEntity("Current Score");
-			pScene->Assign<CText>(currentScoreEnt)->m_text = "0";
-			pScene->Assign<CTransform>(currentScoreEnt)->m_pos = Vec3f(150.0f, h - 53.0f, 0.0f);
-			pScene->Assign<CPlayerScore>(currentScoreEnt);
+			EntityID currentScoreEnt = pCurrentScene->NewEntity("Current Score");
+			pCurrentScene->Assign<CText>(currentScoreEnt)->m_text = "0";
+			pCurrentScene->Assign<CTransform>(currentScoreEnt)->m_pos = Vec3f(150.0f, h - 53.0f, 0.0f);
+			pCurrentScene->Assign<CPlayerScore>(currentScoreEnt);
 
-			EntityID highScoreEnt = pScene->NewEntity("High Score");
-			pScene->Assign<CText>(highScoreEnt)->m_text = "0";
-			pScene->Assign<CTransform>(highScoreEnt)->m_pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
+			EntityID highScoreEnt = pCurrentScene->NewEntity("High Score");
+			pCurrentScene->Assign<CText>(highScoreEnt)->m_text = "0";
+			pCurrentScene->Assign<CTransform>(highScoreEnt)->m_pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
 		}
 
 		// Create game over text
 		{
-			EntityID gameOver = pScene->NewEntity("Game Over");
-			pScene->Assign<CTransform>(gameOver)->m_pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
-			pScene->Assign<CGameOver>(gameOver);
-			CText* pText = pScene->Assign<CText>(gameOver);
+			EntityID gameOver = pCurrentScene->NewEntity("Game Over");
+			pCurrentScene->Assign<CTransform>(gameOver)->m_pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+			pCurrentScene->Assign<CGameOver>(gameOver);
+			CText* pText = pCurrentScene->Assign<CText>(gameOver);
 			pText->m_text = "Game Over";
 			pText->m_visible = false;
 		}
+
+		Editor::SetCurrentScene(pCurrentScene);
 	}
 
-	void OnFrame(Scene* pScene, float deltaTime) override
+	void OnFrame(float deltaTime) override
 	{
-		// This function will become useless once systems are managed internally in the engine.
-		// Consider removing IGame entirely. Players can do their own setup and pass in an initial scene
-		// when they start the engine itself, which they've primed already. Engine manages and updates the systems
-		// which have been pre-registered to the initial scene. 
+		//Log::Print(Log::EMsg, "----- Frame Start -----");
 
 		// #RefactorNote: Make systems into more carefully managed classes, and tidy up this performance profiling.
 		// Make into a more fleshed out imgui window
 		Uint64 start = SDL_GetPerformanceCounter();
-		ShipControlSystemUpdate(pScene, deltaTime);
+		ShipControlSystemUpdate(pCurrentScene, deltaTime);
 		float shipControl = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 
 		start = SDL_GetPerformanceCounter();
-		MovementSystemUpdate(pScene, deltaTime);
+		MovementSystemUpdate(pCurrentScene, deltaTime);
 		float movement = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 
 		start = SDL_GetPerformanceCounter();
-		CollisionSystemUpdate(pScene, deltaTime);
+		CollisionSystemUpdate(pCurrentScene, deltaTime);
 		float collision = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 		
 		start = SDL_GetPerformanceCounter();
-		DrawShapeSystem(pScene, deltaTime);
+		DrawShapeSystem(pCurrentScene, deltaTime);
 		float drawShape = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 		
 		start = SDL_GetPerformanceCounter();
-		DrawTextSystem(pScene, deltaTime);
+		DrawTextSystem(pCurrentScene, deltaTime);
 		float drawText = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 	
 		ImGui::Begin("Profiler");
@@ -258,7 +266,7 @@ struct Asteroids : public IGame
 		ImGui::End();
 	}
 
-	void OnEnd(Scene* pScene) override
+	void OnEnd() override
 	{
 
 	}
@@ -267,8 +275,8 @@ struct Asteroids : public IGame
 int main(int argc, char *argv[])
 {
 	Asteroids* pAsteroids = new Asteroids;
-	
-	Engine::Startup(pAsteroids, new Scene());
+
+	Engine::Startup(pAsteroids);
 	Engine::Run();
 	Engine::Shutdown();
 	
