@@ -3,10 +3,9 @@
 #include "SDL.h"
 
 struct IGame;
+struct Scene;
 
 namespace Engine
 {
-	void Startup(IGame* pGame);
-	void Run();
-	void Shutdown();
+	void Run(IGame* pGame, Scene* pInitialScene);
 }

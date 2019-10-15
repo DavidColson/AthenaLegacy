@@ -21,6 +21,7 @@ namespace
 	double g_realFrameTime;
 
 	IGame* g_pGame{ nullptr };
+	Scene* pCurrentScene{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
 }
 
@@ -42,8 +43,9 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
-void Engine::Startup(IGame* pGame)
+void Engine::Run(IGame* pGame, Scene *pScene)
 {	
+	// Startup flow
 	SDL_Init(SDL_INIT_VIDEO);
 
 	float width = 1800.0f;
@@ -61,31 +63,30 @@ void Engine::Startup(IGame* pGame)
 	Log::Print(Log::EMsg, "Engine starting up");
 	Log::Print(Log::EMsg, "Window size W: %.1f H: %.1f", width, height);
 
+	pCurrentScene = pScene;
+
 	Graphics::CreateContext(g_pWindow, width, height);
 	Input::CreateInputState();
 
 	g_pGame = pGame;
-	pGame->OnStart();
-}
+	pGame->OnStart(*pCurrentScene);
 
-void Engine::Run()
-{
+	// Game update loop
 	double frameTime = 0.016f;
 	double targetFrameTime = 0.016f;
 	bool shutdown = false;
 	while (!shutdown)
 	{
-		Graphics::NewFrame();
-
 		Uint64 frameStart = SDL_GetPerformanceCounter();
+
+		// Update flow for the engine
+		Graphics::NewFrame();
 		Input::Update(shutdown);
-
-		g_pGame->OnFrame((float)frameTime);
-
-		Editor::ShowEditor(shutdown, g_realFrameTime, g_observedFrameTime);
-
+		g_pGame->OnFrame(*pCurrentScene, (float)frameTime);
+		Editor::ShowEditor(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
 		Graphics::RenderFrame();
 
+		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
 		if (realframeTime < targetFrameTime)
 		{
@@ -100,11 +101,9 @@ void Engine::Run()
 		g_realFrameTime = realframeTime;
 		g_observedFrameTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
 	}
-}
 
-void Engine::Shutdown()
-{
-	g_pGame->OnEnd();
+	// Shutdown everything
+	g_pGame->OnEnd(*pCurrentScene);
 	Graphics::Shutdown();
 
 	SDL_DestroyWindow(g_pWindow);

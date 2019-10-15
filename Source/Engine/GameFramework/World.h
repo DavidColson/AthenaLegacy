@@ -17,25 +17,25 @@ struct Shape
 
 // Define systems like this:
 
-void ShipControlSystemUpdate(Scene* pScene, float deltaTime)
+void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 {
 
 }
 
 // Update the system by simply calling it with the current scene
 
-ShipControlSystem(pScene, deltaTime);
+ShipControlSystem(scene, deltaTime);
 
 // To create entities and assign entities to them do this:
 
-EntityID triangle = gGameWorld.NewEntity();
-Transform* pTransform = gGameWorld.Assign<Transform>(triangle);
-Shape* pShape = gGameWorld.Assign<Shape>(triangle);
+EntityID triangle = scene.NewEntity();
+Transform* pTransform = scene.Assign<Transform>(triangle);
+Shape* pShape = scene.Assign<Shape>(triangle);
 
-EntityID circle = gGameWorld.NewEntity();
-gGameWorld.Assign<Shape>(circle);
+EntityID circle = scene.NewEntity();
+scene.Assign<Shape>(circle);
 
-// To get the whole thing running, just call gGameWorld.UpdateSystems();
+// To get the whole thing running, just call your systems ShipControlSystem(scene);
 
 */
 
@@ -263,7 +263,7 @@ struct Scene
 template<typename... ComponentTypes>
 struct SceneView
 {
-	SceneView(Scene* pScene) : m_pScene(pScene) {
+	SceneView(Scene& scene) : m_pScene(&scene) {
 		if (sizeof...(ComponentTypes) == 0)
 		{
 			m_all = true;

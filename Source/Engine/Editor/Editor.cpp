@@ -21,8 +21,6 @@ namespace {
 	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
 	double oldRealFrameTime;
 	double oldObservedFrameTime;
-
-	static Scene* pCurrentScene;
 }
 
 void ShowLog()
@@ -47,14 +45,14 @@ void ShowLog()
 	ImGui::End();
 }
 
-void ShowEntityInspector()
+void ShowEntityInspector(Scene& scene)
 {
 	if (!showEntityInspector)
 		return;
 
 	ImGui::Begin("Entity Inspector", &showEntityInspector);
 
-	if (GetEntityIndex(selectedEntity) > pCurrentScene->m_entities.size())
+	if (GetEntityIndex(selectedEntity) > scene.m_entities.size())
 	{
 		ImGui::End();
 		return;
@@ -66,16 +64,16 @@ void ShowEntityInspector()
 		std::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
-		if (mask == (pCurrentScene->m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
+		if (mask == (scene.m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
-			TypeData* pComponentType = pCurrentScene->m_componentPools[i]->pTypeData;
+			TypeData* pComponentType = scene.m_componentPools[i]->pTypeData;
 			if (ImGui::CollapsingHeader(pComponentType->m_name))
 			{
 				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
 				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
 
 				// Make a new variant to hide this void*
-				void* pComponentData = pCurrentScene->m_componentPools[i]->get(GetEntityIndex(selectedEntity));
+				void* pComponentData = scene.m_componentPools[i]->get(GetEntityIndex(selectedEntity));
 
 				// Loop through all the members of the component, showing the appropriate UI elements
 				for (Member* member : *pComponentType)
@@ -122,21 +120,21 @@ void ShowEntityInspector()
 	ImGui::End();
 }
 
-void ShowEntityList()
+void ShowEntityList(Scene& scene)
 {
 	if (!showEntityList)
 		return;
 
 	ImGui::Begin("Entity Editor", &showEntityList);
 
-	for (EntityID entity : SceneView<>(pCurrentScene))
+	for (EntityID entity : SceneView<>(scene))
 	{
 		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
 		if (selectedEntity == entity)
 			node_flags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "%i - %s", GetEntityIndex(entity), pCurrentScene->GetEntityName(entity));
+		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "%i - %s", GetEntityIndex(entity), scene.GetEntityName(entity));
 		if (ImGui::IsItemClicked())
 			selectedEntity = entity;
 	}
@@ -164,7 +162,7 @@ void ShowFrameStats(double realFrameTime, double observedFrameTime)
 	ImGui::End();
 }
 
-void Editor::ShowEditor(bool& shutdown, double realFrameTime, double observedFrameTime)
+void Editor::ShowEditor(Scene& scene, bool& shutdown, double realFrameTime, double observedFrameTime)
 {
 	if (Input::GetKeyDown(SDL_SCANCODE_F8))
 		showEditor = !showEditor;
@@ -193,13 +191,8 @@ void Editor::ShowEditor(bool& shutdown, double realFrameTime, double observedFra
 	}
 
 	ShowLog();
-	ShowEntityInspector();
-	ShowEntityList();
+	ShowEntityInspector(scene);
+	ShowEntityList(scene);
 	ShowFrameStats(realFrameTime, observedFrameTime);
 	//ImGui::ShowDemoWindow();
-}
-
-void Editor::SetCurrentScene(Scene* pScene)
-{
-	pCurrentScene = pScene;
 }
