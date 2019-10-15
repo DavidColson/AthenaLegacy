@@ -124,7 +124,7 @@ struct BaseComponentPool // #TODO: Move to detail namespace
 template <typename T>
 struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespace
 {
-	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { pTypeData = TypeDatabase::Get<T>(); }
+	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { pTypeData = &TypeDatabase::Get<T>(); }
 
 	virtual void destroy(size_t index) override
 	{

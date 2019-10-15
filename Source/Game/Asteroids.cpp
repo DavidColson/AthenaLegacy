@@ -38,24 +38,21 @@ struct Asteroids : public IGame
 		// Move this to type system tests
 		Component testComponent;
 
-		TypeData* typeData = TypeDatabase::Get<Component>();
+		TypeData& typeData = TypeDatabase::Get<Component>();
 
-		TypeData* sameTypeData = TypeDatabase::GetFromString("Component");
-		TypeData* intTypeData = TypeDatabase::GetFromString("int");
+		TypeData& sameTypeData = TypeDatabase::GetFromString("Component");
+		TypeData& intTypeData = TypeDatabase::GetFromString("int");
 
-		bool same = typeData == sameTypeData;
-		bool diff = typeData == intTypeData;
+		Member& myInMember = typeData.GetMember("myInt");
 
-		Member* myInMember = typeData->GetMember("myInt");
+		bool isInt = myInMember.IsType<int>();
 
-		bool isInt = myInMember->IsType<int>();
+		myInMember.Set(&testComponent, 1337);
 
-		myInMember->Set(&testComponent, 1337);
-
-		Log::Print(Log::EMsg, "Iterator printing Members of type: %s", typeData->m_name);
-		for (Member* member : *typeData)
+		Log::Print(Log::EMsg, "Iterator printing Members of type: %s", typeData.m_name);
+		for (Member& member : typeData)
 		{			
-			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member->m_name, member->m_type->m_name, *member->Get<int>(&testComponent));
+			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.m_name, member.GetType().m_name, *member.Get<int>(&testComponent));
 		}
 
 		Game::g_asteroidMeshes.emplace_back(RenderProxy(

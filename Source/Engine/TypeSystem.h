@@ -12,12 +12,18 @@ struct Member
 {
   const char* m_name;
   size_t m_offset;
-  TypeData* m_type;
+  TypeData* m_pType;
 
   template<typename T>
   bool IsType()
   {
-    return m_type == TypeDatabase::Get<T>(); 
+    // #TODO: add actual proper equality check not this hack 
+    return m_pType == &TypeDatabase::Get<T>(); 
+  }
+
+  TypeData& GetType()
+  {
+    return *m_pType;
   }
 
   template<typename T>
@@ -45,15 +51,15 @@ struct TypeData
   TypeData(const char* name, size_t size) : m_name{name}, m_size{size} {}
   TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, Member>>& init) : m_name{name}, m_size{size}, m_members{ init } {}
 
-   Member* GetMember(const char* name);
+  Member& GetMember(const char* name);
 
    struct MemberIterator
   {
     MemberIterator(std::map<std::string, Member>::iterator it) : m_it(it) {}
 
-    Member* operator*() const 
+    Member& operator*() const 
     { 
-      return &(m_it->second);
+      return m_it->second;
     }
 
     bool operator==(const MemberIterator& other) const 
@@ -87,18 +93,22 @@ struct TypeData
 
 // Type resolving mechanism
 template<typename T>
-TypeData* getPrimitiveTypeData() { return nullptr; }
+TypeData& getPrimitiveTypeData() 
+{
+  static TypeData unknownType("UnkownType", 0); 
+  return unknownType;
+}
 
 template <>
-TypeData* getPrimitiveTypeData<int>();
+TypeData& getPrimitiveTypeData<int>();
 template <>
-TypeData* getPrimitiveTypeData<float>();
+TypeData& getPrimitiveTypeData<float>();
 template <>
-TypeData* getPrimitiveTypeData<double>();
+TypeData& getPrimitiveTypeData<double>();
 template <>
-TypeData* getPrimitiveTypeData<std::string>();
+TypeData& getPrimitiveTypeData<std::string>();
 template <>
-TypeData* getPrimitiveTypeData<bool>();
+TypeData& getPrimitiveTypeData<bool>();
 
 struct DefaultTypeResolver 
 {
@@ -113,12 +123,12 @@ struct DefaultTypeResolver
 
   // We're switching template versions depending on whether T has been internally reflected (i.e. has an m_typeData member)
   template<typename T, typename std::enable_if<IsReflected<T>::value, int>::type = 0>
-  static TypeData* Get()
+  static TypeData& Get()
   {
-    return &T::m_typeData;
+    return T::m_typeData;
   }
   template<typename T, typename std::enable_if<!IsReflected<T>::value, int>::type = 0>
-  static TypeData* Get()
+  static TypeData& Get()
   {
     return getPrimitiveTypeData<T>();
   }
@@ -141,11 +151,11 @@ namespace TypeDatabase
     std::unordered_map<std::string, TypeData*> m_typeNames;
   };
 
-  TypeData* GetFromString(const char* name);
+  TypeData& GetFromString(const char* name);
 
   // Generic typedata return
   template<typename T>
-  TypeData* Get()
+  TypeData& Get()
   {
     return DefaultTypeResolver::Get<T>();
   }
@@ -169,7 +179,7 @@ namespace TypeDatabase
     typeData->m_members = {
 
 #define REFLECT_MEMBER(member)\
-      {#member, {#member, offsetof(XX, member), TypeDatabase::Get<decltype(XX::member)>()}},
+      {#member, {#member, offsetof(XX, member), &TypeDatabase::Get<decltype(XX::member)>()}},
 
 #define REFLECT_END()\
     };\

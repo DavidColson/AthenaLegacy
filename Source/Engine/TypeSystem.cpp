@@ -3,19 +3,19 @@
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
 
-Member* TypeData::GetMember(const char* name)
+Member& TypeData::GetMember(const char* name)
 {
   ASSERT(m_members.count(name) == 1, "The member you're trying to access doesn't exist");
-  return &m_members[name];
+  return m_members[name];
 }
 
 namespace TypeDatabase
 {
   Data* TypeDatabase::Data::pInstance{ nullptr };
 
-  TypeData* GetFromString(const char* name)
+  TypeData& GetFromString(const char* name)
   {
-    return Data::Get().m_typeNames[name];
+    return *Data::Get().m_typeNames[name];
   }
 }
 
@@ -30,10 +30,10 @@ struct TypeData_Int : TypeData
   }
 };
 template <>
-TypeData* getPrimitiveTypeData<int>()
+TypeData& getPrimitiveTypeData<int>()
 {
   static TypeData_Int typeData;
-  return &typeData;
+  return typeData;
 }
 
 struct TypeData_Float : TypeData
@@ -44,10 +44,10 @@ struct TypeData_Float : TypeData
   }
 };
 template <>
-TypeData* getPrimitiveTypeData<float>()
+TypeData& getPrimitiveTypeData<float>()
 {
   static TypeData_Float typeData;
-  return &typeData;
+  return typeData;
 }
 
 struct TypeData_Double : TypeData
@@ -58,10 +58,10 @@ struct TypeData_Double : TypeData
   }
 };
 template <>
-TypeData* getPrimitiveTypeData<double>()
+TypeData& getPrimitiveTypeData<double>()
 {
   static TypeData_Double typeData;
-  return &typeData;
+  return typeData;
 }
 
 struct TypeData_String : TypeData
@@ -72,10 +72,10 @@ struct TypeData_String : TypeData
   }
 };
 template <>
-TypeData* getPrimitiveTypeData<std::string>()
+TypeData& getPrimitiveTypeData<std::string>()
 {
   static TypeData_String typeData;
-  return &typeData;
+  return typeData;
 }
 
 struct TypeData_Bool : TypeData
@@ -86,8 +86,8 @@ struct TypeData_Bool : TypeData
   }
 };
 template <>
-TypeData* getPrimitiveTypeData<bool>()
+TypeData& getPrimitiveTypeData<bool>()
 {
   static TypeData_Bool typeData;
-  return &typeData;
+  return typeData;
 }
