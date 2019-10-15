@@ -12,6 +12,7 @@
 #include "Renderer/Renderer.h"
 #include "Editor/Editor.h"
 #include "Log.h"
+#include "Profiler.h"
 #include "IGame.h"
 
 namespace
@@ -84,7 +85,8 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 		Input::Update(shutdown);
 		g_pGame->OnFrame(*pCurrentScene, (float)frameTime);
 		Editor::ShowEditor(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
-		Graphics::RenderFrame();
+		Profiler::ClearFrameData();
+		Graphics::RenderFrame(); // This should take in the scene as a paramter and work from that, instead of
 
 		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();

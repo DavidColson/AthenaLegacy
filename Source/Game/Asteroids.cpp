@@ -8,6 +8,7 @@
 #include <GameFramework/World.h>
 #include <Engine.h>
 #include <IGame.h>
+#include <Profiler.h>
 #include <Renderer/Renderer.h>
 #include <ThirdParty/Imgui/imgui.h>
 #include <TypeSystem.h>
@@ -217,35 +218,13 @@ struct Asteroids : public IGame
 
 	void OnFrame(Scene& scene, float deltaTime) override
 	{
-		Uint64 start = SDL_GetPerformanceCounter();
+		PROFILE("Asteroids::OnFrame");
+
 		ShipControlSystemUpdate(scene, deltaTime);
-		float shipControl = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-
-		start = SDL_GetPerformanceCounter();
 		MovementSystemUpdate(scene, deltaTime);
-		float movement = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-
-		start = SDL_GetPerformanceCounter();
 		CollisionSystemUpdate(scene, deltaTime);
-		float collision = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-		
-		start = SDL_GetPerformanceCounter();
 		DrawShapeSystem(scene, deltaTime);
-		float drawShape = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-		
-		start = SDL_GetPerformanceCounter();
 		DrawTextSystem(scene, deltaTime);
-		float drawText = float(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-	
-		ImGui::Begin("Profiler");
-
-		ImGui::Text(StringFormat("Ship Control System %f", shipControl).c_str());
-		ImGui::Text(StringFormat("Movement System %f", movement).c_str());
-		ImGui::Text(StringFormat("Collision System %f", collision).c_str());
-		ImGui::Text(StringFormat("Draw Shape System %f", drawShape).c_str());
-		ImGui::Text(StringFormat("Draw Text System %f", drawText).c_str());
-
-		ImGui::End();
 	}
 
 	void OnEnd(Scene& scene) override

@@ -8,6 +8,7 @@
 #include <Renderer/RenderFont.h>
 #include <Input/Input.h>
 #include <Utility.h>
+#include <Profiler.h>
 
 
 // **********
@@ -145,6 +146,8 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 
 void CollisionSystemUpdate(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	bool bContinueOuter = false;
 	for (EntityID asteroid : SceneView<CAsteroid>(scene))
 	{
@@ -186,6 +189,8 @@ void CollisionSystemUpdate(Scene& scene, float deltaTime)
 
 void DrawShapeSystem(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	for (EntityID id : SceneView<CTransform, CDrawable>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
@@ -200,6 +205,8 @@ void DrawShapeSystem(Scene& scene, float deltaTime)
 
 void DrawTextSystem(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	for (EntityID id : SceneView<CTransform, CText>(scene))
 	{
 		CText* pText = scene.Get<CText>(id);
@@ -214,6 +221,8 @@ void DrawTextSystem(Scene& scene, float deltaTime)
 
 void MovementSystemUpdate(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	for (EntityID id : SceneView<CTransform>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
@@ -247,6 +256,8 @@ void MovementSystemUpdate(Scene& scene, float deltaTime)
 
 void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	for (EntityID id : SceneView<CTransform, CPlayerControl>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);

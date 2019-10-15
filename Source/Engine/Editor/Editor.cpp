@@ -5,6 +5,7 @@
 #include "GameFramework/World.h"
 #include "Maths/Vec3.h"
 #include "Maths/Vec2.h"
+#include "Profiler.h"
 
 #include <vector>
 #include <string>
@@ -158,6 +159,17 @@ void ShowFrameStats(double realFrameTime, double observedFrameTime)
 
   ImGui::Text("Real frame time %.6f ms/frame (%.3f FPS)", oldRealFrameTime * 1000.0, 1.0 / oldRealFrameTime);
   ImGui::Text("Observed frame time %.6f ms/frame (%.3f FPS)", oldObservedFrameTime * 1000.0, 1.0 / oldObservedFrameTime);
+
+  ImGui::Separator();
+
+  std::vector<Profiler::ScopeData>& data = Profiler::GetFrameData();
+  for (size_t i = 0; i < data.size(); ++i)
+  {
+  	// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
+  	// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
+  	double inMs = data[i].m_time * 1000.0;
+  	ImGui::Text(StringFormat("%s - %fms/frame", data[i].m_name, inMs).c_str());
+  }
 
 	ImGui::End();
 }

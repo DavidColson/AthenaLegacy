@@ -33,6 +33,8 @@ set(SOURCES
     "Maths/Matrix.cpp"
     "Engine.h"
     "Engine.cpp"
+    "Profiler.h"
+    "Profiler.cpp"
     "IGame.h"
     )
 
