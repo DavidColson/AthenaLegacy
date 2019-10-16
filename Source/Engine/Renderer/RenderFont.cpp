@@ -18,7 +18,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	FT_Library freetype;
 	FT_Init_FreeType(&freetype);
 
-	std::string fontShader = "\
+	std::string fontShaderSrc = "\
 		cbuffer cbTransform\
 	{\
 		float4x4 WVP;\
@@ -46,7 +46,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		return textureColor;\
 	}";
 
-	fontShader = Graphics::LoadShaderFromText(fontShader);
+	fontShader = Graphics::LoadShaderFromText(fontShaderSrc);
 
 
 	std::vector<Vertex> quadVertices = {

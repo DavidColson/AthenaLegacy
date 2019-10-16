@@ -48,14 +48,14 @@ struct TypeData
   {
 	  initFunc(this);
   }
-  TypeData(const char* name, size_t size) : name{name}, size{size} {}
-  TypeData(const char* name, size_t size, const std::initializer_list<std::pair<const std::string, Member>>& init) : name{name}, size{size}, members{ init } {}
+  TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
+  TypeData(const char* _name, size_t _size, const std::initializer_list<std::pair<const std::string, Member>>& init) : name(_name), size(_size), members( init ) {}
 
-  Member& GetMember(const char* name);
+  Member& GetMember(const char* _name);
 
    struct MemberIterator
   {
-    MemberIterator(std::map<std::string, Member>::iterator it) : it(it) {}
+    MemberIterator(std::map<std::string, Member>::iterator _it) : it(_it) {}
 
     Member& operator*() const 
     { 
@@ -113,7 +113,7 @@ TypeData& getPrimitiveTypeData<bool>();
 struct DefaultTypeResolver 
 {
   // the decltype term here may result in invalid c++ if T doesn't contain typeData. 
-  // As such if it doesn't, this template instantiation will be completely ignored by the compiler through SNIFAE. 
+  // As such if it doesn't, this template instantiation will be completely ignored by the compiler through SFINAE. 
   // If it does contain typeData, this will be instantiated and we're all good.
   // See here for deep explanation: https://stackoverflow.com/questions/1005476/how-to-detect-whether-there-is-a-specific-member-variable-in-class
   template<typename T, typename = int>

@@ -21,8 +21,8 @@ struct cbPerObject
 };
 cbPerObject perObject;
 
-RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
-	: vertices(vertices), indices(indices)
+RenderProxy::RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indices)
+	: vertices(_vertices), indices(_indices)
 {
 	// Create vertex buffer
 	// ********************

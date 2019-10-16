@@ -33,7 +33,7 @@ void Input::Update(bool& shutdownEngine)
 	
 	// Copy the SDL keystate into our own bitset
 	const Uint8* pSdlKeyState = SDL_GetKeyboardState(nullptr);
-	for (int i = 0; i < SDL_NUSCANCODES; i++)
+	for (int i = 0; i < SDL_NUM_SCANCODES; i++)
 	{
 		pInput->keyStates[i] = bool(pSdlKeyState[i]);
 	}

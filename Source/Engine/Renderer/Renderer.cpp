@@ -85,7 +85,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	depthStencilDesc.Height = UINT(height);
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORS8_UINT;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilDesc.SampleDesc.Count = 1;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -95,7 +95,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
-	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORS8_UINT;
+	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 	pCtx->pDevice->CreateDepthStencilView(pCtx->pDepthStencilBuffer, &depthStencilViewDesc, &pCtx->pDepthStencilView);

@@ -9,7 +9,7 @@ struct ID3D11Buffer;
 
 struct Vertex
 {
-	Vertex(Vec3f pos) : pos(pos) {}
+	Vertex(Vec3f _pos) : pos(_pos) {}
 
 	Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
 	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
@@ -19,11 +19,11 @@ struct Vertex
 struct RenderProxy
 {
 	RenderProxy() {};
-	RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices);
+	RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indices);
 
 	void Draw();
 
-	void SetTransform(Vec3f pos, float rot, Vec3f sca) { pos = pos; rot = rot; sca = sca; }
+	void SetTransform(Vec3f _pos, float _rot, Vec3f _sca) { pos = _pos; rot = _rot; sca = _sca; }
 
 	ID3D11Buffer* pWVPBuffer;
 

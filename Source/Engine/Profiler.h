@@ -9,14 +9,14 @@ namespace Profiler
 {
   struct ScopeData
   {
-    ScopeData(const char* name, double time) : name(name), time(time) {}
+    ScopeData(const char* _name, double _time) : name(_name), time(_time) {}
     const char* name;
     double time{ 0 };
   };
 
   void ClearFrameData();
 
-  void PushProfile(const char* name, double time);
+  void PushProfile(const char* _name, double _time);
 
   std::vector<ScopeData>& GetFrameData();
 }
@@ -26,9 +26,9 @@ namespace Profiler
 
 struct AutoProfile
 {
-  AutoProfile(const char* name)
+  AutoProfile(const char* _name)
   {
-    name = name;
+    name = _name;
     start = SDL_GetPerformanceCounter();;
   }
 

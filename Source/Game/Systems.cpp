@@ -44,7 +44,7 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 
 void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 {
-	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), scene.GetEntityName(bullet), GetEntityIndex(asteroid), scene.GetEntityName(asteroid));
+	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), scene.GetEntityName(bullet).c_str(), GetEntityIndex(asteroid), scene.GetEntityName(asteroid).c_str());
 
 	// Do scoring for the player
 	// #RefactorNote: Another use of single entity for loop lookup

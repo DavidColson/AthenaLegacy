@@ -3,10 +3,10 @@
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
 
-Member& TypeData::GetMember(const char* name)
+Member& TypeData::GetMember(const char* _name)
 {
-  ASSERT(members.count(name) == 1, "The member you're trying to access doesn't exist");
-  return members[name];
+  ASSERT(members.count(_name) == 1, "The member you're trying to access doesn't exist");
+  return members[_name];
 }
 
 namespace TypeDatabase
