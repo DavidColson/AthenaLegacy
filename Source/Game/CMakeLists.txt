@@ -2,10 +2,10 @@ project(AsteroidsGame)
 
 set(SOURCES
     "Asteroids.cpp"
-    "Systems/Systems.h"
-    "Systems/Systems.cpp"
-    "Components/Components.h"
-    "Components/Components.cpp"
+    "Systems.h"
+    "Systems.cpp"
+    "Components.h"
+    "Components.cpp"
     )
 
 foreach(source IN LISTS SOURCES)

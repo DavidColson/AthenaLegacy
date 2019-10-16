@@ -1,6 +1,4 @@
-#include "Components/Components.h"
-
-#include <GameFramework/World.h>
+#include "Components.h"
 
 REFLECT_BEGIN(CPlayerControl)
 REFLECT_MEMBER(m_thrust)

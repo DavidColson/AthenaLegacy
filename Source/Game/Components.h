@@ -5,7 +5,7 @@
 #include <Maths/Vec3.h>
 #include <Renderer/RenderProxy.h>
 #include <Log.h>
-#include <GameFramework/World.h>
+#include <Scene.h>
 
 
 struct CTransform

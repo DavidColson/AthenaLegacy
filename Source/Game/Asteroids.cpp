@@ -1,11 +1,11 @@
 #include "Asteroids.h"
-#include "Systems/Systems.h"
-#include "Components/Components.h"
+#include "Systems.h"
+#include "Components.h"
 
 #include <Maths/Vec4.h>
 #include <Maths/Matrix.h>
 #include <Editor/Editor.h>
-#include <GameFramework/World.h>
+#include <Scene.h>
 #include <Engine.h>
 #include <IGame.h>
 #include <Profiler.h>

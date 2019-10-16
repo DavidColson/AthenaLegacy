@@ -7,7 +7,7 @@
 #include <ThirdParty/Imgui/imgui.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
-#include "GameFramework/World.h"
+#include "Scene.h"
 #include "Input/Input.h"
 #include "Renderer/Renderer.h"
 #include "Editor/Editor.h"

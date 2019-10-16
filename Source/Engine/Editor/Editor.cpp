@@ -2,7 +2,7 @@
 
 #include "Input/Input.h"
 #include "Log.h"
-#include "GameFramework/World.h"
+#include "Scene.h"
 #include "Maths/Vec3.h"
 #include "Maths/Vec2.h"
 #include "Profiler.h"
@@ -69,7 +69,7 @@ void ShowEntityInspector(Scene& scene)
 		if (mask == (scene.m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
 		{
 			TypeData* pComponentType = scene.m_componentPools[i]->pTypeData;
-			if (ImGui::CollapsingHeader(pComponentType->m_name))
+			if (ImGui::CollapsingHeader(pComponentType->m_name, ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
 				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
@@ -211,5 +211,5 @@ void Editor::ShowEditor(Scene& scene, bool& shutdown, double realFrameTime, doub
 	ShowEntityInspector(scene);
 	ShowEntityList(scene);
 	ShowFrameStats(realFrameTime, observedFrameTime);
-	ImGui::ShowDemoWindow();
+	// ImGui::ShowDemoWindow();
 }

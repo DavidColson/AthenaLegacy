@@ -1,7 +1,7 @@
 #include "Systems.h"
 
 #include "Asteroids.h"
-#include "Components/Components.h"
+#include "Components.h"
 
 #include <Renderer/DebugDraw.h>
 #include <Renderer/Renderer.h>

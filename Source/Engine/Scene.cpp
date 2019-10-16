@@ -1,4 +1,4 @@
-#include "GameFramework/World.h"
+#include "Scene.h"
 int s_componentCounter = 0;
 
 REFLECT_BEGIN(CName)

@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <Renderer/RenderProxy.h>
-#include <GameFramework/World.h>
+#include <Scene.h>
 
 void CollisionSystemUpdate(Scene& scene, float deltaTime);
 
