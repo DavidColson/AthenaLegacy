@@ -54,7 +54,7 @@ void ShowEntityInspector(Scene& scene)
 
 	ImGui::Begin("Entity Inspector", &showEntityInspector);
 
-	if (GetEntityIndex(selectedEntity) > scene.m_entities.size())
+	if (GetEntityIndex(selectedEntity) > scene.entities.size())
 	{
 		ImGui::End();
 		return;
@@ -66,16 +66,16 @@ void ShowEntityInspector(Scene& scene)
 		std::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
-		if (mask == (scene.m_entities[GetEntityIndex(selectedEntity)].m_mask & mask))
+		if (mask == (scene.entities[GetEntityIndex(selectedEntity)].mask & mask))
 		{
-			TypeData* pComponentType = scene.m_componentPools[i]->pTypeData;
-			if (ImGui::CollapsingHeader(pComponentType->m_name, ImGuiTreeNodeFlags_DefaultOpen))
+			TypeData* pComponentType = scene.componentPools[i]->pTypeData;
+			if (ImGui::CollapsingHeader(pComponentType->name, ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
 				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
 
 				// Make a new variant to hide this void*
-				void* pComponentData = scene.m_componentPools[i]->get(GetEntityIndex(selectedEntity));
+				void* pComponentData = scene.componentPools[i]->get(GetEntityIndex(selectedEntity));
 
 				// Loop through all the members of the component, showing the appropriate UI elements
 				for (Member& member : *pComponentType)
@@ -83,40 +83,40 @@ void ShowEntityInspector(Scene& scene)
 					if (member.IsType<float>())
 					{
 						float* number = member.Get<float>(pComponentData);
-						ImGui::DragFloat(member.m_name, number, 0.1f);
+						ImGui::DragFloat(member.name, number, 0.1f);
 					}
 					else if (member.IsType<int>())
 					{
 						int* number = member.Get<int>(pComponentData);
-						ImGui::DragInt(member.m_name, number, 0.1f);
+						ImGui::DragInt(member.name, number, 0.1f);
 					}
 					else if (member.IsType<Vec2f>())
 					{
 						Vec2f& vec = *member.Get<Vec2f>(pComponentData);
 						float list[2] = { vec.x, vec.y };
-						ImGui::DragFloat2(member.m_name, list, 0.1f);
+						ImGui::DragFloat2(member.name, list, 0.1f);
 						vec.x = list[0]; vec.y = list[1];
 					}
 					else if (member.IsType<Vec3f>())
 					{
 						Vec3f& vec = *member.Get<Vec3f>(pComponentData);
 						float list[3] = { vec.x, vec.y, vec.z };
-						ImGui::DragFloat3(member.m_name, list, 0.1f);
+						ImGui::DragFloat3(member.name, list, 0.1f);
 						vec.x = list[0]; vec.y = list[1]; vec.z = list[2];
 					}
 					else if (member.IsType<bool>())
 					{
 						bool* boolean = member.Get<bool>(pComponentData);
-						ImGui::Checkbox(member.m_name, boolean);
+						ImGui::Checkbox(member.name, boolean);
 					}
 					else if (member.IsType<std::string>())
 					{
-						ImGui::InputText(member.m_name, member.Get<std::string>(pComponentData));
+						ImGui::InputText(member.name, member.Get<std::string>(pComponentData));
 					}
 					else if (member.IsType<EntityID>())
 					{
 						EntityID& entity = *member.Get<EntityID>(pComponentData);
-						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member.m_name);
+						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member.name);
 					}
 				}
 			}
@@ -172,8 +172,8 @@ void ShowFrameStats(double realFrameTime, double observedFrameTime)
   {
   	// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
   	// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
-  	double inMs = data[i].m_time * 1000.0;
-  	ImGui::Text(StringFormat("%s - %fms/frame", data[i].m_name, inMs).c_str());
+  	double inMs = data[i].time * 1000.0;
+  	ImGui::Text(StringFormat("%s - %fms/frame", data[i].name, inMs).c_str());
   }
 
 	ImGui::End();

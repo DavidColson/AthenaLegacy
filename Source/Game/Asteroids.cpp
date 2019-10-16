@@ -50,10 +50,10 @@ struct Asteroids : public IGame
 
 		myInMember.Set(&testComponent, 1337);
 
-		Log::Print(Log::EMsg, "Iterator printing Members of type: %s", typeData.m_name);
+		Log::Print(Log::EMsg, "Iterator printing Members of type: %s", typeData.name);
 		for (Member& member : typeData)
 		{			
-			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.m_name, member.GetType().m_name, *member.Get<int>(&testComponent));
+			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.Get<int>(&testComponent));
 		}
 
 		Game::g_asteroidMeshes.emplace_back(RenderProxy(
@@ -154,12 +154,12 @@ struct Asteroids : public IGame
 			EntityID asteroid = scene.NewEntity("Asteroid");
 			scene.Assign<CCollidable>(asteroid);
 			CTransform* pTranform = scene.Assign<CTransform>(asteroid);
-			pTranform->m_pos = randomLocation;
-			pTranform->m_sca = Vec3f(90.0f, 90.0f, 1.0f);
-			pTranform->m_vel = randomVelocity;
-			pTranform->m_rot = randomRotation;
+			pTranform->pos = randomLocation;
+			pTranform->sca = Vec3f(90.0f, 90.0f, 1.0f);
+			pTranform->vel = randomVelocity;
+			pTranform->rot = randomRotation;
 
-			scene.Assign<CDrawable>(asteroid)->m_renderProxy = Game::g_asteroidMeshes[rand() % 4];
+			scene.Assign<CDrawable>(asteroid)->renderProxy = Game::g_asteroidMeshes[rand() % 4];
 			scene.Assign<CAsteroid>(asteroid);
 		}
 
@@ -167,14 +167,14 @@ struct Asteroids : public IGame
 		EntityID ship = scene.NewEntity("Player Ship");
 		CTransform* pTransform = scene.Assign<CTransform>(ship);
 
-		const float w = Graphics::GetContext()->m_windowWidth;
-		const float h = Graphics::GetContext()->m_windowHeight;
-		pTransform->m_pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
-		pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
+		const float w = Graphics::GetContext()->windowWidth;
+		const float h = Graphics::GetContext()->windowHeight;
+		pTransform->pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
+		pTransform->sca = Vec3f(30.f, 35.f, 1.0f);
 
 		CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
-		scene.Assign<CCollidable>(ship)->m_radius = 17.f;
-		scene.Assign<CDrawable>(ship)->m_renderProxy = Game::g_shipMesh;
+		scene.Assign<CCollidable>(ship)->radius = 17.f;
+		scene.Assign<CDrawable>(ship)->renderProxy = Game::g_shipMesh;
 
 		// Create the lives
 		float offset = 0.0f;
@@ -183,36 +183,36 @@ struct Asteroids : public IGame
 			EntityID life = scene.NewEntity("Life");
 			
 			CTransform* pTransform = scene.Assign<CTransform>(life);
-			pTransform->m_pos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
-			pTransform->m_sca = Vec3f(30.f, 35.f, 1.0f);
-			pTransform->m_rot = -3.14159f / 2.0f;
+			pTransform->pos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
+			pTransform->sca = Vec3f(30.f, 35.f, 1.0f);
+			pTransform->rot = -3.14159f / 2.0f;
 			offset += 30.0f;
 			
-			scene.Assign<CDrawable>(life)->m_renderProxy = Game::g_shipMesh;
-			pPlayer->m_lifeEntities[i] = life;
+			scene.Assign<CDrawable>(life)->renderProxy = Game::g_shipMesh;
+			pPlayer->lifeEntities[i] = life;
 		}
 
 
 		// Create score counters
 		{
 			EntityID currentScoreEnt =scene.NewEntity("Current Score");
-			scene.Assign<CText>(currentScoreEnt)->m_text = "0";
-			scene.Assign<CTransform>(currentScoreEnt)->m_pos = Vec3f(150.0f, h - 53.0f, 0.0f);
+			scene.Assign<CText>(currentScoreEnt)->text = "0";
+			scene.Assign<CTransform>(currentScoreEnt)->pos = Vec3f(150.0f, h - 53.0f, 0.0f);
 			scene.Assign<CPlayerScore>(currentScoreEnt);
 
 			EntityID highScoreEnt = scene.NewEntity("High Score");
-			scene.Assign<CText>(highScoreEnt)->m_text = "0";
-			scene.Assign<CTransform>(highScoreEnt)->m_pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
+			scene.Assign<CText>(highScoreEnt)->text = "0";
+			scene.Assign<CTransform>(highScoreEnt)->pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
 		}
 
 		// Create game over text
 		{
 			EntityID gameOver = scene.NewEntity("Game Over");
-			scene.Assign<CTransform>(gameOver)->m_pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+			scene.Assign<CTransform>(gameOver)->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 			scene.Assign<CGameOver>(gameOver);
 			CText* pText = scene.Assign<CText>(gameOver);
-			pText->m_text = "Game Over";
-			pText->m_visible = false;
+			pText->text = "Game Over";
+			pText->visible = false;
 		}
 	}
 

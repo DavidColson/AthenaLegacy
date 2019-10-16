@@ -5,8 +5,8 @@
 
 Member& TypeData::GetMember(const char* name)
 {
-  ASSERT(m_members.count(name) == 1, "The member you're trying to access doesn't exist");
-  return m_members[name];
+  ASSERT(members.count(name) == 1, "The member you're trying to access doesn't exist");
+  return members[name];
 }
 
 namespace TypeDatabase
@@ -15,7 +15,7 @@ namespace TypeDatabase
 
   TypeData& GetFromString(const char* name)
   {
-    return *Data::Get().m_typeNames[name];
+    return *Data::Get().typeNames[name];
   }
 }
 
@@ -26,7 +26,7 @@ struct TypeData_Int : TypeData
 {
   TypeData_Int() : TypeData{"int", sizeof(int)} 
   {
-    TypeDatabase::Data::Get().m_typeNames.emplace("int", this);
+    TypeDatabase::Data::Get().typeNames.emplace("int", this);
   }
 };
 template <>
@@ -40,7 +40,7 @@ struct TypeData_Float : TypeData
 {
   TypeData_Float() : TypeData{"float", sizeof(float)} 
   {
-    TypeDatabase::Data::Get().m_typeNames.emplace("float", this);
+    TypeDatabase::Data::Get().typeNames.emplace("float", this);
   }
 };
 template <>
@@ -54,7 +54,7 @@ struct TypeData_Double : TypeData
 {
   TypeData_Double() : TypeData{"double", sizeof(double)} 
   {
-    TypeDatabase::Data::Get().m_typeNames.emplace("double", this);
+    TypeDatabase::Data::Get().typeNames.emplace("double", this);
   }
 };
 template <>
@@ -68,7 +68,7 @@ struct TypeData_String : TypeData
 {
   TypeData_String() : TypeData{"std::string", sizeof(std::string)} 
   {
-    TypeDatabase::Data::Get().m_typeNames.emplace("std::string", this);
+    TypeDatabase::Data::Get().typeNames.emplace("std::string", this);
   }
 };
 template <>
@@ -82,7 +82,7 @@ struct TypeData_Bool : TypeData
 {
   TypeData_Bool() : TypeData{"bool", sizeof(bool)} 
   {
-    TypeDatabase::Data::Get().m_typeNames.emplace("bool", this);
+    TypeDatabase::Data::Get().typeNames.emplace("bool", this);
   }
 };
 template <>

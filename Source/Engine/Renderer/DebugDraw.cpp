@@ -10,15 +10,15 @@ namespace
 {
 	struct DrawCall
 	{
-		int m_vertexCount{ 0 };
-		int m_indexCount{ 0 };
+		int vertexCount{ 0 };
+		int indexCount{ 0 };
 	};
 	std::vector<DrawCall> drawQueue;
 	
 	struct DebugVertex
 	{
-		Vec3f m_pos{ Vec3f(0.0f, 0.0f, 0.0f) };
-		Vec3f m_col{ Vec3f(0.0f, 0.0f, 0.0f) };
+		Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
+		Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
 	};
 	std::vector<DebugVertex> vertBufferData;
 	int vertBufferSize = 0;
@@ -31,7 +31,7 @@ namespace
 
 	struct cbTransform
 	{
-		Matrixf m_wvp;
+		Matrixf wvp;
 	};
 	ID3D11Buffer* pConstBuffer;
 }
@@ -96,7 +96,7 @@ void DebugDraw::Detail::Init()
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.MiscFlags = 0;
-		pCtx->m_pDevice->CreateBuffer(&desc, NULL, &pConstBuffer);
+		pCtx->pDevice->CreateBuffer(&desc, NULL, &pConstBuffer);
 	}
 }
 
@@ -114,7 +114,7 @@ void DebugDraw::Detail::DrawQueue()
 		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.MiscFlags = 0;
-		pCtx->m_pDevice->CreateBuffer(&desc, nullptr, &pVertexBuffer);
+		pCtx->pDevice->CreateBuffer(&desc, nullptr, &pVertexBuffer);
 	}
 
 	if (pIndexBuffer == nullptr || indexBufferSize < indexBufferData.size())
@@ -127,54 +127,54 @@ void DebugDraw::Detail::DrawQueue()
 		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.MiscFlags = 0;
-		pCtx->m_pDevice->CreateBuffer(&desc, nullptr, &pIndexBuffer);
+		pCtx->pDevice->CreateBuffer(&desc, nullptr, &pIndexBuffer);
 	}
 
 	// Update vert and index buffer data
 	D3D11_MAPPED_SUBRESOURCE vertResource, indexResource;
 	ZeroMemory(&vertResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	ZeroMemory(&indexResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	pCtx->m_pDeviceContext->Map(pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &vertResource);
-	pCtx->m_pDeviceContext->Map(pIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &indexResource);
+	pCtx->pDeviceContext->Map(pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &vertResource);
+	pCtx->pDeviceContext->Map(pIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &indexResource);
 
 	if (!vertBufferData.empty())
 		memcpy(vertResource.pData, vertBufferData.data(), vertBufferData.size() * sizeof(DebugVertex));
 	if (!indexBufferData.empty())
 		memcpy(indexResource.pData, indexBufferData.data(), indexBufferData.size() * sizeof(int));
 
-	pCtx->m_pDeviceContext->Unmap(pVertexBuffer, 0);
-	pCtx->m_pDeviceContext->Unmap(pIndexBuffer, 0);
+	pCtx->pDeviceContext->Unmap(pVertexBuffer, 0);
+	pCtx->pDeviceContext->Unmap(pIndexBuffer, 0);
 
 	// Update constant buffer data
 	D3D11_MAPPED_SUBRESOURCE constResource;
 	ZeroMemory(&constResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	pCtx->m_pDeviceContext->Map(pConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constResource);
+	pCtx->pDeviceContext->Map(pConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constResource);
 	cbTransform* transform = (cbTransform*)constResource.pData;
-	Matrixf wvp = Matrixf::Orthographic(0.f, pCtx->m_windowWidth / pCtx->m_pixelScale, 0.0f, pCtx->m_windowHeight / pCtx->m_pixelScale, 0.1f, 10.0f);
-	memcpy(&transform->m_wvp, &wvp, sizeof(wvp));
-	pCtx->m_pDeviceContext->Unmap(pConstBuffer, 0);
+	Matrixf wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth / pCtx->pixelScale, 0.0f, pCtx->windowHeight / pCtx->pixelScale, 0.1f, 10.0f);
+	memcpy(&transform->wvp, &wvp, sizeof(wvp));
+	pCtx->pDeviceContext->Unmap(pConstBuffer, 0);
 
 	// Bind shaders
-	pCtx->m_pDeviceContext->IASetInputLayout(debugShader.m_pVertLayout);
-	pCtx->m_pDeviceContext->VSSetShader(debugShader.m_pVertexShader, 0, 0);
-	pCtx->m_pDeviceContext->PSSetShader(debugShader.m_pPixelShader, 0, 0);
-	pCtx->m_pDeviceContext->GSSetShader(debugShader.m_pGeometryShader, 0, 0);
-	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	pCtx->pDeviceContext->IASetInputLayout(debugShader.pVertLayout);
+	pCtx->pDeviceContext->VSSetShader(debugShader.pVertexShader, 0, 0);
+	pCtx->pDeviceContext->PSSetShader(debugShader.pPixelShader, 0, 0);
+	pCtx->pDeviceContext->GSSetShader(debugShader.pGeometryShader, 0, 0);
+	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 
-	pCtx->m_pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	UINT stride = sizeof(DebugVertex);
 	UINT offset = 0;
-	pCtx->m_pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
-	pCtx->m_pDeviceContext->VSSetConstantBuffers(0, 1, &pConstBuffer);
+	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
+	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &pConstBuffer);
 
 
 	int vertOffset = 0;
 	int indexOffset = 0;
 	for (DrawCall& draw : drawQueue)
 	{
-		pCtx->m_pDeviceContext->DrawIndexed(draw.m_indexCount, indexOffset, vertOffset);
-		vertOffset += draw.m_vertexCount;
-		indexOffset += draw.m_indexCount;
+		pCtx->pDeviceContext->DrawIndexed(draw.indexCount, indexOffset, vertOffset);
+		vertOffset += draw.vertexCount;
+		indexOffset += draw.indexCount;
 	}
 
 	drawQueue.clear();

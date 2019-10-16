@@ -39,16 +39,16 @@ namespace Graphics
 
 	struct Texture2D
 	{
-		ID3D11ShaderResourceView* m_pShaderResourceView{ nullptr };
-		ID3D11Texture2D* m_pTexture2D{ nullptr };
+		ID3D11ShaderResourceView* pShaderResourceView{ nullptr };
+		ID3D11Texture2D* pTexture2D{ nullptr };
 	};
 
 	struct Shader
 	{
-		ID3D11InputLayout* m_pVertLayout{ nullptr };
-		ID3D11VertexShader* m_pVertexShader{ nullptr };
-		ID3D11GeometryShader* m_pGeometryShader{ nullptr };
-		ID3D11PixelShader* m_pPixelShader{ nullptr };
+		ID3D11InputLayout* pVertLayout{ nullptr };
+		ID3D11VertexShader* pVertexShader{ nullptr };
+		ID3D11GeometryShader* pGeometryShader{ nullptr };
+		ID3D11PixelShader* pPixelShader{ nullptr };
 	};
 
 	Shader LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader);
@@ -59,31 +59,31 @@ namespace Graphics
 
 struct RenderContext
 {
-	SDL_Window* m_pWindow;
+	SDL_Window* pWindow;
 
-	IDXGISwapChain* m_pSwapChain;
-	ID3D11Device* m_pDevice;
-	ID3D11DeviceContext* m_pDeviceContext;
-	ID3D11RenderTargetView* m_pBackBuffer;
+	IDXGISwapChain* pSwapChain;
+	ID3D11Device* pDevice;
+	ID3D11DeviceContext* pDeviceContext;
+	ID3D11RenderTargetView* pBackBuffer;
 
-	ID3D11DepthStencilView* m_pDepthStencilView;
-	ID3D11Texture2D* m_pDepthStencilBuffer;
+	ID3D11DepthStencilView* pDepthStencilView;
+	ID3D11Texture2D* pDepthStencilBuffer;
 
 	// Scene is rendered into the preprocessed frame render target, 
 	// where it'll then be re-rendered for post processing
-	Graphics::Texture2D m_preprocessedFrame;
-	ID3D11SamplerState* m_frameTextureSampler;
-	ID3D11RenderTargetView* m_pPreprocessedFrameView;
-	ID3D11Buffer * m_pFullScreenVertBuffer{ nullptr };
-	Graphics::Shader m_postProcessShader;
+	Graphics::Texture2D preprocessedFrame;
+	ID3D11SamplerState* frameTextureSampler;
+	ID3D11RenderTargetView* pPreprocessedFrameView;
+	ID3D11Buffer * pFullScreenVertBuffer{ nullptr };
+	Graphics::Shader postProcessShader;
 
-	Graphics::Shader m_baseShader;
+	Graphics::Shader baseShader;
 
-	RenderFont* m_pFontRender;
+	RenderFont* pFontRender;
 
-	float m_pixelScale = 1.0f;
-	float m_windowWidth{ 0 };
-	float m_windowHeight{ 0 };
+	float pixelScale = 1.0f;
+	float windowWidth{ 0 };
+	float windowHeight{ 0 };
 
-	std::vector<RenderProxy*> m_renderQueue;
+	std::vector<RenderProxy*> renderQueue;
 };

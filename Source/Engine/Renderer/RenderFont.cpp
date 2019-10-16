@@ -46,7 +46,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		return textureColor;\
 	}";
 
-	m_fontShader = Graphics::LoadShaderFromText(fontShader);
+	fontShader = Graphics::LoadShaderFromText(fontShader);
 
 
 	std::vector<Vertex> quadVertices = {
@@ -60,10 +60,10 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		3, 0
 	};
 
-	quadVertices[0].m_texCoords = Vec2f(0.0f, 1.0f);
-	quadVertices[1].m_texCoords = Vec2f(0.0f, 0.0f);
-	quadVertices[2].m_texCoords = Vec2f(1.0f, 0.0f);
-	quadVertices[3].m_texCoords = Vec2f(1.0f, 1.0f);
+	quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
+	quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
+	quadVertices[2].texCoords = Vec2f(1.0f, 0.0f);
+	quadVertices[3].texCoords = Vec2f(1.0f, 1.0f);
 
 	// Create vertex buffer
 	// ********************
@@ -82,7 +82,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = quadVertices.data();
 
-	Graphics::GetContext()->m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_pQuadVertBuffer);
+	Graphics::GetContext()->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pQuadVertBuffer);
 
 	// Create an index buffer
 	// **********************
@@ -100,7 +100,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
 	indexBufferData.pSysMem = quadIndices.data();
-	Graphics::GetContext()->m_pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_pQuadIndexBuffer);
+	Graphics::GetContext()->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pQuadIndexBuffer);
 
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
@@ -112,7 +112,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	wvpBufferDesc.CPUAccessFlags = 0;
 	wvpBufferDesc.MiscFlags = 0;
-	Graphics::GetContext()->m_pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &m_pQuadWVPBuffer);
+	Graphics::GetContext()->pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &pQuadWVPBuffer);
 
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(blendDesc));
@@ -132,7 +132,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	blendDesc.AlphaToCoverageEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
-	Graphics::GetContext()->m_pDevice->CreateBlendState(&blendDesc, &m_transparency);
+	Graphics::GetContext()->pDevice->CreateBlendState(&blendDesc, &transparency);
 
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -144,7 +144,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	Graphics::GetContext()->m_pDevice->CreateSamplerState(&sampDesc, &m_charTextureSampler);
+	Graphics::GetContext()->pDevice->CreateSamplerState(&sampDesc, &charTextureSampler);
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -166,22 +166,22 @@ RenderFont::RenderFont(std::string fontFile, int size)
 				D3D11_BIND_SHADER_RESOURCE
 			);
 
-			character.m_charTexture = texture.m_pShaderResourceView;
+			character.charTexture = texture.pShaderResourceView;
 		}
-		character.m_size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
-		character.m_bearing = Vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
-		character.m_advance = (face->glyph->advance.x) >> 6;
+		character.size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
+		character.bearing = Vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
+		character.advance = (face->glyph->advance.x) >> 6;
 
 		int size = sizeof(character);
-		int size2 = sizeof(character.m_size);
+		int size2 = sizeof(character.size);
 
-		m_characters.push_back(character);
+		characters.push_back(character);
 	}
 }
 
 void RenderFont::SubmitText(const char* text, Vec2f pos)
 {
-	m_textQueue.emplace_back(text, pos);
+	textQueue.emplace_back(text, pos);
 }
 
 void RenderFont::DrawQueue()
@@ -189,63 +189,63 @@ void RenderFont::DrawQueue()
 	// Set vertex buffer as active
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	Graphics::GetContext()->m_pDeviceContext->IASetVertexBuffers(0, 1, &m_pQuadVertBuffer, &stride, &offset);
+	Graphics::GetContext()->pDeviceContext->IASetVertexBuffers(0, 1, &pQuadVertBuffer, &stride, &offset);
 
-	Graphics::GetContext()->m_pDeviceContext->IASetIndexBuffer(m_pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	Graphics::GetContext()->pDeviceContext->IASetIndexBuffer(pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	Graphics::GetContext()->m_pDeviceContext->VSSetConstantBuffers(0, 1, &(m_pQuadWVPBuffer));
+	Graphics::GetContext()->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
 
 	// Set Shaders to active
-	Graphics::GetContext()->m_pDeviceContext->VSSetShader(m_fontShader.m_pVertexShader, 0, 0);
-	Graphics::GetContext()->m_pDeviceContext->PSSetShader(m_fontShader.m_pPixelShader, 0, 0);
-	Graphics::GetContext()->m_pDeviceContext->GSSetShader(m_fontShader.m_pGeometryShader, 0, 0);
+	Graphics::GetContext()->pDeviceContext->VSSetShader(fontShader.pVertexShader, 0, 0);
+	Graphics::GetContext()->pDeviceContext->PSSetShader(fontShader.pPixelShader, 0, 0);
+	Graphics::GetContext()->pDeviceContext->GSSetShader(fontShader.pGeometryShader, 0, 0);
 
-	Graphics::GetContext()->m_pDeviceContext->IASetInputLayout(m_fontShader.m_pVertLayout);
+	Graphics::GetContext()->pDeviceContext->IASetInputLayout(fontShader.pVertLayout);
 
-	Graphics::GetContext()->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	Graphics::GetContext()->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
-	Graphics::GetContext()->m_pDeviceContext->OMSetBlendState(m_transparency, blendFactor, 0xffffffff);
+	Graphics::GetContext()->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);
 
-	Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->m_windowWidth / Graphics::GetContext()->m_pixelScale, 0.0f, Graphics::GetContext()->m_windowHeight / Graphics::GetContext()->m_pixelScale, 0.1f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->windowWidth / Graphics::GetContext()->pixelScale, 0.0f, Graphics::GetContext()->windowHeight / Graphics::GetContext()->pixelScale, 0.1f, 10.0f); // transform into screen space
 	
-	Graphics::GetContext()->m_pDeviceContext->PSSetSamplers(0, 1, &m_charTextureSampler);
+	Graphics::GetContext()->pDeviceContext->PSSetSamplers(0, 1, &charTextureSampler);
 
-	for (QueueElement const& element : m_textQueue)
+	for (QueueElement const& element : textQueue)
 	{
 		float textWidth = 0.0f;
-		float x = element.m_pos.x;
-		float y = element.m_pos.y;
+		float x = element.pos.x;
+		float y = element.pos.y;
 
 
-		for (char const& c : element.m_text)
+		for (char const& c : element.text)
 		{
-			Character ch = m_characters[c];
-			textWidth += ch.m_advance;
+			Character ch = characters[c];
+			textWidth += ch.advance;
 		}
 
-		for (char const& c : element.m_text) {
+		for (char const& c : element.text) {
 			// Draw a font character
-			Character ch = m_characters[c];
+			Character ch = characters[c];
 
-			Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.m_bearing.x - textWidth*0.5f), float(y - (ch.m_size.y - ch.m_bearing.y)), 0.0f));
-			Matrixf scalemat = Matrixf::Scale(Vec3f(ch.m_size.x / 10.0f, ch.m_size.y / 10.0f, 1.0f));
+			Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth*0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
+			Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
 
 			Matrixf world = posmat * scalemat; // transform into world space
 			Matrixf wvp = projection * world;
 
-			m_cbCharTransform.m_wvp = wvp;
-			Graphics::GetContext()->m_pDeviceContext->UpdateSubresource(m_pQuadWVPBuffer, 0, nullptr, &m_cbCharTransform, 0, 0);
+			cbCharTransform.wvp = wvp;
+			Graphics::GetContext()->pDeviceContext->UpdateSubresource(pQuadWVPBuffer, 0, nullptr, &cbCharTransform, 0, 0);
 
-			Graphics::GetContext()->m_pDeviceContext->PSSetShaderResources(0, 1, &(m_characters[c].m_charTexture));
+			Graphics::GetContext()->pDeviceContext->PSSetShaderResources(0, 1, &(characters[c].charTexture));
 
 			// do 3D rendering on the back buffer here
 			// Instance render the entire string
-			Graphics::GetContext()->m_pDeviceContext->DrawIndexed(5, 0, 0);
+			Graphics::GetContext()->pDeviceContext->DrawIndexed(5, 0, 0);
 
-			x += ch.m_advance;
+			x += ch.advance;
 		}
 	}
-	m_textQueue.clear();
+	textQueue.clear();
 }
 

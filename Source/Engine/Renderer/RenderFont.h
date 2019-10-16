@@ -17,10 +17,10 @@ struct ID3D11InputLayout;
 
 struct Character
 {
-	ID3D11ShaderResourceView* m_charTexture{ nullptr };
-	Vec2i m_size{ Vec2i(0, 0) };
-	Vec2i m_bearing{ Vec2i(0, 0) };
-	int m_advance;
+	ID3D11ShaderResourceView* charTexture{ nullptr };
+	Vec2i size{ Vec2i(0, 0) };
+	Vec2i bearing{ Vec2i(0, 0) };
+	int advance;
 };
 
 class RenderFont
@@ -34,28 +34,28 @@ public:
 private:
 	struct cbTransform
 	{
-		Matrixf m_wvp;
+		Matrixf wvp;
 	};
-	cbTransform m_cbCharTransform;
+	cbTransform cbCharTransform;
 
-	ID3D11Buffer * m_pQuadVertBuffer{ nullptr };
-	ID3D11Buffer* m_pQuadIndexBuffer{ nullptr };
+	ID3D11Buffer * pQuadVertBuffer{ nullptr };
+	ID3D11Buffer* pQuadIndexBuffer{ nullptr };
 
-	ID3D11Buffer* m_pQuadWVPBuffer{ nullptr };
+	ID3D11Buffer* pQuadWVPBuffer{ nullptr };
 
-	ID3D11SamplerState* m_charTextureSampler;
+	ID3D11SamplerState* charTextureSampler;
 
-	ID3D11BlendState* m_transparency;
+	ID3D11BlendState* transparency;
 
-	Graphics::Shader m_fontShader;
+	Graphics::Shader fontShader;
 
-	std::vector<Character> m_characters;
+	std::vector<Character> characters;
 
 	struct QueueElement
 	{
-		std::string m_text;
-		Vec2f m_pos;
-		QueueElement(const char* text, Vec2f pos) : m_text(text), m_pos(pos) {}
+		std::string text;
+		Vec2f pos;
+		QueueElement(const char* text, Vec2f pos) : text(text), pos(pos) {}
 	};
-	std::vector<QueueElement> m_textQueue;
+	std::vector<QueueElement> textQueue;
 };

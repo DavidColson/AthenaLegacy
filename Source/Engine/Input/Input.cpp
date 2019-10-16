@@ -14,38 +14,38 @@ void Input::CreateInputState()
 
 bool Input::GetKeyDown(int keyCode)
 {
-	return pInput->m_keyDowns[keyCode];
+	return pInput->keyDowns[keyCode];
 }
 
 bool Input::GetKeyUp(int keyCode)
 {
-	return pInput->m_keyUps[keyCode];
+	return pInput->keyUps[keyCode];
 }
 
 bool Input::GetKeyHeld(int keyCode)
 {
-	return pInput->m_keyStates[keyCode];
+	return pInput->keyStates[keyCode];
 }
 
 void Input::Update(bool& shutdownEngine)
 {
-	std::bitset<NKEYS> prevKeyStates = pInput->m_keyStates;
+	std::bitset<NKEYS> prevKeyStates = pInput->keyStates;
 	
 	// Copy the SDL keystate into our own bitset
 	const Uint8* pSdlKeyState = SDL_GetKeyboardState(nullptr);
-	for (int i = 0; i < SDL_NUM_SCANCODES; i++)
+	for (int i = 0; i < SDL_NUSCANCODES; i++)
 	{
-		pInput->m_keyStates[i] = bool(pSdlKeyState[i]);
+		pInput->keyStates[i] = bool(pSdlKeyState[i]);
 	}
 
 	// exclusive or, if state changed, then keychanges bit will be 1
-	std::bitset<NKEYS> keyChanges = pInput->m_keyStates ^ prevKeyStates;
+	std::bitset<NKEYS> keyChanges = pInput->keyStates ^ prevKeyStates;
 
 	// and, if key is down and it changed this frame, key went down
-	pInput->m_keyDowns = keyChanges & pInput->m_keyStates;
+	pInput->keyDowns = keyChanges & pInput->keyStates;
 
 	// and not, if key is not down and it changed this frame, key went up
-	pInput->m_keyUps = keyChanges & ~pInput->m_keyStates;
+	pInput->keyUps = keyChanges & ~pInput->keyStates;
 
 	SDL_Event event;
 	if (SDL_PollEvent(&event)) {

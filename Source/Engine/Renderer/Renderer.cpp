@@ -28,15 +28,15 @@ RenderContext* Graphics::GetContext()
 void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 {
 	pCtx = new RenderContext();
-	pCtx->m_pWindow = pWindow;
+	pCtx->pWindow = pWindow;
 
 	SDL_SysWMinfo wmInfo;
 	SDL_VERSION(&wmInfo.version);
 	SDL_GetWindowWMInfo(pWindow, &wmInfo);
 	HWND hwnd = wmInfo.info.win.window;
 
-	pCtx->m_windowWidth = width;
-	pCtx->m_windowHeight = height;
+	pCtx->windowWidth = width;
+	pCtx->windowHeight = height;
 
 
 
@@ -66,17 +66,17 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 		NULL,
 		D3D11_SDK_VERSION,
 		&scd,
-		&pCtx->m_pSwapChain,
-		&pCtx->m_pDevice,
+		&pCtx->pSwapChain,
+		&pCtx->pDevice,
 		NULL,
-		&pCtx->m_pDeviceContext);
+		&pCtx->pDeviceContext);
 
 	// get the address of the back buffer
 	ID3D11Texture2D *pBackBuffer;
-	pCtx->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
 	// use the back buffer address to create the render target
-	pCtx->m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->m_pBackBuffer);
+	pCtx->pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->pBackBuffer);
 	pBackBuffer->Release();
 
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
@@ -85,26 +85,26 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	depthStencilDesc.Height = UINT(height);
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORS8_UINT;
 	depthStencilDesc.SampleDesc.Count = 1;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	depthStencilDesc.CPUAccessFlags = 0;
 	depthStencilDesc.MiscFlags = 0;
-	pCtx->m_pDevice->CreateTexture2D(&depthStencilDesc, NULL, &pCtx->m_pDepthStencilBuffer);
+	pCtx->pDevice->CreateTexture2D(&depthStencilDesc, NULL, &pCtx->pDepthStencilBuffer);
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
-	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORS8_UINT;
 	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
-	pCtx->m_pDevice->CreateDepthStencilView(pCtx->m_pDepthStencilBuffer, &depthStencilViewDesc, &pCtx->m_pDepthStencilView);
+	pCtx->pDevice->CreateDepthStencilView(pCtx->pDepthStencilBuffer, &depthStencilViewDesc, &pCtx->pDepthStencilView);
 
 	// RENDER TO TEXTURE
 	// *****************
 
 	// Create a texture for the pre-processed frame
-	pCtx->m_preprocessedFrame = CreateTexture2D(
+	pCtx->preprocessedFrame = CreateTexture2D(
 		1800,
 		1000,
 		DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -116,7 +116,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
-	pCtx->m_pDevice->CreateRenderTargetView(pCtx->m_preprocessedFrame.m_pTexture2D, &renderTargetViewDesc, &pCtx->m_pPreprocessedFrameView);
+	pCtx->pDevice->CreateRenderTargetView(pCtx->preprocessedFrame.pTexture2D, &renderTargetViewDesc, &pCtx->pPreprocessedFrameView);
 
 
 	// D3D11_FILTER_MIN_MAG_MIP_POINT
@@ -130,7 +130,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	pCtx->m_pDevice->CreateSamplerState(&sampDesc, &pCtx->m_frameTextureSampler);
+	pCtx->pDevice->CreateSamplerState(&sampDesc, &pCtx->frameTextureSampler);
 
 	// Create a quad to render onto
 	std::vector<Vertex> quadVertices = {
@@ -139,10 +139,10 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 		Vertex(Vec3f(1.f, -1.f, 0.5f)),
 		Vertex(Vec3f(1.f, 1.f, 0.5f))
 	};
-	quadVertices[0].m_texCoords = Vec2f(0.0f, 1.0f);
-	quadVertices[1].m_texCoords = Vec2f(0.0f, 0.0f);
-	quadVertices[2].m_texCoords = Vec2f(1.0f, 1.0f);
-	quadVertices[3].m_texCoords = Vec2f(1.0f, 0.0f);
+	quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
+	quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
+	quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
+	quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
@@ -155,16 +155,16 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	D3D11_SUBRESOURCE_DATA vertexBufferData;
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = quadVertices.data();
-	Graphics::GetContext()->m_pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->m_pFullScreenVertBuffer);
+	Graphics::GetContext()->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->pFullScreenVertBuffer);
 
 	// Compile and create post processing shaders
-	pCtx->m_postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
+	pCtx->postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
 
 
 
-	pCtx->m_baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
+	pCtx->baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
 
-	pCtx->m_pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
+	pCtx->pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
 	DebugDraw::Detail::Init();
 
@@ -172,7 +172,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplSDL2_InitForVulkan(pWindow);
-	ImGui_ImplDX11_Init(pCtx->m_pDevice, pCtx->m_pDeviceContext);
+	ImGui_ImplDX11_Init(pCtx->pDevice, pCtx->pDeviceContext);
 
 	io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
 
@@ -183,72 +183,72 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 void Graphics::NewFrame()
 {
 	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplSDL2_NewFrame(pCtx->m_pWindow);
+	ImGui_ImplSDL2_NewFrame(pCtx->pWindow);
 	ImGui::NewFrame();
 }
 
 void Graphics::RenderFrame()
 {
 	// First we draw the scene into a render target
-	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pPreprocessedFrameView, pCtx->m_pDepthStencilView);
+	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pPreprocessedFrameView, pCtx->pDepthStencilView);
 
 	// clear the back buffer to black
 	float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
-	pCtx->m_pDeviceContext->ClearRenderTargetView(pCtx->m_pPreprocessedFrameView, color);
-	pCtx->m_pDeviceContext->ClearDepthStencilView(pCtx->m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pPreprocessedFrameView, color);
+	pCtx->pDeviceContext->ClearDepthStencilView(pCtx->pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	D3D11_VIEWPORT viewport;
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
-	viewport.Width = pCtx->m_windowWidth /  pCtx->m_pixelScale;
-	viewport.Height = pCtx->m_windowHeight / pCtx->m_pixelScale;
+	viewport.Width = pCtx->windowWidth /  pCtx->pixelScale;
+	viewport.Height = pCtx->windowHeight / pCtx->pixelScale;
 	viewport.MaxDepth = 1.0f;
 	viewport.MinDepth = 0.0f;
-	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
+	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
 
 	// Set Shaders to active
-	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_baseShader.m_pVertexShader, 0, 0);
-	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_baseShader.m_pPixelShader, 0, 0);
-	pCtx->m_pDeviceContext->GSSetShader(pCtx->m_baseShader.m_pGeometryShader, 0, 0);
+	pCtx->pDeviceContext->VSSetShader(pCtx->baseShader.pVertexShader, 0, 0);
+	pCtx->pDeviceContext->PSSetShader(pCtx->baseShader.pPixelShader, 0, 0);
+	pCtx->pDeviceContext->GSSetShader(pCtx->baseShader.pGeometryShader, 0, 0);
 
-	pCtx->m_pDeviceContext->IASetInputLayout(pCtx->m_baseShader.m_pVertLayout);
+	pCtx->pDeviceContext->IASetInputLayout(pCtx->baseShader.pVertLayout);
 
-	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
+	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
 
-	for (RenderProxy* proxy : pCtx->m_renderQueue)
+	for (RenderProxy* proxy : pCtx->renderQueue)
 	{
 		proxy->Draw();
 	}
-	pCtx->m_renderQueue.clear();
-	pCtx->m_pFontRender->DrawQueue();
+	pCtx->renderQueue.clear();
+	pCtx->pFontRender->DrawQueue();
 	DebugDraw::Detail::DrawQueue();
 
 
 	// Now we change the render target to the swap chain back buffer, render onto a quad, and then render imgui
-	pCtx->m_pDeviceContext->OMSetRenderTargets(1, &pCtx->m_pBackBuffer, NULL);
-	pCtx->m_pDeviceContext->ClearRenderTargetView(pCtx->m_pBackBuffer, color);
+	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBackBuffer, NULL);
+	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBackBuffer, color);
 
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
-	viewport.Width = pCtx->m_windowWidth;
-	viewport.Height = pCtx->m_windowHeight;
+	viewport.Width = pCtx->windowWidth;
+	viewport.Height = pCtx->windowHeight;
 	viewport.MaxDepth = 1.0f;
 	viewport.MinDepth = 0.0f;
-	pCtx->m_pDeviceContext->RSSetViewports(1, &viewport);
+	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
 
-	pCtx->m_pDeviceContext->VSSetShader(pCtx->m_postProcessShader.m_pVertexShader, 0, 0);
-	pCtx->m_pDeviceContext->PSSetShader(pCtx->m_postProcessShader.m_pPixelShader, 0, 0);
-	pCtx->m_pDeviceContext->GSSetShader(pCtx->m_postProcessShader.m_pGeometryShader, 0, 0);
-	pCtx->m_pDeviceContext->IASetInputLayout(pCtx->m_postProcessShader.m_pVertLayout);
+	pCtx->pDeviceContext->VSSetShader(pCtx->postProcessShader.pVertexShader, 0, 0);
+	pCtx->pDeviceContext->PSSetShader(pCtx->postProcessShader.pPixelShader, 0, 0);
+	pCtx->pDeviceContext->GSSetShader(pCtx->postProcessShader.pGeometryShader, 0, 0);
+	pCtx->pDeviceContext->IASetInputLayout(pCtx->postProcessShader.pVertLayout);
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	pCtx->m_pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->m_pFullScreenVertBuffer, &stride, &offset);
-	pCtx->m_pDeviceContext->PSSetShaderResources(0, 1, &pCtx->m_preprocessedFrame.m_pShaderResourceView);
-	pCtx->m_pDeviceContext->PSSetSamplers(0, 1, &pCtx->m_frameTextureSampler);
-	pCtx->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	pCtx->m_pDeviceContext->Draw(4, 0);
+	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+	pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
+	pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->frameTextureSampler);
+	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pCtx->pDeviceContext->Draw(4, 0);
 
 
 	// Draw Imgui
@@ -257,10 +257,10 @@ void Graphics::RenderFrame()
 	
 	// #TODO: should probably clear all render state that we set after rendering
 	ID3D11ShaderResourceView* pSRV = nullptr;
-	pCtx->m_pDeviceContext->PSSetShaderResources(0, 1, &pSRV);
+	pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pSRV);
 
 	// switch the back buffer and the front buffer
-	pCtx->m_pSwapChain->Present(0, 0);
+	pCtx->pSwapChain->Present(0, 0);
 }
 
 void Graphics::Shutdown()
@@ -270,7 +270,7 @@ void Graphics::Shutdown()
 
 void Graphics::SubmitProxy(RenderProxy* pRenderProxy)
 {
-	pCtx->m_renderQueue.push_back(pRenderProxy);
+	pCtx->renderQueue.push_back(pRenderProxy);
 }
 
 Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader)
@@ -315,12 +315,12 @@ Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool ha
 				pErrorBlob->Release();
 			}
 		}
-		hr = pCtx->m_pDevice->CreateGeometryShader(pGsBlob->GetBufferPointer(), pGsBlob->GetBufferSize(), nullptr, &shader.m_pGeometryShader);
+		hr = pCtx->pDevice->CreateGeometryShader(pGsBlob->GetBufferPointer(), pGsBlob->GetBufferSize(), nullptr, &shader.pGeometryShader);
 	}
 
 	// Create shader objects
-	hr = pCtx->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.m_pVertexShader);
-	hr = pCtx->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.m_pPixelShader);
+	hr = pCtx->pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.pVertexShader);
+	hr = pCtx->pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.pPixelShader);
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -329,7 +329,7 @@ Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool ha
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 	UINT numElements = ARRAYSIZE(layout);
-	hr = pCtx->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
+	hr = pCtx->pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.pVertLayout);
 
 	return shader;
 }
@@ -365,8 +365,8 @@ Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents, bool w
 	Shader shader;
 
 	// Create shader objects
-	hr = Graphics::GetContext()->m_pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.m_pVertexShader);
-	hr = Graphics::GetContext()->m_pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.m_pPixelShader);
+	hr = Graphics::GetContext()->pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.pVertexShader);
+	hr = Graphics::GetContext()->pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.pPixelShader);
 
 	if (withTexCoords)
 	{
@@ -377,7 +377,7 @@ Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents, bool w
 			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		UINT numElements = ARRAYSIZE(layout);
-		hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
+		hr = Graphics::GetContext()->pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.pVertLayout);
 	}
 	else
 	{
@@ -387,7 +387,7 @@ Graphics::Shader Graphics::LoadShaderFromText(std::string shaderContents, bool w
 			{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 		UINT numElements = ARRAYSIZE(layout);
-		hr = Graphics::GetContext()->m_pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.m_pVertLayout);
+		hr = Graphics::GetContext()->pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.pVertLayout);
 	}
 	return shader;
 }
@@ -409,7 +409,7 @@ Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT
 	ID3D11Texture2D* pTexture = nullptr;
 	if (data == nullptr)
 	{
-		pCtx->m_pDevice->CreateTexture2D(&textureDesc, nullptr, &pTexture);
+		pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &pTexture);
 	}
 	else
 	{
@@ -417,7 +417,7 @@ Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT
 		ZeroMemory(&textureBufferData, sizeof(textureBufferData));
 		textureBufferData.pSysMem = data;
 		textureBufferData.SysMemPitch = width;
-		pCtx->m_pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &pTexture);
+		pCtx->pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &pTexture);
 	}
 	
 	//pPreprocessingFrame->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("Texture 2D Preprocessed Frame"), "Texture 2D Preprocessed Frame");
@@ -429,7 +429,7 @@ Graphics::Texture2D Graphics::CreateTexture2D(int width, int height, DXGI_FORMAT
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
 	ID3D11ShaderResourceView* pShaderResourceView = nullptr;
-	pCtx->m_pDevice->CreateShaderResourceView(pTexture, &shaderResourceViewDesc, &pShaderResourceView);
+	pCtx->pDevice->CreateShaderResourceView(pTexture, &shaderResourceViewDesc, &pShaderResourceView);
 
 	return { pShaderResourceView, pTexture };
 }

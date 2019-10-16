@@ -7,9 +7,9 @@
 struct InputState
 {
 #define NKEYS 512
-	std::bitset<NKEYS> m_keyDowns;
-	std::bitset<NKEYS> m_keyUps;
-	std::bitset<NKEYS> m_keyStates;
+	std::bitset<NKEYS> keyDowns;
+	std::bitset<NKEYS> keyUps;
+	std::bitset<NKEYS> keyStates;
 };
 
 namespace Input

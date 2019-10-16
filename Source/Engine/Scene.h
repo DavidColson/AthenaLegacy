@@ -83,7 +83,7 @@ inline bool IsEntityValid(EntityID id)
 
 struct CName
 {
-	std::string m_name;
+	std::string name;
 
 	REFLECT()
 };
@@ -156,17 +156,17 @@ struct Scene
 	// Creates an entity, simply makes a new id and mask
 	EntityID NewEntity(const char* name)// #TODO: Move implementation to cpp
 	{
- 		if (!m_freeEntities.empty())
+ 		if (!freeEntities.empty())
 		{
-			EntityIndex newIndex = m_freeEntities.back();
-			m_freeEntities.pop_back();
-			m_entities[newIndex].m_id = CreateEntityId(newIndex, GetEntityVersion(m_entities[newIndex].m_id));
-			Assign<CName>(m_entities[newIndex].m_id)->m_name = name;
-			return m_entities[newIndex].m_id;
+			EntityIndex newIndex = freeEntities.back();
+			freeEntities.pop_back();
+			entities[newIndex].id = CreateEntityId(newIndex, GetEntityVersion(entities[newIndex].id));
+			Assign<CName>(entities[newIndex].id)->name = name;
+			return entities[newIndex].id;
 		}
-		m_entities.push_back({ CreateEntityId(EntityIndex(m_entities.size()), 0), ComponentMask() });
-		Assign<CName>(m_entities.back().m_id)->m_name = name;
-		return m_entities.back().m_id;
+		entities.push_back({ CreateEntityId(EntityIndex(entities.size()), 0), ComponentMask() });
+		Assign<CName>(entities.back().id)->name = name;
+		return entities.back().id;
 	}
 
 	void DestroyEntity(EntityID id)
@@ -176,14 +176,14 @@ struct Scene
 			// For each component ID, check the bitmask, if no, continue, if yes, destroy the component
 			std::bitset<MAX_COMPONENTS> mask;
 			mask.set(i, true);
-			if (mask == (m_entities[GetEntityIndex(id)].m_mask & mask))
+			if (mask == (entities[GetEntityIndex(id)].mask & mask))
 			{
-				m_componentPools[i]->destroy(GetEntityIndex(id));
+				componentPools[i]->destroy(GetEntityIndex(id));
 			}
 		}
-		m_entities[GetEntityIndex(id)].m_id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
-		m_entities[GetEntityIndex(id)].m_mask.reset(); // clear components
-		m_freeEntities.push_back(GetEntityIndex(id));
+		entities[GetEntityIndex(id)].id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
+		entities[GetEntityIndex(id)].mask.reset(); // clear components
+		freeEntities.push_back(GetEntityIndex(id));
 	}
 
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
@@ -191,39 +191,39 @@ struct Scene
 	template<typename T>
 	T* Assign(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
-		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+		if (entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
 
 		int componentId = GetId<T>();
-		if (m_componentPools.size() <= componentId) // Not enough component pool
+		if (componentPools.size() <= componentId) // Not enough component pool
 		{
-			m_componentPools.resize(componentId + 1, nullptr);
+			componentPools.resize(componentId + 1, nullptr);
 		}
-		if (m_componentPools[componentId] == nullptr) // New component, make a new pool
+		if (componentPools[componentId] == nullptr) // New component, make a new pool
 		{
-			m_componentPools[componentId] = new ComponentPool<T>(sizeof(T));
+			componentPools[componentId] = new ComponentPool<T>(sizeof(T));
 		}
 
 		// Check the mask so you're not overwriting a component
 		ASSERT(Has<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
 		
 		// Looks up the component in the pool, and initializes it with placement new
-		T* pComponent = new (static_cast<T*>(m_componentPools[componentId]->get(GetEntityIndex(id)))) T();
+		T* pComponent = new (static_cast<T*>(componentPools[componentId]->get(GetEntityIndex(id)))) T();
 
 		// Set the bit for this component to true
-		m_entities[GetEntityIndex(id)].m_mask.set(componentId);
+		entities[GetEntityIndex(id)].mask.set(componentId);
 		return pComponent;
 	}
 
 	template<typename T>
 	void Remove(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
-		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+		if (entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
 			return;
 
 		int componentId = GetId<T>();
 		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
-		m_entities[GetEntityIndex(id)].m_mask.reset(componentId); // Turn off the component bit
+		entities[GetEntityIndex(id)].mask.reset(componentId); // Turn off the component bit
 	}
 
 
@@ -232,12 +232,12 @@ struct Scene
 	template<typename T>
 	T* Get(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
-		if (m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+		if (entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
 
 		int componentId = GetId<T>();
 		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
-		T* pComponent = static_cast<T*>(m_componentPools[componentId]->get(GetEntityIndex(id)));
+		T* pComponent = static_cast<T*>(componentPools[componentId]->get(GetEntityIndex(id)));
 		return pComponent;
 	}
 
@@ -245,102 +245,102 @@ struct Scene
 	template<typename T>
 	bool Has(EntityID id)
 	{
-		if (!IsEntityValid(id) || m_entities[GetEntityIndex(id)].m_id != id) // ensures you're not accessing an entity that has been deleted
+		if (!IsEntityValid(id) || entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
 			return false;
 
 		int componentId = GetId<T>();
-		return m_entities[GetEntityIndex(id)].m_mask.test(componentId);
+		return entities[GetEntityIndex(id)].mask.test(componentId);
 	}
 
 	std::string GetEntityName(EntityID entity)
 	{
-		return Get<CName>(entity)->m_name;
+		return Get<CName>(entity)->name;
 	}
 
-	std::vector<BaseComponentPool*> m_componentPools;
+	std::vector<BaseComponentPool*> componentPools;
 
 	struct EntityDesc
 	{
-		EntityID m_id;
-		ComponentMask m_mask;
+		EntityID id;
+		ComponentMask mask;
 	};
-	std::vector<EntityDesc> m_entities;
-	std::vector<EntityIndex> m_freeEntities;
+	std::vector<EntityDesc> entities;
+	std::vector<EntityIndex> freeEntities;
 };
 
 // View into the Scene for a given set of components
 template<typename... ComponentTypes>
 struct SceneView
 {
-	SceneView(Scene& scene) : m_pScene(&scene) {
+	SceneView(Scene& scene) : pScene(&scene) {
 		if (sizeof...(ComponentTypes) == 0)
 		{
-			m_all = true;
+			all = true;
 		}
 		else
 		{
 			int componentIds[] = { 0, GetId<ComponentTypes>() ... };
 			for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)
-				m_componentMask.set(componentIds[i]);
+				componentMask.set(componentIds[i]);
 		}
 	}
 
 	struct Iterator
 	{
-		Iterator(Scene* pScene, EntityIndex index, ComponentMask mask, bool all) : m_pScene(pScene), m_index(index), m_mask(mask), m_all(all) {}
+		Iterator(Scene* pScene, EntityIndex index, ComponentMask mask, bool all) : pScene(pScene), index(index), mask(mask), all(all) {}
 
-		EntityID operator*() const { return m_pScene->m_entities[m_index].m_id; }
+		EntityID operator*() const { return pScene->entities[index].id; }
 		bool operator==(const Iterator& other) const 
 		{
-			return m_index == other.m_index || m_index == m_pScene->m_entities.size(); 
+			return index == other.index || index == pScene->entities.size(); 
 		}
 		bool operator!=(const Iterator& other) const 
 		{
-			return m_index != other.m_index && m_index != m_pScene->m_entities.size();
+			return index != other.index && index != pScene->entities.size();
 		}
 
 		bool ValidIndex()
 		{
 			return 
 				// It's a valid entity ID
-				IsEntityValid(m_pScene->m_entities[m_index].m_id) && 
+				IsEntityValid(pScene->entities[index].id) && 
 				// It has the correct component mask
-				(m_all || m_mask == (m_mask & m_pScene->m_entities[m_index].m_mask));
+				(all || mask == (mask & pScene->entities[index].mask));
 		}
 
 		Iterator& operator++()
 		{
 			do
 			{
-				m_index++;
-			} while (m_index < m_pScene->m_entities.size() && !ValidIndex());
+				index++;
+			} while (index < pScene->entities.size() && !ValidIndex());
 			return *this;
 		}
 
-		EntityIndex m_index;
-		Scene* m_pScene;
-		ComponentMask m_mask;
-		bool m_all{ false };
+		EntityIndex index;
+		Scene* pScene;
+		ComponentMask mask;
+		bool all{ false };
 	};
 
 	const Iterator begin() const 
 	{
 		int firstIndex = 0;
-		while (firstIndex < m_pScene->m_entities.size() && // Checking we're not overflowing
-			(m_componentMask != (m_componentMask & m_pScene->m_entities[firstIndex].m_mask) // Does this index have the right components?
-			|| !IsEntityValid(m_pScene->m_entities[firstIndex].m_id))) // Does this index have a valid entity?
+		while (firstIndex < pScene->entities.size() && // Checking we're not overflowing
+			(componentMask != (componentMask & pScene->entities[firstIndex].mask) // Does this index have the right components?
+			|| !IsEntityValid(pScene->entities[firstIndex].id))) // Does this index have a valid entity?
 		{
 			firstIndex++;
 		}
-		return Iterator(m_pScene, firstIndex, m_componentMask, m_all);
+		return Iterator(pScene, firstIndex, componentMask, all);
 	}
 
 	const Iterator end() const
 	{
-		return Iterator(m_pScene, EntityIndex(m_pScene->m_entities.size()), m_componentMask, m_all);
+		return Iterator(pScene, EntityIndex(pScene->entities.size()), componentMask, all);
 	}
 
-	Scene* m_pScene{ nullptr };
-	ComponentMask m_componentMask;
-	bool m_all{ false };
+	Scene* pScene{ nullptr };
+	ComponentMask componentMask;
+	bool all{ false };
 };
