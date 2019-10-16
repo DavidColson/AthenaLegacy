@@ -145,6 +145,21 @@ struct Asteroids : public IGame
 		srand(unsigned int(time(nullptr)));
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
 
+		// Create the ship
+		EntityID ship = scene.NewEntity("Player Ship");
+		ASSERT(ship == PLAYER_ID, "Player must be spawned first");
+		CTransform* pTransform = scene.Assign<CTransform>(ship);
+
+		const float w = Graphics::GetContext()->windowWidth;
+		const float h = Graphics::GetContext()->windowHeight;
+		pTransform->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+		pTransform->sca = Vec3f(30.f, 35.f, 1.0f);
+
+		CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
+		scene.Assign<CCollidable>(ship)->radius = 17.f;
+		scene.Assign<CDrawable>(ship)->renderProxy = Game::g_shipMesh;
+		CPlayerUI* pPlayerUI = scene.Assign<CPlayerUI>(ship);
+
 		// Create some asteroids
 		for (int i = 0; i < 15; i++)
 		{
@@ -162,19 +177,6 @@ struct Asteroids : public IGame
 			scene.Assign<CDrawable>(asteroid)->renderProxy = Game::g_asteroidMeshes[rand() % 4];
 			scene.Assign<CAsteroid>(asteroid);
 		}
-
-		// Create the ship
-		EntityID ship = scene.NewEntity("Player Ship");
-		CTransform* pTransform = scene.Assign<CTransform>(ship);
-
-		const float w = Graphics::GetContext()->windowWidth;
-		const float h = Graphics::GetContext()->windowHeight;
-		pTransform->pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
-		pTransform->sca = Vec3f(30.f, 35.f, 1.0f);
-
-		CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
-		scene.Assign<CCollidable>(ship)->radius = 17.f;
-		scene.Assign<CDrawable>(ship)->renderProxy = Game::g_shipMesh;
 
 		// Create the lives
 		float offset = 0.0f;
@@ -196,6 +198,7 @@ struct Asteroids : public IGame
 		// Create score counters
 		{
 			EntityID currentScoreEnt =scene.NewEntity("Current Score");
+			pPlayerUI->currentScoreEntity = currentScoreEnt;
 			scene.Assign<CText>(currentScoreEnt)->text = "0";
 			scene.Assign<CTransform>(currentScoreEnt)->pos = Vec3f(150.0f, h - 53.0f, 0.0f);
 			scene.Assign<CPlayerScore>(currentScoreEnt);
@@ -208,12 +211,15 @@ struct Asteroids : public IGame
 		// Create game over text
 		{
 			EntityID gameOver = scene.NewEntity("Game Over");
+			pPlayerUI->gameOverEntity = gameOver;
 			scene.Assign<CTransform>(gameOver)->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 			scene.Assign<CGameOver>(gameOver);
 			CText* pText = scene.Assign<CText>(gameOver);
 			pText->text = "Game Over";
 			pText->visible = false;
 		}
+
+
 	}
 
 	void OnFrame(Scene& scene, float deltaTime) override

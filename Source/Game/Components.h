@@ -58,6 +58,12 @@ struct CPlayerScore
 	int score;
 };
 
+struct CPlayerUI
+{
+	EntityID currentScoreEntity;
+	EntityID gameOverEntity;
+};
+
 struct CBullet
 {
 	float speed = 300.0f;

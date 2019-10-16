@@ -51,7 +51,7 @@ scene.Assign<Shape>(circle);
 typedef unsigned int EntityIndex;
 typedef unsigned int EntityVersion;
 typedef unsigned long long EntityID;
-const int MAX_COMPONENTS = 10;
+const int MAX_COMPONENTS = 20;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
@@ -98,6 +98,7 @@ int GetId() // Move this whole function to the detail namespace
 	// Allows us to assign a unique id to each component type, since each component type has it's own instance of this function
 	// NOTE THIS IS NOT THREADSAFE PROBABLY DO SOMETHING ABOUT THAT
 	static int s_componentId = s_componentCounter++;
+	ASSERT(s_componentId < MAX_COMPONENTS, "Too many component types, above supported amount");
 	return s_componentId;
 }
 

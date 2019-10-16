@@ -47,27 +47,19 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), scene.GetEntityName(bullet).c_str(), GetEntityIndex(asteroid), scene.GetEntityName(asteroid).c_str());
 
 	// Do scoring for the player
-	// #RefactorNote: Another use of single entity for loop lookup
-	// Consider player storing the entity Id of the score entity. Or a HUD singleton storing the entity ID.
-	for (EntityID score : SceneView<CPlayerScore, CText>(scene))
-	{
-		int hits = scene.Get<CAsteroid>(asteroid)->hitCount;
+	EntityID scoreEnt = scene.Get<CPlayerUI>(PLAYER_ID)->currentScoreEntity;
+	CPlayerScore* pPlayerScore = scene.Get<CPlayerScore>(scoreEnt);
+	CText* pText = scene.Get<CText>(scoreEnt);
 
-		CPlayerScore* pPlayerScore = scene.Get<CPlayerScore>(score);
-		CText* pText = scene.Get<CText>(score);
-
-		// #RefactorNote: Get rid of branching here by storing the score for an asteroid in the asteroid
-		if (hits == 0)
-			pPlayerScore->score += 20;
+	int hits = scene.Get<CAsteroid>(asteroid)->hitCount;
+	if (hits == 0)
+		pPlayerScore->score += 20;
+	if (hits == 1)
+		pPlayerScore->score += 50;
+	if (hits == 2)
+		pPlayerScore->score += 100;
 		
-		if (hits == 1)
-			pPlayerScore->score += 50;
-
-		if (hits == 2)
-			pPlayerScore->score += 100;
-			
-		scene.Get<CText>(score)->text = StringFormat("%i", pPlayerScore->score);
-	}
+	scene.Get<CText>(scoreEnt)->text = StringFormat("%i", pPlayerScore->score);
 
 	// Asteroid vs bullet collision
 	if (scene.Get<CAsteroid>(asteroid)->hitCount >= 2) // Smallest type asteroid, destroy and return
@@ -106,7 +98,6 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	if (!scene.Has<CDrawable>(player))
 		return; // Can't kill a player who is dead
 
-
 	CPlayerControl* pPlayerControl = scene.Get<CPlayerControl>(player);
 	scene.Remove<CDrawable>(player);
 	pPlayerControl->lives -= 1;
@@ -116,15 +107,8 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	
 	if (pPlayerControl->lives <= 0)
 	{
-		// #RefactorNote: We're iterating the entire list of entities to find the one we want to tell it to be invisible.
-		// Maybe this isn't ideal. Maybe we should have a system for updating UI elements that can figure out when stuff
-		// Needs updating and do it there.
-		// Could have a HUD singleton component, that stores entity Ids for each hud component to update
-		// Or player's themselves store a refernece to the game over entity
-		for (EntityID gameOver : SceneView<CText, CGameOver>(scene))
-		{
-			scene.Get<CText>(gameOver)->visible = true;
-		}
+		EntityID gameOverEnt = scene.Get<CPlayerUI>(player)->gameOverEntity;
+		scene.Get<CText>(gameOverEnt)->visible = true;
 		return; // Game over
 	} 
 
@@ -168,22 +152,15 @@ void CollisionSystemUpdate(Scene& scene, float deltaTime)
 		if(bContinueOuter) // The asteroid has been deleted, so skip
 			continue;
 
-		// #RefactorNote, get the player's ID from a singleton and completely avoid this loop
-		for (EntityID player : SceneView<CPlayerControl>(scene))
+		float playerRad = scene.Get<CCollidable>(PLAYER_ID)->radius;
+		float distance = (scene.Get<CTransform>(asteroid)->pos - scene.Get<CTransform>(PLAYER_ID)->pos).GetLength();
+		float collisionDistance = asteroidRad + playerRad;
+		
+		if (distance < collisionDistance)
 		{
-			float playerRad = scene.Get<CCollidable>(player)->radius;
-
-			float distance = (scene.Get<CTransform>(asteroid)->pos - scene.Get<CTransform>(player)->pos).GetLength();
-			float collisionDistance = asteroidRad + playerRad;
-			
-			if (distance < collisionDistance)
-			{
-				OnPlayerAsteroidCollision(scene, player, asteroid);
-				bContinueOuter = true; break;
-			}
-		}
-		if(bContinueOuter) // The asteroid has been deleted, so skip
+			OnPlayerAsteroidCollision(scene, PLAYER_ID, asteroid);
 			continue;
+		}
 	}
 }
 
@@ -263,7 +240,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		CTransform* pTransform = scene.Get<CTransform>(id);
 		CPlayerControl* pControl = scene.Get<CPlayerControl>(id);
 
-		// #RefactorNote: Probably clearer to have an "isDead" variable on PlayerControl, and check that here instead
+		// If player doesn't have a drawable component we consider them dead
 		if (!scene.Has<CDrawable>(id))
 		{
 			if (pControl->respawnTimer > 0.0f)
