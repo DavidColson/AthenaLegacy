@@ -43,6 +43,7 @@ scene.Assign<Shape>(circle);
 
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
+#include "Log.h"
 
 #include <bitset>
 #include <vector>
@@ -77,7 +78,15 @@ inline bool IsEntityValid(EntityID id)
 #define INVALID_ENTITY CreateEntityId(EntityIndex(-1), 0)
 
 
+// Built-in Components
+// ******************
 
+struct CName
+{
+	std::string m_name;
+
+	REFLECT()
+};
 
 // Gives you the id within this world for a given component type
 extern int s_componentCounter; // #TODO: Move this to a detail namespace
@@ -152,10 +161,11 @@ struct Scene
 			EntityIndex newIndex = m_freeEntities.back();
 			m_freeEntities.pop_back();
 			m_entities[newIndex].m_id = CreateEntityId(newIndex, GetEntityVersion(m_entities[newIndex].m_id));
-			m_entities[newIndex].m_name = name;
+			Assign<CName>(m_entities[newIndex].m_id)->m_name = name;
 			return m_entities[newIndex].m_id;
 		}
-		m_entities.push_back({ CreateEntityId(EntityIndex(m_entities.size()), 0), name, ComponentMask() });
+		m_entities.push_back({ CreateEntityId(EntityIndex(m_entities.size()), 0), ComponentMask() });
+		Assign<CName>(m_entities.back().m_id)->m_name = name;
 		return m_entities.back().m_id;
 	}
 
@@ -242,9 +252,9 @@ struct Scene
 		return m_entities[GetEntityIndex(id)].m_mask.test(componentId);
 	}
 
-	const char* GetEntityName(EntityID entity) const
+	std::string GetEntityName(EntityID entity)
 	{
-		return m_entities[GetEntityIndex(entity)].m_name;
+		return Get<CName>(entity)->m_name;
 	}
 
 	std::vector<BaseComponentPool*> m_componentPools;
@@ -252,7 +262,6 @@ struct Scene
 	struct EntityDesc
 	{
 		EntityID m_id;
-		const char* m_name; // #RefactorNote: Move this to a component, store no data in here that is not necessary.
 		ComponentMask m_mask;
 	};
 	std::vector<EntityDesc> m_entities;

@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <ThirdParty/Imgui/imgui.h>
+#include <ThirdParty/Imgui/misc/cpp/imgui_stdlib.h>
 
 namespace {
 	bool showEditor = true;
@@ -108,6 +109,10 @@ void ShowEntityInspector(Scene& scene)
 						bool* boolean = member.Get<bool>(pComponentData);
 						ImGui::Checkbox(member.m_name, boolean);
 					}
+					else if (member.IsType<std::string>())
+					{
+						ImGui::InputText(member.m_name, member.Get<std::string>(pComponentData));
+					}
 					else if (member.IsType<EntityID>())
 					{
 						EntityID& entity = *member.Get<EntityID>(pComponentData);
@@ -135,7 +140,7 @@ void ShowEntityList(Scene& scene)
 		if (selectedEntity == entity)
 			node_flags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "%i - %s", GetEntityIndex(entity), scene.GetEntityName(entity));
+		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "%i - %s", GetEntityIndex(entity), scene.GetEntityName(entity).c_str());
 		if (ImGui::IsItemClicked())
 			selectedEntity = entity;
 	}
@@ -206,5 +211,5 @@ void Editor::ShowEditor(Scene& scene, bool& shutdown, double realFrameTime, doub
 	ShowEntityInspector(scene);
 	ShowEntityList(scene);
 	ShowFrameStats(realFrameTime, observedFrameTime);
-	//ImGui::ShowDemoWindow();
+	ImGui::ShowDemoWindow();
 }

@@ -218,7 +218,7 @@ struct Asteroids : public IGame
 
 	void OnFrame(Scene& scene, float deltaTime) override
 	{
-		PROFILE("Asteroids::OnFrame");
+		PROFILE();
 
 		ShipControlSystemUpdate(scene, deltaTime);
 		MovementSystemUpdate(scene, deltaTime);
