@@ -64,9 +64,17 @@ struct CPlayerUI
 	EntityID gameOverEntity;
 };
 
+struct CInvincibility
+{
+	float m_timer{ 5.0f };
+	float m_flashTimer{ 0.3f };
+
+	REFLECT()
+};
+
 struct CBullet
 {
-	float speed = 300.0f;
+	float speed{ 300.0f };
 
 	REFLECT()
 };

@@ -152,14 +152,43 @@ void CollisionSystemUpdate(Scene& scene, float deltaTime)
 		if(bContinueOuter) // The asteroid has been deleted, so skip
 			continue;
 
-		float playerRad = scene.Get<CCollidable>(PLAYER_ID)->radius;
-		float distance = (scene.Get<CTransform>(asteroid)->pos - scene.Get<CTransform>(PLAYER_ID)->pos).GetLength();
-		float collisionDistance = asteroidRad + playerRad;
-		
-		if (distance < collisionDistance)
+		if (!scene.Has<CInvincibility>(PLAYER_ID))
 		{
-			OnPlayerAsteroidCollision(scene, PLAYER_ID, asteroid);
-			continue;
+			float playerRad = scene.Get<CCollidable>(PLAYER_ID)->radius;
+			float distance = (scene.Get<CTransform>(asteroid)->pos - scene.Get<CTransform>(PLAYER_ID)->pos).GetLength();
+			float collisionDistance = asteroidRad + playerRad;
+			
+			if (distance < collisionDistance)
+			{
+				OnPlayerAsteroidCollision(scene, PLAYER_ID, asteroid);
+				continue;
+			}
+		}
+	}
+}
+
+void InvincibilitySystemUpdate(Scene& scene, float deltaTime)
+{
+	PROFILE();
+
+	if (scene.Has<CInvincibility>(PLAYER_ID))
+	{
+		CInvincibility* pInvincibility = scene.Get<CInvincibility>(PLAYER_ID);
+		pInvincibility->m_timer -= deltaTime;
+		if (pInvincibility->m_timer <= 0.0f)
+		{
+			scene.Remove<CInvincibility>(PLAYER_ID);
+			return;
+		}
+
+		pInvincibility->m_flashTimer -= deltaTime;
+		if (pInvincibility->m_flashTimer <= 0.0f)
+		{
+			pInvincibility->m_flashTimer = 0.3f;
+			if (scene.Has<CDrawable>(PLAYER_ID))
+				scene.Remove<CDrawable>(PLAYER_ID);
+			else
+				scene.Assign<CDrawable>(PLAYER_ID)->renderProxy = Game::g_shipMesh;
 		}
 	}
 }
@@ -250,6 +279,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 				{
 					// #RefactorNote: Assign and remove a visibility component instead
 					scene.Assign<CDrawable>(id)->renderProxy = Game::g_shipMesh;
+					scene.Assign<CInvincibility>(id);
 				}
 			}
 			return; // Player not being drawn is dead

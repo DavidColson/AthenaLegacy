@@ -6,6 +6,8 @@
 
 void CollisionSystemUpdate(Scene& scene, float deltaTime);
 
+void InvincibilitySystemUpdate(Scene& scene, float deltaTime);
+
 void AsteroidSystemUpdate(Scene& scene, float deltaTime);
 
 void DrawShapeSystem(Scene& scene, float deltaTime);

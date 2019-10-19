@@ -229,6 +229,7 @@ struct Asteroids : public IGame
 		ShipControlSystemUpdate(scene, deltaTime);
 		MovementSystemUpdate(scene, deltaTime);
 		CollisionSystemUpdate(scene, deltaTime);
+		InvincibilitySystemUpdate(scene, deltaTime);
 		DrawShapeSystem(scene, deltaTime);
 		DrawTextSystem(scene, deltaTime);
 	}
