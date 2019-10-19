@@ -72,11 +72,15 @@ struct RenderContext
 	// Scene is rendered into the preprocessed frame render target, 
 	// where it'll then be re-rendered for post processing
 	Graphics::Texture2D preprocessedFrame;
+	Graphics::Texture2D blurredFrame[2]; // frame buffer for bloom, ping pongs for each iteration
 	ID3D11SamplerState* frameTextureSampler;
 	ID3D11RenderTargetView* pPreprocessedFrameView;
+	ID3D11RenderTargetView* pBlurredFrameView[2];
 	ID3D11Buffer * pFullScreenVertBuffer{ nullptr };
 	Graphics::Shader postProcessShader;
+	Graphics::Shader bloomShader;
 	ID3D11Buffer* pPostProcessDataBuffer;
+	ID3D11Buffer* pBloomDataBuffer;
 
 	Graphics::Shader baseShader;
 

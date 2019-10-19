@@ -34,18 +34,21 @@ VS_OUTPUT VSMain(float4 inPos : POSITION, float4 inCol : COLOR, float2 inTex : T
 	return output;
 }
 
-Texture2D shaderTexture;
+Texture2D originalFrame : register(t0);
+Texture2D blurredFrame : register(t1);
 SamplerState SampleType;
 float4 PSMain(VS_OUTPUT input) : SV_TARGET
 {
-	float4 textureColor;
+	// Comment out to disable post processing
+	//return blurredFrame.Sample(SampleType, input.Tex);
+
+	// Warp the UV coordiantes to make the screen warp effect
 	float2 q = input.Tex.xy;
 	float2 uv = q;
 	uv = curve( uv );
-	textureColor = shaderTexture.Sample(SampleType, float2(uv.x,uv.y));
-
 
 	float3 col;
+
 
 	// This offsets the UV lookuups over time and makes pixels move around a little bit
 	float x =  
@@ -60,11 +63,15 @@ float4 PSMain(VS_OUTPUT input) : SV_TARGET
 	// Offsets for each colour channel lookup, use the vignette value to make the chromatic abberation worse at the edge of the screen
 	float3 colorOffX = float3(0.0015, 0.0, -0.0017) * (1.0 - pow(vig, 0.8) + 0.3);
 	float3 colorOffY = float3(0.0, -0.0016, 0.0) * (1.0 - pow(vig, 0.8) + 0.3);
+	/*float3 colorOffX = float3(0.0, 0.0, 0.0);
+	float3 colorOffY = float3(0.0, 0.0, 0.0);*/
 
 	// Sample the frame texture, and then offset the channels to create some chromatic abberation
-	col.r = shaderTexture.Sample(SampleType, float2(x + uv.x + colorOffX.r, uv.y + colorOffY.r)).x + 0.1;
-	col.g = shaderTexture.Sample(SampleType, float2(x + uv.x + colorOffX.g, uv.y + colorOffY.g)).y + 0.1;
-	col.b = shaderTexture.Sample(SampleType, float2(x + uv.x + colorOffX.b, uv.y + colorOffY.b)).z + 0.1;
+	col.r = originalFrame.Sample(SampleType, float2(x + uv.x + colorOffX.r, uv.y + colorOffY.r)).x + 0.1;
+	col.g = originalFrame.Sample(SampleType, float2(x + uv.x + colorOffX.g, uv.y + colorOffY.g)).y + 0.1;
+	col.b = originalFrame.Sample(SampleType, float2(x + uv.x + colorOffX.b, uv.y + colorOffY.b)).z + 0.1;
+
+	col += blurredFrame.Sample(SampleType, uv) * 1.5f;
 
 	// Some kind of pre vignette colour adjustment
 	col = clamp(col*0.6+0.4*col*col*1.0,0.0,1.0);

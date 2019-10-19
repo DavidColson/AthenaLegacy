@@ -33,6 +33,13 @@ struct cbPostProcessShaderData
 };
 cbPostProcessShaderData postProcessShaderData;
 
+struct cbBloomShaderData
+{
+	Vec2f direction;
+	Vec2f resolution;
+};
+cbBloomShaderData bloomShaderData;
+
 void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 {
 	pCtx = new RenderContext();
@@ -111,7 +118,7 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	// RENDER TO TEXTURE
 	// *****************
 
-	// Create a texture for the pre-processed frame
+	// Create a texture for the pre-processed and blurring frames
 	pCtx->preprocessedFrame = CreateTexture2D(
 		1800,
 		1000,
@@ -125,6 +132,18 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	pCtx->pDevice->CreateRenderTargetView(pCtx->preprocessedFrame.pTexture2D, &renderTargetViewDesc, &pCtx->pPreprocessedFrameView);
+	
+	for (int i = 0; i < 2; ++i)
+	{
+		pCtx->blurredFrame[i] = CreateTexture2D(
+				900,
+				500,
+				DXGI_FORMAT_R32G32B32A32_FLOAT,
+				nullptr,
+				D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
+			);
+		pCtx->pDevice->CreateRenderTargetView(pCtx->blurredFrame[i].pTexture2D, &renderTargetViewDesc, &pCtx->pBlurredFrameView[i]);
+	}
 
 
 	// D3D11_FILTER_MIN_MAG_MIP_POINT
@@ -175,8 +194,19 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	ppdBufferDesc.MiscFlags = 0;
 	Graphics::GetContext()->pDevice->CreateBuffer(&ppdBufferDesc, nullptr, &pCtx->pPostProcessDataBuffer);
 
+	// Create bloom shader data buffer
+	D3D11_BUFFER_DESC bloomBufferDesc;
+	ZeroMemory(&bloomBufferDesc, sizeof(bloomBufferDesc));
+	bloomBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	bloomBufferDesc.ByteWidth = sizeof(cbBloomShaderData);
+	bloomBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bloomBufferDesc.CPUAccessFlags = 0;
+	bloomBufferDesc.MiscFlags = 0;
+	Graphics::GetContext()->pDevice->CreateBuffer(&bloomBufferDesc, nullptr, &pCtx->pBloomDataBuffer);
+
 	// Compile and create post processing shaders
 	pCtx->postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
+	pCtx->bloomShader = LoadShaderFromFile(L"shaders/Bloom.hlsl", false);
 
 
 
@@ -243,28 +273,81 @@ void Graphics::RenderFrame()
 	DebugDraw::Detail::DrawQueue();
 
 
-	// Now we change the render target to the swap chain back buffer, render onto a quad, and then render imgui
+	// Now we'll do all our post processing passes
+	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBlurredFrameView[0], nullptr);
+	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBlurredFrameView[0], color);
+
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = 900;
+	viewport.Height = 500;
+	viewport.MaxDepth = 1.0f;
+	viewport.MinDepth = 0.0f;
+	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
+
+	// Bind bloom shader data
+	pCtx->pDeviceContext->VSSetShader(pCtx->bloomShader.pVertexShader, 0, 0);
+	pCtx->pDeviceContext->PSSetShader(pCtx->bloomShader.pPixelShader, 0, 0);
+	pCtx->pDeviceContext->GSSetShader(pCtx->bloomShader.pGeometryShader, 0, 0);
+	pCtx->pDeviceContext->IASetInputLayout(pCtx->bloomShader.pVertLayout);
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+	pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->frameTextureSampler);
+	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	bloomShaderData.resolution = Vec2f(900, 500);
+	
+	// Iteratively calculate bloom
+	ID3D11RenderTargetView* nullViews[] = { nullptr };
+	int blurIterations = 8;
+	for (int i = 0; i < blurIterations; ++i)
+	{
+		// Bind data
+		float radius = float(blurIterations - i - 1) * 0.04f;
+		bloomShaderData.direction = i % 2 == 0 ? Vec2f(radius, 0.0f) : Vec2f(0.0f, radius);
+		//bloomShaderData.direction = Vec2f(0.0f, radius);
+		Graphics::GetContext()->pDeviceContext->UpdateSubresource(pCtx->pBloomDataBuffer, 0, nullptr, &bloomShaderData, 0, 0);
+		Graphics::GetContext()->pDeviceContext->PSSetConstantBuffers(0, 1, &(pCtx->pBloomDataBuffer));
+
+		if (i == 0)
+		{
+			// First iteration, bind the plain, preprocessed frame
+			pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
+		}
+		else
+		{
+			pCtx->pDeviceContext->OMSetRenderTargets(1, nullViews, nullptr);
+			pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->blurredFrame[(i + 1) % 2].pShaderResourceView);
+			pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBlurredFrameView[i % 2], nullptr);
+			pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBlurredFrameView[i % 2], color);
+		}
+
+		pCtx->pDeviceContext->Draw(4, 0);
+	}
+
+	
+	// Now we'll actually render onto the backbuffer and do our final post process stage
 	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBackBuffer, NULL);
 	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBackBuffer, color);
 
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
-	viewport.Width = pCtx->windowWidth;
-	viewport.Height = pCtx->windowHeight;
+	viewport.Width = 1800;
+	viewport.Height = 1000;
 	viewport.MaxDepth = 1.0f;
 	viewport.MinDepth = 0.0f;
 	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
 
-	
 	pCtx->pDeviceContext->VSSetShader(pCtx->postProcessShader.pVertexShader, 0, 0);
 	pCtx->pDeviceContext->PSSetShader(pCtx->postProcessShader.pPixelShader, 0, 0);
 	pCtx->pDeviceContext->GSSetShader(pCtx->postProcessShader.pGeometryShader, 0, 0);
 	pCtx->pDeviceContext->IASetInputLayout(pCtx->postProcessShader.pVertLayout);
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
 	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
 	pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
+	pCtx->pDeviceContext->PSSetShaderResources(1, 1, &pCtx->blurredFrame[1].pShaderResourceView);
 	pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->frameTextureSampler);
 	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	
@@ -273,19 +356,21 @@ void Graphics::RenderFrame()
 	Graphics::GetContext()->pDeviceContext->UpdateSubresource(pCtx->pPostProcessDataBuffer, 0, nullptr, &postProcessShaderData, 0, 0);
 	Graphics::GetContext()->pDeviceContext->PSSetConstantBuffers(0, 1, &(pCtx->pPostProcessDataBuffer));
 
+	// Draw post processed frame
 	pCtx->pDeviceContext->Draw(4, 0);
 
 
 	// Draw Imgui
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-	
+
 	// #TODO: should probably clear all render state that we set after rendering
 	ID3D11ShaderResourceView* pSRV = nullptr;
 	pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pSRV);
 
 	// switch the back buffer and the front buffer
 	pCtx->pSwapChain->Present(0, 0);
+	pCtx->pDeviceContext->ClearState();
 }
 
 void Graphics::Shutdown()
