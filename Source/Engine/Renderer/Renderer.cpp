@@ -25,6 +25,14 @@ RenderContext* Graphics::GetContext()
 	return pCtx;
 }
 
+struct cbPostProcessShaderData
+{
+	Vec2f resolution;
+	float time{ 0.1f };
+	float pad{ 0.0f };
+};
+cbPostProcessShaderData postProcessShaderData;
+
 void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 {
 	pCtx = new RenderContext();
@@ -157,6 +165,16 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	vertexBufferData.pSysMem = quadVertices.data();
 	Graphics::GetContext()->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->pFullScreenVertBuffer);
 
+	// Create post process shader data buffer
+	D3D11_BUFFER_DESC ppdBufferDesc;
+	ZeroMemory(&ppdBufferDesc, sizeof(ppdBufferDesc));
+	ppdBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	ppdBufferDesc.ByteWidth = sizeof(cbPostProcessShaderData);
+	ppdBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	ppdBufferDesc.CPUAccessFlags = 0;
+	ppdBufferDesc.MiscFlags = 0;
+	Graphics::GetContext()->pDevice->CreateBuffer(&ppdBufferDesc, nullptr, &pCtx->pPostProcessDataBuffer);
+
 	// Compile and create post processing shaders
 	pCtx->postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
 
@@ -238,6 +256,7 @@ void Graphics::RenderFrame()
 	viewport.MinDepth = 0.0f;
 	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
 
+	
 	pCtx->pDeviceContext->VSSetShader(pCtx->postProcessShader.pVertexShader, 0, 0);
 	pCtx->pDeviceContext->PSSetShader(pCtx->postProcessShader.pPixelShader, 0, 0);
 	pCtx->pDeviceContext->GSSetShader(pCtx->postProcessShader.pGeometryShader, 0, 0);
@@ -248,6 +267,12 @@ void Graphics::RenderFrame()
 	pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
 	pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->frameTextureSampler);
 	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	
+	postProcessShaderData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
+	postProcessShaderData.time = float(SDL_GetTicks()) / 1000.0f;
+	Graphics::GetContext()->pDeviceContext->UpdateSubresource(pCtx->pPostProcessDataBuffer, 0, nullptr, &postProcessShaderData, 0, 0);
+	Graphics::GetContext()->pDeviceContext->PSSetConstantBuffers(0, 1, &(pCtx->pPostProcessDataBuffer));
+
 	pCtx->pDeviceContext->Draw(4, 0);
 
 

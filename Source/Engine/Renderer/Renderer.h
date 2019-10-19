@@ -76,6 +76,7 @@ struct RenderContext
 	ID3D11RenderTargetView* pPreprocessedFrameView;
 	ID3D11Buffer * pFullScreenVertBuffer{ nullptr };
 	Graphics::Shader postProcessShader;
+	ID3D11Buffer* pPostProcessDataBuffer;
 
 	Graphics::Shader baseShader;
 
