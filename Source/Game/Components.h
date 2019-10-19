@@ -44,8 +44,6 @@ struct CPlayerControl
 	int 	lives = 3;
 	// #RefactorNote: move this into the singleton HUD component
 	EntityID lifeEntities[3]; // Stores the entityID of the three lives living in the corner of the screen
-	// #RefactorNote Store an age timer, and give the player some invincibility when they spawn
-
 	REFLECT()
 };
 

@@ -270,7 +270,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		CPlayerControl* pControl = scene.Get<CPlayerControl>(id);
 
 		// If player doesn't have a drawable component we consider them dead
-		if (!scene.Has<CDrawable>(id))
+		if (!scene.Has<CDrawable>(id) && !scene.Has<CInvincibility>(id))
 		{
 			if (pControl->respawnTimer > 0.0f)
 			{
@@ -282,7 +282,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 					scene.Assign<CInvincibility>(id);
 				}
 			}
-			return; // Player not being drawn is dead
+			return; // Player not being drawn and without invisibility is dead
 		}
 
 		Vec3f accel(0.0f, 0.0f, 0.0f);
