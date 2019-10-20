@@ -11,6 +11,7 @@
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
 
+#include "Profiler.h"
 #include "Log.h"
 #include "RenderFont.h"
 #include "DebugDraw.h"
@@ -237,6 +238,8 @@ void Graphics::NewFrame()
 
 void Graphics::RenderFrame()
 {
+	PROFILE();
+
 	// First we draw the scene into a render target
 	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pPreprocessedFrameView, pCtx->pDepthStencilView);
 

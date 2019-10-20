@@ -218,8 +218,6 @@ struct Asteroids : public IGame
 			pText->text = "Game Over";
 			pText->visible = false;
 		}
-
-
 	}
 
 	void OnFrame(Scene& scene, float deltaTime) override

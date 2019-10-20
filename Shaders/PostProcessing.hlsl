@@ -73,14 +73,11 @@ float4 PSMain(VS_OUTPUT input) : SV_TARGET
 
 	col += blurredFrame.Sample(SampleType, uv) * 1.5f;
 
-	// Some kind of pre vignette colour adjustment
+	// Some kind of pre vignette tonemapping
 	col = clamp(col*0.6+0.4*col*col*1.0,0.0,1.0);
 
 	// Apply the vignette darkening
 	col *= pow(vig, 0.3);
-
-	// Color adjustment
-	col *= float3(0.95,1.05,0.95);
 	col *= 2.8;
 
 	// Draw scanlines

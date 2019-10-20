@@ -72,7 +72,7 @@ struct CInvincibility
 
 struct CBullet
 {
-	float speed{ 300.0f };
+	float speed{ 700.0f };
 
 	REFLECT()
 };
