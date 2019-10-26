@@ -108,39 +108,24 @@ int GetId() // Move this whole function to the detail namespace
 // Memory is managed manually
 // ********************************************
 
-struct BaseComponentPool // #TODO: Move to detail namespace
+// #TODO: Move this inside the scene struct, no one should need to touch this
+struct ComponentPool
 {
-	BaseComponentPool(size_t elementsize)
+	ComponentPool(size_t elementsize)
 	{
 		elementSize = elementsize;
 		pData = new char[elementSize * MAX_ENTITIES];
-		size = MAX_ENTITIES;
 	}
 
 	inline void* get(size_t index)
 	{
-		ASSERT(index < size, "Entity overrun, delete some entities");
+		ASSERT(index < MAX_ENTITIES, "Entity overrun, delete some entities");
 		return pData + index * elementSize;
 	}
 
-	virtual void destroy(size_t index) = 0;
-
 	char* pData{ nullptr };
 	size_t elementSize{ 0 };
-	size_t size{ 0 };
 	TypeData* pTypeData{ nullptr };
-};
-
-template <typename T>
-struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespace
-{
-	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { pTypeData = &TypeDatabase::Get<T>(); }
-
-	virtual void destroy(size_t index) override
-	{
-		ASSERT(index < size, "Trying to delete an entity with an ID greater than max allowed entities");
-		static_cast<T*>(get(index))->~T();
-	}
 };
 
 // *****************************************
@@ -152,8 +137,6 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 
 struct Scene
 {
-	// #TODO Destructor, delete systems and components
-
 	// Creates an entity, simply makes a new id and mask
 	EntityID NewEntity(const char* name)// #TODO: Move implementation to cpp
 	{
@@ -172,16 +155,6 @@ struct Scene
 
 	void DestroyEntity(EntityID id)
 	{
-		for (int i = 0; i < MAX_COMPONENTS; i++)
-		{
-			// For each component ID, check the bitmask, if no, continue, if yes, destroy the component
-			std::bitset<MAX_COMPONENTS> mask;
-			mask.set(i, true);
-			if (mask == (entities[GetEntityIndex(id)].mask & mask))
-			{
-				componentPools[i]->destroy(GetEntityIndex(id));
-			}
-		}
 		entities[GetEntityIndex(id)].id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
 		entities[GetEntityIndex(id)].mask.reset(); // clear components
 		freeEntities.push_back(GetEntityIndex(id));
@@ -202,14 +175,14 @@ struct Scene
 		}
 		if (componentPools[componentId] == nullptr) // New component, make a new pool
 		{
-			componentPools[componentId] = new ComponentPool<T>(sizeof(T));
+			componentPools[componentId] = new ComponentPool(sizeof(T));
 		}
 
 		// Check the mask so you're not overwriting a component
 		ASSERT(Has<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
 		
 		// Looks up the component in the pool, and initializes it with placement new
-		T* pComponent = new (static_cast<T*>(componentPools[componentId]->get(GetEntityIndex(id)))) T();
+		T* pComponent = new (componentPools[componentId]->get(GetEntityIndex(id))) T();
 
 		// Set the bit for this component to true
 		entities[GetEntityIndex(id)].mask.set(componentId);
@@ -258,7 +231,7 @@ struct Scene
 		return Get<CName>(entity)->name;
 	}
 
-	std::vector<BaseComponentPool*> componentPools;
+	std::vector<ComponentPool*> componentPools;
 
 	struct EntityDesc
 	{
