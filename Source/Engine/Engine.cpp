@@ -72,6 +72,8 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 	g_pGame = pGame;
 	pGame->OnStart(*pCurrentScene);
 
+	Graphics::OnGameStart(*pCurrentScene);
+
 	// Game update loop
 	double frameTime = 0.016f;
 	double targetFrameTime = 0.016f;
@@ -81,12 +83,12 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
 		// Update flow for the engine
-		Graphics::NewFrame();
-		Input::Update(shutdown);
+		Graphics::OnFrameStart();
+		Input::OnFrame(shutdown);
 		g_pGame->OnFrame(*pCurrentScene, (float)frameTime);
-		Editor::ShowEditor(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
+		Editor::OnFrame(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
 		Profiler::ClearFrameData();
-		Graphics::RenderFrame(); // This should take in the scene as a paramter and work from that, instead of
+		Graphics::OnFrame(*pCurrentScene, (float)frameTime); // This should take in the scene as a paramter and work from that, instead of
 
 		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
@@ -106,7 +108,7 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 
 	// Shutdown everything
 	g_pGame->OnEnd(*pCurrentScene);
-	Graphics::Shutdown();
+	Graphics::OnGameEnd();
 
 	SDL_DestroyWindow(g_pWindow);
 	SDL_Quit();

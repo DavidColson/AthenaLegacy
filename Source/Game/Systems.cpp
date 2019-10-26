@@ -193,38 +193,6 @@ void InvincibilitySystemUpdate(Scene& scene, float deltaTime)
 	}
 }
 
-void DrawShapeSystem(Scene& scene, float deltaTime)
-{
-	PROFILE();
-
-	for (EntityID id : SceneView<CTransform, CDrawable>(scene))
-	{
-		CTransform* pTransform = scene.Get<CTransform>(id);
-		CDrawable* pDrawable = scene.Get<CDrawable>(id);
-
-		pDrawable->renderProxy.SetTransform(pTransform->pos, pTransform->rot, pTransform->sca);
-		pDrawable->renderProxy.lineThickness = pDrawable->lineThickness;
-
-		Graphics::SubmitProxy(&pDrawable->renderProxy);
-	}
-}
-
-void DrawTextSystem(Scene& scene, float deltaTime)
-{
-	PROFILE();
-
-	for (EntityID id : SceneView<CTransform, CText>(scene))
-	{
-		CText* pText = scene.Get<CText>(id);
-		if (pText->visible) // #RefactorNote: Consider making visible a component, 
-			// and then you can just iterate over visible renderables, less branching
-		{
-			CTransform* pTransform = scene.Get<CTransform>(id);
-			Graphics::GetContext()->pFontRender->SubmitText(pText->text.c_str(), Vec2f(pTransform->pos.x, pTransform->pos.y));
-		}
-	}
-}
-
 void MovementSystemUpdate(Scene& scene, float deltaTime)
 {
 	PROFILE();

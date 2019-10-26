@@ -7,34 +7,6 @@
 #include <Log.h>
 #include <Scene.h>
 
-
-struct CTransform
-{
-	Vec3f pos;
-	float rot;
-	Vec3f sca{ Vec3f(1.f, 1.f, 1.f) };
-	Vec3f vel{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec3f accel{ Vec3f(0.0f, 0.0f, 0.0f) };
-
-	REFLECT()
-};
-
-struct CDrawable
-{
-	RenderProxy renderProxy;
-	float lineThickness{ 1.5f };
-
-	REFLECT()
-};
-
-struct CText
-{
-	std::string text;
-	bool visible = true;
-
-	REFLECT()
-};
-
 struct CPlayerControl
 {
 	float thrust{ 160.f };

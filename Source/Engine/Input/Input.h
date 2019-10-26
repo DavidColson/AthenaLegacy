@@ -20,5 +20,5 @@ namespace Input
 	bool GetKeyUp(int keyCode);
 	bool GetKeyHeld(int keyCode);
 
-	void Update(bool& shutdownEngine);
+	void OnFrame(bool& shutdownEngine);
 };

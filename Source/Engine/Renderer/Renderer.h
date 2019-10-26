@@ -21,21 +21,23 @@ struct ID3D11Texture2D;
 
 struct RenderContext;
 class RenderFont;
+struct Scene;
 
 namespace Graphics
 {
-	void CreateContext(SDL_Window* pWindow, float width, float height);
-
-
 	RenderContext* GetContext();
 
-	void NewFrame();
 
-	void RenderFrame();
+	// New API style
+	void CreateContext(SDL_Window* pWindow, float width, float height);
 
-	void Shutdown();
+	void OnGameStart(Scene& scene); // should eventually be unecessary, moved to other systems/components
 
-	void SubmitProxy(RenderProxy* pRenderProxy);
+	void OnFrameStart();
+
+	void OnFrame(Scene& scene, float deltaTime);
+
+	void OnGameEnd();
 
 	struct Texture2D
 	{
@@ -65,30 +67,65 @@ struct RenderContext
 	ID3D11Device* pDevice;
 	ID3D11DeviceContext* pDeviceContext;
 	ID3D11RenderTargetView* pBackBuffer;
-
 	ID3D11DepthStencilView* pDepthStencilView;
 	ID3D11Texture2D* pDepthStencilBuffer;
 
-	// Scene is rendered into the preprocessed frame render target, 
-	// where it'll then be re-rendered for post processing
+	// We render the scene into this framebuffer to give systems an opportunity to do 
+	// post processing before we render into the backbuffer
 	Graphics::Texture2D preprocessedFrame;
-	Graphics::Texture2D blurredFrame[2]; // frame buffer for bloom, ping pongs for each iteration
-	ID3D11SamplerState* frameTextureSampler;
 	ID3D11RenderTargetView* pPreprocessedFrameView;
-	ID3D11RenderTargetView* pBlurredFrameView[2];
 	ID3D11Buffer * pFullScreenVertBuffer{ nullptr };
-	Graphics::Shader postProcessShader;
-	Graphics::Shader bloomShader;
-	ID3D11Buffer* pPostProcessDataBuffer;
-	ID3D11Buffer* pBloomDataBuffer;
+	ID3D11SamplerState* fullScreenTextureSampler;
+	Graphics::Shader fullScreenTextureShader; // simple shader that draws a texture onscreen
 
+	// Will eventually be a "material" type, assigned to drawables
 	Graphics::Shader baseShader;
 
+	// Need a separate font render system, which pre processes text
+	// into meshes
 	RenderFont* pFontRender;
 
 	float pixelScale = 1.0f;
 	float windowWidth{ 0 };
 	float windowHeight{ 0 };
+};
 
-	std::vector<RenderProxy*> renderQueue;
+// *******************
+// Renderer Components
+// *******************
+
+struct CDrawable
+{
+	RenderProxy renderProxy;
+	float lineThickness{ 1.5f };
+
+	REFLECT()
+};
+
+struct CPostProcessing
+{
+	// Shader constant data
+	struct cbPostProcessShaderData
+	{
+		Vec2f resolution;
+		float time{ 0.1f };
+		float pad{ 0.0f };
+	};
+	cbPostProcessShaderData postProcessShaderData;
+	struct cbBloomShaderData
+	{
+		Vec2f direction;
+		Vec2f resolution;
+	};
+	cbBloomShaderData bloomShaderData;
+
+	// Graphics system resource handles
+	Graphics::Texture2D blurredFrame[2];
+	ID3D11RenderTargetView* pBlurredFrameView[2];
+	Graphics::Shader postProcessShader;
+	Graphics::Shader bloomShader;
+	ID3D11Buffer* pPostProcessDataBuffer;
+	ID3D11Buffer* pBloomDataBuffer;
+
+	REFLECT()
 };

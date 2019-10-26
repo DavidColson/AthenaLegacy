@@ -44,6 +44,7 @@ scene.Assign<Shape>(circle);
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
 #include "Log.h"
+#include "Maths/Vec3.h"
 
 #include <bitset>
 #include <vector>
@@ -88,6 +89,17 @@ struct CName
 	REFLECT()
 };
 
+struct CTransform
+{
+	Vec3f pos;
+	float rot;
+	Vec3f sca{ Vec3f(1.f, 1.f, 1.f) };
+	Vec3f vel{ Vec3f(0.0f, 0.0f, 0.0f) };
+	Vec3f accel{ Vec3f(0.0f, 0.0f, 0.0f) };
+
+	REFLECT()
+};
+
 // Gives you the id within this world for a given component type
 extern int s_componentCounter; // #TODO: Move this to a detail namespace
 template <class T>
@@ -111,10 +123,11 @@ int GetId() // Move this whole function to the detail namespace
 // #TODO: Move this inside the scene struct, no one should need to touch this
 struct ComponentPool
 {
-	ComponentPool(size_t elementsize)
+	ComponentPool(size_t elementsize, TypeData* pType)
 	{
 		elementSize = elementsize;
 		pData = new char[elementSize * MAX_ENTITIES];
+		pTypeData = pType;
 	}
 
 	inline void* get(size_t index)
@@ -175,7 +188,7 @@ struct Scene
 		}
 		if (componentPools[componentId] == nullptr) // New component, make a new pool
 		{
-			componentPools[componentId] = new ComponentPool(sizeof(T));
+			componentPools[componentId] = new ComponentPool(sizeof(T), &TypeDatabase::Get<T>());
 		}
 
 		// Check the mask so you're not overwriting a component

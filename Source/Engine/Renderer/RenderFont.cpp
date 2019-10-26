@@ -12,6 +12,12 @@
 #include "RenderProxy.h"
 #include "Log.h"
 #include "Renderer.h"
+#include "Scene.h"
+
+REFLECT_BEGIN(CText)
+REFLECT_MEMBER(text)
+REFLECT_MEMBER(visible)
+REFLECT_END()
 
 RenderFont::RenderFont(std::string fontFile, int size)
 {
@@ -179,12 +185,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	}
 }
 
-void RenderFont::SubmitText(const char* text, Vec2f pos)
-{
-	textQueue.emplace_back(text, pos);
-}
-
-void RenderFont::DrawQueue()
+void RenderFont::DrawSceneText(Scene& scene)
 {
 	// Set vertex buffer as active
 	UINT stride = sizeof(Vertex);
@@ -199,9 +200,7 @@ void RenderFont::DrawQueue()
 	Graphics::GetContext()->pDeviceContext->VSSetShader(fontShader.pVertexShader, 0, 0);
 	Graphics::GetContext()->pDeviceContext->PSSetShader(fontShader.pPixelShader, 0, 0);
 	Graphics::GetContext()->pDeviceContext->GSSetShader(fontShader.pGeometryShader, 0, 0);
-
 	Graphics::GetContext()->pDeviceContext->IASetInputLayout(fontShader.pVertLayout);
-
 	Graphics::GetContext()->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
@@ -211,41 +210,45 @@ void RenderFont::DrawQueue()
 	
 	Graphics::GetContext()->pDeviceContext->PSSetSamplers(0, 1, &charTextureSampler);
 
-	for (QueueElement const& element : textQueue)
+	for (EntityID ent : SceneView<CText, CTransform>(scene))
 	{
-		float textWidth = 0.0f;
-		float x = element.pos.x;
-		float y = element.pos.y;
-
-
-		for (char const& c : element.text)
+		CText* pText = scene.Get<CText>(ent);
+		if (pText->visible)
 		{
-			Character ch = characters[c];
-			textWidth += ch.advance;
-		}
+			CTransform* pTransform = scene.Get<CTransform>(ent);
+			
+			float textWidth = 0.0f;
+			float x = pTransform->pos.x;
+			float y = pTransform->pos.y;
 
-		for (char const& c : element.text) {
-			// Draw a font character
-			Character ch = characters[c];
+			for (char const& c : pText->text)
+			{
+				Character ch = characters[c];
+				textWidth += ch.advance;
+			}
 
-			Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth*0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
-			Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
+			for (char const& c : pText->text) {
+				// Draw a font character
+				Character ch = characters[c];
 
-			Matrixf world = posmat * scalemat; // transform into world space
-			Matrixf wvp = projection * world;
+				Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth*0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
+				Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
 
-			cbCharTransform.wvp = wvp;
-			Graphics::GetContext()->pDeviceContext->UpdateSubresource(pQuadWVPBuffer, 0, nullptr, &cbCharTransform, 0, 0);
+				Matrixf world = posmat * scalemat; // transform into world space
+				Matrixf wvp = projection * world;
 
-			Graphics::GetContext()->pDeviceContext->PSSetShaderResources(0, 1, &(characters[c].charTexture));
+				cbCharTransform.wvp = wvp;
+				Graphics::GetContext()->pDeviceContext->UpdateSubresource(pQuadWVPBuffer, 0, nullptr, &cbCharTransform, 0, 0);
 
-			// do 3D rendering on the back buffer here
-			// Instance render the entire string
-			Graphics::GetContext()->pDeviceContext->DrawIndexed(5, 0, 0);
+				Graphics::GetContext()->pDeviceContext->PSSetShaderResources(0, 1, &(characters[c].charTexture));
 
-			x += ch.advance;
+				// do 3D rendering on the back buffer here
+				// Instance render the entire string
+				Graphics::GetContext()->pDeviceContext->DrawIndexed(5, 0, 0);
+
+				x += ch.advance;
+			}
 		}
 	}
-	textQueue.clear();
 }
 

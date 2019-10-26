@@ -15,6 +15,21 @@ struct ID3D11VertexShader;
 struct ID3D11PixelShader;
 struct ID3D11InputLayout;
 
+struct Scene;
+
+// **********
+// Components
+// **********
+
+struct CText
+{
+	std::string text;
+	bool visible = true;
+
+	REFLECT()
+};
+
+
 struct Character
 {
 	ID3D11ShaderResourceView* charTexture{ nullptr };
@@ -28,8 +43,7 @@ class RenderFont
 public:
 	RenderFont(std::string fontFile, int size);
 
-	void DrawQueue();
-	void SubmitText(const char* text, Vec2f pos);
+	void DrawSceneText(Scene& scene);
 
 private:
 	struct cbTransform
@@ -50,12 +64,4 @@ private:
 	Graphics::Shader fontShader;
 
 	std::vector<Character> characters;
-
-	struct QueueElement
-	{
-		std::string text;
-		Vec2f pos;
-		QueueElement(const char* text, Vec2f pos) : text(text), pos(pos) {}
-	};
-	std::vector<QueueElement> textQueue;
 };

@@ -179,7 +179,7 @@ void ShowFrameStats(double realFrameTime, double observedFrameTime)
 	ImGui::End();
 }
 
-void Editor::ShowEditor(Scene& scene, bool& shutdown, double realFrameTime, double observedFrameTime)
+void Editor::OnFrame(Scene& scene, bool& shutdown, double realFrameTime, double observedFrameTime)
 {
 	if (Input::GetKeyDown(SDL_SCANCODE_F8))
 		showEditor = !showEditor;

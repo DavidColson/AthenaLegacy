@@ -15,7 +15,14 @@
 #include "Log.h"
 #include "RenderFont.h"
 #include "DebugDraw.h"
+#include "Scene.h"
 
+REFLECT_BEGIN(CDrawable)
+REFLECT_MEMBER(lineThickness)
+REFLECT_END()
+
+REFLECT_BEGIN(CPostProcessing)
+REFLECT_END()
 
 namespace {
 	RenderContext* pCtx = nullptr;
@@ -25,21 +32,6 @@ RenderContext* Graphics::GetContext()
 {
 	return pCtx;
 }
-
-struct cbPostProcessShaderData
-{
-	Vec2f resolution;
-	float time{ 0.1f };
-	float pad{ 0.0f };
-};
-cbPostProcessShaderData postProcessShaderData;
-
-struct cbBloomShaderData
-{
-	Vec2f direction;
-	Vec2f resolution;
-};
-cbBloomShaderData bloomShaderData;
 
 void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 {
@@ -53,8 +45,6 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 
 	pCtx->windowWidth = width;
 	pCtx->windowHeight = height;
-
-
 
 	// Set up D3D contexts
 	// *******************
@@ -116,39 +106,9 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 	pCtx->pDevice->CreateDepthStencilView(pCtx->pDepthStencilBuffer, &depthStencilViewDesc, &pCtx->pDepthStencilView);
 
-	// RENDER TO TEXTURE
-	// *****************
-
-	// Create a texture for the pre-processed and blurring frames
-	pCtx->preprocessedFrame = CreateTexture2D(
-		1800,
-		1000,
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
-		nullptr,
-		D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
-	);
-
-	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	renderTargetViewDesc.Texture2D.MipSlice = 0;
-	pCtx->pDevice->CreateRenderTargetView(pCtx->preprocessedFrame.pTexture2D, &renderTargetViewDesc, &pCtx->pPreprocessedFrameView);
+	// Create a fullscreen quad and shader for drawing fullscreen textures to the backbuffer
+	pCtx->fullScreenTextureShader = LoadShaderFromFile(L"shaders/FullScreenTexture.hlsl", false);
 	
-	for (int i = 0; i < 2; ++i)
-	{
-		pCtx->blurredFrame[i] = CreateTexture2D(
-				900,
-				500,
-				DXGI_FORMAT_R32G32B32A32_FLOAT,
-				nullptr,
-				D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
-			);
-		pCtx->pDevice->CreateRenderTargetView(pCtx->blurredFrame[i].pTexture2D, &renderTargetViewDesc, &pCtx->pBlurredFrameView[i]);
-	}
-
-
-	// D3D11_FILTER_MIN_MAG_MIP_POINT
-
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -158,9 +118,8 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	pCtx->pDevice->CreateSamplerState(&sampDesc, &pCtx->frameTextureSampler);
+	pCtx->pDevice->CreateSamplerState(&sampDesc, &pCtx->fullScreenTextureSampler);
 
-	// Create a quad to render onto
 	std::vector<Vertex> quadVertices = {
 		Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
 		Vertex(Vec3f(-1.f, 1.f, 0.5f)),
@@ -185,187 +144,294 @@ void Graphics::CreateContext(SDL_Window* pWindow, float width, float height)
 	vertexBufferData.pSysMem = quadVertices.data();
 	Graphics::GetContext()->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->pFullScreenVertBuffer);
 
-	// Create post process shader data buffer
-	D3D11_BUFFER_DESC ppdBufferDesc;
-	ZeroMemory(&ppdBufferDesc, sizeof(ppdBufferDesc));
-	ppdBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	ppdBufferDesc.ByteWidth = sizeof(cbPostProcessShaderData);
-	ppdBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	ppdBufferDesc.CPUAccessFlags = 0;
-	ppdBufferDesc.MiscFlags = 0;
-	Graphics::GetContext()->pDevice->CreateBuffer(&ppdBufferDesc, nullptr, &pCtx->pPostProcessDataBuffer);
+	// Create a texture for the pre-processed frame 
+	// (a frame buffer that can be processed before it'll actually be rendered to the backbuffer)
+	pCtx->preprocessedFrame = CreateTexture2D(
+		1800,
+		1000,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		nullptr,
+		D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
+	);
 
-	// Create bloom shader data buffer
-	D3D11_BUFFER_DESC bloomBufferDesc;
-	ZeroMemory(&bloomBufferDesc, sizeof(bloomBufferDesc));
-	bloomBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bloomBufferDesc.ByteWidth = sizeof(cbBloomShaderData);
-	bloomBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	bloomBufferDesc.CPUAccessFlags = 0;
-	bloomBufferDesc.MiscFlags = 0;
-	Graphics::GetContext()->pDevice->CreateBuffer(&bloomBufferDesc, nullptr, &pCtx->pBloomDataBuffer);
-
-	// Compile and create post processing shaders
-	pCtx->postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
-	pCtx->bloomShader = LoadShaderFromFile(L"shaders/Bloom.hlsl", false);
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+	pCtx->pDevice->CreateRenderTargetView(pCtx->preprocessedFrame.pTexture2D, &renderTargetViewDesc, &pCtx->pPreprocessedFrameView);
 
 
-
-	pCtx->baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
-
-	pCtx->pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
-
+	// Init debug drawing
 	DebugDraw::Detail::Init();
 
+	// Init Imgui
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplSDL2_InitForVulkan(pWindow);
 	ImGui_ImplDX11_Init(pCtx->pDevice, pCtx->pDeviceContext);
-
 	io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
-
 	ImGui::StyleColorsDark();
 }
 
+void Graphics::OnGameStart(Scene& scene)
+{
+	// Should be eventually moved to a material type when that exists
+	pCtx->baseShader = LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
 
-void Graphics::NewFrame()
+	pCtx->pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
+
+	// *****************
+	// Post processing
+	// *****************
+
+	for (EntityID ent : SceneView<CPostProcessing>(scene))
+	{
+		CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
+		
+		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+		renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		renderTargetViewDesc.Texture2D.MipSlice = 0;
+		
+		for (int i = 0; i < 2; ++i)
+		{
+			pp->blurredFrame[i] = CreateTexture2D(
+					900,
+					500,
+					DXGI_FORMAT_R32G32B32A32_FLOAT,
+					nullptr,
+					D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
+				);
+			pCtx->pDevice->CreateRenderTargetView(pp->blurredFrame[i].pTexture2D, &renderTargetViewDesc, &pp->pBlurredFrameView[i]);
+		}
+
+		// Create post process shader data buffer
+		D3D11_BUFFER_DESC ppdBufferDesc;
+		ZeroMemory(&ppdBufferDesc, sizeof(ppdBufferDesc));
+		ppdBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		ppdBufferDesc.ByteWidth = sizeof(CPostProcessing::cbPostProcessShaderData);
+		ppdBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		ppdBufferDesc.CPUAccessFlags = 0;
+		ppdBufferDesc.MiscFlags = 0;
+		Graphics::GetContext()->pDevice->CreateBuffer(&ppdBufferDesc, nullptr, &pp->pPostProcessDataBuffer);
+
+		// Create bloom shader data buffer
+		D3D11_BUFFER_DESC bloomBufferDesc;
+		ZeroMemory(&bloomBufferDesc, sizeof(bloomBufferDesc));
+		bloomBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		bloomBufferDesc.ByteWidth = sizeof(CPostProcessing::cbBloomShaderData);
+		bloomBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		bloomBufferDesc.CPUAccessFlags = 0;
+		bloomBufferDesc.MiscFlags = 0;
+		Graphics::GetContext()->pDevice->CreateBuffer(&bloomBufferDesc, nullptr, &pp->pBloomDataBuffer);
+
+		// Compile and create post processing shaders
+		pp->postProcessShader = LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
+		pp->bloomShader = LoadShaderFromFile(L"shaders/Bloom.hlsl", false);
+	}
+}
+
+void Graphics::OnFrameStart()
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplSDL2_NewFrame(pCtx->pWindow);
 	ImGui::NewFrame();
 }
 
-void Graphics::RenderFrame()
+void Graphics::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	// First we draw the scene into a render target
-	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pPreprocessedFrameView, pCtx->pDepthStencilView);
+	// RenderFonts -- Picks up text component data
+	// RenderPostProcessing -- Need a scene post process component, lives on singleton?
+	// RenderImgui - Editor components? Maybe something for future
 
-	// clear the back buffer to black
-	float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
-	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pPreprocessedFrameView, color);
-	pCtx->pDeviceContext->ClearDepthStencilView(pCtx->pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-	D3D11_VIEWPORT viewport;
-	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.Width = pCtx->windowWidth /  pCtx->pixelScale;
-	viewport.Height = pCtx->windowHeight / pCtx->pixelScale;
-	viewport.MaxDepth = 1.0f;
-	viewport.MinDepth = 0.0f;
-	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
-
-	// Set Shaders to active
-	pCtx->pDeviceContext->VSSetShader(pCtx->baseShader.pVertexShader, 0, 0);
-	pCtx->pDeviceContext->PSSetShader(pCtx->baseShader.pPixelShader, 0, 0);
-	pCtx->pDeviceContext->GSSetShader(pCtx->baseShader.pGeometryShader, 0, 0);
-
-	pCtx->pDeviceContext->IASetInputLayout(pCtx->baseShader.pVertLayout);
-
-	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
-
-	for (RenderProxy* proxy : pCtx->renderQueue)
+	// ****************
+	// Render Drawables
+	// ****************
 	{
-		proxy->Draw();
+		// First we draw the scene into a render target
+		pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pPreprocessedFrameView, pCtx->pDepthStencilView);
+
+		// clear the back buffer to black
+		float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
+		pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pPreprocessedFrameView, color);
+		pCtx->pDeviceContext->ClearDepthStencilView(pCtx->pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		D3D11_VIEWPORT viewport;
+		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.Width = pCtx->windowWidth /  pCtx->pixelScale;
+		viewport.Height = pCtx->windowHeight / pCtx->pixelScale;
+		viewport.MaxDepth = 1.0f;
+		viewport.MinDepth = 0.0f;
+		pCtx->pDeviceContext->RSSetViewports(1, &viewport);
+
+		// Set Shaders to active
+		pCtx->pDeviceContext->VSSetShader(pCtx->baseShader.pVertexShader, 0, 0);
+		pCtx->pDeviceContext->PSSetShader(pCtx->baseShader.pPixelShader, 0, 0);
+		pCtx->pDeviceContext->GSSetShader(pCtx->baseShader.pGeometryShader, 0, 0);
+
+		pCtx->pDeviceContext->IASetInputLayout(pCtx->baseShader.pVertLayout);
+
+		pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
+
+		for (EntityID ent : SceneView<CDrawable, CTransform>(scene))
+		{
+			CDrawable* pDrawable = scene.Get<CDrawable>(ent);
+			CTransform* pTransform = scene.Get<CTransform>(ent);
+
+			pDrawable->renderProxy.SetTransform(pTransform->pos, pTransform->rot, pTransform->sca);
+			pDrawable->renderProxy.lineThickness = pDrawable->lineThickness;
+			pDrawable->renderProxy.Draw();
+		}
 	}
-	pCtx->renderQueue.clear();
-	pCtx->pFontRender->DrawQueue();
+
+	// *********
+	// Draw Text
+	// *********
+
+	// Ideally font is just another mesh with a material to draw
+	// So it would go through the normal channels, specialness is in it's material and probably
+	// an earlier system that prepares the quads to render
+	pCtx->pFontRender->DrawSceneText(scene);
+
+	// **********
+	// Draw Debug 
+	// **********
+
 	DebugDraw::Detail::DrawQueue();
 
+	// ***************
+	// Post Processing
+	// ***************
 
-	// Now we'll do all our post processing passes
-	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBlurredFrameView[0], nullptr);
-	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBlurredFrameView[0], color);
-
-	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.Width = 900;
-	viewport.Height = 500;
-	viewport.MaxDepth = 1.0f;
-	viewport.MinDepth = 0.0f;
-	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
-
-	// Bind bloom shader data
-	pCtx->pDeviceContext->VSSetShader(pCtx->bloomShader.pVertexShader, 0, 0);
-	pCtx->pDeviceContext->PSSetShader(pCtx->bloomShader.pPixelShader, 0, 0);
-	pCtx->pDeviceContext->GSSetShader(pCtx->bloomShader.pGeometryShader, 0, 0);
-	pCtx->pDeviceContext->IASetInputLayout(pCtx->bloomShader.pVertLayout);
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
-	pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->frameTextureSampler);
-	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	bloomShaderData.resolution = Vec2f(900, 500);
-	
-	// Iteratively calculate bloom
-	ID3D11RenderTargetView* nullViews[] = { nullptr };
-	int blurIterations = 8;
-	for (int i = 0; i < blurIterations; ++i)
+	bool wasPostProcessing = false;
+	for (EntityID ent : SceneView<CPostProcessing>(scene))
 	{
-		// Bind data
-		float radius = float(blurIterations - i - 1) * 0.04f;
-		bloomShaderData.direction = i % 2 == 0 ? Vec2f(radius, 0.0f) : Vec2f(0.0f, radius);
-		//bloomShaderData.direction = Vec2f(0.0f, radius);
-		Graphics::GetContext()->pDeviceContext->UpdateSubresource(pCtx->pBloomDataBuffer, 0, nullptr, &bloomShaderData, 0, 0);
-		Graphics::GetContext()->pDeviceContext->PSSetConstantBuffers(0, 1, &(pCtx->pBloomDataBuffer));
+		wasPostProcessing = true;
+		CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
 
-		if (i == 0)
+		pCtx->pDeviceContext->OMSetRenderTargets(1, &pp->pBlurredFrameView[0], nullptr);
+		float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
+		pCtx->pDeviceContext->ClearRenderTargetView(pp->pBlurredFrameView[0], color);
+
+		D3D11_VIEWPORT viewport;
+		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.Width = 900;
+		viewport.Height = 500;
+		viewport.MaxDepth = 1.0f;
+		viewport.MinDepth = 0.0f;
+		pCtx->pDeviceContext->RSSetViewports(1, &viewport);
+
+		// Bind bloom shader data
+		pCtx->pDeviceContext->VSSetShader(pp->bloomShader.pVertexShader, 0, 0);
+		pCtx->pDeviceContext->PSSetShader(pp->bloomShader.pPixelShader, 0, 0);
+		pCtx->pDeviceContext->GSSetShader(pp->bloomShader.pGeometryShader, 0, 0);
+		pCtx->pDeviceContext->IASetInputLayout(pp->bloomShader.pVertLayout);
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
+		pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+		pp->bloomShaderData.resolution = Vec2f(900, 500);
+		
+		// Iteratively calculate bloom
+		ID3D11RenderTargetView* nullViews[] = { nullptr };
+		int blurIterations = 8;
+		for (int i = 0; i < blurIterations; ++i)
 		{
-			// First iteration, bind the plain, preprocessed frame
-			pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
+			// Bind data
+			float radius = float(blurIterations - i - 1) * 0.04f;
+			pp->bloomShaderData.direction = i % 2 == 0 ? Vec2f(radius, 0.0f) : Vec2f(0.0f, radius);
+			//bloomShaderData.direction = Vec2f(0.0f, radius);
+			Graphics::GetContext()->pDeviceContext->UpdateSubresource(pp->pBloomDataBuffer, 0, nullptr, &pp->bloomShaderData, 0, 0);
+			Graphics::GetContext()->pDeviceContext->PSSetConstantBuffers(0, 1, &(pp->pBloomDataBuffer));
+
+			if (i == 0)
+			{
+				// First iteration, bind the plain, preprocessed frame
+				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
+			}
+			else
+			{
+				pCtx->pDeviceContext->OMSetRenderTargets(1, nullViews, nullptr);
+				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pp->blurredFrame[(i + 1) % 2].pShaderResourceView);
+				pCtx->pDeviceContext->OMSetRenderTargets(1, &pp->pBlurredFrameView[i % 2], nullptr);
+				pCtx->pDeviceContext->ClearRenderTargetView(pp->pBlurredFrameView[i % 2], color);
+			}
+
+			pCtx->pDeviceContext->Draw(4, 0);
 		}
-		else
-		{
-			pCtx->pDeviceContext->OMSetRenderTargets(1, nullViews, nullptr);
-			pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->blurredFrame[(i + 1) % 2].pShaderResourceView);
-			pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBlurredFrameView[i % 2], nullptr);
-			pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBlurredFrameView[i % 2], color);
-		}
+
+		// Now we'll actually render onto the backbuffer and do our final post process stage
+		pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBackBuffer, NULL);
+		pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBackBuffer, color);
+
+		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.Width = 1800;
+		viewport.Height = 1000;
+		viewport.MaxDepth = 1.0f;
+		viewport.MinDepth = 0.0f;
+		pCtx->pDeviceContext->RSSetViewports(1, &viewport);
+
+		pCtx->pDeviceContext->VSSetShader(pp->postProcessShader.pVertexShader, 0, 0);
+		pCtx->pDeviceContext->PSSetShader(pp->postProcessShader.pPixelShader, 0, 0);
+		pCtx->pDeviceContext->GSSetShader(pp->postProcessShader.pGeometryShader, 0, 0);
+		pCtx->pDeviceContext->IASetInputLayout(pp->postProcessShader.pVertLayout);
+		pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
+		pCtx->pDeviceContext->PSSetShaderResources(1, 1, &pp->blurredFrame[1].pShaderResourceView);
+		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
+		pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		
+		pp->postProcessShaderData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
+		pp->postProcessShaderData.time = float(SDL_GetTicks()) / 1000.0f;
+		Graphics::GetContext()->pDeviceContext->UpdateSubresource(pp->pPostProcessDataBuffer, 0, nullptr, &pp->postProcessShaderData, 0, 0);
+		Graphics::GetContext()->pDeviceContext->PSSetConstantBuffers(0, 1, &(pp->pPostProcessDataBuffer));
+
+		// Draw post processed frame
+		pCtx->pDeviceContext->Draw(4, 0);
+	}
+
+	// If there was no post processing to do, just draw the pre-processed frame on screen
+	if (!wasPostProcessing)
+	{
+		pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBackBuffer, NULL);
+		float color[4] = { 0.0f, 0.f, 0.f, 1.0f };
+		pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBackBuffer, color);
+
+		pCtx->pDeviceContext->VSSetShader(pCtx->fullScreenTextureShader.pVertexShader, 0, 0);
+		pCtx->pDeviceContext->PSSetShader(pCtx->fullScreenTextureShader.pPixelShader, 0, 0);
+		pCtx->pDeviceContext->GSSetShader(pCtx->fullScreenTextureShader.pGeometryShader, 0, 0);
+		pCtx->pDeviceContext->IASetInputLayout(pCtx->fullScreenTextureShader.pVertLayout);
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
+		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
+		pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 		pCtx->pDeviceContext->Draw(4, 0);
 	}
 
-	
-	// Now we'll actually render onto the backbuffer and do our final post process stage
-	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBackBuffer, NULL);
-	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBackBuffer, color);
-
-	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
-	viewport.Width = 1800;
-	viewport.Height = 1000;
-	viewport.MaxDepth = 1.0f;
-	viewport.MinDepth = 0.0f;
-	pCtx->pDeviceContext->RSSetViewports(1, &viewport);
-
-	pCtx->pDeviceContext->VSSetShader(pCtx->postProcessShader.pVertexShader, 0, 0);
-	pCtx->pDeviceContext->PSSetShader(pCtx->postProcessShader.pPixelShader, 0, 0);
-	pCtx->pDeviceContext->GSSetShader(pCtx->postProcessShader.pGeometryShader, 0, 0);
-	pCtx->pDeviceContext->IASetInputLayout(pCtx->postProcessShader.pVertLayout);
-	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
-	pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preprocessedFrame.pShaderResourceView);
-	pCtx->pDeviceContext->PSSetShaderResources(1, 1, &pCtx->blurredFrame[1].pShaderResourceView);
-	pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->frameTextureSampler);
-	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	
-	postProcessShaderData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
-	postProcessShaderData.time = float(SDL_GetTicks()) / 1000.0f;
-	Graphics::GetContext()->pDeviceContext->UpdateSubresource(pCtx->pPostProcessDataBuffer, 0, nullptr, &postProcessShaderData, 0, 0);
-	Graphics::GetContext()->pDeviceContext->PSSetConstantBuffers(0, 1, &(pCtx->pPostProcessDataBuffer));
-
-	// Draw post processed frame
-	pCtx->pDeviceContext->Draw(4, 0);
-
-
-	// Draw Imgui
+	// *******************
+	// Draw Imgui Overlays
+	// *******************
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+
+	// ***********************
+	// Present Frame to screen
+	// ***********************
 
 	// #TODO: should probably clear all render state that we set after rendering
 	ID3D11ShaderResourceView* pSRV = nullptr;
@@ -376,14 +442,9 @@ void Graphics::RenderFrame()
 	pCtx->pDeviceContext->ClearState();
 }
 
-void Graphics::Shutdown()
+void Graphics::OnGameEnd()
 {
 	// #TODO: Release things
-}
-
-void Graphics::SubmitProxy(RenderProxy* pRenderProxy)
-{
-	pCtx->renderQueue.push_back(pRenderProxy);
 }
 
 Graphics::Shader Graphics::LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader)

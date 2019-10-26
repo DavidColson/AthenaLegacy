@@ -10,6 +10,7 @@
 #include <IGame.h>
 #include <Profiler.h>
 #include <Renderer/Renderer.h>
+#include <Renderer/RenderFont.h>
 #include <ThirdParty/Imgui/imgui.h>
 #include <TypeSystem.h>
 
@@ -159,6 +160,7 @@ struct Asteroids : public IGame
 		scene.Assign<CCollidable>(ship)->radius = 17.f;
 		scene.Assign<CDrawable>(ship)->renderProxy = Game::g_shipMesh;
 		CPlayerUI* pPlayerUI = scene.Assign<CPlayerUI>(ship);
+		scene.Assign<CPostProcessing>(ship);
 
 		// Create some asteroids
 		for (int i = 0; i < 15; i++)
@@ -228,8 +230,6 @@ struct Asteroids : public IGame
 		MovementSystemUpdate(scene, deltaTime);
 		CollisionSystemUpdate(scene, deltaTime);
 		InvincibilitySystemUpdate(scene, deltaTime);
-		DrawShapeSystem(scene, deltaTime);
-		DrawTextSystem(scene, deltaTime);
 	}
 
 	void OnEnd(Scene& scene) override

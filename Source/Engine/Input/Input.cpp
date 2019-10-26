@@ -27,7 +27,7 @@ bool Input::GetKeyHeld(int keyCode)
 	return pInput->keyStates[keyCode];
 }
 
-void Input::Update(bool& shutdownEngine)
+void Input::OnFrame(bool& shutdownEngine)
 {
 	std::bitset<NKEYS> prevKeyStates = pInput->keyStates;
 	
