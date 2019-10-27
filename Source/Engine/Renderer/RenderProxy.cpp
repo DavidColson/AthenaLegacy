@@ -24,6 +24,8 @@ cbPerObject perObject;
 RenderProxy::RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indices)
 	: vertices(_vertices), indices(_indices)
 {
+	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
+	Context* pCtx = GfxDevice::GetContext();
 	// Create vertex buffer
 	// ********************
 
@@ -41,7 +43,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indice
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = vertices.data();
 
-	Graphics::GetContext()->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pVertBuffer);
+	pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pVertBuffer);
 
 	// Create an index buffer
 	// **********************
@@ -59,7 +61,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indice
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
 	indexBufferData.pSysMem = indices.data();
-	Graphics::GetContext()->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pIndexBuffer);
+	pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pIndexBuffer);
 
 
 
@@ -73,18 +75,21 @@ RenderProxy::RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indice
 	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	wvpBufferDesc.CPUAccessFlags = 0;
 	wvpBufferDesc.MiscFlags = 0;
-	Graphics::GetContext()->pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &pWVPBuffer);
+	pCtx->pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &pWVPBuffer);
 	
 }
 
 void RenderProxy::Draw()
 {
+	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
+	Context* pCtx = GfxDevice::GetContext();
+	
 	// Set vertex buffer as active
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	Graphics::GetContext()->pDeviceContext->IASetVertexBuffers(0, 1, &pVertBuffer, &stride, &offset);
+	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pVertBuffer, &stride, &offset);
 
-	Graphics::GetContext()->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	Matrixf posMat = Matrixf::Translate(pos);
 	Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, rot));
@@ -94,16 +99,16 @@ void RenderProxy::Draw()
 	Matrixf world = posMat * rotMat * scaMat * pivotAdjust; // transform into world space
 	Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f)); // transform into camera space
 
-	Matrixf projection = Matrixf::Orthographic(0.f, Graphics::GetContext()->windowWidth, 0.0f, Graphics::GetContext()->windowHeight, -1.0f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, -1.0f, 10.0f); // transform into screen space
 	
 	Matrixf wvp = projection * view * world;
 
 	perObject.wvp = wvp;
 	perObject.lineThickness = lineThickness;
-	Graphics::GetContext()->pDeviceContext->UpdateSubresource(pWVPBuffer, 0, nullptr, &perObject, 0, 0);
- 	Graphics::GetContext()->pDeviceContext->VSSetConstantBuffers(0, 1, &(pWVPBuffer));
-	Graphics::GetContext()->pDeviceContext->GSSetConstantBuffers(0, 1, &(pWVPBuffer));
+	pCtx->pDeviceContext->UpdateSubresource(pWVPBuffer, 0, nullptr, &perObject, 0, 0);
+ 	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &(pWVPBuffer));
+	pCtx->pDeviceContext->GSSetConstantBuffers(0, 1, &(pWVPBuffer));
 
 	// do 3D rendering on the back buffer here
-	Graphics::GetContext()->pDeviceContext->DrawIndexed((UINT)indices.size(), 0, 0);
+	pCtx->pDeviceContext->DrawIndexed((UINT)indices.size(), 0, 0);
 }

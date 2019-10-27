@@ -151,8 +151,8 @@ struct Asteroids : public IGame
 		ASSERT(ship == PLAYER_ID, "Player must be spawned first");
 		CTransform* pTransform = scene.Assign<CTransform>(ship);
 
-		const float w = Graphics::GetContext()->windowWidth;
-		const float h = Graphics::GetContext()->windowHeight;
+		const float w = GfxDevice::GetContext()->windowWidth;
+		const float h = GfxDevice::GetContext()->windowHeight;
 		pTransform->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 		pTransform->sca = Vec3f(30.f, 35.f, 1.0f);
 

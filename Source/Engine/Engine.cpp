@@ -66,13 +66,13 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 
 	pCurrentScene = pScene;
 
-	Graphics::CreateContext(g_pWindow, width, height);
+	GfxDevice::Initialize(g_pWindow, width, height);
 	Input::CreateInputState();
 
 	g_pGame = pGame;
 	pGame->OnStart(*pCurrentScene);
 
-	Graphics::OnGameStart(*pCurrentScene);
+	Renderer::OnGameStart(*pCurrentScene);
 
 	// Game update loop
 	double frameTime = 0.016f;
@@ -83,12 +83,12 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
 		// Update flow for the engine
-		Graphics::OnFrameStart();
+		Renderer::OnFrameStart();
 		Input::OnFrame(shutdown);
 		g_pGame->OnFrame(*pCurrentScene, (float)frameTime);
 		Editor::OnFrame(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
 		Profiler::ClearFrameData();
-		Graphics::OnFrame(*pCurrentScene, (float)frameTime); // This should take in the scene as a paramter and work from that, instead of
+		Renderer::OnFrame(*pCurrentScene, (float)frameTime); // This should take in the scene as a paramter and work from that, instead of
 
 		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
@@ -108,7 +108,7 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 
 	// Shutdown everything
 	g_pGame->OnEnd(*pCurrentScene);
-	Graphics::OnGameEnd();
+	Renderer::OnGameEnd();
 
 	SDL_DestroyWindow(g_pWindow);
 	SDL_Quit();

@@ -25,7 +25,7 @@ namespace
 	std::vector<int> indexBufferData;
 	int indexBufferSize = 0;
 
-	Graphics::Shader debugShader;
+	GfxDevice::Shader debugShader;
 	ID3D11Buffer* pVertexBuffer;
 	ID3D11Buffer* pIndexBuffer;
 
@@ -62,7 +62,8 @@ void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec3f color)
 
 void DebugDraw::Detail::Init()
 {
-	RenderContext* pCtx = Graphics::GetContext();
+	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
+	Context* pCtx = GfxDevice::GetContext();
 
 	std::string shaderSrc = "\
 	cbuffer cbTransform\
@@ -86,7 +87,7 @@ void DebugDraw::Detail::Init()
 		return input.Col;\
 	}";
 
-	debugShader = Graphics::LoadShaderFromText(shaderSrc, false);
+	debugShader = GfxDevice::LoadShaderFromText(shaderSrc, false);
 	debugShader.topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
 
 	// Create constant buffer for WVP
@@ -103,7 +104,8 @@ void DebugDraw::Detail::Init()
 
 void DebugDraw::Detail::DrawQueue()
 {
-	RenderContext* pCtx = Graphics::GetContext();
+	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
+	Context* pCtx = GfxDevice::GetContext();
 
 	if (pVertexBuffer == nullptr || vertBufferSize < vertBufferData.size())
 	{
@@ -156,7 +158,7 @@ void DebugDraw::Detail::DrawQueue()
 	pCtx->pDeviceContext->Unmap(pConstBuffer, 0);
 
 	// Bind shaders
-	debugShader.Bind(*pCtx);
+	debugShader.Bind();
 
 	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	UINT stride = sizeof(DebugVertex);

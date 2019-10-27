@@ -21,6 +21,9 @@ REFLECT_END()
 
 RenderFont::RenderFont(std::string fontFile, int size)
 {
+	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
+	Context* pCtx = GfxDevice::GetContext();
+
 	FT_Library freetype;
 	FT_Init_FreeType(&freetype);
 
@@ -52,7 +55,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		return textureColor;\
 	}";
 
-	fontShader = Graphics::LoadShaderFromText(fontShaderSrc);
+	fontShader = GfxDevice::LoadShaderFromText(fontShaderSrc);
 
 
 	std::vector<Vertex> quadVertices = {
@@ -88,7 +91,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = quadVertices.data();
 
-	Graphics::GetContext()->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pQuadVertBuffer);
+	pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pQuadVertBuffer);
 
 	// Create an index buffer
 	// **********************
@@ -106,7 +109,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
 	indexBufferData.pSysMem = quadIndices.data();
-	Graphics::GetContext()->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pQuadIndexBuffer);
+	pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pQuadIndexBuffer);
 
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
@@ -118,7 +121,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	wvpBufferDesc.CPUAccessFlags = 0;
 	wvpBufferDesc.MiscFlags = 0;
-	Graphics::GetContext()->pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &pQuadWVPBuffer);
+	pCtx->pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &pQuadWVPBuffer);
 
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(blendDesc));
@@ -138,7 +141,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	blendDesc.AlphaToCoverageEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
-	Graphics::GetContext()->pDevice->CreateBlendState(&blendDesc, &transparency);
+	pCtx->pDevice->CreateBlendState(&blendDesc, &transparency);
 
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -150,7 +153,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	Graphics::GetContext()->pDevice->CreateSamplerState(&sampDesc, &charTextureSampler);
+	pCtx->pDevice->CreateSamplerState(&sampDesc, &charTextureSampler);
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -164,7 +167,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		Character character;
 		if (face->glyph->bitmap.width > 0 && face->glyph->bitmap.rows > 0)
 		{
-			Graphics::Texture2D texture = Graphics::CreateTexture2D(
+			GfxDevice::Texture2D texture = GfxDevice::CreateTexture2D(
 				face->glyph->bitmap.width,
 				face->glyph->bitmap.rows,
 				DXGI_FORMAT_R8_UNORM,
@@ -187,24 +190,27 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 void RenderFont::DrawSceneText(Scene& scene)
 {
+	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
+	Context* pCtx = GfxDevice::GetContext();
+
 	// Set vertex buffer as active
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	Graphics::GetContext()->pDeviceContext->IASetVertexBuffers(0, 1, &pQuadVertBuffer, &stride, &offset);
+	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pQuadVertBuffer, &stride, &offset);
 
-	Graphics::GetContext()->pDeviceContext->IASetIndexBuffer(pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	pCtx->pDeviceContext->IASetIndexBuffer(pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	Graphics::GetContext()->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
+	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
 
 	// Set Shaders to active
-	fontShader.Bind(*Graphics::GetContext());
+	fontShader.Bind();
 	
 	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
-	Graphics::GetContext()->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);
+	pCtx->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);
 
-	Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->windowWidth, 0.0f, Graphics::GetContext()->windowHeight, 0.1f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f); // transform into screen space
 	
-	Graphics::GetContext()->pDeviceContext->PSSetSamplers(0, 1, &charTextureSampler);
+	pCtx->pDeviceContext->PSSetSamplers(0, 1, &charTextureSampler);
 
 	for (EntityID ent : SceneView<CText, CTransform>(scene))
 	{
@@ -234,13 +240,13 @@ void RenderFont::DrawSceneText(Scene& scene)
 				Matrixf wvp = projection * world;
 
 				cbCharTransform.wvp = wvp;
-				Graphics::GetContext()->pDeviceContext->UpdateSubresource(pQuadWVPBuffer, 0, nullptr, &cbCharTransform, 0, 0);
+				pCtx->pDeviceContext->UpdateSubresource(pQuadWVPBuffer, 0, nullptr, &cbCharTransform, 0, 0);
 
-				Graphics::GetContext()->pDeviceContext->PSSetShaderResources(0, 1, &(characters[c].charTexture));
+				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &(characters[c].charTexture));
 
 				// do 3D rendering on the back buffer here
 				// Instance render the entire string
-				Graphics::GetContext()->pDeviceContext->DrawIndexed(5, 0, 0);
+				pCtx->pDeviceContext->DrawIndexed(5, 0, 0);
 
 				x += ch.advance;
 			}

@@ -32,6 +32,8 @@ set(SOURCES
     "Renderer/RenderFont.cpp"
     "Renderer/DebugDraw.h"
     "Renderer/DebugDraw.cpp"
+    "GraphicsDevice/GraphicsDevice.h"
+    "GraphicsDevice/GraphicsDevice.cpp"
     "Editor/Editor.h"
     "Editor/Editor.cpp"
     "Input/Input.h"

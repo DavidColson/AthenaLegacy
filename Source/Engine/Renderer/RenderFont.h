@@ -3,6 +3,7 @@
 #include "Maths/Matrix.h"
 #include "Maths/Vec2.h"
 #include "Renderer/Renderer.h"
+#include "GraphicsDevice/GraphicsDevice.h"
 
 #include <string>
 #include <vector>
@@ -52,6 +53,7 @@ private:
 	};
 	cbTransform cbCharTransform;
 
+	// #TODO: Systems outside GfxDevice should not be acceessing directX stuff
 	ID3D11Buffer * pQuadVertBuffer{ nullptr };
 	ID3D11Buffer* pQuadIndexBuffer{ nullptr };
 
@@ -61,7 +63,7 @@ private:
 
 	ID3D11BlendState* transparency;
 
-	Graphics::Shader fontShader;
+	GfxDevice::Shader fontShader;
 
 	std::vector<Character> characters;
 };
