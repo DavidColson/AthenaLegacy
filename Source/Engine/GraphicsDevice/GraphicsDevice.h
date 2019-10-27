@@ -25,6 +25,19 @@ struct ID3D11Texture2D;
 class RenderFont;
 struct Context;
 
+enum class TopologyType
+{
+  TriangleStrip,
+  TriangleList,
+  LineStrip,
+  LineList,
+  PointList,
+  TriangleStripAdjacency,
+  TriangleListAdjacency,
+  LineStripAdjacency,
+  LineListAdjacency,
+};
+
 namespace GfxDevice
 {
   // #TODO: temp, external systems should never touch the context
@@ -35,6 +48,8 @@ namespace GfxDevice
   void SetViewport(float x, float y, float width, float height);
 
   void ClearBackBuffer(std::array<float, 4> color);
+
+  void SetTopologyType(TopologyType type);
 
   void SetBackBufferActive();
 
@@ -64,9 +79,15 @@ namespace GfxDevice
     std::vector<D3D11_INPUT_ELEMENT_DESC> layout;
   };
 
-  // This is more like a program than a shader
-  // Probably rename it
-  struct Shader
+  struct VertexShader
+  {
+    void Create(const wchar_t* fileName, VertexInputLayout inputLayout);
+
+    VertexInputLayout vertexInput;
+    ID3D11VertexShader* pVertexShader{ nullptr };
+  };
+
+  struct Program
   {
     void Bind();
 
@@ -74,13 +95,10 @@ namespace GfxDevice
     ID3D11VertexShader* pVertexShader{ nullptr };
     ID3D11GeometryShader* pGeometryShader{ nullptr };
     ID3D11PixelShader* pPixelShader{ nullptr };
-
-    // Should be part of the index buffer no?
-    D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
   };
 
-  Shader LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader);
-  Shader LoadShaderFromText(std::string shaderContents, bool withTexCoords = true);
+  Program LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader);
+  Program LoadShaderFromText(std::string shaderContents, bool withTexCoords = true);
 
   // #TODO: Resources should have private constructors, and are created using GfxDevice Create* functions
   struct RenderTarget
@@ -140,10 +158,10 @@ struct Context
   GfxDevice::RenderTarget preProcessedFrame;
   GfxDevice::VertexBuffer fullScreenQuad;
   ID3D11SamplerState* fullScreenTextureSampler;
-  GfxDevice::Shader fullScreenTextureShader; // simple shader that draws a texture onscreen
+  GfxDevice::Program fullScreenTextureShader; // simple shader that draws a texture onscreen
 
   // Will eventually be a "material" type, assigned to drawables
-  GfxDevice::Shader baseShader;
+  GfxDevice::Program baseShader;
 
   // Need a separate font render system, which pre processes text
   // into meshes

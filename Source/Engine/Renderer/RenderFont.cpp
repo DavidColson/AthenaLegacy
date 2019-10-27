@@ -157,6 +157,8 @@ void RenderFont::DrawSceneText(Scene& scene)
 	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
 	Context* pCtx = GfxDevice::GetContext();
 
+	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
+
 	// Set vertex buffer as active
 	quadBuffer.Bind();
 

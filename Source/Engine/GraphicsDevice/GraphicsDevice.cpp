@@ -151,7 +151,25 @@ void GfxDevice::ClearRenderState()
   pCtx->pDeviceContext->ClearState();
 }
 
-GfxDevice::Shader GfxDevice::LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader)
+void GfxDevice::SetTopologyType(TopologyType type)
+{
+  D3D11_PRIMITIVE_TOPOLOGY topologyType;
+  switch(type)
+  {
+    case TopologyType::TriangleStrip: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
+    case TopologyType::TriangleList: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
+    case TopologyType::LineStrip: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP; break;
+    case TopologyType::LineList: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break;
+    case TopologyType::PointList: topologyType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break;
+    case TopologyType::TriangleStripAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ; break;
+    case TopologyType::TriangleListAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ; break;
+    case TopologyType::LineStripAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ; break;
+    case TopologyType::LineListAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ; break;
+  }
+  pCtx->pDeviceContext->IASetPrimitiveTopology(topologyType);
+}
+
+GfxDevice::Program GfxDevice::LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader)
 {
   HRESULT hr;
   ID3DBlob* pVsBlob = nullptr;
@@ -180,7 +198,7 @@ GfxDevice::Shader GfxDevice::LoadShaderFromFile(const wchar_t* shaderName, bool 
     }
   }
 
-  Shader shader;
+  Program shader;
 
   if (hasGeometryShader)
   {
@@ -210,7 +228,7 @@ GfxDevice::Shader GfxDevice::LoadShaderFromFile(const wchar_t* shaderName, bool 
   return shader;
 }
 
-GfxDevice::Shader GfxDevice::LoadShaderFromText(std::string shaderContents, bool withTexCoords /*= true*/)
+GfxDevice::Program GfxDevice::LoadShaderFromText(std::string shaderContents, bool withTexCoords /*= true*/)
 {
   HRESULT hr;
 
@@ -238,7 +256,7 @@ GfxDevice::Shader GfxDevice::LoadShaderFromText(std::string shaderContents, bool
     }
   }
 
-  Shader shader;
+  Program shader;
 
   // Create shader objects
   hr = pCtx->pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.pVertexShader);
@@ -307,13 +325,12 @@ GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORM
   return { pShaderResourceView, pTexture };
 }
 
-void GfxDevice::Shader::Bind() 
+void GfxDevice::Program::Bind() 
 {
   pCtx->pDeviceContext->VSSetShader(pVertexShader, 0, 0);
   pCtx->pDeviceContext->PSSetShader(pPixelShader, 0, 0);
   pCtx->pDeviceContext->GSSetShader(pGeometryShader, 0, 0);
   pCtx->pDeviceContext->IASetInputLayout(vertexInput.pLayout);
-  pCtx->pDeviceContext->IASetPrimitiveTopology(topology);
 }
 
 void GfxDevice::RenderTarget::Create(float width, float height)

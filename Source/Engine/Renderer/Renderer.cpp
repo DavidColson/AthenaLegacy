@@ -29,7 +29,6 @@ void Renderer::OnGameStart(Scene& scene)
 	Context* pCtx = GfxDevice::GetContext();
 	// Should be eventually moved to a material type when that exists
 	pCtx->baseShader = GfxDevice::LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
-	pCtx->baseShader.topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
 
 	pCtx->pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
@@ -99,6 +98,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 		// Set Shaders to active
 		pCtx->baseShader.Bind();
+		GfxDevice::SetTopologyType(TopologyType::LineStripAdjacency);
+
 
 		for (EntityID ent : SceneView<CDrawable, CTransform>(scene))
 		{
@@ -139,6 +140,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		pp->blurredFrame[0].SetActive();
 		pp->blurredFrame[0].ClearView({ 0.0f, 0.f, 0.f, 1.0f }, false, false);
 		GfxDevice::SetViewport(0.f, 0.f, pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
+		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Bind bloom shader data
 		pp->bloomShader.Bind();
@@ -201,6 +203,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetBackBufferActive();
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
 		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
+		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		pCtx->fullScreenTextureShader.Bind();
 		pCtx->fullScreenQuad.Bind();

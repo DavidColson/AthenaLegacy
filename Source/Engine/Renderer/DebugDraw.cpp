@@ -26,7 +26,7 @@ namespace
 	std::vector<int> indexBufferData;
 	int indexBufferSize = 0;
 
-	GfxDevice::Shader debugShader;
+	GfxDevice::Program debugShader;
 	GfxDevice::VertexBuffer vertexBuffer;
 	GfxDevice::IndexBuffer indexBuffer;
 
@@ -89,7 +89,6 @@ void DebugDraw::Detail::Init()
 	}";
 
 	debugShader = GfxDevice::LoadShaderFromText(shaderSrc, false);
-	debugShader.topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
 
 	// Create constant buffer for WVP
 	{
@@ -131,6 +130,8 @@ void DebugDraw::Detail::DrawQueue()
 
 	// Bind shaders
 	debugShader.Bind();
+
+	GfxDevice::SetTopologyType(TopologyType::LineStrip);
 
 	vertexBuffer.Bind();
 	indexBuffer.Bind();
