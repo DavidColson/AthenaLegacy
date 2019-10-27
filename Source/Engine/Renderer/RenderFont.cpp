@@ -197,16 +197,12 @@ void RenderFont::DrawSceneText(Scene& scene)
 	Graphics::GetContext()->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
 
 	// Set Shaders to active
-	Graphics::GetContext()->pDeviceContext->VSSetShader(fontShader.pVertexShader, 0, 0);
-	Graphics::GetContext()->pDeviceContext->PSSetShader(fontShader.pPixelShader, 0, 0);
-	Graphics::GetContext()->pDeviceContext->GSSetShader(fontShader.pGeometryShader, 0, 0);
-	Graphics::GetContext()->pDeviceContext->IASetInputLayout(fontShader.pVertLayout);
-	Graphics::GetContext()->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
+	fontShader.Bind(*Graphics::GetContext());
+	
 	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
 	Graphics::GetContext()->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);
 
-	Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->windowWidth / Graphics::GetContext()->pixelScale, 0.0f, Graphics::GetContext()->windowHeight / Graphics::GetContext()->pixelScale, 0.1f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0, Graphics::GetContext()->windowWidth, 0.0f, Graphics::GetContext()->windowHeight, 0.1f, 10.0f); // transform into screen space
 	
 	Graphics::GetContext()->pDeviceContext->PSSetSamplers(0, 1, &charTextureSampler);
 

@@ -87,6 +87,7 @@ void DebugDraw::Detail::Init()
 	}";
 
 	debugShader = Graphics::LoadShaderFromText(shaderSrc, false);
+	debugShader.topology = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
 
 	// Create constant buffer for WVP
 	{
@@ -150,16 +151,12 @@ void DebugDraw::Detail::DrawQueue()
 	ZeroMemory(&constResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
 	pCtx->pDeviceContext->Map(pConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constResource);
 	cbTransform* transform = (cbTransform*)constResource.pData;
-	Matrixf wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth / pCtx->pixelScale, 0.0f, pCtx->windowHeight / pCtx->pixelScale, 0.1f, 10.0f);
+	Matrixf wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f);
 	memcpy(&transform->wvp, &wvp, sizeof(wvp));
 	pCtx->pDeviceContext->Unmap(pConstBuffer, 0);
 
 	// Bind shaders
-	pCtx->pDeviceContext->IASetInputLayout(debugShader.pVertLayout);
-	pCtx->pDeviceContext->VSSetShader(debugShader.pVertexShader, 0, 0);
-	pCtx->pDeviceContext->PSSetShader(debugShader.pPixelShader, 0, 0);
-	pCtx->pDeviceContext->GSSetShader(debugShader.pGeometryShader, 0, 0);
-	pCtx->pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	debugShader.Bind(*pCtx);
 
 	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	UINT stride = sizeof(DebugVertex);

@@ -94,7 +94,7 @@ void RenderProxy::Draw()
 	Matrixf world = posMat * rotMat * scaMat * pivotAdjust; // transform into world space
 	Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f)); // transform into camera space
 
-	Matrixf projection = Matrixf::Orthographic(0.f, Graphics::GetContext()->windowWidth / Graphics::GetContext()->pixelScale, 0.0f, Graphics::GetContext()->windowHeight / Graphics::GetContext()->pixelScale, -1.0f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0.f, Graphics::GetContext()->windowWidth, 0.0f, Graphics::GetContext()->windowHeight, -1.0f, 10.0f); // transform into screen space
 	
 	Matrixf wvp = projection * view * world;
 
