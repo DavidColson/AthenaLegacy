@@ -98,6 +98,14 @@ namespace GfxDevice
 
   struct VertexBuffer
   {
+    void Create(size_t elements, size_t _elementSize, void* data);
+    void CreateDynamic(size_t elements, size_t _elementSize);
+    void UpdateDynamicData(void* data, size_t size);
+    bool IsInvalid();
+    void Bind();
+
+    bool isDynamic{ false };
+    UINT elementSize{ 0 };
     ID3D11Buffer* pBuffer{ nullptr };
   };
 }
@@ -116,7 +124,7 @@ struct Context
   // post processing before we render into the backbuffer
   // #TODO: This stuff should be part of the higher level graphics system
   GfxDevice::RenderTarget preProcessedFrame;
-  ID3D11Buffer * pFullScreenVertBuffer{ nullptr };
+  GfxDevice::VertexBuffer fullScreenQuad;
   ID3D11SamplerState* fullScreenTextureSampler;
   GfxDevice::Shader fullScreenTextureShader; // simple shader that draws a texture onscreen
 

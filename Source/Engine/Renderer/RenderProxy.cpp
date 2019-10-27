@@ -21,33 +21,20 @@ struct cbPerObject
 };
 cbPerObject perObject;
 
-RenderProxy::RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indices)
-	: vertices(_vertices), indices(_indices)
+RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 {
 	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
 	Context* pCtx = GfxDevice::GetContext();
+
 	// Create vertex buffer
 	// ********************
 
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * UINT(vertices.size());
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
-
-	// fill the buffer with actual data
-	D3D11_SUBRESOURCE_DATA vertexBufferData;
-	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-	vertexBufferData.pSysMem = vertices.data();
-
-	pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pVertBuffer);
+	vertBuffer.Create(vertices.size(), sizeof(Vertex), vertices.data());
 
 	// Create an index buffer
 	// **********************
 
+	numberOfIndices = (UINT)indices.size();
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
@@ -85,9 +72,7 @@ void RenderProxy::Draw()
 	Context* pCtx = GfxDevice::GetContext();
 	
 	// Set vertex buffer as active
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pVertBuffer, &stride, &offset);
+	vertBuffer.Bind();
 
 	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
@@ -110,5 +95,5 @@ void RenderProxy::Draw()
 	pCtx->pDeviceContext->GSSetConstantBuffers(0, 1, &(pWVPBuffer));
 
 	// do 3D rendering on the back buffer here
-	pCtx->pDeviceContext->DrawIndexed((UINT)indices.size(), 0, 0);
+	pCtx->pDeviceContext->DrawIndexed(numberOfIndices, 0, 0);
 }

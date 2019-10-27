@@ -142,9 +142,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 		// Bind bloom shader data
 		pp->bloomShader.Bind();
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
-		pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+		pCtx->fullScreenQuad.Bind();
 		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
 
 		pp->bloomShaderData.resolution = Vec2f(900, 500);
@@ -182,7 +180,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
 
 		pp->postProcessShader.Bind();
-		pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+		pCtx->fullScreenQuad.Bind();
+
 		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
 		pCtx->pDeviceContext->PSSetShaderResources(1, 1, &pp->blurredFrame[1].texture.pShaderResourceView);
 		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
@@ -204,9 +203,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
 
 		pCtx->fullScreenTextureShader.Bind();
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
-		pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pCtx->pFullScreenVertBuffer, &stride, &offset);
+		pCtx->fullScreenQuad.Bind();
+
 		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
 		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
 

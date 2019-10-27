@@ -61,55 +61,19 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	std::vector<Vertex> quadVertices = {
 		Vertex(Vec3f(0.0f, 0.0f, 0.5f)),
 		Vertex(Vec3f(0.f, 10.f, 0.5f)),
-		Vertex(Vec3f(10.f, 10.f, 0.5f)),
-		Vertex(Vec3f(10.f, 0.f, 0.5f))
-	};
-	std::vector<int> quadIndices = {
-		0, 1, 2,
-		3, 0
+		Vertex(Vec3f(10.f, 0.f, 0.5f)),
+		Vertex(Vec3f(10.f, 10.f, 0.5f))
 	};
 
 	quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
 	quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
-	quadVertices[2].texCoords = Vec2f(1.0f, 0.0f);
-	quadVertices[3].texCoords = Vec2f(1.0f, 1.0f);
+	quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
+	quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
 
 	// Create vertex buffer
 	// ********************
 
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * UINT(quadVertices.size());
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
-
-	// fill the buffer with actual data
-	D3D11_SUBRESOURCE_DATA vertexBufferData;
-	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-	vertexBufferData.pSysMem = quadVertices.data();
-
-	pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pQuadVertBuffer);
-
-	// Create an index buffer
-	// **********************
-
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * UINT(quadIndices.size());
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-
-	// fill the index buffer with actual data
-	D3D11_SUBRESOURCE_DATA indexBufferData;
-	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
-	indexBufferData.pSysMem = quadIndices.data();
-	pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pQuadIndexBuffer);
+	quadBuffer.Create(quadVertices.size(), sizeof(Vertex), quadVertices.data());
 
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
@@ -194,11 +158,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 	Context* pCtx = GfxDevice::GetContext();
 
 	// Set vertex buffer as active
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pQuadVertBuffer, &stride, &offset);
-
-	pCtx->pDeviceContext->IASetIndexBuffer(pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	quadBuffer.Bind();
 
 	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
 
@@ -246,7 +206,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 
 				// do 3D rendering on the back buffer here
 				// Instance render the entire string
-				pCtx->pDeviceContext->DrawIndexed(5, 0, 0);
+				pCtx->pDeviceContext->Draw(4, 0);
 
 				x += ch.advance;
 			}

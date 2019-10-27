@@ -2,6 +2,7 @@
 
 #include "Maths/Vec3.h"
 #include "Maths/Vec2.h"
+#include "GraphicsDevice/GraphicsDevice.h"
 
 #include <vector>
 
@@ -19,7 +20,7 @@ struct Vertex
 struct RenderProxy
 {
 	RenderProxy() {};
-	RenderProxy(std::vector<Vertex> _vertices, std::vector<int> _indices);
+	RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices);
 
 	void Draw();
 
@@ -32,11 +33,8 @@ struct RenderProxy
 	float rot{ 0.0f };
 	float lineThickness{ 1.0f };
 
-	ID3D11Buffer* pVertBuffer{ nullptr };
-	std::vector<Vertex> vertices;
+	GfxDevice::VertexBuffer vertBuffer;
 
 	ID3D11Buffer* pIndexBuffer{ nullptr };
-	std::vector<int> indices;
-
-	// draw states
+	UINT numberOfIndices{ 0 };
 };

@@ -89,6 +89,7 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
   pCtx->pDevice->CreateSamplerState(&sampDesc, &pCtx->fullScreenTextureSampler);
 
+  // Vertex Buffer for fullscreen quad
   std::vector<Vertex> quadVertices = {
     Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
     Vertex(Vec3f(-1.f, 1.f, 0.5f)),
@@ -99,19 +100,7 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
   quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
   quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-
-  D3D11_BUFFER_DESC vertexBufferDesc;
-  ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-  vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-  vertexBufferDesc.ByteWidth = sizeof(Vertex) * UINT(quadVertices.size());
-  vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-  vertexBufferDesc.CPUAccessFlags = 0;
-  vertexBufferDesc.MiscFlags = 0;
-  vertexBufferDesc.StructureByteStride = 0;
-  D3D11_SUBRESOURCE_DATA vertexBufferData;
-  ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-  vertexBufferData.pSysMem = quadVertices.data();
-  pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->pFullScreenVertBuffer);
+  pCtx->fullScreenQuad.Create(quadVertices.size(), sizeof(Vertex), quadVertices.data());
 
   // Render target for the main scene
   pCtx->preProcessedFrame.Create(pCtx->windowWidth, pCtx->windowHeight);
@@ -303,16 +292,17 @@ GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORM
     pCtx->pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &pTexture);
   }
   
-  //pPreprocessingFrame->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof("Texture 2D Preprocessed Frame"), "Texture 2D Preprocessed Frame");
-
-  D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-  shaderResourceViewDesc.Format = textureDesc.Format;
-  shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-  shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-  shaderResourceViewDesc.Texture2D.MipLevels = 1;
-
   ID3D11ShaderResourceView* pShaderResourceView = nullptr;
-  pCtx->pDevice->CreateShaderResourceView(pTexture, &shaderResourceViewDesc, &pShaderResourceView);
+  if (textureDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE)
+  {
+    D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+    shaderResourceViewDesc.Format = textureDesc.Format;
+    shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+    shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+    pCtx->pDevice->CreateShaderResourceView(pTexture, &shaderResourceViewDesc, &pShaderResourceView);
+  }
 
   return { pShaderResourceView, pTexture };
 }
@@ -388,4 +378,69 @@ void GfxDevice::VertexInputLayout::AddElement(const char* name, AttributeType ty
     default:
       break;  
   }
+}
+
+void GfxDevice::VertexBuffer::Create(size_t elements, size_t _elementSize, void* data)
+{
+  elementSize = UINT(_elementSize);
+
+  D3D11_BUFFER_DESC vertexBufferDesc;
+  ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+  vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+  vertexBufferDesc.ByteWidth = elementSize * UINT(elements);
+  vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+  vertexBufferDesc.CPUAccessFlags = 0;
+  vertexBufferDesc.MiscFlags = 0;
+  vertexBufferDesc.StructureByteStride = 0;
+
+  D3D11_SUBRESOURCE_DATA vertexBufferData;
+  ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+  vertexBufferData.pSysMem = data;
+  pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pBuffer);
+}
+
+void GfxDevice::VertexBuffer::CreateDynamic(size_t elements, size_t _elementSize)
+{
+  elementSize = UINT(_elementSize);
+  isDynamic = true;
+
+  D3D11_BUFFER_DESC vertexBufferDesc;
+  ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+  vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+  vertexBufferDesc.ByteWidth = elementSize * UINT(elements);
+  vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+  vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  vertexBufferDesc.MiscFlags = 0;
+  vertexBufferDesc.StructureByteStride = 0;
+
+  pCtx->pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &pBuffer);
+}
+
+void GfxDevice::VertexBuffer::UpdateDynamicData(void* data, size_t size)
+{
+  if (!isDynamic)
+  {
+    Log::Print(Log::EErr, "Attempting to update non dynamic vertex buffer");
+    return;
+  }
+
+  D3D11_MAPPED_SUBRESOURCE vertResource;
+  ZeroMemory(&vertResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+  pCtx->pDeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &vertResource);
+  memcpy(vertResource.pData, data, size);
+  pCtx->pDeviceContext->Unmap(pBuffer, 0);
+}
+
+bool GfxDevice::VertexBuffer::IsInvalid()
+{
+  return pBuffer == nullptr;
+}
+
+
+void GfxDevice::VertexBuffer::Bind()
+{
+  UINT offset = 0;
+  pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &elementSize, &offset);
 }

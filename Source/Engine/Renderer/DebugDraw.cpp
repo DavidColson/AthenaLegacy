@@ -20,20 +20,21 @@ namespace
 		Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
 		Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
 	};
+
 	std::vector<DebugVertex> vertBufferData;
 	int vertBufferSize = 0;
 	std::vector<int> indexBufferData;
 	int indexBufferSize = 0;
 
 	GfxDevice::Shader debugShader;
-	ID3D11Buffer* pVertexBuffer;
+	GfxDevice::VertexBuffer vertexBuffer;
 	ID3D11Buffer* pIndexBuffer;
 
 	struct cbTransform
 	{
 		Matrixf wvp;
-	};
-	ID3D11Buffer* pConstBuffer;
+	} transformBufferData;
+	ID3D11Buffer* pTransformBuffer;
 }
 
 void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec3f color)
@@ -42,7 +43,7 @@ void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec3f color)
 	for (int i = 0; i < 20; i++)
 	{
 		float x = div * (float)i;
-		Vec3f point = Vec3f(radius*cos(x), radius*sin(x), 0.0f) + Vec3f::Embed2D(pos);
+		Vec3f point = Vec3f(radius*cos(x), radius*sin(x), 0.0f) + Vec3f(pos.x, pos.y, 0.5f);
 		vertBufferData.emplace_back(DebugVertex{ point, color });
 		indexBufferData.push_back(i);
 	}
@@ -52,8 +53,8 @@ void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec3f color)
 
 void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec3f color)
 {
-	vertBufferData.emplace_back(DebugVertex{ Vec3f::Embed2D(start), color });
-	vertBufferData.emplace_back(DebugVertex{ Vec3f::Embed2D(end), color });
+	vertBufferData.emplace_back(DebugVertex{ Vec3f(start.x, start.y, 0.5f), color });
+	vertBufferData.emplace_back(DebugVertex{ Vec3f(end.x, end.y, 0.5f), color });
 	indexBufferData.push_back(0);
 	indexBufferData.push_back(1);
 
@@ -93,12 +94,13 @@ void DebugDraw::Detail::Init()
 	// Create constant buffer for WVP
 	{
 		D3D11_BUFFER_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+		desc.Usage = D3D11_USAGE_DEFAULT;
 		desc.ByteWidth = sizeof(cbTransform);
-		desc.Usage = D3D11_USAGE_DYNAMIC;
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		desc.CPUAccessFlags = 0;
 		desc.MiscFlags = 0;
-		pCtx->pDevice->CreateBuffer(&desc, NULL, &pConstBuffer);
+		pCtx->pDevice->CreateBuffer(&desc, nullptr, &pTransformBuffer);
 	}
 }
 
@@ -107,17 +109,10 @@ void DebugDraw::Detail::DrawQueue()
 	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
 	Context* pCtx = GfxDevice::GetContext();
 
-	if (pVertexBuffer == nullptr || vertBufferSize < vertBufferData.size())
+	if (vertexBuffer.IsInvalid() || vertBufferSize < vertBufferData.size())
 	{
-		D3D11_BUFFER_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
 		vertBufferSize = (int)vertBufferData.size() + 1000;
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.ByteWidth = sizeof(Vertex) * UINT(vertBufferSize);
-		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		desc.MiscFlags = 0;
-		pCtx->pDevice->CreateBuffer(&desc, nullptr, &pVertexBuffer);
+		vertexBuffer.CreateDynamic(vertBufferSize, sizeof(DebugVertex));
 	}
 
 	if (pIndexBuffer == nullptr || indexBufferSize < indexBufferData.size())
@@ -126,7 +121,7 @@ void DebugDraw::Detail::DrawQueue()
 		ZeroMemory(&desc, sizeof(desc));
 		indexBufferSize = (int)indexBufferData.size() + 1000;
 		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.ByteWidth = sizeof(Vertex) * UINT(indexBufferSize);
+		desc.ByteWidth = sizeof(int) * UINT(indexBufferSize);
 		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		desc.MiscFlags = 0;
@@ -134,37 +129,25 @@ void DebugDraw::Detail::DrawQueue()
 	}
 
 	// Update vert and index buffer data
-	D3D11_MAPPED_SUBRESOURCE vertResource, indexResource;
-	ZeroMemory(&vertResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	ZeroMemory(&indexResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	pCtx->pDeviceContext->Map(pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &vertResource);
-	pCtx->pDeviceContext->Map(pIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &indexResource);
+	vertexBuffer.UpdateDynamicData(vertBufferData.data(), vertBufferData.size() * sizeof(DebugVertex));
 
-	if (!vertBufferData.empty())
-		memcpy(vertResource.pData, vertBufferData.data(), vertBufferData.size() * sizeof(DebugVertex));
+	D3D11_MAPPED_SUBRESOURCE indexResource;
+	ZeroMemory(&indexResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+	pCtx->pDeviceContext->Map(pIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &indexResource);
 	if (!indexBufferData.empty())
 		memcpy(indexResource.pData, indexBufferData.data(), indexBufferData.size() * sizeof(int));
-
-	pCtx->pDeviceContext->Unmap(pVertexBuffer, 0);
 	pCtx->pDeviceContext->Unmap(pIndexBuffer, 0);
 
 	// Update constant buffer data
-	D3D11_MAPPED_SUBRESOURCE constResource;
-	ZeroMemory(&constResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	pCtx->pDeviceContext->Map(pConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constResource);
-	cbTransform* transform = (cbTransform*)constResource.pData;
-	Matrixf wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f);
-	memcpy(&transform->wvp, &wvp, sizeof(wvp));
-	pCtx->pDeviceContext->Unmap(pConstBuffer, 0);
+	transformBufferData.wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f);
+	pCtx->pDeviceContext->UpdateSubresource(pTransformBuffer, 0, nullptr, &transformBufferData, 0, 0);
 
 	// Bind shaders
 	debugShader.Bind();
 
+	vertexBuffer.Bind();
 	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	UINT stride = sizeof(DebugVertex);
-	UINT offset = 0;
-	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
-	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &pConstBuffer);
+	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &pTransformBuffer);
 
 
 	int vertOffset = 0;
