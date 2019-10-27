@@ -98,14 +98,28 @@ namespace GfxDevice
 
   struct VertexBuffer
   {
-    void Create(size_t elements, size_t _elementSize, void* data);
-    void CreateDynamic(size_t elements, size_t _elementSize);
-    void UpdateDynamicData(void* data, size_t size);
+    void Create(size_t numElements, size_t _elementSize, void* data);
+    void CreateDynamic(size_t numElements, size_t _elementSize);
+    void UpdateDynamicData(void* data, size_t dataSize);
     bool IsInvalid();
     void Bind();
 
     bool isDynamic{ false };
     UINT elementSize{ 0 };
+    ID3D11Buffer* pBuffer{ nullptr };
+  };
+
+  struct IndexBuffer
+  {
+    void Create(size_t numElements, void* data);
+    void CreateDynamic(size_t numElements);
+    void UpdateDynamicData(void* data, size_t dataSize);
+    bool IsInvalid();
+    int  GetNumElements();
+    void Bind();
+
+    int nElements;
+    bool isDynamic{ false };
     ID3D11Buffer* pBuffer{ nullptr };
   };
 }

@@ -34,7 +34,5 @@ struct RenderProxy
 	float lineThickness{ 1.0f };
 
 	GfxDevice::VertexBuffer vertBuffer;
-
-	ID3D11Buffer* pIndexBuffer{ nullptr };
-	UINT numberOfIndices{ 0 };
+	GfxDevice::IndexBuffer indexBuffer;
 };

@@ -28,7 +28,7 @@ namespace
 
 	GfxDevice::Shader debugShader;
 	GfxDevice::VertexBuffer vertexBuffer;
-	ID3D11Buffer* pIndexBuffer;
+	GfxDevice::IndexBuffer indexBuffer;
 
 	struct cbTransform
 	{
@@ -115,28 +115,15 @@ void DebugDraw::Detail::DrawQueue()
 		vertexBuffer.CreateDynamic(vertBufferSize, sizeof(DebugVertex));
 	}
 
-	if (pIndexBuffer == nullptr || indexBufferSize < indexBufferData.size())
+	if (indexBuffer.IsInvalid() || indexBufferSize < indexBufferData.size())
 	{
-		D3D11_BUFFER_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
 		indexBufferSize = (int)indexBufferData.size() + 1000;
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.ByteWidth = sizeof(int) * UINT(indexBufferSize);
-		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		desc.MiscFlags = 0;
-		pCtx->pDevice->CreateBuffer(&desc, nullptr, &pIndexBuffer);
+		indexBuffer.CreateDynamic(indexBufferSize);
 	}
 
 	// Update vert and index buffer data
 	vertexBuffer.UpdateDynamicData(vertBufferData.data(), vertBufferData.size() * sizeof(DebugVertex));
-
-	D3D11_MAPPED_SUBRESOURCE indexResource;
-	ZeroMemory(&indexResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-	pCtx->pDeviceContext->Map(pIndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &indexResource);
-	if (!indexBufferData.empty())
-		memcpy(indexResource.pData, indexBufferData.data(), indexBufferData.size() * sizeof(int));
-	pCtx->pDeviceContext->Unmap(pIndexBuffer, 0);
+	indexBuffer.UpdateDynamicData(indexBufferData.data(), indexBufferData.size() * sizeof(int));
 
 	// Update constant buffer data
 	transformBufferData.wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f);
@@ -146,7 +133,7 @@ void DebugDraw::Detail::DrawQueue()
 	debugShader.Bind();
 
 	vertexBuffer.Bind();
-	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	indexBuffer.Bind();
 	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &pTransformBuffer);
 
 

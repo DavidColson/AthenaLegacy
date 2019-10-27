@@ -34,23 +34,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 	// Create an index buffer
 	// **********************
 
-	numberOfIndices = (UINT)indices.size();
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * UINT(indices.size());
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-
-	// fill the index buffer with actual data
-	D3D11_SUBRESOURCE_DATA indexBufferData;
-	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
-	indexBufferData.pSysMem = indices.data();
-	pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pIndexBuffer);
-
-
+	indexBuffer.Create(indices.size(), indices.data());
 
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
@@ -73,8 +57,7 @@ void RenderProxy::Draw()
 	
 	// Set vertex buffer as active
 	vertBuffer.Bind();
-
-	pCtx->pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	indexBuffer.Bind();
 
 	Matrixf posMat = Matrixf::Translate(pos);
 	Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, rot));
@@ -95,5 +78,5 @@ void RenderProxy::Draw()
 	pCtx->pDeviceContext->GSSetConstantBuffers(0, 1, &(pWVPBuffer));
 
 	// do 3D rendering on the back buffer here
-	pCtx->pDeviceContext->DrawIndexed(numberOfIndices, 0, 0);
+	pCtx->pDeviceContext->DrawIndexed(indexBuffer.GetNumElements(), 0, 0);
 }

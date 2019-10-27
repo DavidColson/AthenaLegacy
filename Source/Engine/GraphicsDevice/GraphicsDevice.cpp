@@ -380,7 +380,7 @@ void GfxDevice::VertexInputLayout::AddElement(const char* name, AttributeType ty
   }
 }
 
-void GfxDevice::VertexBuffer::Create(size_t elements, size_t _elementSize, void* data)
+void GfxDevice::VertexBuffer::Create(size_t numElements, size_t _elementSize, void* data)
 {
   elementSize = UINT(_elementSize);
 
@@ -388,7 +388,7 @@ void GfxDevice::VertexBuffer::Create(size_t elements, size_t _elementSize, void*
   ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
   vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-  vertexBufferDesc.ByteWidth = elementSize * UINT(elements);
+  vertexBufferDesc.ByteWidth = elementSize * UINT(numElements);
   vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
   vertexBufferDesc.CPUAccessFlags = 0;
   vertexBufferDesc.MiscFlags = 0;
@@ -400,7 +400,7 @@ void GfxDevice::VertexBuffer::Create(size_t elements, size_t _elementSize, void*
   pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pBuffer);
 }
 
-void GfxDevice::VertexBuffer::CreateDynamic(size_t elements, size_t _elementSize)
+void GfxDevice::VertexBuffer::CreateDynamic(size_t numElements, size_t _elementSize)
 {
   elementSize = UINT(_elementSize);
   isDynamic = true;
@@ -409,7 +409,7 @@ void GfxDevice::VertexBuffer::CreateDynamic(size_t elements, size_t _elementSize
   ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
   vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-  vertexBufferDesc.ByteWidth = elementSize * UINT(elements);
+  vertexBufferDesc.ByteWidth = elementSize * UINT(numElements);
   vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
   vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
   vertexBufferDesc.MiscFlags = 0;
@@ -418,7 +418,7 @@ void GfxDevice::VertexBuffer::CreateDynamic(size_t elements, size_t _elementSize
   pCtx->pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &pBuffer);
 }
 
-void GfxDevice::VertexBuffer::UpdateDynamicData(void* data, size_t size)
+void GfxDevice::VertexBuffer::UpdateDynamicData(void* data, size_t dataSize)
 {
   if (!isDynamic)
   {
@@ -426,10 +426,10 @@ void GfxDevice::VertexBuffer::UpdateDynamicData(void* data, size_t size)
     return;
   }
 
-  D3D11_MAPPED_SUBRESOURCE vertResource;
-  ZeroMemory(&vertResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-  pCtx->pDeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &vertResource);
-  memcpy(vertResource.pData, data, size);
+  D3D11_MAPPED_SUBRESOURCE resource;
+  ZeroMemory(&resource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+  pCtx->pDeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+  memcpy(resource.pData, data, dataSize);
   pCtx->pDeviceContext->Unmap(pBuffer, 0);
 }
 
@@ -443,4 +443,72 @@ void GfxDevice::VertexBuffer::Bind()
 {
   UINT offset = 0;
   pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &elementSize, &offset);
+}
+
+void GfxDevice::IndexBuffer::Create(size_t numElements, void* data)
+{
+  nElements = (int)numElements;
+
+  D3D11_BUFFER_DESC indexBufferDesc;
+  ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+
+  indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+  indexBufferDesc.ByteWidth = sizeof(int) * UINT(numElements);
+  indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+  indexBufferDesc.CPUAccessFlags = 0;
+  indexBufferDesc.MiscFlags = 0;
+  indexBufferDesc.StructureByteStride = 0;
+
+  D3D11_SUBRESOURCE_DATA indexBufferData;
+  ZeroMemory(&indexBufferData, sizeof(indexBufferData));
+  indexBufferData.pSysMem = data;
+  pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pBuffer);
+}
+
+void GfxDevice::IndexBuffer::CreateDynamic(size_t numElements)
+{
+  isDynamic = true;
+  nElements = (int)numElements;
+
+  D3D11_BUFFER_DESC indexBufferDesc;
+  ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+
+  indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+  indexBufferDesc.ByteWidth = sizeof(int) * UINT(numElements);
+  indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+  indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  indexBufferDesc.MiscFlags = 0;
+  indexBufferDesc.StructureByteStride = 0;
+
+  pCtx->pDevice->CreateBuffer(&indexBufferDesc, nullptr, &pBuffer);
+}
+
+void GfxDevice::IndexBuffer::UpdateDynamicData(void* data, size_t dataSize)
+{
+  if (!isDynamic)
+  {
+    Log::Print(Log::EErr, "Attempting to update non dynamic index buffer");
+    return;
+  }
+
+  D3D11_MAPPED_SUBRESOURCE resource;
+  ZeroMemory(&resource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+  pCtx->pDeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+  memcpy(resource.pData, data, dataSize);
+  pCtx->pDeviceContext->Unmap(pBuffer, 0);
+}
+
+bool GfxDevice::IndexBuffer::IsInvalid()
+{
+  return pBuffer == nullptr;
+}
+
+int GfxDevice::IndexBuffer::GetNumElements()
+{
+  return nElements;
+}
+
+void GfxDevice::IndexBuffer::Bind()
+{
+  pCtx->pDeviceContext->IASetIndexBuffer(pBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
