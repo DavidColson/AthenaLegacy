@@ -114,7 +114,7 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pCtx->pFullScreenVertBuffer);
 
   // Render target for the main scene
-  pCtx->preProcessedFrame.Init(pCtx->windowWidth, pCtx->windowHeight);
+  pCtx->preProcessedFrame.Create(pCtx->windowWidth, pCtx->windowHeight);
 
   // Init debug drawing
   DebugDraw::Detail::Init();
@@ -211,14 +211,12 @@ GfxDevice::Shader GfxDevice::LoadShaderFromFile(const wchar_t* shaderName, bool 
   hr = pCtx->pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.pVertexShader);
   hr = pCtx->pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.pPixelShader);
 
-  D3D11_INPUT_ELEMENT_DESC layout[] =
-  {
-    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-  };
-  UINT numElements = ARRAYSIZE(layout);
-  hr = pCtx->pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.pVertLayout);
+  shader.vertexInput.AddElement("POSITION", AttributeType::float3);
+  shader.vertexInput.AddElement("COLOR", AttributeType::float3);
+  shader.vertexInput.AddElement("TEXCOORD", AttributeType::float2);
+
+  hr = pCtx->pDevice->CreateInputLayout(shader.vertexInput.layout.data(), UINT(shader.vertexInput.layout.size()), pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.vertexInput.pLayout);
+
 
   return shader;
 }
@@ -259,24 +257,20 @@ GfxDevice::Shader GfxDevice::LoadShaderFromText(std::string shaderContents, bool
 
   if (withTexCoords)
   {
-    D3D11_INPUT_ELEMENT_DESC layout[] =
-    {
-      { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-      { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-      { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-    };
-    UINT numElements = ARRAYSIZE(layout);
-    hr = pCtx->pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.pVertLayout);
+    // #TODO: This should be done by user and provided when creating vertex shaders, 
+    // we'll create the inputLayout type when we create the vert shader
+    shader.vertexInput.AddElement("POSITION", AttributeType::float3);
+    shader.vertexInput.AddElement("COLOR", AttributeType::float3);
+    shader.vertexInput.AddElement("TEXCOORD", AttributeType::float2);
+
+    hr = pCtx->pDevice->CreateInputLayout(shader.vertexInput.layout.data(), UINT(shader.vertexInput.layout.size()), pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.vertexInput.pLayout);
   }
   else
   {
-    D3D11_INPUT_ELEMENT_DESC layout[] =
-    {
-      { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-      { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    };
-    UINT numElements = ARRAYSIZE(layout);
-    hr = pCtx->pDevice->CreateInputLayout(layout, numElements, pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.pVertLayout);
+    shader.vertexInput.AddElement("POSITION", AttributeType::float3);
+    shader.vertexInput.AddElement("COLOR", AttributeType::float3);
+
+    hr = pCtx->pDevice->CreateInputLayout(shader.vertexInput.layout.data(), UINT(shader.vertexInput.layout.size()), pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.vertexInput.pLayout);
   }
   return shader;
 }
@@ -328,11 +322,11 @@ void GfxDevice::Shader::Bind()
   pCtx->pDeviceContext->VSSetShader(pVertexShader, 0, 0);
   pCtx->pDeviceContext->PSSetShader(pPixelShader, 0, 0);
   pCtx->pDeviceContext->GSSetShader(pGeometryShader, 0, 0);
-  pCtx->pDeviceContext->IASetInputLayout(pVertLayout);
+  pCtx->pDeviceContext->IASetInputLayout(vertexInput.pLayout);
   pCtx->pDeviceContext->IASetPrimitiveTopology(topology);
 }
 
-void GfxDevice::RenderTarget::Init(float width, float height)
+void GfxDevice::RenderTarget::Create(float width, float height)
 {
   texture = CreateTexture2D(
     (int)width,
@@ -379,4 +373,19 @@ void GfxDevice::RenderTarget::ClearView(std::array<float, 4> color, bool clearDe
 {
   pCtx->pDeviceContext->ClearRenderTargetView(pView, color.data());
   pCtx->pDeviceContext->ClearDepthStencilView(pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+void GfxDevice::VertexInputLayout::AddElement(const char* name, AttributeType type)
+{
+  switch(type)
+  {
+    case AttributeType::float3:
+      layout.push_back( { name, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
+      break;
+    case AttributeType::float2:
+      layout.push_back( { name, 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
+      break;
+    default:
+      break;  
+  }
 }

@@ -43,7 +43,7 @@ void Renderer::OnGameStart(Scene& scene)
 
 		for (int i = 0; i < 2; ++i)
 		{
-			pp->blurredFrame[i].Init(pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
+			pp->blurredFrame[i].Create(pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
 		}
 
 		// Create post process shader data buffer

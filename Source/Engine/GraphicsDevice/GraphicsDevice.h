@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 #include <d3d11.h>
 
 // *************************
@@ -49,21 +50,33 @@ namespace GfxDevice
 
   Texture2D CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags);
 
+  enum class AttributeType
+  {
+    float3,
+    float2
+  };
+
+  struct VertexInputLayout
+  {
+    void AddElement(const char* name, AttributeType type);
+
+    ID3D11InputLayout* pLayout{ nullptr };
+    std::vector<D3D11_INPUT_ELEMENT_DESC> layout;
+  };
+
   // This is more like a program than a shader
   // Probably rename it
   struct Shader
   {
+    void Bind();
+
+    VertexInputLayout vertexInput;
     ID3D11VertexShader* pVertexShader{ nullptr };
     ID3D11GeometryShader* pGeometryShader{ nullptr };
     ID3D11PixelShader* pPixelShader{ nullptr };
 
-    // This should be part of the vertex buffer
-    ID3D11InputLayout* pVertLayout{ nullptr };
-
     // Should be part of the index buffer no?
     D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-
-    void Bind();
   };
 
   Shader LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader);
@@ -72,15 +85,20 @@ namespace GfxDevice
   // #TODO: Resources should have private constructors, and are created using GfxDevice Create* functions
   struct RenderTarget
   {
+    void Create(float width, float height);
+    void SetActive();
+    void UnsetActive();
+    void ClearView(std::array<float, 4> color, bool clearDepth, bool clearStencil);
+
     GfxDevice::Texture2D texture;
     ID3D11RenderTargetView* pView{ nullptr };
     GfxDevice::Texture2D depthStencilTexture;
     ID3D11DepthStencilView* pDepthStencilView { nullptr };
+  };
 
-    void Init(float width, float height);
-    void SetActive();
-    void UnsetActive();
-    void ClearView(std::array<float, 4> color, bool clearDepth, bool clearStencil);
+  struct VertexBuffer
+  {
+    ID3D11Buffer* pBuffer{ nullptr };
   };
 }
 
