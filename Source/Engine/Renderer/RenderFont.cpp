@@ -117,17 +117,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 	pCtx->pDevice->CreateBlendState(&blendDesc, &transparency);
 
-	D3D11_SAMPLER_DESC sampDesc;
-	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	pCtx->pDevice->CreateSamplerState(&sampDesc, &charTextureSampler);
+	charTextureSampler.Create();
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -182,7 +172,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 
 	Matrixf projection = Matrixf::Orthographic(0, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f); // transform into screen space
 	
-	pCtx->pDeviceContext->PSSetSamplers(0, 1, &charTextureSampler);
+	charTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
 
 	for (EntityID ent : SceneView<CText, CTransform>(scene))
 	{

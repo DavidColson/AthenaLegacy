@@ -178,7 +178,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		// Bind bloom shader data
 		pp->bloomShaderProgram.Bind();
 		pCtx->fullScreenQuad.Bind();
-		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
+		pCtx->fullScreenTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
 
 		pp->bloomShaderData.resolution = Vec2f(900, 500);
 		
@@ -219,7 +219,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
 		pCtx->pDeviceContext->PSSetShaderResources(1, 1, &pp->blurredFrame[1].texture.pShaderResourceView);
-		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
+		pCtx->fullScreenTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
 		
 		pp->postProcessShaderData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
 		pp->postProcessShaderData.time = float(SDL_GetTicks()) / 1000.0f;
@@ -242,7 +242,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		pCtx->fullScreenQuad.Bind();
 
 		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
-		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
+		pCtx->fullScreenTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
 
 		pCtx->pDeviceContext->Draw(4, 0);
 	}

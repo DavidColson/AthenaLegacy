@@ -89,16 +89,7 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 
   pCtx->fullScreenTextureProgram.Create(vShader, pShader);
   
-  D3D11_SAMPLER_DESC sampDesc;
-  ZeroMemory(&sampDesc, sizeof(sampDesc));
-  sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-  sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-  sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-  sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-  sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-  sampDesc.MinLOD = 0;
-  sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-  pCtx->pDevice->CreateSamplerState(&sampDesc, &pCtx->fullScreenTextureSampler);
+  pCtx->fullScreenTextureSampler.Create();
 
   // Vertex Buffer for fullscreen quad
   std::vector<Vertex> quadVertices = {
@@ -511,4 +502,51 @@ void GfxDevice::Program::Bind()
   pCtx->pDeviceContext->PSSetShader(pixelShader.pShader, 0, 0);
   pCtx->pDeviceContext->GSSetShader(geomShader.pShader, 0, 0);
   pCtx->pDeviceContext->IASetInputLayout(vertShader.vertexInput.pLayout);
+}
+
+void GfxDevice::Sampler::Create(Filter filter, WrapMode wrapMode)
+{
+  D3D11_FILTER samplerFilter;
+  switch(filter)
+  {
+    case Filter::Linear: samplerFilter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; break;
+    case Filter::Point: samplerFilter = D3D11_FILTER_MIN_MAG_MIP_POINT; break;
+    case Filter::Anisotropic: samplerFilter = D3D11_FILTER_ANISOTROPIC; break;
+  }
+
+  D3D11_TEXTURE_ADDRESS_MODE samplerAddressMode;
+  switch(wrapMode)
+  {
+    case WrapMode::Wrap: samplerAddressMode = D3D11_TEXTURE_ADDRESS_WRAP; break;
+    case WrapMode::Mirror: samplerAddressMode = D3D11_TEXTURE_ADDRESS_MIRROR; break;
+    case WrapMode::Clamp: samplerAddressMode = D3D11_TEXTURE_ADDRESS_CLAMP; break;
+    case WrapMode::Border: samplerAddressMode = D3D11_TEXTURE_ADDRESS_BORDER; break;
+  }
+
+  D3D11_SAMPLER_DESC sampDesc;
+  ZeroMemory(&sampDesc, sizeof(sampDesc));
+  sampDesc.Filter = samplerFilter;
+  sampDesc.AddressU = samplerAddressMode;
+  sampDesc.AddressV = samplerAddressMode;
+  sampDesc.AddressW = samplerAddressMode;
+  sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+  sampDesc.MinLOD = 0;
+  sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+  pCtx->pDevice->CreateSamplerState(&sampDesc, &pSampler);
+}
+
+void GfxDevice::Sampler::Bind(ShaderType shaderType, int slot)
+{
+  switch (shaderType)
+  {
+    case ShaderType::Vertex:
+      pCtx->pDeviceContext->VSSetSamplers(slot, 1, &pSampler);
+      break;
+    case ShaderType::Pixel:
+      pCtx->pDeviceContext->PSSetSamplers(slot, 1, &pSampler);
+      break;
+    case ShaderType::Geometry:
+      pCtx->pDeviceContext->GSSetSamplers(slot, 1, &pSampler);
+      break;
+  }
 }

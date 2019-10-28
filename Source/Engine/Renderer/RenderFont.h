@@ -55,14 +55,11 @@ private:
 
 	// #TODO: Systems outside GfxDevice should not be acceessing directX stuff
 	GfxDevice::VertexBuffer quadBuffer;
+	GfxDevice::Sampler charTextureSampler;
+	GfxDevice::Program fontShaderProgram;
 	
 	ID3D11Buffer* pQuadWVPBuffer{ nullptr };
-
-	ID3D11SamplerState* charTextureSampler;
-
 	ID3D11BlendState* transparency;
-
-	GfxDevice::Program fontShaderProgram;
 
 	std::vector<Character> characters;
 };

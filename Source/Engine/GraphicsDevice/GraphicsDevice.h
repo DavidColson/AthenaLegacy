@@ -159,6 +159,37 @@ namespace GfxDevice
     bool isDynamic{ false };
     ID3D11Buffer* pBuffer{ nullptr };
   };
+
+  enum class Filter
+  {
+    Linear,
+    Point,
+    Anisotropic
+  };
+
+  enum class WrapMode
+  {
+    Wrap,
+    Mirror,
+    Clamp,
+    Border
+  };
+
+  enum class ShaderType
+  {
+    Vertex,
+    Pixel,
+    Geometry
+  };
+
+  struct Sampler
+  {
+    void Create(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap);
+    bool IsInvalid() { return pSampler == nullptr; }
+    void Bind(ShaderType shaderType, int slot);
+
+    ID3D11SamplerState* pSampler;
+  };
 }
 
 // #TODO: temp, external systems should never touch the context
@@ -176,7 +207,7 @@ struct Context
   // #TODO: This stuff should be part of the higher level graphics system
   GfxDevice::RenderTarget preProcessedFrame;
   GfxDevice::VertexBuffer fullScreenQuad;
-  ID3D11SamplerState* fullScreenTextureSampler;
+  GfxDevice::Sampler fullScreenTextureSampler;
   GfxDevice::Program fullScreenTextureProgram; // simple shader program that draws a texture onscreen
 
   // Will eventually be a "material" type, assigned to drawables
