@@ -26,7 +26,7 @@ namespace
 	std::vector<int> indexBufferData;
 	int indexBufferSize = 0;
 
-	GfxDevice::Program debugShader;
+	GfxDevice::Program debugShaderProgram;
 	GfxDevice::VertexBuffer vertexBuffer;
 	GfxDevice::IndexBuffer indexBuffer;
 
@@ -88,7 +88,17 @@ void DebugDraw::Detail::Init()
 		return input.Col;\
 	}";
 
-	debugShader = GfxDevice::LoadShaderFromText(shaderSrc, false);
+	GfxDevice::VertexInputLayout layout;
+  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
+  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
+
+  GfxDevice::VertexShader vShader;
+  vShader.CreateFromFileContents(shaderSrc, "VSMain", layout);
+
+  GfxDevice::PixelShader pShader;
+  pShader.CreateFromFileContents(shaderSrc, "PSMain");
+
+  debugShaderProgram.Create(vShader, pShader);
 
 	// Create constant buffer for WVP
 	{
@@ -129,7 +139,7 @@ void DebugDraw::Detail::DrawQueue()
 	pCtx->pDeviceContext->UpdateSubresource(pTransformBuffer, 0, nullptr, &transformBufferData, 0, 0);
 
 	// Bind shaders
-	debugShader.Bind();
+	debugShaderProgram.Bind();
 
 	GfxDevice::SetTopologyType(TopologyType::LineStrip);
 

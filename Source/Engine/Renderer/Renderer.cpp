@@ -27,8 +27,22 @@ REFLECT_END()
 void Renderer::OnGameStart(Scene& scene)
 {
 	Context* pCtx = GfxDevice::GetContext();
+
 	// Should be eventually moved to a material type when that exists
-	pCtx->baseShader = GfxDevice::LoadShaderFromFile(L"Shaders/Shader.hlsl", true);
+	GfxDevice::VertexInputLayout layout;
+  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
+  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
+
+  GfxDevice::VertexShader vShader;
+  vShader.CreateFromFilename(L"Shaders/Shader.hlsl", "VSMain", layout);
+
+  GfxDevice::PixelShader pShader;
+  pShader.CreateFromFilename(L"Shaders/Shader.hlsl", "PSMain");
+
+  GfxDevice::GeometryShader gShader;
+  gShader.CreateFromFilename(L"Shaders/Shader.hlsl", "GSMain");
+
+  pCtx->baseShaderProgram.Create(vShader, pShader, gShader);
 
 	pCtx->pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
@@ -66,8 +80,27 @@ void Renderer::OnGameStart(Scene& scene)
 		GfxDevice::GetContext()->pDevice->CreateBuffer(&bloomBufferDesc, nullptr, &pp->pBloomDataBuffer);
 
 		// Compile and create post processing shaders
-		pp->postProcessShader = GfxDevice::LoadShaderFromFile(L"shaders/PostProcessing.hlsl", false);
-		pp->bloomShader = GfxDevice::LoadShaderFromFile(L"shaders/Bloom.hlsl", false);
+		GfxDevice::VertexInputLayout layout;
+	  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
+	  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
+	  layout.AddElement("TEXCOORD", GfxDevice::AttributeType::float2);
+
+	  GfxDevice::VertexShader vPostProcessShader;
+	  vPostProcessShader.CreateFromFilename(L"shaders/PostProcessing.hlsl", "VSMain", layout);
+
+	  GfxDevice::PixelShader pPostProcessShader;
+	  pPostProcessShader.CreateFromFilename(L"shaders/PostProcessing.hlsl", "PSMain");
+
+	  pp->postProcessShaderProgram.Create(vPostProcessShader, pPostProcessShader);
+
+
+	  GfxDevice::VertexShader vBloomShader;
+	  vBloomShader.CreateFromFilename(L"shaders/Bloom.hlsl", "VSMain", layout);
+
+	  GfxDevice::PixelShader pBloomShader;
+	  pBloomShader.CreateFromFilename(L"shaders/Bloom.hlsl", "PSMain");
+
+	  pp->bloomShaderProgram.Create(vBloomShader, pBloomShader);
 	}
 }
 
@@ -97,7 +130,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetViewport(0.0f, 0.0f, pCtx->windowWidth, pCtx->windowHeight);
 
 		// Set Shaders to active
-		pCtx->baseShader.Bind();
+		pCtx->baseShaderProgram.Bind();
 		GfxDevice::SetTopologyType(TopologyType::LineStripAdjacency);
 
 
@@ -143,7 +176,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Bind bloom shader data
-		pp->bloomShader.Bind();
+		pp->bloomShaderProgram.Bind();
 		pCtx->fullScreenQuad.Bind();
 		pCtx->pDeviceContext->PSSetSamplers(0, 1, &pCtx->fullScreenTextureSampler);
 
@@ -181,7 +214,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
 		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
 
-		pp->postProcessShader.Bind();
+		pp->postProcessShaderProgram.Bind();
 		pCtx->fullScreenQuad.Bind();
 
 		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
@@ -205,7 +238,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
-		pCtx->fullScreenTextureShader.Bind();
+		pCtx->fullScreenTextureProgram.Bind();
 		pCtx->fullScreenQuad.Bind();
 
 		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);

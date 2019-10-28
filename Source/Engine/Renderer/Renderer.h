@@ -70,8 +70,8 @@ struct CPostProcessing
 
 	// Graphics system resource handles
 	GfxDevice::RenderTarget blurredFrame[2];
-	GfxDevice::Program postProcessShader;
-	GfxDevice::Program bloomShader;
+	GfxDevice::Program postProcessShaderProgram;
+	GfxDevice::Program bloomShaderProgram;
 	ID3D11Buffer* pPostProcessDataBuffer;
 	ID3D11Buffer* pBloomDataBuffer;
 

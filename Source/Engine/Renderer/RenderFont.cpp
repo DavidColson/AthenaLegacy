@@ -55,8 +55,18 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		return textureColor;\
 	}";
 
-	fontShader = GfxDevice::LoadShaderFromText(fontShaderSrc);
+	GfxDevice::VertexInputLayout layout;
+  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
+  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
+  layout.AddElement("TEXCOORD", GfxDevice::AttributeType::float2);
 
+  GfxDevice::VertexShader vShader;
+  vShader.CreateFromFileContents(fontShaderSrc, "VSMain", layout);
+
+  GfxDevice::PixelShader pShader;
+  pShader.CreateFromFileContents(fontShaderSrc, "PSMain");
+
+  fontShaderProgram.Create(vShader, pShader);
 
 	std::vector<Vertex> quadVertices = {
 		Vertex(Vec3f(0.0f, 0.0f, 0.5f)),
@@ -165,7 +175,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
 
 	// Set Shaders to active
-	fontShader.Bind();
+	fontShaderProgram.Bind();
 	
 	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
 	pCtx->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);

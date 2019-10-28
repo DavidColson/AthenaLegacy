@@ -74,6 +74,7 @@ namespace GfxDevice
   struct VertexInputLayout
   {
     void AddElement(const char* name, AttributeType type);
+    bool IsInvalid() { return pLayout == nullptr; }
 
     ID3D11InputLayout* pLayout{ nullptr };
     std::vector<D3D11_INPUT_ELEMENT_DESC> layout;
@@ -81,26 +82,44 @@ namespace GfxDevice
 
   struct VertexShader
   {
-    void Create(const wchar_t* fileName, VertexInputLayout inputLayout);
+    void CreateFromFilename(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout);
+    void CreateFromFileContents(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout);
+    bool IsInvalid() { return pShader == nullptr; }
 
     VertexInputLayout vertexInput;
-    ID3D11VertexShader* pVertexShader{ nullptr };
+    ID3D11VertexShader* pShader{ nullptr };
+  };
+
+  struct PixelShader
+  {
+    void CreateFromFilename(const wchar_t* fileName, const char* entry);
+    void CreateFromFileContents(std::string& fileContents, const char* entry);
+    bool IsInvalid() { return pShader == nullptr; }
+
+    ID3D11PixelShader* pShader{ nullptr };
+  };
+
+  struct GeometryShader
+  {
+    void CreateFromFilename(const wchar_t* fileName, const char* entry);
+    void CreateFromFileContents(std::string& fileContents, const char* entry);
+    bool IsInvalid() { return pShader == nullptr; }
+
+    ID3D11GeometryShader* pShader{ nullptr };
   };
 
   struct Program
   {
+    void Create(VertexShader vShader, PixelShader pShader);
+    void Create(VertexShader vShader, PixelShader pShader, GeometryShader gShader);
+    bool IsInvalid() { return !vertShader.IsInvalid() && !pixelShader.IsInvalid(); }
     void Bind();
 
-    VertexInputLayout vertexInput;
-    ID3D11VertexShader* pVertexShader{ nullptr };
-    ID3D11GeometryShader* pGeometryShader{ nullptr };
-    ID3D11PixelShader* pPixelShader{ nullptr };
+    VertexShader vertShader;
+    PixelShader pixelShader;
+    GeometryShader geomShader;
   };
 
-  Program LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader);
-  Program LoadShaderFromText(std::string shaderContents, bool withTexCoords = true);
-
-  // #TODO: Resources should have private constructors, and are created using GfxDevice Create* functions
   struct RenderTarget
   {
     void Create(float width, float height);
@@ -119,7 +138,7 @@ namespace GfxDevice
     void Create(size_t numElements, size_t _elementSize, void* data);
     void CreateDynamic(size_t numElements, size_t _elementSize);
     void UpdateDynamicData(void* data, size_t dataSize);
-    bool IsInvalid();
+    bool IsInvalid() { return pBuffer == nullptr; }
     void Bind();
 
     bool isDynamic{ false };
@@ -132,7 +151,7 @@ namespace GfxDevice
     void Create(size_t numElements, void* data);
     void CreateDynamic(size_t numElements);
     void UpdateDynamicData(void* data, size_t dataSize);
-    bool IsInvalid();
+    bool IsInvalid() { return pBuffer == nullptr; }
     int  GetNumElements();
     void Bind();
 
@@ -158,10 +177,10 @@ struct Context
   GfxDevice::RenderTarget preProcessedFrame;
   GfxDevice::VertexBuffer fullScreenQuad;
   ID3D11SamplerState* fullScreenTextureSampler;
-  GfxDevice::Program fullScreenTextureShader; // simple shader that draws a texture onscreen
+  GfxDevice::Program fullScreenTextureProgram; // simple shader program that draws a texture onscreen
 
   // Will eventually be a "material" type, assigned to drawables
-  GfxDevice::Program baseShader;
+  GfxDevice::Program baseShaderProgram;
 
   // Need a separate font render system, which pre processes text
   // into meshes

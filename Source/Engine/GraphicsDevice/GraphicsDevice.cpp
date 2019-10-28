@@ -75,8 +75,19 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   pCtx->pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->pBackBuffer);
   pBackBuffer->Release();
 
-  // Create a fullscreen quad and shader for drawing fullscreen textures to the backbuffer
-  pCtx->fullScreenTextureShader = LoadShaderFromFile(L"shaders/FullScreenTexture.hlsl", false);
+  // Create a program for drawing full screen quads to t
+  VertexInputLayout layout;
+  layout.AddElement("POSITION", AttributeType::float3);
+  layout.AddElement("COLOR", AttributeType::float3);
+  layout.AddElement("TEXCOORD", AttributeType::float2);
+
+  VertexShader vShader;
+  vShader.CreateFromFilename(L"shaders/FullScreenTexture.hlsl", "VSMain", layout);
+
+  PixelShader pShader;
+  pShader.CreateFromFilename(L"shaders/FullScreenTexture.hlsl", "PSMain");
+
+  pCtx->fullScreenTextureProgram.Create(vShader, pShader);
   
   D3D11_SAMPLER_DESC sampDesc;
   ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -151,6 +162,43 @@ void GfxDevice::ClearRenderState()
   pCtx->pDeviceContext->ClearState();
 }
 
+bool ShaderCompileFromFile(const wchar_t* fileName, const char* entry, const char* target, ID3DBlob** pOutBlob)
+{
+  HRESULT hr;
+  ID3DBlob* pErrorBlob = nullptr;
+  hr = D3DCompileFromFile(fileName, 0, 0, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
+  if (FAILED(hr))
+  {
+    if (pErrorBlob)
+    {
+      OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+      Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char*)pErrorBlob->GetBufferPointer());
+      pErrorBlob->Release();
+      return false;
+    }
+  }
+  return true;
+}
+
+bool ShaderCompile(std::string& fileContents, const char* entry, const char* target, ID3DBlob** pOutBlob)
+{
+  HRESULT hr;
+  ID3DBlob* pErrorBlob = nullptr;
+  hr = D3DCompile(fileContents.c_str(), fileContents.size(), NULL, 0, 0, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
+  if (FAILED(hr))
+  {
+    if (pErrorBlob)
+    {
+      OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
+      Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char*)pErrorBlob->GetBufferPointer());
+      pErrorBlob->Release();
+      return false;
+    }
+  }
+  return true;
+}
+
+
 void GfxDevice::SetTopologyType(TopologyType type)
 {
   D3D11_PRIMITIVE_TOPOLOGY topologyType;
@@ -167,119 +215,6 @@ void GfxDevice::SetTopologyType(TopologyType type)
     case TopologyType::LineListAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ; break;
   }
   pCtx->pDeviceContext->IASetPrimitiveTopology(topologyType);
-}
-
-GfxDevice::Program GfxDevice::LoadShaderFromFile(const wchar_t* shaderName, bool hasGeometryShader)
-{
-  HRESULT hr;
-  ID3DBlob* pVsBlob = nullptr;
-  ID3DBlob* pPsBlob = nullptr;
-  ID3DBlob* pGsBlob = nullptr;
-  ID3DBlob* pErrorBlob = nullptr;
-
-  // #TODO: Shaders should be considered a material, kept somewhere so objects can share materials
-  hr = D3DCompileFromFile(shaderName, 0, 0, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG, 0, &pVsBlob, &pErrorBlob);
-  if (FAILED(hr))
-  {
-    if (pErrorBlob)
-    {
-      OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-      Log::Print(Log::EErr, "Vertex Shader Compile Error\n\n%s", (char*)pErrorBlob->GetBufferPointer());
-      pErrorBlob->Release();
-    }
-  }
-  hr = D3DCompileFromFile(shaderName, 0, 0, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG, 0, &pPsBlob, &pErrorBlob);
-  if (FAILED(hr))
-  {
-    if (pErrorBlob)
-    {
-      Log::Print(Log::EErr, "Pixel Shader Compile Error\n\n%s", (char*)pErrorBlob->GetBufferPointer());
-      pErrorBlob->Release();
-    }
-  }
-
-  Program shader;
-
-  if (hasGeometryShader)
-  {
-    hr = D3DCompileFromFile(shaderName, 0, 0, "GSMain", "gs_5_0", D3DCOMPILE_DEBUG, 0, &pGsBlob, &pErrorBlob);
-    if (FAILED(hr))
-    {
-      if (pErrorBlob)
-      {
-        Log::Print(Log::EErr, "Geometry Shader Compile Error\n\n%s", (char*)pErrorBlob->GetBufferPointer());
-        pErrorBlob->Release();
-      }
-    }
-    hr = pCtx->pDevice->CreateGeometryShader(pGsBlob->GetBufferPointer(), pGsBlob->GetBufferSize(), nullptr, &shader.pGeometryShader);
-  }
-
-  // Create shader objects
-  hr = pCtx->pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.pVertexShader);
-  hr = pCtx->pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.pPixelShader);
-
-  shader.vertexInput.AddElement("POSITION", AttributeType::float3);
-  shader.vertexInput.AddElement("COLOR", AttributeType::float3);
-  shader.vertexInput.AddElement("TEXCOORD", AttributeType::float2);
-
-  hr = pCtx->pDevice->CreateInputLayout(shader.vertexInput.layout.data(), UINT(shader.vertexInput.layout.size()), pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.vertexInput.pLayout);
-
-
-  return shader;
-}
-
-GfxDevice::Program GfxDevice::LoadShaderFromText(std::string shaderContents, bool withTexCoords /*= true*/)
-{
-  HRESULT hr;
-
-  ID3DBlob* pVsBlob = nullptr;
-  ID3DBlob* pPsBlob = nullptr;
-  ID3DBlob* pGsBlob = nullptr;
-  ID3DBlob* pErrorBlob = nullptr;
-
-  hr = D3DCompile(shaderContents.c_str(), shaderContents.size(), NULL, 0, 0, "VSMain", "vs_5_0", 0, 0, &pVsBlob, &pErrorBlob);
-  if (FAILED(hr))
-  {
-    if (pErrorBlob)
-    {
-      Log::Print(Log::EErr, "Vert Shader Compile Error: %s", (char*)pErrorBlob->GetBufferPointer());
-      pErrorBlob->Release();
-    }
-  }
-  hr = D3DCompile(shaderContents.c_str(), shaderContents.size(), NULL, 0, 0, "PSMain", "ps_5_0", 0, 0, &pPsBlob, &pErrorBlob);
-  if (FAILED(hr))
-  {
-    if (pErrorBlob)
-    {
-      Log::Print(Log::EErr, "Pixel Shader Compile Error: %s", (char*)pErrorBlob->GetBufferPointer());
-      pErrorBlob->Release();
-    }
-  }
-
-  Program shader;
-
-  // Create shader objects
-  hr = pCtx->pDevice->CreateVertexShader(pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), nullptr, &shader.pVertexShader);
-  hr = pCtx->pDevice->CreatePixelShader(pPsBlob->GetBufferPointer(), pPsBlob->GetBufferSize(), nullptr, &shader.pPixelShader);
-
-  if (withTexCoords)
-  {
-    // #TODO: This should be done by user and provided when creating vertex shaders, 
-    // we'll create the inputLayout type when we create the vert shader
-    shader.vertexInput.AddElement("POSITION", AttributeType::float3);
-    shader.vertexInput.AddElement("COLOR", AttributeType::float3);
-    shader.vertexInput.AddElement("TEXCOORD", AttributeType::float2);
-
-    hr = pCtx->pDevice->CreateInputLayout(shader.vertexInput.layout.data(), UINT(shader.vertexInput.layout.size()), pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.vertexInput.pLayout);
-  }
-  else
-  {
-    shader.vertexInput.AddElement("POSITION", AttributeType::float3);
-    shader.vertexInput.AddElement("COLOR", AttributeType::float3);
-
-    hr = pCtx->pDevice->CreateInputLayout(shader.vertexInput.layout.data(), UINT(shader.vertexInput.layout.size()), pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &shader.vertexInput.pLayout);
-  }
-  return shader;
 }
 
 GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags)
@@ -323,14 +258,6 @@ GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORM
   }
 
   return { pShaderResourceView, pTexture };
-}
-
-void GfxDevice::Program::Bind() 
-{
-  pCtx->pDeviceContext->VSSetShader(pVertexShader, 0, 0);
-  pCtx->pDeviceContext->PSSetShader(pPixelShader, 0, 0);
-  pCtx->pDeviceContext->GSSetShader(pGeometryShader, 0, 0);
-  pCtx->pDeviceContext->IASetInputLayout(vertexInput.pLayout);
 }
 
 void GfxDevice::RenderTarget::Create(float width, float height)
@@ -450,12 +377,6 @@ void GfxDevice::VertexBuffer::UpdateDynamicData(void* data, size_t dataSize)
   pCtx->pDeviceContext->Unmap(pBuffer, 0);
 }
 
-bool GfxDevice::VertexBuffer::IsInvalid()
-{
-  return pBuffer == nullptr;
-}
-
-
 void GfxDevice::VertexBuffer::Bind()
 {
   UINT offset = 0;
@@ -515,11 +436,6 @@ void GfxDevice::IndexBuffer::UpdateDynamicData(void* data, size_t dataSize)
   pCtx->pDeviceContext->Unmap(pBuffer, 0);
 }
 
-bool GfxDevice::IndexBuffer::IsInvalid()
-{
-  return pBuffer == nullptr;
-}
-
 int GfxDevice::IndexBuffer::GetNumElements()
 {
   return nElements;
@@ -528,4 +444,71 @@ int GfxDevice::IndexBuffer::GetNumElements()
 void GfxDevice::IndexBuffer::Bind()
 {
   pCtx->pDeviceContext->IASetIndexBuffer(pBuffer, DXGI_FORMAT_R32_UINT, 0);
+}
+
+void GfxDevice::VertexShader::CreateFromFilename(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout)
+{
+  ID3DBlob* pBlob = nullptr;
+  vertexInput = inputLayout;
+  ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
+  pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+  pCtx->pDevice->CreateInputLayout(vertexInput.layout.data(), UINT(vertexInput.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &vertexInput.pLayout);
+}
+
+void GfxDevice::VertexShader::CreateFromFileContents(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout)
+{
+  ID3DBlob* pBlob = nullptr;
+  vertexInput = inputLayout;
+  ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
+  pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+  pCtx->pDevice->CreateInputLayout(vertexInput.layout.data(), UINT(vertexInput.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &vertexInput.pLayout);
+}
+
+void GfxDevice::PixelShader::CreateFromFilename(const wchar_t* fileName, const char* entry)
+{
+  ID3DBlob* pBlob = nullptr;
+  ShaderCompileFromFile(fileName, entry, "ps_5_0", &pBlob);
+  pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+}
+
+void GfxDevice::PixelShader::CreateFromFileContents(std::string& fileContents, const char* entry)
+{
+  ID3DBlob* pBlob = nullptr;
+  ShaderCompile(fileContents, entry, "ps_5_0", &pBlob);
+  pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+}
+
+void GfxDevice::GeometryShader::CreateFromFilename(const wchar_t* fileName, const char* entry)
+{
+  ID3DBlob* pBlob = nullptr;
+  ShaderCompileFromFile(fileName, entry, "gs_5_0", &pBlob);
+  pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+}
+
+void GfxDevice::GeometryShader::CreateFromFileContents(std::string& fileContents, const char* entry)
+{
+  ID3DBlob* pBlob = nullptr;
+  ShaderCompile(fileContents, entry, "gs_5_0", &pBlob);
+  pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+}
+
+void GfxDevice::Program::Create(VertexShader vShader, PixelShader pShader)
+{
+  vertShader = vShader;
+  pixelShader = pShader;
+}
+
+void GfxDevice::Program::Create(VertexShader vShader, PixelShader pShader, GeometryShader gShader)
+{
+  vertShader = vShader;
+  pixelShader = pShader;
+  geomShader = gShader;
+}
+
+void GfxDevice::Program::Bind() 
+{
+  pCtx->pDeviceContext->VSSetShader(vertShader.pShader, 0, 0);
+  pCtx->pDeviceContext->PSSetShader(pixelShader.pShader, 0, 0);
+  pCtx->pDeviceContext->GSSetShader(geomShader.pShader, 0, 0);
+  pCtx->pDeviceContext->IASetInputLayout(vertShader.vertexInput.pLayout);
 }

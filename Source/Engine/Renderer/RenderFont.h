@@ -62,7 +62,7 @@ private:
 
 	ID3D11BlendState* transparency;
 
-	GfxDevice::Program fontShader;
+	GfxDevice::Program fontShaderProgram;
 
 	std::vector<Character> characters;
 };
