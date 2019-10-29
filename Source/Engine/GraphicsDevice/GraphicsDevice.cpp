@@ -205,8 +205,10 @@ void GfxDevice::SetTopologyType(TopologyType type)
   pCtx->pDeviceContext->IASetPrimitiveTopology(topologyType);
 }
 
-GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags)
+TextureHandle GfxDevice::CreateTexture(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags)
 {
+  Texture texture;
+
   D3D11_TEXTURE2D_DESC textureDesc;
   ZeroMemory(&textureDesc, sizeof(textureDesc));
   textureDesc.Width = width;
@@ -219,10 +221,9 @@ GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORM
   textureDesc.CPUAccessFlags = 0;
   textureDesc.MiscFlags = 0;
 
-  ID3D11Texture2D* pTexture = nullptr;
   if (data == nullptr)
   {
-    pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &pTexture);
+    pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &texture.pTexture);
   }
   else
   {
@@ -230,7 +231,7 @@ GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORM
     ZeroMemory(&textureBufferData, sizeof(textureBufferData));
     textureBufferData.pSysMem = data;
     textureBufferData.SysMemPitch = width;
-    pCtx->pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &pTexture);
+    pCtx->pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &texture.pTexture);
   }
   
   ID3D11ShaderResourceView* pShaderResourceView = nullptr;
@@ -242,44 +243,65 @@ GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORM
     shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
     shaderResourceViewDesc.Texture2D.MipLevels = 1;
 
-    pCtx->pDevice->CreateShaderResourceView(pTexture, &shaderResourceViewDesc, &pShaderResourceView);
+    pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
   }
 
-  return { pShaderResourceView, pTexture };
+  pCtx->textures.push_back(texture);
+  return TextureHandle{uint16_t(pCtx->textures.size()-1)};
+}
+
+void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
+{
+  Texture& texture = pCtx->textures[handle.id];
+
+   switch (shader)
+  {
+    case ShaderType::Vertex:
+      pCtx->pDeviceContext->VSSetShaderResources(slot, 1, &texture.pShaderResourceView);
+      break;
+    case ShaderType::Pixel:
+      pCtx->pDeviceContext->PSSetShaderResources(slot, 1, &texture.pShaderResourceView);
+      break;
+    case ShaderType::Geometry:
+      pCtx->pDeviceContext->GSSetShaderResources(slot, 1, &texture.pShaderResourceView);
+      break;
+  }
 }
 
 RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 {
   RenderTarget renderTarget;
 
-  renderTarget.texture = CreateTexture2D(
+  renderTarget.texture = CreateTexture(
     (int)width,
     (int)height,
     DXGI_FORMAT_R32G32B32A32_FLOAT,
     nullptr,
     D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
   );
+  Texture texture = pCtx->textures[renderTarget.texture.id];
 
   D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
   renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
   renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
   renderTargetViewDesc.Texture2D.MipSlice = 0;
-  pCtx->pDevice->CreateRenderTargetView(renderTarget.texture.pTexture2D, &renderTargetViewDesc, &renderTarget.pView);
+  pCtx->pDevice->CreateRenderTargetView(texture.pTexture, &renderTargetViewDesc, &renderTarget.pView);
 
-  renderTarget.depthStencilTexture = CreateTexture2D(
+  renderTarget.depthStencilTexture = CreateTexture(
     (int)width,
     (int)height,
     DXGI_FORMAT_D24_UNORM_S8_UINT,
     nullptr,
     D3D11_BIND_DEPTH_STENCIL
   );
+  Texture depthStencilTexture = pCtx->textures[renderTarget.depthStencilTexture.id];
 
   D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
   ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
   depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
   depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
   depthStencilViewDesc.Texture2D.MipSlice = 0;
-  pCtx->pDevice->CreateDepthStencilView(renderTarget.depthStencilTexture.pTexture2D, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
+  pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
 
   pCtx->renderTargets.push_back(renderTarget);
   return RenderTargetHandle{uint16_t(pCtx->renderTargets.size()-1)};
@@ -304,6 +326,12 @@ void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4
 
   pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
   pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+TextureHandle GfxDevice::GetTexture(RenderTargetHandle handle)
+{
+  RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
+  return renderTarget.texture;
 }
 
 void VertexInputLayout::AddElement(const char* name, AttributeType type)
@@ -541,11 +569,11 @@ SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode)
   return SamplerHandle{uint16_t(pCtx->samplers.size()-1)};
 }
 
-void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shaderType, int slot)
+void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shader, int slot)
 {
   Sampler& sampler = pCtx->samplers[handle.id];
 
-  switch (shaderType)
+  switch (shader)
   {
     case ShaderType::Vertex:
       pCtx->pDeviceContext->VSSetSamplers(slot, 1, &sampler.pSampler);

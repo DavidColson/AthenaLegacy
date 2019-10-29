@@ -33,7 +33,7 @@ struct CText
 
 struct Character
 {
-	ID3D11ShaderResourceView* charTexture{ nullptr };
+	TextureHandle charTexture;
 	Vec2i size{ Vec2i(0, 0) };
 	Vec2i bearing{ Vec2i(0, 0) };
 	int advance;

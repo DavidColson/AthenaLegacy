@@ -128,15 +128,13 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		Character character;
 		if (face->glyph->bitmap.width > 0 && face->glyph->bitmap.rows > 0)
 		{
-			GfxDevice::Texture2D texture = GfxDevice::CreateTexture2D(
+			character.charTexture = GfxDevice::CreateTexture(
 				face->glyph->bitmap.width,
 				face->glyph->bitmap.rows,
 				DXGI_FORMAT_R8_UNORM,
 				face->glyph->bitmap.buffer,
 				D3D11_BIND_SHADER_RESOURCE
 			);
-
-			character.charTexture = texture.pShaderResourceView;
 		}
 		character.size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
 		character.bearing = Vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
@@ -201,7 +199,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 				cbCharTransform.wvp = wvp;
 				pCtx->pDeviceContext->UpdateSubresource(pQuadWVPBuffer, 0, nullptr, &cbCharTransform, 0, 0);
 
-				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &(characters[c].charTexture));
+				GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
 
 				// do 3D rendering on the back buffer here
 				// Instance render the entire string

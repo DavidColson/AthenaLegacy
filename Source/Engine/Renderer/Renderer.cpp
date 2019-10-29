@@ -184,14 +184,14 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			if (i == 0)
 			{
 				// First iteration, bind the plain, preprocessed frame
-				RenderTarget& renderTarget = pCtx->renderTargets[pCtx->preProcessedFrame.id];
-				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget.texture.pShaderResourceView);
+				TextureHandle tex = GfxDevice::GetTexture(pCtx->preProcessedFrame);
+				GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
 			}
 			else
 			{
 				GfxDevice::UnbindRenderTarget(pp->blurredFrame[(i + 1) % 2]);
-				RenderTarget& renderTarget = pCtx->renderTargets[pp->blurredFrame[(i + 1) % 2].id];
-				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget.texture.pShaderResourceView);
+				TextureHandle tex = GfxDevice::GetTexture(pp->blurredFrame[(i + 1) % 2]);
+				GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
 				GfxDevice::BindRenderTarget(pp->blurredFrame[i % 2]);
 				GfxDevice::ClearRenderTarget(pp->blurredFrame[i % 2], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
 			}
@@ -207,10 +207,11 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::BindProgram(pp->postProcessShaderProgram);
 		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
 
-		RenderTarget& renderTarget1 = pCtx->renderTargets[pCtx->preProcessedFrame.id];
-		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget1.texture.pShaderResourceView);
-		RenderTarget& renderTarget2 = pCtx->renderTargets[pp->blurredFrame[1].id];
-		pCtx->pDeviceContext->PSSetShaderResources(1, 1, &renderTarget2.texture.pShaderResourceView);
+		TextureHandle ppFrameTex = GfxDevice::GetTexture(pCtx->preProcessedFrame);
+		GfxDevice::BindTexture(ppFrameTex, ShaderType::Pixel, 0);
+		TextureHandle blurFrameTex = GfxDevice::GetTexture(pp->blurredFrame[1]);
+		GfxDevice::BindTexture(blurFrameTex, ShaderType::Pixel, 1);
+
 		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
 		
 		pp->postProcessShaderData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
@@ -233,8 +234,9 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::BindProgram(pCtx->fullScreenTextureProgram);
 		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
 
-		RenderTarget& renderTarget = pCtx->renderTargets[pCtx->preProcessedFrame.id];
-		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget.texture.pShaderResourceView);
+		TextureHandle tex = GfxDevice::GetTexture(pCtx->preProcessedFrame);
+		GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
+
 		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
 
 		pCtx->pDeviceContext->Draw(4, 0);

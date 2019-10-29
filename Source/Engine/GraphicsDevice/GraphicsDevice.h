@@ -54,6 +54,7 @@ DEFINE_HANDLE(VertexShaderHandle)
 DEFINE_HANDLE(GeometryShaderHandle)
 DEFINE_HANDLE(ProgramHandle)
 DEFINE_HANDLE(SamplerHandle)
+DEFINE_HANDLE(TextureHandle)
 
 enum class Filter
 {
@@ -160,6 +161,8 @@ namespace GfxDevice
 
   void ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4> color, bool clearDepth, bool clearStencil);
 
+  TextureHandle GetTexture(RenderTargetHandle handle);
+
   // Samplers
 
   SamplerHandle CreateSampler(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap);
@@ -168,13 +171,9 @@ namespace GfxDevice
 
   // Textures
 
-  struct Texture2D
-  {
-    ID3D11ShaderResourceView* pShaderResourceView{ nullptr };
-    ID3D11Texture2D* pTexture2D{ nullptr };
-  };
+  TextureHandle CreateTexture(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags);
 
-  Texture2D CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags);
+  void BindTexture(TextureHandle, ShaderType shader, int slot);
 
   // Shader Constants
 }
@@ -182,9 +181,9 @@ namespace GfxDevice
 // Everything declared below should be inside the cpp file in future
 struct RenderTarget
 {
-  GfxDevice::Texture2D texture;
+  TextureHandle texture;
   ID3D11RenderTargetView* pView{ nullptr };
-  GfxDevice::Texture2D depthStencilTexture;
+  TextureHandle depthStencilTexture;
   ID3D11DepthStencilView* pDepthStencilView { nullptr };
 };
 
@@ -230,6 +229,12 @@ struct Sampler
   ID3D11SamplerState* pSampler;
 };
 
+struct Texture
+{
+  ID3D11ShaderResourceView* pShaderResourceView{ nullptr };
+  ID3D11Texture2D* pTexture{ nullptr };
+};
+
 struct Context
 {
   SDL_Window* pWindow;
@@ -248,6 +253,7 @@ struct Context
   std::vector<GeometryShader> geometryShaders;
   std::vector<Program> programs;
   std::vector<Sampler> samplers;
+  std::vector<Texture> textures;
 
   // We render the scene into this framebuffer to give systems an opportunity to do 
   // post processing before we render into the backbuffer
