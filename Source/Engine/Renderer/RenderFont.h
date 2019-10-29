@@ -54,9 +54,9 @@ private:
 	cbTransform cbCharTransform;
 
 	// #TODO: Systems outside GfxDevice should not be acceessing directX stuff
-	GfxDevice::VertexBuffer quadBuffer;
-	GfxDevice::Sampler charTextureSampler;
-	GfxDevice::Program fontShaderProgram;
+	VertexBufferHandle quadBuffer;
+	SamplerHandle charTextureSampler;
+	ProgramHandle fontShaderProgram;
 	
 	ID3D11Buffer* pQuadWVPBuffer{ nullptr };
 	ID3D11BlendState* transparency;

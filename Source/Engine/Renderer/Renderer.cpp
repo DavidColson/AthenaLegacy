@@ -29,20 +29,15 @@ void Renderer::OnGameStart(Scene& scene)
 	Context* pCtx = GfxDevice::GetContext();
 
 	// Should be eventually moved to a material type when that exists
-	GfxDevice::VertexInputLayout layout;
-  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
-  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
+	VertexInputLayout layout;
+  layout.AddElement("POSITION", AttributeType::float3);
+  layout.AddElement("COLOR", AttributeType::float3);
 
-  GfxDevice::VertexShader vShader;
-  vShader.CreateFromFilename(L"Shaders/Shader.hlsl", "VSMain", layout);
+  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", layout);
+  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain");
+  GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain");
 
-  GfxDevice::PixelShader pShader;
-  pShader.CreateFromFilename(L"Shaders/Shader.hlsl", "PSMain");
-
-  GfxDevice::GeometryShader gShader;
-  gShader.CreateFromFilename(L"Shaders/Shader.hlsl", "GSMain");
-
-  pCtx->baseShaderProgram.Create(vShader, pShader, gShader);
+  pCtx->baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
 
 	pCtx->pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
@@ -56,7 +51,7 @@ void Renderer::OnGameStart(Scene& scene)
 
 		for (int i = 0; i < 2; ++i)
 		{
-			pp->blurredFrame[i].Create(pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
+			pp->blurredFrame[i] = GfxDevice::CreateRenderTarget(pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
 		}
 
 		// Create post process shader data buffer
@@ -80,27 +75,20 @@ void Renderer::OnGameStart(Scene& scene)
 		GfxDevice::GetContext()->pDevice->CreateBuffer(&bloomBufferDesc, nullptr, &pp->pBloomDataBuffer);
 
 		// Compile and create post processing shaders
-		GfxDevice::VertexInputLayout layout;
-	  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
-	  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
-	  layout.AddElement("TEXCOORD", GfxDevice::AttributeType::float2);
+		VertexInputLayout layout;
+	  layout.AddElement("POSITION", AttributeType::float3);
+	  layout.AddElement("COLOR", AttributeType::float3);
+	  layout.AddElement("TEXCOORD", AttributeType::float2);
 
-	  GfxDevice::VertexShader vPostProcessShader;
-	  vPostProcessShader.CreateFromFilename(L"shaders/PostProcessing.hlsl", "VSMain", layout);
+	  VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout);
+	  PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain");
 
-	  GfxDevice::PixelShader pPostProcessShader;
-	  pPostProcessShader.CreateFromFilename(L"shaders/PostProcessing.hlsl", "PSMain");
+	  pp->postProcessShaderProgram = GfxDevice::CreateProgram(vertPostProcessShader, pixPostProcessShader);
 
-	  pp->postProcessShaderProgram.Create(vPostProcessShader, pPostProcessShader);
+    VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Shaders/Bloom.hlsl", "VSMain", layout);
+	  PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Shaders/Bloom.hlsl", "PSMain");
 
-
-	  GfxDevice::VertexShader vBloomShader;
-	  vBloomShader.CreateFromFilename(L"shaders/Bloom.hlsl", "VSMain", layout);
-
-	  GfxDevice::PixelShader pBloomShader;
-	  pBloomShader.CreateFromFilename(L"shaders/Bloom.hlsl", "PSMain");
-
-	  pp->bloomShaderProgram.Create(vBloomShader, pBloomShader);
+	  pp->bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
 	}
 }
 
@@ -125,12 +113,12 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// ****************
 	{
 		// First we draw the scene into a render target
-		pCtx->preProcessedFrame.SetActive();
-		pCtx->preProcessedFrame.ClearView({ 0.0f, 0.f, 0.f, 1.0f }, true, true);
+		GfxDevice::BindRenderTarget(pCtx->preProcessedFrame);
+		GfxDevice::ClearRenderTarget(pCtx->preProcessedFrame, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
 		GfxDevice::SetViewport(0.0f, 0.0f, pCtx->windowWidth, pCtx->windowHeight);
 
 		// Set Shaders to active
-		pCtx->baseShaderProgram.Bind();
+		GfxDevice::BindProgram(pCtx->baseShaderProgram);
 		GfxDevice::SetTopologyType(TopologyType::LineStripAdjacency);
 
 
@@ -170,15 +158,15 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		wasPostProcessing = true;
 		CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
 
-		pp->blurredFrame[0].SetActive();
-		pp->blurredFrame[0].ClearView({ 0.0f, 0.f, 0.f, 1.0f }, false, false);
+		GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
+		GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
 		GfxDevice::SetViewport(0.f, 0.f, pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Bind bloom shader data
-		pp->bloomShaderProgram.Bind();
-		pCtx->fullScreenQuad.Bind();
-		pCtx->fullScreenTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
+		GfxDevice::BindProgram(pp->bloomShaderProgram);
+		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
+		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
 
 		pp->bloomShaderData.resolution = Vec2f(900, 500);
 		
@@ -196,14 +184,16 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			if (i == 0)
 			{
 				// First iteration, bind the plain, preprocessed frame
-				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
+				RenderTarget& renderTarget = pCtx->renderTargets[pCtx->preProcessedFrame.id];
+				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget.texture.pShaderResourceView);
 			}
 			else
 			{
-				pp->blurredFrame[(i + 1) % 2].UnsetActive();
-				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pp->blurredFrame[(i + 1) % 2].texture.pShaderResourceView);
-				pp->blurredFrame[i % 2].SetActive();
-				pp->blurredFrame[i % 2].ClearView({ 0.0f, 0.f, 0.f, 1.0f }, false, false);
+				GfxDevice::UnbindRenderTarget(pp->blurredFrame[(i + 1) % 2]);
+				RenderTarget& renderTarget = pCtx->renderTargets[pp->blurredFrame[(i + 1) % 2].id];
+				pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget.texture.pShaderResourceView);
+				GfxDevice::BindRenderTarget(pp->blurredFrame[i % 2]);
+				GfxDevice::ClearRenderTarget(pp->blurredFrame[i % 2], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
 			}
 
 			pCtx->pDeviceContext->Draw(4, 0);
@@ -214,12 +204,14 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
 		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
 
-		pp->postProcessShaderProgram.Bind();
-		pCtx->fullScreenQuad.Bind();
+		GfxDevice::BindProgram(pp->postProcessShaderProgram);
+		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
 
-		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
-		pCtx->pDeviceContext->PSSetShaderResources(1, 1, &pp->blurredFrame[1].texture.pShaderResourceView);
-		pCtx->fullScreenTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
+		RenderTarget& renderTarget1 = pCtx->renderTargets[pCtx->preProcessedFrame.id];
+		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget1.texture.pShaderResourceView);
+		RenderTarget& renderTarget2 = pCtx->renderTargets[pp->blurredFrame[1].id];
+		pCtx->pDeviceContext->PSSetShaderResources(1, 1, &renderTarget2.texture.pShaderResourceView);
+		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
 		
 		pp->postProcessShaderData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
 		pp->postProcessShaderData.time = float(SDL_GetTicks()) / 1000.0f;
@@ -238,11 +230,12 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
-		pCtx->fullScreenTextureProgram.Bind();
-		pCtx->fullScreenQuad.Bind();
+		GfxDevice::BindProgram(pCtx->fullScreenTextureProgram);
+		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
 
-		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &pCtx->preProcessedFrame.texture.pShaderResourceView);
-		pCtx->fullScreenTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
+		RenderTarget& renderTarget = pCtx->renderTargets[pCtx->preProcessedFrame.id];
+		pCtx->pDeviceContext->PSSetShaderResources(0, 1, &renderTarget.texture.pShaderResourceView);
+		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
 
 		pCtx->pDeviceContext->Draw(4, 0);
 	}

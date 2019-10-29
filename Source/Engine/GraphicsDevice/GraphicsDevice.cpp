@@ -81,15 +81,12 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   layout.AddElement("COLOR", AttributeType::float3);
   layout.AddElement("TEXCOORD", AttributeType::float2);
 
-  VertexShader vShader;
-  vShader.CreateFromFilename(L"shaders/FullScreenTexture.hlsl", "VSMain", layout);
+  VertexShaderHandle vertShader = CreateVertexShader(L"Shaders/FullScreenTexture.hlsl", "VSMain", layout);
+  PixelShaderHandle pixShader = CreatePixelShader(L"Shaders/FullScreenTexture.hlsl", "PSMain");
 
-  PixelShader pShader;
-  pShader.CreateFromFilename(L"shaders/FullScreenTexture.hlsl", "PSMain");
-
-  pCtx->fullScreenTextureProgram.Create(vShader, pShader);
+  pCtx->fullScreenTextureProgram = CreateProgram(vertShader, pixShader);
   
-  pCtx->fullScreenTextureSampler.Create();
+  pCtx->fullScreenTextureSampler = CreateSampler();
 
   // Vertex Buffer for fullscreen quad
   std::vector<Vertex> quadVertices = {
@@ -102,10 +99,10 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
   quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
   quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-  pCtx->fullScreenQuad.Create(quadVertices.size(), sizeof(Vertex), quadVertices.data());
+  pCtx->fullScreenQuad = CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data());
 
   // Render target for the main scene
-  pCtx->preProcessedFrame.Create(pCtx->windowWidth, pCtx->windowHeight);
+  pCtx->preProcessedFrame = CreateRenderTarget(pCtx->windowWidth, pCtx->windowHeight);
 
   // Init debug drawing
   DebugDraw::Detail::Init();
@@ -251,9 +248,11 @@ GfxDevice::Texture2D GfxDevice::CreateTexture2D(int width, int height, DXGI_FORM
   return { pShaderResourceView, pTexture };
 }
 
-void GfxDevice::RenderTarget::Create(float width, float height)
+RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 {
-  texture = CreateTexture2D(
+  RenderTarget renderTarget;
+
+  renderTarget.texture = CreateTexture2D(
     (int)width,
     (int)height,
     DXGI_FORMAT_R32G32B32A32_FLOAT,
@@ -265,9 +264,9 @@ void GfxDevice::RenderTarget::Create(float width, float height)
   renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
   renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
   renderTargetViewDesc.Texture2D.MipSlice = 0;
-  pCtx->pDevice->CreateRenderTargetView(texture.pTexture2D, &renderTargetViewDesc, &pView);
+  pCtx->pDevice->CreateRenderTargetView(renderTarget.texture.pTexture2D, &renderTargetViewDesc, &renderTarget.pView);
 
-  depthStencilTexture = CreateTexture2D(
+  renderTarget.depthStencilTexture = CreateTexture2D(
     (int)width,
     (int)height,
     DXGI_FORMAT_D24_UNORM_S8_UINT,
@@ -280,27 +279,34 @@ void GfxDevice::RenderTarget::Create(float width, float height)
   depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
   depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
   depthStencilViewDesc.Texture2D.MipSlice = 0;
-  pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture2D, &depthStencilViewDesc, &pDepthStencilView);
+  pCtx->pDevice->CreateDepthStencilView(renderTarget.depthStencilTexture.pTexture2D, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
+
+  pCtx->renderTargets.push_back(renderTarget);
+  return RenderTargetHandle{uint16_t(pCtx->renderTargets.size()-1)};
 }
 
-void GfxDevice::RenderTarget::SetActive()
+void GfxDevice::BindRenderTarget(RenderTargetHandle handle)
 {
-  pCtx->pDeviceContext->OMSetRenderTargets(1, &pView, pDepthStencilView);
+  RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
+
+  pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);
 }
 
-void GfxDevice::RenderTarget::UnsetActive()
+void GfxDevice::UnbindRenderTarget(RenderTargetHandle handle)
 {
   ID3D11RenderTargetView* nullViews[] = { nullptr };
   pCtx->pDeviceContext->OMSetRenderTargets(1, nullViews, nullptr);
 }
 
-void GfxDevice::RenderTarget::ClearView(std::array<float, 4> color, bool clearDepth, bool clearStencil)
+void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4> color, bool clearDepth, bool clearStencil)
 {
-  pCtx->pDeviceContext->ClearRenderTargetView(pView, color.data());
-  pCtx->pDeviceContext->ClearDepthStencilView(pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+  RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
+
+  pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
+  pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
-void GfxDevice::VertexInputLayout::AddElement(const char* name, AttributeType type)
+void VertexInputLayout::AddElement(const char* name, AttributeType type)
 {
   switch(type)
   {
@@ -315,68 +321,11 @@ void GfxDevice::VertexInputLayout::AddElement(const char* name, AttributeType ty
   }
 }
 
-void GfxDevice::VertexBuffer::Create(size_t numElements, size_t _elementSize, void* data)
+IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data)
 {
-  elementSize = UINT(_elementSize);
+  IndexBuffer indexBuffer;
 
-  D3D11_BUFFER_DESC vertexBufferDesc;
-  ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-  vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-  vertexBufferDesc.ByteWidth = elementSize * UINT(numElements);
-  vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-  vertexBufferDesc.CPUAccessFlags = 0;
-  vertexBufferDesc.MiscFlags = 0;
-  vertexBufferDesc.StructureByteStride = 0;
-
-  D3D11_SUBRESOURCE_DATA vertexBufferData;
-  ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-  vertexBufferData.pSysMem = data;
-  pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pBuffer);
-}
-
-void GfxDevice::VertexBuffer::CreateDynamic(size_t numElements, size_t _elementSize)
-{
-  elementSize = UINT(_elementSize);
-  isDynamic = true;
-
-  D3D11_BUFFER_DESC vertexBufferDesc;
-  ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-  vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-  vertexBufferDesc.ByteWidth = elementSize * UINT(numElements);
-  vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-  vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-  vertexBufferDesc.MiscFlags = 0;
-  vertexBufferDesc.StructureByteStride = 0;
-
-  pCtx->pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &pBuffer);
-}
-
-void GfxDevice::VertexBuffer::UpdateDynamicData(void* data, size_t dataSize)
-{
-  if (!isDynamic)
-  {
-    Log::Print(Log::EErr, "Attempting to update non dynamic vertex buffer");
-    return;
-  }
-
-  D3D11_MAPPED_SUBRESOURCE resource;
-  ZeroMemory(&resource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-  pCtx->pDeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
-  memcpy(resource.pData, data, dataSize);
-  pCtx->pDeviceContext->Unmap(pBuffer, 0);
-}
-
-void GfxDevice::VertexBuffer::Bind()
-{
-  UINT offset = 0;
-  pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &elementSize, &offset);
-}
-
-void GfxDevice::IndexBuffer::Create(size_t numElements, void* data)
-{
-  nElements = (int)numElements;
+  indexBuffer.nElements = (int)numElements;
 
   D3D11_BUFFER_DESC indexBufferDesc;
   ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
@@ -391,13 +340,18 @@ void GfxDevice::IndexBuffer::Create(size_t numElements, void* data)
   D3D11_SUBRESOURCE_DATA indexBufferData;
   ZeroMemory(&indexBufferData, sizeof(indexBufferData));
   indexBufferData.pSysMem = data;
-  pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pBuffer);
+  pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &indexBuffer.pBuffer);
+
+  pCtx->indexBuffers.push_back(indexBuffer);
+  return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
 }
 
-void GfxDevice::IndexBuffer::CreateDynamic(size_t numElements)
+IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements)
 {
-  isDynamic = true;
-  nElements = (int)numElements;
+  IndexBuffer indexBuffer;
+
+  indexBuffer.isDynamic = true;
+  indexBuffer.nElements = (int)numElements;
 
   D3D11_BUFFER_DESC indexBufferDesc;
   ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
@@ -409,12 +363,17 @@ void GfxDevice::IndexBuffer::CreateDynamic(size_t numElements)
   indexBufferDesc.MiscFlags = 0;
   indexBufferDesc.StructureByteStride = 0;
 
-  pCtx->pDevice->CreateBuffer(&indexBufferDesc, nullptr, &pBuffer);
+  pCtx->pDevice->CreateBuffer(&indexBufferDesc, nullptr, &indexBuffer.pBuffer);
+
+  pCtx->indexBuffers.push_back(indexBuffer);
+  return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
 }
 
-void GfxDevice::IndexBuffer::UpdateDynamicData(void* data, size_t dataSize)
+void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize)
 {
-  if (!isDynamic)
+  IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
+
+  if (!indexBuffer.isDynamic)
   {
     Log::Print(Log::EErr, "Attempting to update non dynamic index buffer");
     return;
@@ -422,90 +381,134 @@ void GfxDevice::IndexBuffer::UpdateDynamicData(void* data, size_t dataSize)
 
   D3D11_MAPPED_SUBRESOURCE resource;
   ZeroMemory(&resource, sizeof(D3D11_MAPPED_SUBRESOURCE));
-  pCtx->pDeviceContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+  pCtx->pDeviceContext->Map(indexBuffer.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
   memcpy(resource.pData, data, dataSize);
-  pCtx->pDeviceContext->Unmap(pBuffer, 0);
+  pCtx->pDeviceContext->Unmap(indexBuffer.pBuffer, 0);
 }
 
-int GfxDevice::IndexBuffer::GetNumElements()
+int GfxDevice::GetIndexBufferSize(IndexBufferHandle handle)
 {
-  return nElements;
+  IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
+  return indexBuffer.nElements;
 }
 
-void GfxDevice::IndexBuffer::Bind()
+void GfxDevice::BindIndexBuffer(IndexBufferHandle handle)
 {
-  pCtx->pDeviceContext->IASetIndexBuffer(pBuffer, DXGI_FORMAT_R32_UINT, 0);
+  IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
+  pCtx->pDeviceContext->IASetIndexBuffer(indexBuffer.pBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
 
-void GfxDevice::VertexShader::CreateFromFilename(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout)
+VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout)
 {
+  VertexShader shader;
+
   ID3DBlob* pBlob = nullptr;
-  vertexInput = inputLayout;
   ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
-  pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
-  pCtx->pDevice->CreateInputLayout(vertexInput.layout.data(), UINT(vertexInput.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &vertexInput.pLayout);
+  pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+  pCtx->pDevice->CreateInputLayout(inputLayout.layout.data(), UINT(inputLayout.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+
+  pCtx->vertexShaders.push_back(shader);
+  return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
 }
 
-void GfxDevice::VertexShader::CreateFromFileContents(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout)
+VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout)
 {
+  VertexShader shader;
+
   ID3DBlob* pBlob = nullptr;
-  vertexInput = inputLayout;
   ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
-  pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
-  pCtx->pDevice->CreateInputLayout(vertexInput.layout.data(), UINT(vertexInput.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &vertexInput.pLayout);
+  pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+  pCtx->pDevice->CreateInputLayout(inputLayout.layout.data(), UINT(inputLayout.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+
+  pCtx->vertexShaders.push_back(shader);
+  return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
 }
 
-void GfxDevice::PixelShader::CreateFromFilename(const wchar_t* fileName, const char* entry)
+PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const char* entry)
 {
+  PixelShader shader;
+
   ID3DBlob* pBlob = nullptr;
   ShaderCompileFromFile(fileName, entry, "ps_5_0", &pBlob);
-  pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+  pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+
+  pCtx->pixelShaders.push_back(shader);
+  return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
 }
 
-void GfxDevice::PixelShader::CreateFromFileContents(std::string& fileContents, const char* entry)
+PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const char* entry)
 {
+  PixelShader shader;
+
   ID3DBlob* pBlob = nullptr;
   ShaderCompile(fileContents, entry, "ps_5_0", &pBlob);
-  pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+  pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+
+  pCtx->pixelShaders.push_back(shader);
+  return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
 }
 
-void GfxDevice::GeometryShader::CreateFromFilename(const wchar_t* fileName, const char* entry)
+GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, const char* entry)
 {
+  GeometryShader shader;
+
   ID3DBlob* pBlob = nullptr;
   ShaderCompileFromFile(fileName, entry, "gs_5_0", &pBlob);
-  pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+  pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+
+  pCtx->geometryShaders.push_back(shader);
+  return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
 }
 
-void GfxDevice::GeometryShader::CreateFromFileContents(std::string& fileContents, const char* entry)
+GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, const char* entry)
 {
+  GeometryShader shader;
+
   ID3DBlob* pBlob = nullptr;
   ShaderCompile(fileContents, entry, "gs_5_0", &pBlob);
-  pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pShader);
+  pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+
+  pCtx->geometryShaders.push_back(shader);
+  return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
 }
 
-void GfxDevice::Program::Create(VertexShader vShader, PixelShader pShader)
+ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader)
 {
-  vertShader = vShader;
-  pixelShader = pShader;
+  Program program;
+
+  program.vertShader = pCtx->vertexShaders[vShader.id];
+  program.pixelShader = pCtx->pixelShaders[pShader.id];
+
+  pCtx->programs.push_back(program);
+  return ProgramHandle{uint16_t(pCtx->programs.size()-1)};
 }
 
-void GfxDevice::Program::Create(VertexShader vShader, PixelShader pShader, GeometryShader gShader)
+ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader, GeometryShaderHandle gShader)
 {
-  vertShader = vShader;
-  pixelShader = pShader;
-  geomShader = gShader;
+  Program program;
+
+  program.vertShader = pCtx->vertexShaders[vShader.id];
+  program.pixelShader = pCtx->pixelShaders[pShader.id];
+  program.geomShader = pCtx->geometryShaders[gShader.id];
+
+  pCtx->programs.push_back(program);
+  return ProgramHandle{uint16_t(pCtx->programs.size()-1)};
 }
 
-void GfxDevice::Program::Bind() 
+void GfxDevice::BindProgram(ProgramHandle handle) 
 {
-  pCtx->pDeviceContext->VSSetShader(vertShader.pShader, 0, 0);
-  pCtx->pDeviceContext->PSSetShader(pixelShader.pShader, 0, 0);
-  pCtx->pDeviceContext->GSSetShader(geomShader.pShader, 0, 0);
-  pCtx->pDeviceContext->IASetInputLayout(vertShader.vertexInput.pLayout);
+  Program& p = pCtx->programs[handle.id];
+
+  pCtx->pDeviceContext->VSSetShader(p.vertShader.pShader, 0, 0);
+  pCtx->pDeviceContext->PSSetShader(p.pixelShader.pShader, 0, 0);
+  pCtx->pDeviceContext->GSSetShader(p.geomShader.pShader, 0, 0);
+  pCtx->pDeviceContext->IASetInputLayout(p.vertShader.pVertLayout);
 }
 
-void GfxDevice::Sampler::Create(Filter filter, WrapMode wrapMode)
+SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode)
 {
+  Sampler sampler;
+
   D3D11_FILTER samplerFilter;
   switch(filter)
   {
@@ -532,21 +535,101 @@ void GfxDevice::Sampler::Create(Filter filter, WrapMode wrapMode)
   sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
   sampDesc.MinLOD = 0;
   sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-  pCtx->pDevice->CreateSamplerState(&sampDesc, &pSampler);
+  pCtx->pDevice->CreateSamplerState(&sampDesc, &sampler.pSampler);
+
+  pCtx->samplers.push_back(sampler);
+  return SamplerHandle{uint16_t(pCtx->samplers.size()-1)};
 }
 
-void GfxDevice::Sampler::Bind(ShaderType shaderType, int slot)
+void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shaderType, int slot)
 {
+  Sampler& sampler = pCtx->samplers[handle.id];
+
   switch (shaderType)
   {
     case ShaderType::Vertex:
-      pCtx->pDeviceContext->VSSetSamplers(slot, 1, &pSampler);
+      pCtx->pDeviceContext->VSSetSamplers(slot, 1, &sampler.pSampler);
       break;
     case ShaderType::Pixel:
-      pCtx->pDeviceContext->PSSetSamplers(slot, 1, &pSampler);
+      pCtx->pDeviceContext->PSSetSamplers(slot, 1, &sampler.pSampler);
       break;
     case ShaderType::Geometry:
-      pCtx->pDeviceContext->GSSetSamplers(slot, 1, &pSampler);
+      pCtx->pDeviceContext->GSSetSamplers(slot, 1, &sampler.pSampler);
       break;
   }
 }
+
+// Vertex Buffers
+// **************
+
+VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data)
+{
+  VertexBuffer vBufferData;
+
+  vBufferData.elementSize = UINT(_elementSize);
+
+  D3D11_BUFFER_DESC vertexBufferDesc;
+  ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+  vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+  vertexBufferDesc.ByteWidth = vBufferData.elementSize * UINT(numElements);
+  vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+  vertexBufferDesc.CPUAccessFlags = 0;
+  vertexBufferDesc.MiscFlags = 0;
+  vertexBufferDesc.StructureByteStride = 0;
+
+  D3D11_SUBRESOURCE_DATA vertexBufferData;
+  ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+  vertexBufferData.pSysMem = data;
+  pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vBufferData.pBuffer);
+
+  pCtx->vertexBuffers.push_back(vBufferData);
+  return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};
+}
+
+VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize)
+{
+  VertexBuffer vBufferData;
+
+  vBufferData.elementSize = UINT(_elementSize);
+  vBufferData.isDynamic = true;
+
+  D3D11_BUFFER_DESC vertexBufferDesc;
+  ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+  vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+  vertexBufferDesc.ByteWidth = vBufferData.elementSize * UINT(numElements);
+  vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+  vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  vertexBufferDesc.MiscFlags = 0;
+  vertexBufferDesc.StructureByteStride = 0;
+
+  pCtx->pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &vBufferData.pBuffer);
+
+  pCtx->vertexBuffers.push_back(vBufferData);
+  return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};
+}
+
+void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize)
+{
+  VertexBuffer& buffer = pCtx->vertexBuffers[handle.id];
+  if (!buffer.isDynamic)
+  {
+    Log::Print(Log::EErr, "Attempting to update non dynamic vertex buffer");
+    return;
+  }
+
+  D3D11_MAPPED_SUBRESOURCE resource;
+  ZeroMemory(&resource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+  pCtx->pDeviceContext->Map(buffer.pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+  memcpy(resource.pData, data, dataSize);
+  pCtx->pDeviceContext->Unmap(buffer.pBuffer, 0);
+}
+
+void GfxDevice::BindVertexBuffer(VertexBufferHandle handle)
+{
+  VertexBuffer& buffer = pCtx->vertexBuffers[handle.id];
+  UINT offset = 0;
+  pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &buffer.pBuffer, &buffer.elementSize, &offset);
+}
+

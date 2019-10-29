@@ -29,12 +29,13 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 	// Create vertex buffer
 	// ********************
 
-	vertBuffer.Create(vertices.size(), sizeof(Vertex), vertices.data());
+	vertBuffer = GfxDevice::CreateVertexBuffer(vertices.size(), sizeof(Vertex), vertices.data());
 
 	// Create an index buffer
 	// **********************
 
-	indexBuffer.Create(indices.size(), indices.data());
+	indexBuffer = GfxDevice::CreateIndexBuffer(indices.size(), indices.data());
+
 
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
@@ -56,8 +57,8 @@ void RenderProxy::Draw()
 	Context* pCtx = GfxDevice::GetContext();
 	
 	// Set vertex buffer as active
-	vertBuffer.Bind();
-	indexBuffer.Bind();
+	GfxDevice::BindVertexBuffer(vertBuffer);
+	GfxDevice::BindIndexBuffer(indexBuffer);
 
 	Matrixf posMat = Matrixf::Translate(pos);
 	Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, rot));
@@ -78,5 +79,5 @@ void RenderProxy::Draw()
 	pCtx->pDeviceContext->GSSetConstantBuffers(0, 1, &(pWVPBuffer));
 
 	// do 3D rendering on the back buffer here
-	pCtx->pDeviceContext->DrawIndexed(indexBuffer.GetNumElements(), 0, 0);
+	pCtx->pDeviceContext->DrawIndexed(GfxDevice::GetIndexBufferSize(indexBuffer), 0, 0);
 }

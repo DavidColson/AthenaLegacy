@@ -25,6 +25,8 @@ struct ID3D11Texture2D;
 class RenderFont;
 struct Context;
 
+
+
 enum class TopologyType
 {
   TriangleStrip,
@@ -36,6 +38,55 @@ enum class TopologyType
   TriangleListAdjacency,
   LineStripAdjacency,
   LineListAdjacency,
+};
+
+#define DEFINE_HANDLE(_name)                                                          \
+  struct _name { uint16_t id{ UINT16_MAX }; };                                        \
+  inline bool IsValid(_name _handle) { return UINT16_MAX != _handle.id; }
+
+#define INVALID_HANDLE { UINT16_MAX }
+
+DEFINE_HANDLE(RenderTargetHandle)
+DEFINE_HANDLE(VertexBufferHandle)
+DEFINE_HANDLE(IndexBufferHandle)
+DEFINE_HANDLE(PixelShaderHandle)
+DEFINE_HANDLE(VertexShaderHandle)
+DEFINE_HANDLE(GeometryShaderHandle)
+DEFINE_HANDLE(ProgramHandle)
+DEFINE_HANDLE(SamplerHandle)
+
+enum class Filter
+{
+  Linear,
+  Point,
+  Anisotropic
+};
+
+enum class WrapMode
+{
+  Wrap,
+  Mirror,
+  Clamp,
+  Border
+};
+
+enum class ShaderType
+{
+  Vertex,
+  Pixel,
+  Geometry
+};
+
+enum class AttributeType
+{
+  float3,
+  float2
+};
+
+struct VertexInputLayout
+{
+  void AddElement(const char* name, AttributeType type);
+  std::vector<D3D11_INPUT_ELEMENT_DESC> layout;
 };
 
 namespace GfxDevice
@@ -57,6 +108,66 @@ namespace GfxDevice
 
   void ClearRenderState();
 
+  // Vertex Buffers
+
+  VertexBufferHandle CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data);
+
+  VertexBufferHandle CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize);
+
+  void UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize);
+
+  void BindVertexBuffer(VertexBufferHandle handle);
+
+  // Index Buffers
+
+  IndexBufferHandle CreateIndexBuffer(size_t numElements, void* data);
+
+  IndexBufferHandle CreateDynamicIndexBuffer(size_t numElements);
+
+  void UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize);
+
+  int GetIndexBufferSize(IndexBufferHandle handle);
+
+  void BindIndexBuffer(IndexBufferHandle handle);
+
+  // Shaders And Programs
+
+  VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout);
+
+  VertexShaderHandle CreateVertexShader(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout);
+
+  PixelShaderHandle CreatePixelShader(const wchar_t* fileName, const char* entry);
+
+  PixelShaderHandle CreatePixelShader(std::string& fileContents, const char* entry);
+
+  GeometryShaderHandle CreateGeometryShader(const wchar_t* fileName, const char* entry);
+
+  GeometryShaderHandle CreateGeometryShader(std::string& fileContents, const char* entry);
+
+  ProgramHandle CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader);
+
+  ProgramHandle CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader, GeometryShaderHandle gShader);
+
+  void BindProgram(ProgramHandle handle);
+
+  // Render Targets
+
+  RenderTargetHandle CreateRenderTarget(float width, float height);
+
+  void BindRenderTarget(RenderTargetHandle handle);
+
+  void UnbindRenderTarget(RenderTargetHandle handle);
+
+  void ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4> color, bool clearDepth, bool clearStencil);
+
+  // Samplers
+
+  SamplerHandle CreateSampler(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap);
+
+  void BindSampler(SamplerHandle handle, ShaderType shader, int slot);
+
+  // Textures
+
   struct Texture2D
   {
     ID3D11ShaderResourceView* pShaderResourceView{ nullptr };
@@ -65,134 +176,60 @@ namespace GfxDevice
 
   Texture2D CreateTexture2D(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags);
 
-  enum class AttributeType
-  {
-    float3,
-    float2
-  };
-
-  struct VertexInputLayout
-  {
-    void AddElement(const char* name, AttributeType type);
-    bool IsInvalid() { return pLayout == nullptr; }
-
-    ID3D11InputLayout* pLayout{ nullptr };
-    std::vector<D3D11_INPUT_ELEMENT_DESC> layout;
-  };
-
-  struct VertexShader
-  {
-    void CreateFromFilename(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout);
-    void CreateFromFileContents(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout);
-    bool IsInvalid() { return pShader == nullptr; }
-
-    VertexInputLayout vertexInput;
-    ID3D11VertexShader* pShader{ nullptr };
-  };
-
-  struct PixelShader
-  {
-    void CreateFromFilename(const wchar_t* fileName, const char* entry);
-    void CreateFromFileContents(std::string& fileContents, const char* entry);
-    bool IsInvalid() { return pShader == nullptr; }
-
-    ID3D11PixelShader* pShader{ nullptr };
-  };
-
-  struct GeometryShader
-  {
-    void CreateFromFilename(const wchar_t* fileName, const char* entry);
-    void CreateFromFileContents(std::string& fileContents, const char* entry);
-    bool IsInvalid() { return pShader == nullptr; }
-
-    ID3D11GeometryShader* pShader{ nullptr };
-  };
-
-  struct Program
-  {
-    void Create(VertexShader vShader, PixelShader pShader);
-    void Create(VertexShader vShader, PixelShader pShader, GeometryShader gShader);
-    bool IsInvalid() { return !vertShader.IsInvalid() && !pixelShader.IsInvalid(); }
-    void Bind();
-
-    VertexShader vertShader;
-    PixelShader pixelShader;
-    GeometryShader geomShader;
-  };
-
-  struct RenderTarget
-  {
-    void Create(float width, float height);
-    void SetActive();
-    void UnsetActive();
-    void ClearView(std::array<float, 4> color, bool clearDepth, bool clearStencil);
-
-    GfxDevice::Texture2D texture;
-    ID3D11RenderTargetView* pView{ nullptr };
-    GfxDevice::Texture2D depthStencilTexture;
-    ID3D11DepthStencilView* pDepthStencilView { nullptr };
-  };
-
-  struct VertexBuffer
-  {
-    void Create(size_t numElements, size_t _elementSize, void* data);
-    void CreateDynamic(size_t numElements, size_t _elementSize);
-    void UpdateDynamicData(void* data, size_t dataSize);
-    bool IsInvalid() { return pBuffer == nullptr; }
-    void Bind();
-
-    bool isDynamic{ false };
-    UINT elementSize{ 0 };
-    ID3D11Buffer* pBuffer{ nullptr };
-  };
-
-  struct IndexBuffer
-  {
-    void Create(size_t numElements, void* data);
-    void CreateDynamic(size_t numElements);
-    void UpdateDynamicData(void* data, size_t dataSize);
-    bool IsInvalid() { return pBuffer == nullptr; }
-    int  GetNumElements();
-    void Bind();
-
-    int nElements;
-    bool isDynamic{ false };
-    ID3D11Buffer* pBuffer{ nullptr };
-  };
-
-  enum class Filter
-  {
-    Linear,
-    Point,
-    Anisotropic
-  };
-
-  enum class WrapMode
-  {
-    Wrap,
-    Mirror,
-    Clamp,
-    Border
-  };
-
-  enum class ShaderType
-  {
-    Vertex,
-    Pixel,
-    Geometry
-  };
-
-  struct Sampler
-  {
-    void Create(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap);
-    bool IsInvalid() { return pSampler == nullptr; }
-    void Bind(ShaderType shaderType, int slot);
-
-    ID3D11SamplerState* pSampler;
-  };
+  // Shader Constants
 }
 
-// #TODO: temp, external systems should never touch the context
+// Everything declared below should be inside the cpp file in future
+struct RenderTarget
+{
+  GfxDevice::Texture2D texture;
+  ID3D11RenderTargetView* pView{ nullptr };
+  GfxDevice::Texture2D depthStencilTexture;
+  ID3D11DepthStencilView* pDepthStencilView { nullptr };
+};
+
+struct IndexBuffer
+{
+  int nElements;
+  bool isDynamic{ false };
+  ID3D11Buffer* pBuffer{ nullptr };
+};
+
+struct VertexBuffer
+{
+  bool isDynamic{ false };
+  UINT elementSize{ 0 };
+  ID3D11Buffer* pBuffer{ nullptr };
+};
+
+struct VertexShader
+{
+  ID3D11InputLayout* pVertLayout{ nullptr };
+  ID3D11VertexShader* pShader{ nullptr };
+};
+
+struct PixelShader
+{
+  ID3D11PixelShader* pShader{ nullptr };
+};
+
+struct GeometryShader
+{
+  ID3D11GeometryShader* pShader{ nullptr };
+};
+
+struct Program
+{
+  VertexShader vertShader;
+  PixelShader pixelShader;
+  GeometryShader geomShader;
+};
+
+struct Sampler
+{
+  ID3D11SamplerState* pSampler;
+};
+
 struct Context
 {
   SDL_Window* pWindow;
@@ -202,16 +239,26 @@ struct Context
   ID3D11DeviceContext* pDeviceContext;
   ID3D11RenderTargetView* pBackBuffer;
 
+  // resources
+  std::vector<RenderTarget> renderTargets;
+  std::vector<VertexBuffer> vertexBuffers;
+  std::vector<IndexBuffer> indexBuffers;
+  std::vector<VertexShader> vertexShaders;
+  std::vector<PixelShader> pixelShaders;
+  std::vector<GeometryShader> geometryShaders;
+  std::vector<Program> programs;
+  std::vector<Sampler> samplers;
+
   // We render the scene into this framebuffer to give systems an opportunity to do 
   // post processing before we render into the backbuffer
   // #TODO: This stuff should be part of the higher level graphics system
-  GfxDevice::RenderTarget preProcessedFrame;
-  GfxDevice::VertexBuffer fullScreenQuad;
-  GfxDevice::Sampler fullScreenTextureSampler;
-  GfxDevice::Program fullScreenTextureProgram; // simple shader program that draws a texture onscreen
+  RenderTargetHandle preProcessedFrame;
+  VertexBufferHandle fullScreenQuad;
+  SamplerHandle fullScreenTextureSampler;
+  ProgramHandle fullScreenTextureProgram; // simple shader program that draws a texture onscreen
 
   // Will eventually be a "material" type, assigned to drawables
-  GfxDevice::Program baseShaderProgram;
+  ProgramHandle baseShaderProgram;
 
   // Need a separate font render system, which pre processes text
   // into meshes

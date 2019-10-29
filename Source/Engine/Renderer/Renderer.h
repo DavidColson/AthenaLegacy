@@ -69,9 +69,9 @@ struct CPostProcessing
 	cbBloomShaderData bloomShaderData;
 
 	// Graphics system resource handles
-	GfxDevice::RenderTarget blurredFrame[2];
-	GfxDevice::Program postProcessShaderProgram;
-	GfxDevice::Program bloomShaderProgram;
+	RenderTargetHandle blurredFrame[2];
+	ProgramHandle postProcessShaderProgram;
+	ProgramHandle bloomShaderProgram;
 	ID3D11Buffer* pPostProcessDataBuffer;
 	ID3D11Buffer* pBloomDataBuffer;
 

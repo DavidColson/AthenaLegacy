@@ -26,9 +26,9 @@ namespace
 	std::vector<int> indexBufferData;
 	int indexBufferSize = 0;
 
-	GfxDevice::Program debugShaderProgram;
-	GfxDevice::VertexBuffer vertexBuffer;
-	GfxDevice::IndexBuffer indexBuffer;
+	ProgramHandle debugShaderProgram;
+	VertexBufferHandle vertexBuffer;
+	IndexBufferHandle indexBuffer;
 
 	struct cbTransform
 	{
@@ -88,17 +88,14 @@ void DebugDraw::Detail::Init()
 		return input.Col;\
 	}";
 
-	GfxDevice::VertexInputLayout layout;
-  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
-  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
+	VertexInputLayout layout;
+  layout.AddElement("POSITION",AttributeType::float3);
+  layout.AddElement("COLOR", AttributeType::float3);
 
-  GfxDevice::VertexShader vShader;
-  vShader.CreateFromFileContents(shaderSrc, "VSMain", layout);
+  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout);
+  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain");
 
-  GfxDevice::PixelShader pShader;
-  pShader.CreateFromFileContents(shaderSrc, "PSMain");
-
-  debugShaderProgram.Create(vShader, pShader);
+  debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	// Create constant buffer for WVP
 	{
@@ -118,33 +115,33 @@ void DebugDraw::Detail::DrawQueue()
 	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
 	Context* pCtx = GfxDevice::GetContext();
 
-	if (vertexBuffer.IsInvalid() || vertBufferSize < vertBufferData.size())
+	if (IsValid(vertexBuffer) || vertBufferSize < vertBufferData.size())
 	{
 		vertBufferSize = (int)vertBufferData.size() + 1000;
-		vertexBuffer.CreateDynamic(vertBufferSize, sizeof(DebugVertex));
+		vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(vertBufferSize, sizeof(DebugVertex));
 	}
 
-	if (indexBuffer.IsInvalid() || indexBufferSize < indexBufferData.size())
+	if (IsValid(indexBuffer) || indexBufferSize < indexBufferData.size())
 	{
 		indexBufferSize = (int)indexBufferData.size() + 1000;
-		indexBuffer.CreateDynamic(indexBufferSize);
+		indexBuffer = GfxDevice::CreateDynamicIndexBuffer(indexBufferSize);
 	}
 
 	// Update vert and index buffer data
-	vertexBuffer.UpdateDynamicData(vertBufferData.data(), vertBufferData.size() * sizeof(DebugVertex));
-	indexBuffer.UpdateDynamicData(indexBufferData.data(), indexBufferData.size() * sizeof(int));
+	GfxDevice::UpdateDynamicVertexBuffer(vertexBuffer, vertBufferData.data(), vertBufferData.size() * sizeof(DebugVertex));
+	GfxDevice::UpdateDynamicIndexBuffer(indexBuffer, indexBufferData.data(), indexBufferData.size() * sizeof(int));
 
 	// Update constant buffer data
 	transformBufferData.wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f);
 	pCtx->pDeviceContext->UpdateSubresource(pTransformBuffer, 0, nullptr, &transformBufferData, 0, 0);
 
 	// Bind shaders
-	debugShaderProgram.Bind();
+	GfxDevice::BindProgram(debugShaderProgram);
 
 	GfxDevice::SetTopologyType(TopologyType::LineStrip);
 
-	vertexBuffer.Bind();
-	indexBuffer.Bind();
+	GfxDevice::BindVertexBuffer(vertexBuffer);
+	GfxDevice::BindIndexBuffer(indexBuffer);
 	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &pTransformBuffer);
 
 

@@ -55,18 +55,15 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		return textureColor;\
 	}";
 
-	GfxDevice::VertexInputLayout layout;
-  layout.AddElement("POSITION", GfxDevice::AttributeType::float3);
-  layout.AddElement("COLOR", GfxDevice::AttributeType::float3);
-  layout.AddElement("TEXCOORD", GfxDevice::AttributeType::float2);
+	VertexInputLayout layout;
+  layout.AddElement("POSITION", AttributeType::float3);
+  layout.AddElement("COLOR", AttributeType::float3);
+  layout.AddElement("TEXCOORD", AttributeType::float2);
 
-  GfxDevice::VertexShader vShader;
-  vShader.CreateFromFileContents(fontShaderSrc, "VSMain", layout);
+  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout);
+  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain");
 
-  GfxDevice::PixelShader pShader;
-  pShader.CreateFromFileContents(fontShaderSrc, "PSMain");
-
-  fontShaderProgram.Create(vShader, pShader);
+  fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	std::vector<Vertex> quadVertices = {
 		Vertex(Vec3f(0.0f, 0.0f, 0.5f)),
@@ -83,7 +80,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	// Create vertex buffer
 	// ********************
 
-	quadBuffer.Create(quadVertices.size(), sizeof(Vertex), quadVertices.data());
+	quadBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data());
 
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
@@ -117,7 +114,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 	pCtx->pDevice->CreateBlendState(&blendDesc, &transparency);
 
-	charTextureSampler.Create();
+	charTextureSampler = GfxDevice::CreateSampler();
 
 	for (int i = 0; i < 128; i++)
 	{
@@ -160,19 +157,19 @@ void RenderFont::DrawSceneText(Scene& scene)
 	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 	// Set vertex buffer as active
-	quadBuffer.Bind();
+	GfxDevice::BindVertexBuffer(quadBuffer);
 
 	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
 
 	// Set Shaders to active
-	fontShaderProgram.Bind();
+	GfxDevice::BindProgram(fontShaderProgram);
 	
 	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
 	pCtx->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);
 
 	Matrixf projection = Matrixf::Orthographic(0, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f); // transform into screen space
 	
-	charTextureSampler.Bind(GfxDevice::ShaderType::Pixel, 0);
+	GfxDevice::BindSampler(charTextureSampler, ShaderType::Pixel, 0);
 
 	for (EntityID ent : SceneView<CText, CTransform>(scene))
 	{

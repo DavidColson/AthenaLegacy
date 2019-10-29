@@ -33,6 +33,6 @@ struct RenderProxy
 	float rot{ 0.0f };
 	float lineThickness{ 1.0f };
 
-	GfxDevice::VertexBuffer vertBuffer;
-	GfxDevice::IndexBuffer indexBuffer;
+	VertexBufferHandle vertBuffer;
+	IndexBufferHandle indexBuffer;
 };
