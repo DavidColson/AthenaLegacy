@@ -82,17 +82,10 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 	quadBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data());
 
-	// Create a constant buffer (uniform) for the WVP
+	// Create a constant buffer for the WVP
 	// **********************************************
 
-	D3D11_BUFFER_DESC wvpBufferDesc;
-	ZeroMemory(&wvpBufferDesc, sizeof(wvpBufferDesc));
-	wvpBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	wvpBufferDesc.ByteWidth = sizeof(cbTransform);
-	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	wvpBufferDesc.CPUAccessFlags = 0;
-	wvpBufferDesc.MiscFlags = 0;
-	pCtx->pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &pQuadWVPBuffer);
+	wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
 
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(blendDesc));
@@ -156,8 +149,6 @@ void RenderFont::DrawSceneText(Scene& scene)
 	// Set vertex buffer as active
 	GfxDevice::BindVertexBuffer(quadBuffer);
 
-	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &(pQuadWVPBuffer));
-
 	// Set Shaders to active
 	GfxDevice::BindProgram(fontShaderProgram);
 	
@@ -195,9 +186,8 @@ void RenderFont::DrawSceneText(Scene& scene)
 				Matrixf world = posmat * scalemat; // transform into world space
 				Matrixf wvp = projection * world;
 
-				cbCharTransform.wvp = wvp;
-				pCtx->pDeviceContext->UpdateSubresource(pQuadWVPBuffer, 0, nullptr, &cbCharTransform, 0, 0);
-
+				TransformData transformData{ wvp };
+				GfxDevice::BindConstantBuffer(wvpBuffer, &transformData, ShaderType::Vertex, 0);
 				GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
 
 				// do 3D rendering on the back buffer here

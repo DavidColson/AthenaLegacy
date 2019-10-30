@@ -54,25 +54,9 @@ void Renderer::OnGameStart(Scene& scene)
 			pp->blurredFrame[i] = GfxDevice::CreateRenderTarget(pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
 		}
 
-		// Create post process shader data buffer
-		D3D11_BUFFER_DESC ppdBufferDesc;
-		ZeroMemory(&ppdBufferDesc, sizeof(ppdBufferDesc));
-		ppdBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		ppdBufferDesc.ByteWidth = sizeof(CPostProcessing::cbPostProcessShaderData);
-		ppdBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		ppdBufferDesc.CPUAccessFlags = 0;
-		ppdBufferDesc.MiscFlags = 0;
-		GfxDevice::GetContext()->pDevice->CreateBuffer(&ppdBufferDesc, nullptr, &pp->pPostProcessDataBuffer);
-
-		// Create bloom shader data buffer
-		D3D11_BUFFER_DESC bloomBufferDesc;
-		ZeroMemory(&bloomBufferDesc, sizeof(bloomBufferDesc));
-		bloomBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		bloomBufferDesc.ByteWidth = sizeof(CPostProcessing::cbBloomShaderData);
-		bloomBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		bloomBufferDesc.CPUAccessFlags = 0;
-		bloomBufferDesc.MiscFlags = 0;
-		GfxDevice::GetContext()->pDevice->CreateBuffer(&bloomBufferDesc, nullptr, &pp->pBloomDataBuffer);
+		// Create constant data buffers
+		pp->postProcessDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::PostProcessShaderData));
+		pp->bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData));
 
 		// Compile and create post processing shaders
 		VertexInputLayout layout;
@@ -168,7 +152,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
 		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
 
-		pp->bloomShaderData.resolution = Vec2f(900, 500);
+		CPostProcessing::BloomShaderData bloomData;
+		bloomData.resolution = Vec2f(900, 500);
 		
 		// Iteratively calculate bloom
 		ID3D11RenderTargetView* nullViews[] = { nullptr };
@@ -177,9 +162,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		{
 			// Bind data
 			float radius = float(blurIterations - i - 1) * 0.04f;
-			pp->bloomShaderData.direction = i % 2 == 0 ? Vec2f(radius, 0.0f) : Vec2f(0.0f, radius);
-			pCtx->pDeviceContext->UpdateSubresource(pp->pBloomDataBuffer, 0, nullptr, &pp->bloomShaderData, 0, 0);
-			pCtx->pDeviceContext->PSSetConstantBuffers(0, 1, &(pp->pBloomDataBuffer));
+			bloomData.direction = i % 2 == 0 ? Vec2f(radius, 0.0f) : Vec2f(0.0f, radius);
+			GfxDevice::BindConstantBuffer(pp->bloomDataBuffer, &bloomData, ShaderType::Pixel, 0);
 
 			if (i == 0)
 			{
@@ -214,10 +198,10 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
 		
-		pp->postProcessShaderData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
-		pp->postProcessShaderData.time = float(SDL_GetTicks()) / 1000.0f;
-		pCtx->pDeviceContext->UpdateSubresource(pp->pPostProcessDataBuffer, 0, nullptr, &pp->postProcessShaderData, 0, 0);
-		pCtx->pDeviceContext->PSSetConstantBuffers(0, 1, &(pp->pPostProcessDataBuffer));
+		CPostProcessing::PostProcessShaderData ppData;
+		ppData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
+		ppData.time = float(SDL_GetTicks()) / 1000.0f;
+		GfxDevice::BindConstantBuffer(pp->postProcessDataBuffer, &ppData, ShaderType::Pixel, 0);
 
 		// Draw post processed frame
 		pCtx->pDeviceContext->Draw(4, 0);

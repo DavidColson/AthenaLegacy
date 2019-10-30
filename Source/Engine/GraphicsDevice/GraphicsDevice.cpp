@@ -697,3 +697,39 @@ void GfxDevice::BindVertexBuffer(VertexBufferHandle handle)
   pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &buffer.pBuffer, &buffer.elementSize, &offset);
 }
 
+ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize)
+{
+  ConstantBuffer buffer;
+
+  D3D11_BUFFER_DESC bufferDesc;
+  ZeroMemory(&bufferDesc, sizeof(bufferDesc));
+  bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+  bufferDesc.ByteWidth = bufferSize;
+  bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+  bufferDesc.CPUAccessFlags = 0;
+  bufferDesc.MiscFlags = 0;
+  GfxDevice::GetContext()->pDevice->CreateBuffer(&bufferDesc, nullptr, &buffer.pBuffer);
+
+  pCtx->constBuffers.push_back(buffer);
+  return ConstBufferHandle{uint16_t(pCtx->constBuffers.size()-1)};
+}
+
+void GfxDevice::BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot)
+{
+  ConstantBuffer& buffer = pCtx->constBuffers[handle.id];
+
+  pCtx->pDeviceContext->UpdateSubresource(buffer.pBuffer, 0, nullptr, bufferData, 0, 0);
+
+  switch (shader)
+  {
+    case ShaderType::Vertex:
+      pCtx->pDeviceContext->VSSetConstantBuffers(slot, 1, &buffer.pBuffer);
+      break;
+    case ShaderType::Pixel:
+      pCtx->pDeviceContext->PSSetConstantBuffers(slot, 1, &buffer.pBuffer);
+      break;
+    case ShaderType::Geometry:
+      pCtx->pDeviceContext->GSSetConstantBuffers(slot, 1, &buffer.pBuffer);
+      break;
+  }
+}

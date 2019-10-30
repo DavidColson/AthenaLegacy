@@ -55,6 +55,7 @@ DEFINE_HANDLE(GeometryShaderHandle)
 DEFINE_HANDLE(ProgramHandle)
 DEFINE_HANDLE(SamplerHandle)
 DEFINE_HANDLE(TextureHandle)
+DEFINE_HANDLE(ConstBufferHandle)
 
 enum class Filter
 {
@@ -184,6 +185,10 @@ namespace GfxDevice
   void BindTexture(TextureHandle, ShaderType shader, int slot);
 
   // Shader Constants
+
+  ConstBufferHandle CreateConstantBuffer(uint32_t bufferSize);
+
+  void BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot);
 }
 
 // Everything declared below should be inside the cpp file in future
@@ -243,6 +248,11 @@ struct Texture
   ID3D11Texture2D* pTexture{ nullptr };
 };
 
+struct ConstantBuffer
+{
+  ID3D11Buffer* pBuffer{ nullptr };
+};
+
 struct Context
 {
   SDL_Window* pWindow;
@@ -262,6 +272,7 @@ struct Context
   std::vector<Program> programs;
   std::vector<Sampler> samplers;
   std::vector<Texture> textures;
+  std::vector<ConstantBuffer> constBuffers;
 
   // We render the scene into this framebuffer to give systems an opportunity to do 
   // post processing before we render into the backbuffer

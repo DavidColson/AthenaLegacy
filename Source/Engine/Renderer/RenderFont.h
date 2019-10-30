@@ -47,18 +47,17 @@ public:
 	void DrawSceneText(Scene& scene);
 
 private:
-	struct cbTransform
+	struct TransformData
 	{
 		Matrixf wvp;
 	};
-	cbTransform cbCharTransform;
 
 	// #TODO: Systems outside GfxDevice should not be acceessing directX stuff
 	VertexBufferHandle quadBuffer;
 	SamplerHandle charTextureSampler;
 	ProgramHandle fontShaderProgram;
 	
-	ID3D11Buffer* pQuadWVPBuffer{ nullptr };
+	ConstBufferHandle wvpBuffer;
 	ID3D11BlendState* transparency;
 
 	std::vector<Character> characters;

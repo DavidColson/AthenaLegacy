@@ -53,27 +53,26 @@ struct CDrawable
 
 struct CPostProcessing
 {
-	// Shader constant data
-	struct cbPostProcessShaderData
+	// Shader constants
+	struct PostProcessShaderData
 	{
 		Vec2f resolution;
 		float time{ 0.1f };
 		float pad{ 0.0f };
 	};
-	cbPostProcessShaderData postProcessShaderData;
-	struct cbBloomShaderData
+
+	struct BloomShaderData
 	{
 		Vec2f direction;
 		Vec2f resolution;
 	};
-	cbBloomShaderData bloomShaderData;
 
 	// Graphics system resource handles
 	RenderTargetHandle blurredFrame[2];
 	ProgramHandle postProcessShaderProgram;
 	ProgramHandle bloomShaderProgram;
-	ID3D11Buffer* pPostProcessDataBuffer;
-	ID3D11Buffer* pBloomDataBuffer;
+	ConstBufferHandle postProcessDataBuffer;
+	ConstBufferHandle bloomDataBuffer;
 
 	REFLECT()
 };
