@@ -28,6 +28,14 @@ Context* GfxDevice::GetContext()
   return pCtx;
 }
 
+// Should probably expand this to more formats at some point
+static const DXGI_FORMAT formatLookup[3] = 
+{
+  DXGI_FORMAT_R32G32B32A32_FLOAT,
+  DXGI_FORMAT_R8_UNORM,
+  DXGI_FORMAT_D24_UNORM_S8_UINT
+};
+
 void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 {
   pCtx = new Context();
@@ -205,7 +213,7 @@ void GfxDevice::SetTopologyType(TopologyType type)
   pCtx->pDeviceContext->IASetPrimitiveTopology(topologyType);
 }
 
-TextureHandle GfxDevice::CreateTexture(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags)
+TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void* data)
 {
   Texture texture;
 
@@ -214,10 +222,10 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, DXGI_FORMAT format
   textureDesc.Width = width;
   textureDesc.Height = height;
   textureDesc.MipLevels = textureDesc.ArraySize = 1;
-  textureDesc.Format = format;
+  textureDesc.Format = formatLookup[static_cast<int>(format)];
   textureDesc.SampleDesc.Count = 1;
   textureDesc.Usage = D3D11_USAGE_DEFAULT;
-  textureDesc.BindFlags = bindflags;
+  textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
   textureDesc.CPUAccessFlags = 0;
   textureDesc.MiscFlags = 0;
 
@@ -234,17 +242,12 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, DXGI_FORMAT format
     pCtx->pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &texture.pTexture);
   }
   
-  ID3D11ShaderResourceView* pShaderResourceView = nullptr;
-  if (textureDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE)
-  {
-    D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
-    shaderResourceViewDesc.Format = textureDesc.Format;
-    shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-    shaderResourceViewDesc.Texture2D.MipLevels = 1;
-
-    pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
-  }
+  D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+  shaderResourceViewDesc.Format = textureDesc.Format;
+  shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+  shaderResourceViewDesc.Texture2D.MipLevels = 1;
+  pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
 
   pCtx->textures.push_back(texture);
   return TextureHandle{uint16_t(pCtx->textures.size()-1)};
@@ -272,29 +275,62 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 {
   RenderTarget renderTarget;
 
-  renderTarget.texture = CreateTexture(
-    (int)width,
-    (int)height,
-    DXGI_FORMAT_R32G32B32A32_FLOAT,
-    nullptr,
-    D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE
-  );
-  Texture texture = pCtx->textures[renderTarget.texture.id];
+  // TODO: Custom texture creation needs to go here, as we will not expose the bind flags.
+  // So we create a custom, empty texture with a render target bind flag, and a shader resource view
+  
+  // First create render target texture and shader resource view
+  Texture texture;
+  {
+    D3D11_TEXTURE2D_DESC textureDesc;
+    ZeroMemory(&textureDesc, sizeof(textureDesc));
+    textureDesc.Width = UINT(width);
+    textureDesc.Height = UINT(height);
+    textureDesc.MipLevels = textureDesc.ArraySize = 1;
+    textureDesc.Format = formatLookup[static_cast<int>(TextureFormat::RGBA32F)];
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    textureDesc.CPUAccessFlags = 0;
+    textureDesc.MiscFlags = 0;
+    pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &texture.pTexture);
 
+    D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+    shaderResourceViewDesc.Format = textureDesc.Format;
+    shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+    shaderResourceViewDesc.Texture2D.MipLevels = 1;
+    pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
+
+    pCtx->textures.push_back(texture);
+    renderTarget.texture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+  }
+
+  // Then create the render target view
   D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
   renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
   renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
   renderTargetViewDesc.Texture2D.MipSlice = 0;
   pCtx->pDevice->CreateRenderTargetView(texture.pTexture, &renderTargetViewDesc, &renderTarget.pView);
 
-  renderTarget.depthStencilTexture = CreateTexture(
-    (int)width,
-    (int)height,
-    DXGI_FORMAT_D24_UNORM_S8_UINT,
-    nullptr,
-    D3D11_BIND_DEPTH_STENCIL
-  );
-  Texture depthStencilTexture = pCtx->textures[renderTarget.depthStencilTexture.id];
+  // Need to create a depth stencil texture now
+  Texture depthStencilTexture;
+  {
+    D3D11_TEXTURE2D_DESC textureDesc;
+    ZeroMemory(&textureDesc, sizeof(textureDesc));
+    textureDesc.Width = UINT(width);
+    textureDesc.Height = UINT(height);
+    textureDesc.MipLevels = textureDesc.ArraySize = 1;
+    textureDesc.Format = formatLookup[static_cast<int>(TextureFormat::D24S8)];
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    textureDesc.CPUAccessFlags = 0;
+    textureDesc.MiscFlags = 0;
+    pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &depthStencilTexture.pTexture);
+
+    pCtx->textures.push_back(depthStencilTexture);
+    renderTarget.depthStencilTexture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+  }
 
   D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
   ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));

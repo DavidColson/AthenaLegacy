@@ -84,6 +84,14 @@ enum class AttributeType
   float2
 };
 
+enum class TextureFormat
+{
+  // Should probably fill this out, but this'll do for now
+  RGBA32F,
+  R8,
+  D24S8
+};
+
 struct VertexInputLayout
 {
   void AddElement(const char* name, AttributeType type);
@@ -171,7 +179,7 @@ namespace GfxDevice
 
   // Textures
 
-  TextureHandle CreateTexture(int width, int height, DXGI_FORMAT format, void* data, unsigned int bindflags);
+  TextureHandle CreateTexture(int width, int height, TextureFormat format, void* data);
 
   void BindTexture(TextureHandle, ShaderType shader, int slot);
 

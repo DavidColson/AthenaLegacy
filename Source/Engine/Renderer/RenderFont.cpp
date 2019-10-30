@@ -131,9 +131,8 @@ RenderFont::RenderFont(std::string fontFile, int size)
 			character.charTexture = GfxDevice::CreateTexture(
 				face->glyph->bitmap.width,
 				face->glyph->bitmap.rows,
-				DXGI_FORMAT_R8_UNORM,
-				face->glyph->bitmap.buffer,
-				D3D11_BIND_SHADER_RESOURCE
+				TextureFormat::R8,
+				face->glyph->bitmap.buffer
 			);
 		}
 		character.size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
