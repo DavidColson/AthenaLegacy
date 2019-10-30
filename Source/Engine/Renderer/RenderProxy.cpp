@@ -11,7 +11,7 @@
 #include "Maths/Vec3.h"
 #include "Renderer/Renderer.h"
 
-struct cbPerObject
+struct TransformData
 {
 	Matrixf wvp;
 	float lineThickness;
@@ -19,7 +19,6 @@ struct cbPerObject
 	float pad2{ 0.0f };
 	float pad3{ 0.0f };
 };
-cbPerObject perObject;
 
 RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 {
@@ -40,15 +39,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 	// Create a constant buffer (uniform) for the WVP
 	// **********************************************
 
-	D3D11_BUFFER_DESC wvpBufferDesc;
-	ZeroMemory(&wvpBufferDesc, sizeof(wvpBufferDesc));
-	wvpBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	wvpBufferDesc.ByteWidth = sizeof(cbPerObject);
-	wvpBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	wvpBufferDesc.CPUAccessFlags = 0;
-	wvpBufferDesc.MiscFlags = 0;
-	pCtx->pDevice->CreateBuffer(&wvpBufferDesc, nullptr, &pWVPBuffer);
-	
+	transformBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
 }
 
 void RenderProxy::Draw()
@@ -68,16 +59,14 @@ void RenderProxy::Draw()
 	Matrixf world = posMat * rotMat * scaMat * pivotAdjust; // transform into world space
 	Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f)); // transform into camera space
 
-	Matrixf projection = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, -1.0f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f); // transform into screen space
 	
 	Matrixf wvp = projection * view * world;
 
-	perObject.wvp = wvp;
-	perObject.lineThickness = lineThickness;
-	pCtx->pDeviceContext->UpdateSubresource(pWVPBuffer, 0, nullptr, &perObject, 0, 0);
- 	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &(pWVPBuffer));
-	pCtx->pDeviceContext->GSSetConstantBuffers(0, 1, &(pWVPBuffer));
+	// TODO: Consider using a flag here for picking a shader, so we don't have to do memcpy twice
+	TransformData trans{ wvp, lineThickness };
+	GfxDevice::BindConstantBuffer(transformBuffer, &trans, ShaderType::Vertex, 0);
+	GfxDevice::BindConstantBuffer(transformBuffer, &trans, ShaderType::Geometry, 0);
 
-	// do 3D rendering on the back buffer here
-	pCtx->pDeviceContext->DrawIndexed(GfxDevice::GetIndexBufferSize(indexBuffer), 0, 0);
+	GfxDevice::DrawIndexed(GfxDevice::GetIndexBufferSize(indexBuffer), 0, 0);
 }

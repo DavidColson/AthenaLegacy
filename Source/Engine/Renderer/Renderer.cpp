@@ -24,22 +24,70 @@ REFLECT_END()
 REFLECT_BEGIN(CPostProcessing)
 REFLECT_END()
 
+namespace
+{
+	// We render the scene into this framebuffer to give systems an opportunity to do 
+  // post processing before we render into the backbuffer
+  RenderTargetHandle preProcessedFrame;
+  VertexBufferHandle fullScreenQuad;
+  SamplerHandle fullScreenTextureSampler;
+  ProgramHandle fullScreenTextureProgram; // simple shader program that draws a texture onscreen
+
+  // Will eventually be a "material" type, assigned to drawables
+  ProgramHandle baseShaderProgram;
+
+  // Need a separate font render system, which pre processes text
+  // into meshes
+  RenderFont* pFontRender;
+}
+
 void Renderer::OnGameStart(Scene& scene)
 {
 	Context* pCtx = GfxDevice::GetContext();
 
 	// Should be eventually moved to a material type when that exists
-	VertexInputLayout layout;
-  layout.AddElement("POSITION", AttributeType::float3);
-  layout.AddElement("COLOR", AttributeType::float3);
+	{
+		std::vector<VertexInputElement> baselayout;
+	  baselayout.push_back({"POSITION", AttributeType::float3});
+	  baselayout.push_back({"COLOR", AttributeType::float3});
 
-  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", layout);
-  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain");
-  GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain");
+	  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout);
+	  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain");
+	  GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain");
 
-  pCtx->baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
+	  baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
+	}
 
-	pCtx->pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
+  // Create a program for drawing full screen quads to
+  {
+		std::vector<VertexInputElement> layout;
+		layout.push_back({"POSITION", AttributeType::float3});
+		layout.push_back({"COLOR", AttributeType::float3});
+		layout.push_back({"TEXCOORD", AttributeType::float2});
+
+		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/FullScreenTexture.hlsl", "VSMain", layout);
+		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/FullScreenTexture.hlsl", "PSMain");
+
+		// Vertex Buffer for fullscreen quad
+		std::vector<Vertex> quadVertices = {
+		  Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
+		  Vertex(Vec3f(-1.f, 1.f, 0.5f)),
+		  Vertex(Vec3f(1.f, -1.f, 0.5f)),
+		  Vertex(Vec3f(1.f, 1.f, 0.5f))
+		};
+		quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
+		quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
+		quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
+		quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
+		fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data());
+
+		fullScreenTextureProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+		fullScreenTextureSampler = GfxDevice::CreateSampler();
+	}
+
+  preProcessedFrame = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+
+	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
 	// *****************
 	// Post processing
@@ -51,7 +99,7 @@ void Renderer::OnGameStart(Scene& scene)
 
 		for (int i = 0; i < 2; ++i)
 		{
-			pp->blurredFrame[i] = GfxDevice::CreateRenderTarget(pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
+			pp->blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f);
 		}
 
 		// Create constant data buffers
@@ -59,10 +107,10 @@ void Renderer::OnGameStart(Scene& scene)
 		pp->bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData));
 
 		// Compile and create post processing shaders
-		VertexInputLayout layout;
-	  layout.AddElement("POSITION", AttributeType::float3);
-	  layout.AddElement("COLOR", AttributeType::float3);
-	  layout.AddElement("TEXCOORD", AttributeType::float2);
+		std::vector<VertexInputElement> layout;
+	  layout.push_back({"POSITION", AttributeType::float3});
+	  layout.push_back({"COLOR", AttributeType::float3});
+	  layout.push_back({"TEXCOORD", AttributeType::float2});
 
 	  VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout);
 	  PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain");
@@ -79,7 +127,7 @@ void Renderer::OnGameStart(Scene& scene)
 void Renderer::OnFrameStart()
 {
 	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplSDL2_NewFrame(GfxDevice::GetContext()->pWindow);
+	ImGui_ImplSDL2_NewFrame(GfxDevice::GetWindow());
 	ImGui::NewFrame();
 }
 
@@ -97,12 +145,12 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// ****************
 	{
 		// First we draw the scene into a render target
-		GfxDevice::BindRenderTarget(pCtx->preProcessedFrame);
-		GfxDevice::ClearRenderTarget(pCtx->preProcessedFrame, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
-		GfxDevice::SetViewport(0.0f, 0.0f, pCtx->windowWidth, pCtx->windowHeight);
+		GfxDevice::BindRenderTarget(preProcessedFrame);
+		GfxDevice::ClearRenderTarget(preProcessedFrame, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
+		GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
 		// Set Shaders to active
-		GfxDevice::BindProgram(pCtx->baseShaderProgram);
+		GfxDevice::BindProgram(baseShaderProgram);
 		GfxDevice::SetTopologyType(TopologyType::LineStripAdjacency);
 
 
@@ -124,7 +172,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// Ideally font is just another mesh with a material to draw
 	// So it would go through the normal channels, specialness is in it's material and probably
 	// an earlier system that prepares the quads to render
-	pCtx->pFontRender->DrawSceneText(scene);
+	pFontRender->DrawSceneText(scene);
 
 	// **********
 	// Draw Debug 
@@ -144,13 +192,13 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 		GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
 		GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
-		GfxDevice::SetViewport(0.f, 0.f, pCtx->windowWidth / 2.0f, pCtx->windowHeight / 2.0f);
+		GfxDevice::SetViewport(0.f, 0.f, GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f);
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Bind bloom shader data
 		GfxDevice::BindProgram(pp->bloomShaderProgram);
-		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
-		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
+		GfxDevice::BindVertexBuffer(fullScreenQuad);
+		GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
 
 		CPostProcessing::BloomShaderData bloomData;
 		bloomData.resolution = Vec2f(900, 500);
@@ -168,7 +216,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			if (i == 0)
 			{
 				// First iteration, bind the plain, preprocessed frame
-				TextureHandle tex = GfxDevice::GetTexture(pCtx->preProcessedFrame);
+				TextureHandle tex = GfxDevice::GetTexture(preProcessedFrame);
 				GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
 			}
 			else
@@ -180,31 +228,31 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 				GfxDevice::ClearRenderTarget(pp->blurredFrame[i % 2], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
 			}
 
-			pCtx->pDeviceContext->Draw(4, 0);
+			GfxDevice::Draw(4, 0);
 		}
 
 		// Now we'll actually render onto the backbuffer and do our final post process stage
 		GfxDevice::SetBackBufferActive();
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
-		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
+		GfxDevice::SetViewport(0, 0, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
 		GfxDevice::BindProgram(pp->postProcessShaderProgram);
-		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
+		GfxDevice::BindVertexBuffer(fullScreenQuad);
 
-		TextureHandle ppFrameTex = GfxDevice::GetTexture(pCtx->preProcessedFrame);
+		TextureHandle ppFrameTex = GfxDevice::GetTexture(preProcessedFrame);
 		GfxDevice::BindTexture(ppFrameTex, ShaderType::Pixel, 0);
 		TextureHandle blurFrameTex = GfxDevice::GetTexture(pp->blurredFrame[1]);
 		GfxDevice::BindTexture(blurFrameTex, ShaderType::Pixel, 1);
 
-		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
+		GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
 		
 		CPostProcessing::PostProcessShaderData ppData;
-		ppData.resolution = Vec2f(pCtx->windowWidth, pCtx->windowHeight);
+		ppData.resolution = Vec2f(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 		ppData.time = float(SDL_GetTicks()) / 1000.0f;
 		GfxDevice::BindConstantBuffer(pp->postProcessDataBuffer, &ppData, ShaderType::Pixel, 0);
 
 		// Draw post processed frame
-		pCtx->pDeviceContext->Draw(4, 0);
+		GfxDevice::Draw(4, 0);
 	}
 
 	// If there was no post processing to do, just draw the pre-processed frame on screen
@@ -212,18 +260,18 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	{
 		GfxDevice::SetBackBufferActive();
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
-		GfxDevice::SetViewport(0, 0, pCtx->windowWidth, pCtx->windowHeight);
+		GfxDevice::SetViewport(0, 0, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
-		GfxDevice::BindProgram(pCtx->fullScreenTextureProgram);
-		GfxDevice::BindVertexBuffer(pCtx->fullScreenQuad);
+		GfxDevice::BindProgram(fullScreenTextureProgram);
+		GfxDevice::BindVertexBuffer(fullScreenQuad);
 
-		TextureHandle tex = GfxDevice::GetTexture(pCtx->preProcessedFrame);
+		TextureHandle tex = GfxDevice::GetTexture(preProcessedFrame);
 		GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
 
-		GfxDevice::BindSampler(pCtx->fullScreenTextureSampler, ShaderType::Pixel, 0);
+		GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
 
-		pCtx->pDeviceContext->Draw(4, 0);
+		GfxDevice::Draw(4, 0);
 	}
 
 	// *******************

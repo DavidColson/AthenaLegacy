@@ -115,8 +115,8 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	pPlayerControl->respawnTimer = 5.0f;
 	scene.DestroyEntity(asteroid);
 
-	float w = GfxDevice::GetContext()->windowWidth;
-	float h = GfxDevice::GetContext()->windowHeight;
+	float w = GfxDevice::GetWindowWidth();
+	float h = GfxDevice::GetWindowHeight();
 	CTransform* pTransform = scene.Get<CTransform>(player);
 	pTransform->pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 	pTransform->rot = 0.0f;
@@ -210,10 +210,10 @@ void MovementSystemUpdate(Scene& scene, float deltaTime)
 
 		if (pTransform->pos.x < 0.0f)
 		{
-			pTransform->pos.x = GfxDevice::GetContext()->windowWidth;
+			pTransform->pos.x = GfxDevice::GetWindowWidth();
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
-		else if (pTransform->pos.x > GfxDevice::GetContext()->windowWidth)
+		else if (pTransform->pos.x > GfxDevice::GetWindowWidth())
 		{
 			pTransform->pos.x = 0.0f;
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
@@ -221,10 +221,10 @@ void MovementSystemUpdate(Scene& scene, float deltaTime)
 
 		if (pTransform->pos.y < 0.0f)
 		{
-			pTransform->pos.y = GfxDevice::GetContext()->windowHeight;
+			pTransform->pos.y = GfxDevice::GetWindowHeight();
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
-		else if (pTransform->pos.y > GfxDevice::GetContext()->windowHeight)
+		else if (pTransform->pos.y > GfxDevice::GetWindowHeight())
 		{
 			pTransform->pos.y = 0.0f;
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);

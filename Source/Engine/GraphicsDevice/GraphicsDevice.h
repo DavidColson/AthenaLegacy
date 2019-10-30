@@ -9,6 +9,7 @@
 // *************************
 
 struct SDL_Window;
+
 struct IDXGISwapChain;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
@@ -24,8 +25,6 @@ struct ID3D11Texture2D;
 
 class RenderFont;
 struct Context;
-
-
 
 enum class TopologyType
 {
@@ -93,10 +92,10 @@ enum class TextureFormat
   D24S8
 };
 
-struct VertexInputLayout
+struct VertexInputElement
 {
-  void AddElement(const char* name, AttributeType type);
-  std::vector<D3D11_INPUT_ELEMENT_DESC> layout;
+  const char* name;
+  AttributeType type;
 };
 
 namespace GfxDevice
@@ -105,6 +104,12 @@ namespace GfxDevice
   Context* GetContext();
 
   void Initialize(SDL_Window* pWindow, float width, float height);
+
+  SDL_Window* GetWindow();
+
+  float GetWindowWidth();
+
+  float GetWindowHeight();
 
   void SetViewport(float x, float y, float width, float height);
 
@@ -117,6 +122,10 @@ namespace GfxDevice
   void PresentBackBuffer();
 
   void ClearRenderState();
+
+  void DrawIndexed(int indexCount, int startIndex, int startVertex);
+
+  void Draw(int numVerts, int startVertex);
 
   // Vertex Buffers
 
@@ -142,9 +151,9 @@ namespace GfxDevice
 
   // Shaders And Programs
 
-  VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout);
+  VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout);
 
-  VertexShaderHandle CreateVertexShader(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout);
+  VertexShaderHandle CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout);
 
   PixelShaderHandle CreatePixelShader(const wchar_t* fileName, const char* entry);
 
@@ -191,7 +200,6 @@ namespace GfxDevice
   void BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot);
 }
 
-// Everything declared below should be inside the cpp file in future
 struct RenderTarget
 {
   TextureHandle texture;
@@ -273,21 +281,6 @@ struct Context
   std::vector<Sampler> samplers;
   std::vector<Texture> textures;
   std::vector<ConstantBuffer> constBuffers;
-
-  // We render the scene into this framebuffer to give systems an opportunity to do 
-  // post processing before we render into the backbuffer
-  // #TODO: This stuff should be part of the higher level graphics system
-  RenderTargetHandle preProcessedFrame;
-  VertexBufferHandle fullScreenQuad;
-  SamplerHandle fullScreenTextureSampler;
-  ProgramHandle fullScreenTextureProgram; // simple shader program that draws a texture onscreen
-
-  // Will eventually be a "material" type, assigned to drawables
-  ProgramHandle baseShaderProgram;
-
-  // Need a separate font render system, which pre processes text
-  // into meshes
-  RenderFont* pFontRender;
 
   float windowWidth{ 0 };
   float windowHeight{ 0 };

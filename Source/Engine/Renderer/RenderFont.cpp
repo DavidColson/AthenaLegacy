@@ -55,10 +55,10 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		return textureColor;\
 	}";
 
-	VertexInputLayout layout;
-  layout.AddElement("POSITION", AttributeType::float3);
-  layout.AddElement("COLOR", AttributeType::float3);
-  layout.AddElement("TEXCOORD", AttributeType::float2);
+	std::vector<VertexInputElement> layout;
+  layout.push_back({"POSITION", AttributeType::float3});
+  layout.push_back({"COLOR", AttributeType::float3});
+  layout.push_back({"TEXCOORD", AttributeType::float2});
 
   VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout);
   PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain");
@@ -155,7 +155,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
 	pCtx->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);
 
-	Matrixf projection = Matrixf::Orthographic(0, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f); // transform into screen space
+	Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
 	
 	GfxDevice::BindSampler(charTextureSampler, ShaderType::Pixel, 0);
 
@@ -191,8 +191,8 @@ void RenderFont::DrawSceneText(Scene& scene)
 				GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
 
 				// do 3D rendering on the back buffer here
-				// Instance render the entire string
-				pCtx->pDeviceContext->Draw(4, 0);
+				// Todo::Instance render the entire string
+				GfxDevice::Draw(4, 0);
 
 				x += ch.advance;
 			}

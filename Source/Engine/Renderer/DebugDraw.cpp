@@ -30,11 +30,12 @@ namespace
 	VertexBufferHandle vertexBuffer;
 	IndexBufferHandle indexBuffer;
 
-	struct cbTransform
+	struct TransformData
 	{
 		Matrixf wvp;
-	} transformBufferData;
-	ID3D11Buffer* pTransformBuffer;
+	};
+
+	ConstBufferHandle transformDataBuffer;
 }
 
 void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec3f color)
@@ -88,9 +89,9 @@ void DebugDraw::Detail::Init()
 		return input.Col;\
 	}";
 
-	VertexInputLayout layout;
-  layout.AddElement("POSITION",AttributeType::float3);
-  layout.AddElement("COLOR", AttributeType::float3);
+	std::vector<VertexInputElement> layout;
+  layout.push_back({"POSITION",AttributeType::float3});
+  layout.push_back({"COLOR", AttributeType::float3});
 
   VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout);
   PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain");
@@ -98,16 +99,7 @@ void DebugDraw::Detail::Init()
   debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	// Create constant buffer for WVP
-	{
-		D3D11_BUFFER_DESC desc;
-		ZeroMemory(&desc, sizeof(desc));
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.ByteWidth = sizeof(cbTransform);
-		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		desc.CPUAccessFlags = 0;
-		desc.MiscFlags = 0;
-		pCtx->pDevice->CreateBuffer(&desc, nullptr, &pTransformBuffer);
-	}
+	transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
 }
 
 void DebugDraw::Detail::DrawQueue()
@@ -132,8 +124,8 @@ void DebugDraw::Detail::DrawQueue()
 	GfxDevice::UpdateDynamicIndexBuffer(indexBuffer, indexBufferData.data(), indexBufferData.size() * sizeof(int));
 
 	// Update constant buffer data
-	transformBufferData.wvp = Matrixf::Orthographic(0.f, pCtx->windowWidth, 0.0f, pCtx->windowHeight, 0.1f, 10.0f);
-	pCtx->pDeviceContext->UpdateSubresource(pTransformBuffer, 0, nullptr, &transformBufferData, 0, 0);
+	TransformData trans{ Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f) };
+	GfxDevice::BindConstantBuffer(transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders
 	GfxDevice::BindProgram(debugShaderProgram);
@@ -142,14 +134,12 @@ void DebugDraw::Detail::DrawQueue()
 
 	GfxDevice::BindVertexBuffer(vertexBuffer);
 	GfxDevice::BindIndexBuffer(indexBuffer);
-	pCtx->pDeviceContext->VSSetConstantBuffers(0, 1, &pTransformBuffer);
-
 
 	int vertOffset = 0;
 	int indexOffset = 0;
 	for (DrawCall& draw : drawQueue)
 	{
-		pCtx->pDeviceContext->DrawIndexed(draw.indexCount, indexOffset, vertOffset);
+		GfxDevice::DrawIndexed(draw.indexCount, indexOffset, vertOffset);
 		vertOffset += draw.vertexCount;
 		indexOffset += draw.indexCount;
 	}

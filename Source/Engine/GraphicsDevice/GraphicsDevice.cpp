@@ -83,35 +83,6 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   pCtx->pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->pBackBuffer);
   pBackBuffer->Release();
 
-  // Create a program for drawing full screen quads to t
-  VertexInputLayout layout;
-  layout.AddElement("POSITION", AttributeType::float3);
-  layout.AddElement("COLOR", AttributeType::float3);
-  layout.AddElement("TEXCOORD", AttributeType::float2);
-
-  VertexShaderHandle vertShader = CreateVertexShader(L"Shaders/FullScreenTexture.hlsl", "VSMain", layout);
-  PixelShaderHandle pixShader = CreatePixelShader(L"Shaders/FullScreenTexture.hlsl", "PSMain");
-
-  pCtx->fullScreenTextureProgram = CreateProgram(vertShader, pixShader);
-  
-  pCtx->fullScreenTextureSampler = CreateSampler();
-
-  // Vertex Buffer for fullscreen quad
-  std::vector<Vertex> quadVertices = {
-    Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
-    Vertex(Vec3f(-1.f, 1.f, 0.5f)),
-    Vertex(Vec3f(1.f, -1.f, 0.5f)),
-    Vertex(Vec3f(1.f, 1.f, 0.5f))
-  };
-  quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
-  quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
-  quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
-  quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-  pCtx->fullScreenQuad = CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data());
-
-  // Render target for the main scene
-  pCtx->preProcessedFrame = CreateRenderTarget(pCtx->windowWidth, pCtx->windowHeight);
-
   // Init debug drawing
   DebugDraw::Detail::Init();
 
@@ -123,6 +94,21 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   ImGui_ImplDX11_Init(pCtx->pDevice, pCtx->pDeviceContext);
   io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
   ImGui::StyleColorsDark();
+}
+
+SDL_Window* GfxDevice::GetWindow()
+{
+  return pCtx->pWindow;
+}
+
+float GfxDevice::GetWindowWidth()
+{
+  return pCtx->windowWidth;
+}
+
+float GfxDevice::GetWindowHeight()
+{
+  return pCtx->windowHeight;
 }
 
 void GfxDevice::SetViewport(float x, float y, float width, float height)
@@ -156,6 +142,16 @@ void GfxDevice::PresentBackBuffer()
 void GfxDevice::ClearRenderState()
 {
   pCtx->pDeviceContext->ClearState();
+}
+
+void GfxDevice::DrawIndexed(int indexCount, int startIndex, int startVertex)
+{
+  pCtx->pDeviceContext->DrawIndexed(indexCount, startIndex, startVertex);
+}
+
+void GfxDevice::Draw(int numVerts, int startVertex)
+{
+  pCtx->pDeviceContext->Draw(numVerts, startVertex);
 }
 
 bool ShaderCompileFromFile(const wchar_t* fileName, const char* entry, const char* target, ID3DBlob** pOutBlob)
@@ -370,21 +366,6 @@ TextureHandle GfxDevice::GetTexture(RenderTargetHandle handle)
   return renderTarget.texture;
 }
 
-void VertexInputLayout::AddElement(const char* name, AttributeType type)
-{
-  switch(type)
-  {
-    case AttributeType::float3:
-      layout.push_back( { name, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
-      break;
-    case AttributeType::float2:
-      layout.push_back( { name, 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
-      break;
-    default:
-      break;  
-  }
-}
-
 IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data)
 {
   IndexBuffer indexBuffer;
@@ -462,27 +443,53 @@ void GfxDevice::BindIndexBuffer(IndexBufferHandle handle)
   pCtx->pDeviceContext->IASetIndexBuffer(indexBuffer.pBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
 
-VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const char* entry, const VertexInputLayout& inputLayout)
+std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<VertexInputElement>& layout)
+{
+  std::vector<D3D11_INPUT_ELEMENT_DESC> d3d11Layout;
+
+  for (const VertexInputElement& elem : layout)
+  {
+    // Todo: might want to replace with a lookup
+    switch(elem.type)
+    {
+      case AttributeType::float3:
+        d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
+        break;
+      case AttributeType::float2:
+        d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
+        break;
+      default:
+        break;  
+    }
+  }
+  return d3d11Layout;
+}
+
+VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout)
 {
   VertexShader shader;
+
+  std::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
   ID3DBlob* pBlob = nullptr;
   ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
   pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
-  pCtx->pDevice->CreateInputLayout(inputLayout.layout.data(), UINT(inputLayout.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+  pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
 
   pCtx->vertexShaders.push_back(shader);
   return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
 }
 
-VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, const char* entry, const VertexInputLayout& inputLayout)
+VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout)
 {
   VertexShader shader;
+
+  std::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
   ID3DBlob* pBlob = nullptr;
   ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
   pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
-  pCtx->pDevice->CreateInputLayout(inputLayout.layout.data(), UINT(inputLayout.layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+  pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
 
   pCtx->vertexShaders.push_back(shader);
   return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};

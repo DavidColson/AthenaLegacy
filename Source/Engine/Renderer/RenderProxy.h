@@ -6,8 +6,6 @@
 
 #include <vector>
 
-struct ID3D11Buffer;
-
 struct Vertex
 {
 	Vertex(Vec3f _pos) : pos(_pos) {}
@@ -26,7 +24,7 @@ struct RenderProxy
 
 	void SetTransform(Vec3f _pos, float _rot, Vec3f _sca) { pos = _pos; rot = _rot; sca = _sca; }
 
-	ID3D11Buffer* pWVPBuffer;
+	ConstBufferHandle transformBuffer;
 
 	Vec3f pos{ Vec3f(0,0,0) };
 	Vec3f sca{ Vec3f(1.f, 1.f, 1.f) };
