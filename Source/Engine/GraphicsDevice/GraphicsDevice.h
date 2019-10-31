@@ -80,6 +80,7 @@ enum class ShaderType
 
 enum class AttributeType
 {
+  // Need to fill this out
   float3,
   float2
 };
@@ -92,10 +93,47 @@ enum class TextureFormat
   D24S8
 };
 
+enum class BlendOp
+{
+  Add,
+  Subtract,
+  RevSubtract,
+  Min,
+  Max
+};
+
+enum class Blend
+{
+  Zero,
+  One,
+  SrcColor,
+  InverseSrcColor,
+  SrcAlpha,
+  InverseSrcAlpha,
+  DestAlpha,
+  InverseDestAlpha,
+  DestColor,
+  InverseDestColor,
+  BlendFactor,
+  InverseBlendFactor
+};
+
 struct VertexInputElement
 {
   const char* name;
   AttributeType type;
+};
+
+struct BlendingInfo
+{
+  bool enabled{ true };
+  BlendOp colorOp{ BlendOp::Add };
+  BlendOp alphaOp{ BlendOp::Add };
+  Blend source{ Blend::One };
+  Blend destination{ Blend::Zero };
+  Blend sourceAlpha{ Blend::One };
+  Blend destinationAlpha{ Blend::Zero };
+  std::array<float, 4> blendFactor;
 };
 
 namespace GfxDevice
@@ -126,6 +164,10 @@ namespace GfxDevice
   void DrawIndexed(int indexCount, int startIndex, int startVertex);
 
   void Draw(int numVerts, int startVertex);
+
+  // Blend States
+
+  void SetBlending(const BlendingInfo& info);
 
   // Vertex Buffers
 

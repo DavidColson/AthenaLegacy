@@ -36,6 +36,31 @@ static const DXGI_FORMAT formatLookup[3] =
   DXGI_FORMAT_D24_UNORM_S8_UINT
 };
 
+static const D3D11_BLEND_OP blendOpLookup[5] = 
+{
+  D3D11_BLEND_OP_ADD,
+  D3D11_BLEND_OP_SUBTRACT,
+  D3D11_BLEND_OP_REV_SUBTRACT,
+  D3D11_BLEND_OP_MIN,
+  D3D11_BLEND_OP_MAX
+};
+
+static const D3D11_BLEND blendLookup[12] = 
+{
+  D3D11_BLEND_ZERO,
+  D3D11_BLEND_ONE,
+  D3D11_BLEND_SRC_COLOR,
+  D3D11_BLEND_INV_SRC_COLOR,
+  D3D11_BLEND_SRC_ALPHA,
+  D3D11_BLEND_INV_SRC_ALPHA,
+  D3D11_BLEND_DEST_ALPHA,
+  D3D11_BLEND_INV_DEST_ALPHA,
+  D3D11_BLEND_DEST_COLOR,
+  D3D11_BLEND_INV_DEST_COLOR,
+  D3D11_BLEND_BLEND_FACTOR,
+  D3D11_BLEND_INV_BLEND_FACTOR
+};
+
 void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 {
   pCtx = new Context();
@@ -152,6 +177,31 @@ void GfxDevice::DrawIndexed(int indexCount, int startIndex, int startVertex)
 void GfxDevice::Draw(int numVerts, int startVertex)
 {
   pCtx->pDeviceContext->Draw(numVerts, startVertex);
+}
+
+void GfxDevice::SetBlending(const BlendingInfo& info)
+{
+  D3D11_BLEND_DESC blendDesc;
+  ZeroMemory(&blendDesc, sizeof(blendDesc));
+
+  D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+  ZeroMemory(&rtbd, sizeof(rtbd));
+
+  rtbd.BlendEnable = info.enabled;
+  rtbd.BlendOp = blendOpLookup[static_cast<int>(info.colorOp)];
+  rtbd.BlendOpAlpha = blendOpLookup[static_cast<int>(info.alphaOp)];
+  rtbd.SrcBlend = blendLookup[static_cast<int>(info.source)];
+  rtbd.DestBlend = blendLookup[static_cast<int>(info.destination)];
+  rtbd.SrcBlendAlpha = blendLookup[static_cast<int>(info.sourceAlpha)];
+  rtbd.DestBlendAlpha = blendLookup[static_cast<int>(info.destinationAlpha)];
+  rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+  blendDesc.AlphaToCoverageEnable = false;
+  blendDesc.RenderTarget[0] = rtbd;
+
+  ID3D11BlendState* blendState;
+  pCtx->pDevice->CreateBlendState(&blendDesc, &blendState);
+  pCtx->pDeviceContext->OMSetBlendState(blendState, info.blendFactor.data(), 0xffffffff);
 }
 
 bool ShaderCompileFromFile(const wchar_t* fileName, const char* entry, const char* target, ID3DBlob** pOutBlob)
@@ -271,9 +321,6 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 {
   RenderTarget renderTarget;
 
-  // TODO: Custom texture creation needs to go here, as we will not expose the bind flags.
-  // So we create a custom, empty texture with a render target bind flag, and a shader resource view
-  
   // First create render target texture and shader resource view
   Texture texture;
   {

@@ -8,14 +8,6 @@
 #include <string>
 #include <vector>
 
-struct ID3D11ShaderResourceView;
-struct ID3D11Buffer;
-struct ID3D11SamplerState;
-struct ID3D11BlendState;
-struct ID3D11VertexShader;
-struct ID3D11PixelShader;
-struct ID3D11InputLayout;
-
 struct Scene;
 
 // **********
@@ -58,7 +50,6 @@ private:
 	ProgramHandle fontShaderProgram;
 	
 	ConstBufferHandle wvpBuffer;
-	ID3D11BlendState* transparency;
 
 	std::vector<Character> characters;
 };

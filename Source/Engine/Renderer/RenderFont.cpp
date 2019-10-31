@@ -1,9 +1,6 @@
 
 #include "RenderFont.h"
 
-#include <D3DCompiler.h>
-#include <d3d11.h>
-#include <d3d10.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -86,27 +83,6 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	// **********************************************
 
 	wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
-
-	D3D11_BLEND_DESC blendDesc;
-	ZeroMemory(&blendDesc, sizeof(blendDesc));
-
-	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
-	ZeroMemory(&rtbd, sizeof(rtbd));
-
-	rtbd.BlendEnable = true;
-	rtbd.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
-	rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
-	rtbd.DestBlendAlpha = D3D11_BLEND_ONE;
-	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
-
-	blendDesc.AlphaToCoverageEnable = false;
-	blendDesc.RenderTarget[0] = rtbd;
-
-	pCtx->pDevice->CreateBlendState(&blendDesc, &transparency);
-
 	charTextureSampler = GfxDevice::CreateSampler();
 
 	for (int i = 0; i < 128; i++)
@@ -151,9 +127,12 @@ void RenderFont::DrawSceneText(Scene& scene)
 
 	// Set Shaders to active
 	GfxDevice::BindProgram(fontShaderProgram);
-	
-	float blendFactor[] = { 0.0f, 0.f, 0.0f, 0.0f };
-	pCtx->pDeviceContext->OMSetBlendState(transparency, blendFactor, 0xffffffff);
+
+	BlendingInfo blender;
+	blender.enabled = true;
+	blender.source = Blend::SrcAlpha;
+	blender.destination = Blend::InverseSrcAlpha;
+	GfxDevice::SetBlending(blender);
 
 	Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
 	
@@ -180,19 +159,22 @@ void RenderFont::DrawSceneText(Scene& scene)
 				// Draw a font character
 				Character ch = characters[c];
 
-				Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth*0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
-				Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
+				if (IsValid(characters[c].charTexture))
+				{
+					Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth * 0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
+					Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
 
-				Matrixf world = posmat * scalemat; // transform into world space
-				Matrixf wvp = projection * world;
+					Matrixf world = posmat * scalemat; // transform into world space
+					Matrixf wvp = projection * world;
 
-				TransformData transformData{ wvp };
-				GfxDevice::BindConstantBuffer(wvpBuffer, &transformData, ShaderType::Vertex, 0);
-				GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
+					TransformData transformData{ wvp };
+					GfxDevice::BindConstantBuffer(wvpBuffer, &transformData, ShaderType::Vertex, 0);
+					GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
 
-				// do 3D rendering on the back buffer here
-				// Todo::Instance render the entire string
-				GfxDevice::Draw(4, 0);
+					// do 3D rendering on the back buffer here
+					// Todo::Instance render the entire string
+					GfxDevice::Draw(4, 0);
+				}
 
 				x += ch.advance;
 			}

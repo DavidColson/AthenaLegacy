@@ -49,7 +49,8 @@ void Renderer::OnGameStart(Scene& scene)
 	{
 		std::vector<VertexInputElement> baselayout;
 	  baselayout.push_back({"POSITION", AttributeType::float3});
-	  baselayout.push_back({"COLOR", AttributeType::float3});
+	  baselayout.push_back({"COLOR", AttributeType::float3 });
+	  baselayout.push_back({"TEXCOORD", AttributeType::float2});
 
 	  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout);
 	  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain");
