@@ -89,6 +89,7 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 		Editor::OnFrame(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
 		Profiler::ClearFrameData();
 		Renderer::OnFrame(*pCurrentScene, (float)frameTime); // This should take in the scene as a paramter and work from that, instead of
+		GfxDevice::PrintQueuedDebugMessages();
 
 		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();

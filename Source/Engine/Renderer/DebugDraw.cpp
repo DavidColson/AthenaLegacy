@@ -1,10 +1,8 @@
 #include "DebugDraw.h"
 
-#include <d3d11.h>
-#include <d3d10.h>
-
 #include "Maths/Matrix.h"
 #include "Renderer.h"
+#include "Profiler.h"
 
 namespace
 {
@@ -64,9 +62,6 @@ void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec3f color)
 
 void DebugDraw::Detail::Init()
 {
-	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
-	Context* pCtx = GfxDevice::GetContext();
-
 	std::string shaderSrc = "\
 	cbuffer cbTransform\
 	{\
@@ -104,8 +99,10 @@ void DebugDraw::Detail::Init()
 
 void DebugDraw::Detail::DrawQueue()
 {
-	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
-	Context* pCtx = GfxDevice::GetContext();
+	PROFILE();
+
+	if (drawQueue.empty())
+		return;
 
 	if (IsValid(vertexBuffer) || vertBufferSize < vertBufferData.size())
 	{

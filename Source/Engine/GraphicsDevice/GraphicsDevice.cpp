@@ -17,16 +17,106 @@
 #include "Renderer/RenderProxy.h"
 #include "Renderer/DebugDraw.h"
 
+
+// ***********************************
+// D3D11 specific resource definitions
+// ***********************************
+
+struct RenderTarget
+{
+  TextureHandle texture;
+  ID3D11RenderTargetView* pView{ nullptr };
+  TextureHandle depthStencilTexture;
+  ID3D11DepthStencilView* pDepthStencilView { nullptr };
+};
+
+struct IndexBuffer
+{
+  int nElements;
+  bool isDynamic{ false };
+  ID3D11Buffer* pBuffer{ nullptr };
+};
+
+struct VertexBuffer
+{
+  bool isDynamic{ false };
+  UINT elementSize{ 0 };
+  ID3D11Buffer* pBuffer{ nullptr };
+};
+
+struct VertexShader
+{
+  ID3D11InputLayout* pVertLayout{ nullptr };
+  ID3D11VertexShader* pShader{ nullptr };
+};
+
+struct PixelShader
+{
+  ID3D11PixelShader* pShader{ nullptr };
+};
+
+struct GeometryShader
+{
+  ID3D11GeometryShader* pShader{ nullptr };
+};
+
+struct Program
+{
+  VertexShader vertShader;
+  PixelShader pixelShader;
+  GeometryShader geomShader;
+};
+
+struct Sampler
+{
+  ID3D11SamplerState* pSampler;
+};
+
+struct Texture
+{
+  ID3D11ShaderResourceView* pShaderResourceView{ nullptr };
+  ID3D11Texture2D* pTexture{ nullptr };
+};
+
+struct ConstantBuffer
+{
+  ID3D11Buffer* pBuffer{ nullptr };
+};
+
+struct Context
+{
+  SDL_Window* pWindow;
+
+  IDXGISwapChain* pSwapChain;
+  ID3D11Device* pDevice;
+  ID3D11DeviceContext* pDeviceContext;
+  ID3D11InfoQueue* pDebugInfoQueue;
+  ID3D11RenderTargetView* pBackBuffer;
+
+  // resources
+  std::vector<RenderTarget> renderTargets;
+  std::vector<VertexBuffer> vertexBuffers;
+  std::vector<IndexBuffer> indexBuffers;
+  std::vector<VertexShader> vertexShaders;
+  std::vector<PixelShader> pixelShaders;
+  std::vector<GeometryShader> geometryShaders;
+  std::vector<Program> programs;
+  std::vector<Sampler> samplers;
+  std::vector<Texture> textures;
+  std::vector<ConstantBuffer> constBuffers;
+
+  float windowWidth{ 0 };
+  float windowHeight{ 0 };
+};
+
 namespace
 {
   Context* pCtx = nullptr;
 }
 
-// #TODO: This should not be
-Context* GfxDevice::GetContext()
-{
-  return pCtx;
-}
+// ***********************************
+// D3D11 Flag conversions
+// ***********************************
 
 // Should probably expand this to more formats at some point
 static const DXGI_FORMAT formatLookup[3] = 
@@ -60,6 +150,8 @@ static const D3D11_BLEND blendLookup[12] =
   D3D11_BLEND_BLEND_FACTOR,
   D3D11_BLEND_INV_BLEND_FACTOR
 };
+
+// ***********************************************************************
 
 void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 {
@@ -102,16 +194,16 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
     NULL,
     &pCtx->pDeviceContext);
 
-  // Create back buffer render targer
+  // Create back buffer render target
   ID3D11Texture2D *pBackBuffer;
   pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
   pCtx->pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->pBackBuffer);
   pBackBuffer->Release();
 
-  // Init debug drawing
-  DebugDraw::Detail::Init();
+  // Setup debug
+  pCtx->pDevice->QueryInterface(__uuidof(ID3D11InfoQueue), (void **)&pCtx->pDebugInfoQueue);
 
-  // Init Imgui
+  // Init Imgui (ideally one day imgui uses GfxDevice, and exists outside here)
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
@@ -121,20 +213,49 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
   ImGui::StyleColorsDark();
 }
 
+// ***********************************************************************
+
+void GfxDevice::PrintQueuedDebugMessages()
+{
+  UINT64 message_count = pCtx->pDebugInfoQueue->GetNumStoredMessages();
+
+  for(UINT64 i = 0; i < message_count; i++){
+      SIZE_T message_size = 0;
+      pCtx->pDebugInfoQueue->GetMessage(i, nullptr, &message_size); //get the size of the message
+
+      D3D11_MESSAGE* message = (D3D11_MESSAGE*) malloc(message_size); //allocate enough space
+      pCtx->pDebugInfoQueue->GetMessage(i, message, &message_size); //get the actual message
+
+      Log::Print(Log::EGraphics, "%s", message->pDescription);
+
+      free(message);
+  }
+
+  pCtx->pDebugInfoQueue->ClearStoredMessages();
+}
+
+// ***********************************************************************
+
 SDL_Window* GfxDevice::GetWindow()
 {
   return pCtx->pWindow;
 }
+
+// ***********************************************************************
 
 float GfxDevice::GetWindowWidth()
 {
   return pCtx->windowWidth;
 }
 
+// ***********************************************************************
+
 float GfxDevice::GetWindowHeight()
 {
   return pCtx->windowHeight;
 }
+
+// ***********************************************************************
 
 void GfxDevice::SetViewport(float x, float y, float width, float height)
 {
@@ -149,35 +270,49 @@ void GfxDevice::SetViewport(float x, float y, float width, float height)
   pCtx->pDeviceContext->RSSetViewports(1, &viewport);
 }
 
+// ***********************************************************************
+
 void GfxDevice::ClearBackBuffer(std::array<float, 4> color)
 {
   pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBackBuffer, color.data());
 }
+
+// ***********************************************************************
 
 void GfxDevice::SetBackBufferActive()
 {
   pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBackBuffer, NULL);  
 }
 
+// ***********************************************************************
+
 void GfxDevice::PresentBackBuffer()
 {
   pCtx->pSwapChain->Present(0, 0);
 }
+
+// ***********************************************************************
 
 void GfxDevice::ClearRenderState()
 {
   pCtx->pDeviceContext->ClearState();
 }
 
+// ***********************************************************************
+
 void GfxDevice::DrawIndexed(int indexCount, int startIndex, int startVertex)
 {
   pCtx->pDeviceContext->DrawIndexed(indexCount, startIndex, startVertex);
 }
 
+// ***********************************************************************
+
 void GfxDevice::Draw(int numVerts, int startVertex)
 {
   pCtx->pDeviceContext->Draw(numVerts, startVertex);
 }
+
+// ***********************************************************************
 
 void GfxDevice::SetBlending(const BlendingInfo& info)
 {
@@ -204,6 +339,8 @@ void GfxDevice::SetBlending(const BlendingInfo& info)
   pCtx->pDeviceContext->OMSetBlendState(blendState, info.blendFactor.data(), 0xffffffff);
 }
 
+// ***********************************************************************
+
 bool ShaderCompileFromFile(const wchar_t* fileName, const char* entry, const char* target, ID3DBlob** pOutBlob)
 {
   HRESULT hr;
@@ -221,6 +358,8 @@ bool ShaderCompileFromFile(const wchar_t* fileName, const char* entry, const cha
   }
   return true;
 }
+
+// ***********************************************************************
 
 bool ShaderCompile(std::string& fileContents, const char* entry, const char* target, ID3DBlob** pOutBlob)
 {
@@ -241,6 +380,8 @@ bool ShaderCompile(std::string& fileContents, const char* entry, const char* tar
 }
 
 
+// ***********************************************************************
+
 void GfxDevice::SetTopologyType(TopologyType type)
 {
   D3D11_PRIMITIVE_TOPOLOGY topologyType;
@@ -258,6 +399,8 @@ void GfxDevice::SetTopologyType(TopologyType type)
   }
   pCtx->pDeviceContext->IASetPrimitiveTopology(topologyType);
 }
+
+// ***********************************************************************
 
 TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void* data)
 {
@@ -299,6 +442,8 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat form
   return TextureHandle{uint16_t(pCtx->textures.size()-1)};
 }
 
+// ***********************************************************************
+
 void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
 {
   Texture& texture = pCtx->textures[handle.id];
@@ -316,6 +461,8 @@ void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
       break;
   }
 }
+
+// ***********************************************************************
 
 RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 {
@@ -386,6 +533,8 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
   return RenderTargetHandle{uint16_t(pCtx->renderTargets.size()-1)};
 }
 
+// ***********************************************************************
+
 void GfxDevice::BindRenderTarget(RenderTargetHandle handle)
 {
   RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
@@ -393,11 +542,15 @@ void GfxDevice::BindRenderTarget(RenderTargetHandle handle)
   pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);
 }
 
+// ***********************************************************************
+
 void GfxDevice::UnbindRenderTarget(RenderTargetHandle handle)
 {
   ID3D11RenderTargetView* nullViews[] = { nullptr };
   pCtx->pDeviceContext->OMSetRenderTargets(1, nullViews, nullptr);
 }
+
+// ***********************************************************************
 
 void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4> color, bool clearDepth, bool clearStencil)
 {
@@ -407,11 +560,15 @@ void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4
   pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
+// ***********************************************************************
+
 TextureHandle GfxDevice::GetTexture(RenderTargetHandle handle)
 {
   RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
   return renderTarget.texture;
 }
+
+// ***********************************************************************
 
 IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data)
 {
@@ -438,6 +595,8 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data)
   return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
 }
 
+// ***********************************************************************
+
 IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements)
 {
   IndexBuffer indexBuffer;
@@ -461,6 +620,8 @@ IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements)
   return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
 }
 
+// ***********************************************************************
+
 void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize)
 {
   IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
@@ -478,17 +639,23 @@ void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, s
   pCtx->pDeviceContext->Unmap(indexBuffer.pBuffer, 0);
 }
 
+// ***********************************************************************
+
 int GfxDevice::GetIndexBufferSize(IndexBufferHandle handle)
 {
   IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
   return indexBuffer.nElements;
 }
 
+// ***********************************************************************
+
 void GfxDevice::BindIndexBuffer(IndexBufferHandle handle)
 {
   IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
   pCtx->pDeviceContext->IASetIndexBuffer(indexBuffer.pBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
+
+// ***********************************************************************
 
 std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<VertexInputElement>& layout)
 {
@@ -512,6 +679,8 @@ std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<V
   return d3d11Layout;
 }
 
+// ***********************************************************************
+
 VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout)
 {
   VertexShader shader;
@@ -526,6 +695,8 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const 
   pCtx->vertexShaders.push_back(shader);
   return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
 }
+
+// ***********************************************************************
 
 VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout)
 {
@@ -542,6 +713,8 @@ VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, cons
   return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
 }
 
+// ***********************************************************************
+
 PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const char* entry)
 {
   PixelShader shader;
@@ -553,6 +726,8 @@ PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const ch
   pCtx->pixelShaders.push_back(shader);
   return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
 }
+
+// ***********************************************************************
 
 PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const char* entry)
 {
@@ -566,6 +741,8 @@ PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const 
   return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
 }
 
+// ***********************************************************************
+
 GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, const char* entry)
 {
   GeometryShader shader;
@@ -577,6 +754,8 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, co
   pCtx->geometryShaders.push_back(shader);
   return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
 }
+
+// ***********************************************************************
 
 GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, const char* entry)
 {
@@ -590,6 +769,8 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, 
   return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
 }
 
+// ***********************************************************************
+
 ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader)
 {
   Program program;
@@ -600,6 +781,8 @@ ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHa
   pCtx->programs.push_back(program);
   return ProgramHandle{uint16_t(pCtx->programs.size()-1)};
 }
+
+// ***********************************************************************
 
 ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader, GeometryShaderHandle gShader)
 {
@@ -613,6 +796,8 @@ ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHa
   return ProgramHandle{uint16_t(pCtx->programs.size()-1)};
 }
 
+// ***********************************************************************
+
 void GfxDevice::BindProgram(ProgramHandle handle) 
 {
   Program& p = pCtx->programs[handle.id];
@@ -622,6 +807,8 @@ void GfxDevice::BindProgram(ProgramHandle handle)
   pCtx->pDeviceContext->GSSetShader(p.geomShader.pShader, 0, 0);
   pCtx->pDeviceContext->IASetInputLayout(p.vertShader.pVertLayout);
 }
+
+// ***********************************************************************
 
 SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode)
 {
@@ -659,6 +846,8 @@ SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode)
   return SamplerHandle{uint16_t(pCtx->samplers.size()-1)};
 }
 
+// ***********************************************************************
+
 void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shader, int slot)
 {
   Sampler& sampler = pCtx->samplers[handle.id];
@@ -677,8 +866,7 @@ void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shader, int slot)
   }
 }
 
-// Vertex Buffers
-// **************
+// ***********************************************************************
 
 VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data)
 {
@@ -705,6 +893,8 @@ VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _ele
   return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};
 }
 
+// ***********************************************************************
+
 VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize)
 {
   VertexBuffer vBufferData;
@@ -728,6 +918,8 @@ VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size
   return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};
 }
 
+// ***********************************************************************
+
 void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize)
 {
   VertexBuffer& buffer = pCtx->vertexBuffers[handle.id];
@@ -744,12 +936,16 @@ void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data,
   pCtx->pDeviceContext->Unmap(buffer.pBuffer, 0);
 }
 
+// ***********************************************************************
+
 void GfxDevice::BindVertexBuffer(VertexBufferHandle handle)
 {
   VertexBuffer& buffer = pCtx->vertexBuffers[handle.id];
   UINT offset = 0;
   pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &buffer.pBuffer, &buffer.elementSize, &offset);
 }
+
+// ***********************************************************************
 
 ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize)
 {
@@ -762,11 +958,13 @@ ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize)
   bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
   bufferDesc.CPUAccessFlags = 0;
   bufferDesc.MiscFlags = 0;
-  GfxDevice::GetContext()->pDevice->CreateBuffer(&bufferDesc, nullptr, &buffer.pBuffer);
+  pCtx->pDevice->CreateBuffer(&bufferDesc, nullptr, &buffer.pBuffer);
 
   pCtx->constBuffers.push_back(buffer);
   return ConstBufferHandle{uint16_t(pCtx->constBuffers.size()-1)};
 }
+
+// ***********************************************************************
 
 void GfxDevice::BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot)
 {

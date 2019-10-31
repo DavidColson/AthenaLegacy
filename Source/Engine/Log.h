@@ -8,7 +8,8 @@ namespace Log
 	{
 		EMsg,
 		EWarn,
-		EErr
+		EErr,
+    EGraphics
 	};
 
 	void Print(LogType type, const char* text, ...);

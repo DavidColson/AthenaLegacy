@@ -3,10 +3,6 @@
 
 #include <SDL.h>
 #include <SDL_syswm.h>
-#include <D3DCompiler.h>
-#include <d3d11.h>
-#include <d3d10.h>
-#include <stdio.h>
 #include <ThirdParty/Imgui/imgui.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
@@ -43,14 +39,12 @@ namespace
 
 void Renderer::OnGameStart(Scene& scene)
 {
-	Context* pCtx = GfxDevice::GetContext();
-
 	// Should be eventually moved to a material type when that exists
 	{
 		std::vector<VertexInputElement> baselayout;
 	  baselayout.push_back({"POSITION", AttributeType::float3});
 	  baselayout.push_back({"COLOR", AttributeType::float3 });
-	  baselayout.push_back({"TEXCOORD", AttributeType::float2});
+	  //baselayout.push_back({"TEXCOORD", AttributeType::float2});
 
 	  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout);
 	  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain");
@@ -89,6 +83,8 @@ void Renderer::OnGameStart(Scene& scene)
   preProcessedFrame = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
 	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
+
+  DebugDraw::Detail::Init();
 
 	// *****************
 	// Post processing
@@ -135,8 +131,6 @@ void Renderer::OnFrameStart()
 void Renderer::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();
-
-	Context* pCtx = GfxDevice::GetContext();
 	// RenderFonts -- Picks up text component data
 	// RenderPostProcessing -- Need a scene post process component, lives on singleton?
 	// RenderImgui - Editor components? Maybe something for future
@@ -205,7 +199,6 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		bloomData.resolution = Vec2f(900, 500);
 		
 		// Iteratively calculate bloom
-		ID3D11RenderTargetView* nullViews[] = { nullptr };
 		int blurIterations = 8;
 		for (int i = 0; i < blurIterations; ++i)
 		{

@@ -1,11 +1,6 @@
 
 #include "renderproxy.h"
 
-#include <D3DCompiler.h>
-#include <d3d11.h>
-#include <d3d10.h>
-#include <stdio.h>
-
 #include "Maths/Matrix.h"
 #include "Maths/Vec4.h"
 #include "Maths/Vec3.h"
@@ -22,31 +17,13 @@ struct TransformData
 
 RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
 {
-	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
-	Context* pCtx = GfxDevice::GetContext();
-
-	// Create vertex buffer
-	// ********************
-
 	vertBuffer = GfxDevice::CreateVertexBuffer(vertices.size(), sizeof(Vertex), vertices.data());
-
-	// Create an index buffer
-	// **********************
-
 	indexBuffer = GfxDevice::CreateIndexBuffer(indices.size(), indices.data());
-
-
-	// Create a constant buffer (uniform) for the WVP
-	// **********************************************
-
 	transformBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
 }
 
 void RenderProxy::Draw()
 {
-	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
-	Context* pCtx = GfxDevice::GetContext();
-	
 	// Set vertex buffer as active
 	GfxDevice::BindVertexBuffer(vertBuffer);
 	GfxDevice::BindIndexBuffer(indexBuffer);

@@ -2,26 +2,12 @@
 
 #include <array>
 #include <vector>
-#include <d3d11.h>
 
 // *************************
 // Graphics Driver Interface
 // *************************
 
 struct SDL_Window;
-
-struct IDXGISwapChain;
-struct ID3D11Device;
-struct ID3D11DeviceContext;
-struct ID3D11ShaderResourceView;
-struct ID3D11SamplerState;
-struct ID3D11RenderTargetView;
-struct ID3D11DepthStencilView;
-struct ID3D11VertexShader;
-struct ID3D11PixelShader;
-struct ID3D11GeometryShader;
-struct ID3D11InputLayout;
-struct ID3D11Texture2D;
 
 class RenderFont;
 struct Context;
@@ -138,10 +124,9 @@ struct BlendingInfo
 
 namespace GfxDevice
 {
-  // #TODO: temp, external systems should never touch the context
-  Context* GetContext();
-
   void Initialize(SDL_Window* pWindow, float width, float height);
+
+  void PrintQueuedDebugMessages();
 
   SDL_Window* GetWindow();
 
@@ -241,89 +226,3 @@ namespace GfxDevice
 
   void BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot);
 }
-
-struct RenderTarget
-{
-  TextureHandle texture;
-  ID3D11RenderTargetView* pView{ nullptr };
-  TextureHandle depthStencilTexture;
-  ID3D11DepthStencilView* pDepthStencilView { nullptr };
-};
-
-struct IndexBuffer
-{
-  int nElements;
-  bool isDynamic{ false };
-  ID3D11Buffer* pBuffer{ nullptr };
-};
-
-struct VertexBuffer
-{
-  bool isDynamic{ false };
-  UINT elementSize{ 0 };
-  ID3D11Buffer* pBuffer{ nullptr };
-};
-
-struct VertexShader
-{
-  ID3D11InputLayout* pVertLayout{ nullptr };
-  ID3D11VertexShader* pShader{ nullptr };
-};
-
-struct PixelShader
-{
-  ID3D11PixelShader* pShader{ nullptr };
-};
-
-struct GeometryShader
-{
-  ID3D11GeometryShader* pShader{ nullptr };
-};
-
-struct Program
-{
-  VertexShader vertShader;
-  PixelShader pixelShader;
-  GeometryShader geomShader;
-};
-
-struct Sampler
-{
-  ID3D11SamplerState* pSampler;
-};
-
-struct Texture
-{
-  ID3D11ShaderResourceView* pShaderResourceView{ nullptr };
-  ID3D11Texture2D* pTexture{ nullptr };
-};
-
-struct ConstantBuffer
-{
-  ID3D11Buffer* pBuffer{ nullptr };
-};
-
-struct Context
-{
-  SDL_Window* pWindow;
-
-  IDXGISwapChain* pSwapChain;
-  ID3D11Device* pDevice;
-  ID3D11DeviceContext* pDeviceContext;
-  ID3D11RenderTargetView* pBackBuffer;
-
-  // resources
-  std::vector<RenderTarget> renderTargets;
-  std::vector<VertexBuffer> vertexBuffers;
-  std::vector<IndexBuffer> indexBuffers;
-  std::vector<VertexShader> vertexShaders;
-  std::vector<PixelShader> pixelShaders;
-  std::vector<GeometryShader> geometryShaders;
-  std::vector<Program> programs;
-  std::vector<Sampler> samplers;
-  std::vector<Texture> textures;
-  std::vector<ConstantBuffer> constBuffers;
-
-  float windowWidth{ 0 };
-  float windowHeight{ 0 };
-};

@@ -138,7 +138,7 @@ void CollisionSystemUpdate(Scene& scene, float deltaTime)
 		float asteroidRad = scene.Get<CCollidable>(asteroid)->radius;
 		CTransform* pTrans = scene.Get<CTransform>(asteroid);
 
-		DebugDraw::Draw2DCircle(Vec2f(pTrans->pos.x, pTrans->pos.y), asteroidRad + 10.0f, Vec3f(1.0f, 0.0f, 0.0f));
+		//DebugDraw::Draw2DCircle(Vec2f(pTrans->pos.x, pTrans->pos.y), asteroidRad + 10.0f, Vec3f(1.0f, 0.0f, 0.0f));
 
 		for (EntityID bullet : SceneView<CBullet>(scene))
 		{

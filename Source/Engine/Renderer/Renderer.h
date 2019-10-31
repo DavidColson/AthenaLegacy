@@ -2,26 +2,9 @@
 
 #include <vector>
 #include <array>
-#include <dxgiformat.h>
-#include <d3d11.h>
 
 #include "GraphicsDevice/GraphicsDevice.h" 
 #include "Renderer/RenderProxy.h"
-
-// #TODO: Shouldn't be accessed outside GfxDevice
-struct SDL_Window;
-struct IDXGISwapChain;
-struct ID3D11Device;
-struct ID3D11DeviceContext;
-struct ID3D11ShaderResourceView;
-struct ID3D11SamplerState;
-struct ID3D11RenderTargetView;
-struct ID3D11DepthStencilView;
-struct ID3D11VertexShader;
-struct ID3D11PixelShader;
-struct ID3D11GeometryShader;
-struct ID3D11InputLayout;
-struct ID3D11Texture2D;
 
 class RenderFont;
 struct Scene;

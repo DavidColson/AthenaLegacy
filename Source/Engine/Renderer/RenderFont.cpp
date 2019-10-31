@@ -18,9 +18,6 @@ REFLECT_END()
 
 RenderFont::RenderFont(std::string fontFile, int size)
 {
-	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
-	Context* pCtx = GfxDevice::GetContext();
-
 	FT_Library freetype;
 	FT_Init_FreeType(&freetype);
 
@@ -117,9 +114,6 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 void RenderFont::DrawSceneText(Scene& scene)
 {
-	// #TODO: There should be no need for render proxies to have access to the GfxDevice context
-	Context* pCtx = GfxDevice::GetContext();
-
 	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 	// Set vertex buffer as active

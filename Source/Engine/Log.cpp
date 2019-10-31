@@ -25,7 +25,8 @@ void Log::Print(LogType type, const char* text, ...)
 	{
 	case EMsg: prefix = "[MSG] "; break;
 	case EWarn: prefix = "[WARN] "; break;
-	case EErr: prefix = "[Err] "; break;
+	case EErr: prefix = "[ERR] "; break;
+	case EGraphics: prefix = "[GFXDEVICE] "; break;
 	default: break;
 	}
 
@@ -34,7 +35,8 @@ void Log::Print(LogType type, const char* text, ...)
 	message += "\n";
 
 	fprintf(pFile, message.c_str());
-	OutputDebugString(message.c_str());
+	if (type != LogType::EGraphics)
+		OutputDebugString(message.c_str());
 	logHistory.push_back(message);
 }
 
