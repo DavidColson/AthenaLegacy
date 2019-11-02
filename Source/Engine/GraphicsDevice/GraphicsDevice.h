@@ -156,9 +156,9 @@ namespace GfxDevice
 
 	// Vertex Buffers
 
-	VertexBufferHandle CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data);
+	VertexBufferHandle CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data, const std::string& debugName = "");
 
-	VertexBufferHandle CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize);
+	VertexBufferHandle CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const std::string& debugName = "");
 
 	void UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize);
 
@@ -166,9 +166,9 @@ namespace GfxDevice
 
 	// Index Buffers
 
-	IndexBufferHandle CreateIndexBuffer(size_t numElements, void* data);
+	IndexBufferHandle CreateIndexBuffer(size_t numElements, void* data, const std::string& debugName = "");
 
-	IndexBufferHandle CreateDynamicIndexBuffer(size_t numElements);
+	IndexBufferHandle CreateDynamicIndexBuffer(size_t numElements, const std::string& debugName = "");
 
 	void UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize);
 
@@ -198,7 +198,7 @@ namespace GfxDevice
 
 	// Render Targets
 
-	RenderTargetHandle CreateRenderTarget(float width, float height);
+	RenderTargetHandle CreateRenderTarget(float width, float height, const std::string& debugName = "");
 
 	void BindRenderTarget(RenderTargetHandle handle);
 
@@ -216,7 +216,7 @@ namespace GfxDevice
 
 	// Textures
 
-	TextureHandle CreateTexture(int width, int height, TextureFormat format, void* data);
+	TextureHandle CreateTexture(int width, int height, TextureFormat format, void* data, const std::string& debugName = "");
 
 	void BindTexture(TextureHandle, ShaderType shader, int slot);
 

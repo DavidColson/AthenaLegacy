@@ -72,7 +72,7 @@ struct Asteroids : public IGame
 			}, {
 				// Note has adjacency data
 				9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1
-			}));
+			}, "Asteroid Type 1"));
 
 		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{
@@ -91,7 +91,7 @@ struct Asteroids : public IGame
 			}, {
 				// Note has adjacency data
 				10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1
-			}));
+			}, "Asteroid Type 2"));
 
 		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{
@@ -110,7 +110,7 @@ struct Asteroids : public IGame
 			}, {
 				// Note has adjacency data
 				11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
-			}));
+			}, "Asteroid Type 3"));
 
 		Game::g_asteroidMeshes.emplace_back(RenderProxy(
 			{
@@ -129,7 +129,7 @@ struct Asteroids : public IGame
 			}, {
 				// Note has adjacency data
 				11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
-			}));
+			}, "Asteroid Type 3"));
 
 		Game::g_shipMesh = RenderProxy(
 			{
@@ -141,7 +141,7 @@ struct Asteroids : public IGame
 			}, {
 				// Note, has adjacency data
 				4, 0, 1, 2, 3, 4, 0, 1
-			});
+			}, "Ship");
 
 		srand(unsigned int(time(nullptr)));
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };

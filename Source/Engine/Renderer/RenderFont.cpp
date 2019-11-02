@@ -74,7 +74,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	// Create vertex buffer
 	// ********************
 
-	quadBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data());
+	quadBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Font Quad");
 
 	// Create a constant buffer for the WVP
 	// **********************************************
@@ -94,11 +94,14 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		Character character;
 		if (face->glyph->bitmap.width > 0 && face->glyph->bitmap.rows > 0)
 		{
+			std::string debugName = "Character ";
+			debugName.push_back(char(i));
 			character.charTexture = GfxDevice::CreateTexture(
 				face->glyph->bitmap.width,
 				face->glyph->bitmap.rows,
 				TextureFormat::R8,
-				face->glyph->bitmap.buffer
+				face->glyph->bitmap.buffer,
+				debugName
 			);
 		}
 		character.size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);

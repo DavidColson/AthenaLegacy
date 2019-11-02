@@ -18,7 +18,7 @@ struct Vertex
 struct RenderProxy
 {
 	RenderProxy() {};
-	RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices);
+	RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices, const std::string& name);
 
 	void Draw();
 

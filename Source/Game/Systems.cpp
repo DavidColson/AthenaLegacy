@@ -36,7 +36,7 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 		}, {
 			// Note, has adjacency data
 			3, 0, 1, 2, 3, 0, 1
-		});
+		}, "Bullet");
 	pDrawable->lineThickness = 5.0f;
 	scene.Assign<CCollidable>(bullet)->radius = 4.0f;
 }

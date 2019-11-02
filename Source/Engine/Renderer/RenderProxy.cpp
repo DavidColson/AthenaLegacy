@@ -15,10 +15,10 @@ struct TransformData
 	float pad3{ 0.0f };
 };
 
-RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices)
+RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices, const std::string& name)
 {
-	vertBuffer = GfxDevice::CreateVertexBuffer(vertices.size(), sizeof(Vertex), vertices.data());
-	indexBuffer = GfxDevice::CreateIndexBuffer(indices.size(), indices.data());
+	vertBuffer = GfxDevice::CreateVertexBuffer(vertices.size(), sizeof(Vertex), vertices.data(), name);
+	indexBuffer = GfxDevice::CreateIndexBuffer(indices.size(), indices.data(), name);
 	transformBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
 }
 

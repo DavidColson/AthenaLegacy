@@ -151,6 +151,12 @@ static const D3D11_BLEND blendLookup[12] =
 	D3D11_BLEND_INV_BLEND_FACTOR
 };
 
+void SetDebugName(ID3D11DeviceChild* child, const std::string& name)
+{
+	if (child != nullptr && !name.empty())
+    	child->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
+}
+
 // ***********************************************************************
 
 void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
@@ -198,6 +204,8 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 	ID3D11Texture2D *pBackBuffer;
 	pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 	pCtx->pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->pBackBuffer);
+	SetDebugName(pCtx->pBackBuffer, "[RENDER_TGT] Back buffer");
+	SetDebugName(pBackBuffer, "[TEXTURE_2D] Back buffer");
 	pBackBuffer->Release();
 
 	// Setup debug
@@ -403,7 +411,7 @@ void GfxDevice::SetTopologyType(TopologyType type)
 
 // ***********************************************************************
 
-TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void* data)
+TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void* data, const std::string& debugName)
 {
 	Texture texture;
 
@@ -431,6 +439,8 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat form
 		textureBufferData.SysMemPitch = width;
 		pCtx->pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &texture.pTexture);
 	}
+
+	SetDebugName(texture.pTexture, "[TEXTURE_2D] " + debugName);
 	
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = textureDesc.Format;
@@ -438,6 +448,7 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat form
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
+	SetDebugName(texture.pShaderResourceView, "[SHADER_RSRC_VIEW] " + debugName);
 
 	pCtx->textures.push_back(texture);
 	return TextureHandle{uint16_t(pCtx->textures.size()-1)};
@@ -465,7 +476,7 @@ void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
 
 // ***********************************************************************
 
-RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
+RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const std::string& debugName)
 {
 	RenderTarget renderTarget;
 
@@ -484,6 +495,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 		textureDesc.CPUAccessFlags = 0;
 		textureDesc.MiscFlags = 0;
 		pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &texture.pTexture);
+		SetDebugName(texture.pTexture, "[TEXTURE_2D] " + debugName);
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 		shaderResourceViewDesc.Format = textureDesc.Format;
@@ -491,6 +503,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 		shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 		shaderResourceViewDesc.Texture2D.MipLevels = 1;
 		pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
+		SetDebugName(texture.pShaderResourceView, "[SHADER_RSRC_VIEW] " + debugName);
 
 		pCtx->textures.push_back(texture);
 		renderTarget.texture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
@@ -502,6 +515,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	pCtx->pDevice->CreateRenderTargetView(texture.pTexture, &renderTargetViewDesc, &renderTarget.pView);
+	SetDebugName(renderTarget.pView, "[RENDER_TGT] " + debugName);
 
 	// Need to create a depth stencil texture now
 	Texture depthStencilTexture;
@@ -518,6 +532,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 		textureDesc.CPUAccessFlags = 0;
 		textureDesc.MiscFlags = 0;
 		pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &depthStencilTexture.pTexture);
+		SetDebugName(depthStencilTexture.pTexture, "[DEPTH_STCL] " + debugName);
 
 		pCtx->textures.push_back(depthStencilTexture);
 		renderTarget.depthStencilTexture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
@@ -529,6 +544,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height)
 	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 	pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
+	SetDebugName(renderTarget.pDepthStencilView, "[DEPTH_STCL_VIEW] " + debugName);
 
 	pCtx->renderTargets.push_back(renderTarget);
 	return RenderTargetHandle{uint16_t(pCtx->renderTargets.size()-1)};
@@ -571,7 +587,7 @@ TextureHandle GfxDevice::GetTexture(RenderTargetHandle handle)
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data)
+IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data, const std::string& debugName)
 {
 	IndexBuffer indexBuffer;
 
@@ -592,13 +608,15 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data)
 	indexBufferData.pSysMem = data;
 	pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &indexBuffer.pBuffer);
 
+	SetDebugName(indexBuffer.pBuffer, "[INDEX_BUFFER] " + debugName);
+
 	pCtx->indexBuffers.push_back(indexBuffer);
 	return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
 }
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements)
+IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const std::string& debugName)
 {
 	IndexBuffer indexBuffer;
 
@@ -614,8 +632,9 @@ IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements)
 	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	indexBufferDesc.MiscFlags = 0;
 	indexBufferDesc.StructureByteStride = 0;
-
 	pCtx->pDevice->CreateBuffer(&indexBufferDesc, nullptr, &indexBuffer.pBuffer);
+
+	SetDebugName(indexBuffer.pBuffer, "[INDEX_BUFFER] " + debugName);
 
 	pCtx->indexBuffers.push_back(indexBuffer);
 	return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
@@ -869,7 +888,7 @@ void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shader, int slot)
 
 // ***********************************************************************
 
-VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data)
+VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data, const std::string& debugName)
 {
 	VertexBuffer vBufferData;
 
@@ -890,13 +909,15 @@ VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _ele
 	vertexBufferData.pSysMem = data;
 	pCtx->pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &vBufferData.pBuffer);
 
+	SetDebugName(vBufferData.pBuffer, "[VERT_BUFFER] " + debugName);
+
 	pCtx->vertexBuffers.push_back(vBufferData);
 	return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};
 }
 
 // ***********************************************************************
 
-VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize)
+VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const std::string& debugName)
 {
 	VertexBuffer vBufferData;
 

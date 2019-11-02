@@ -74,13 +74,13 @@ void Renderer::OnGameStart(Scene& scene)
 		quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
 		quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
 		quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-		fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data());
+		fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Fullscreen Quad");
 
 		fullScreenTextureProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 		fullScreenTextureSampler = GfxDevice::CreateSampler();
 	}
 
-  preProcessedFrame = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+  preProcessedFrame = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), "Pre processed frame");
 
 	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
@@ -96,7 +96,7 @@ void Renderer::OnGameStart(Scene& scene)
 
 		for (int i = 0; i < 2; ++i)
 		{
-			pp->blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f);
+			pp->blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f, StringFormat("Blurred frame %i", i));
 		}
 
 		// Create constant data buffers
