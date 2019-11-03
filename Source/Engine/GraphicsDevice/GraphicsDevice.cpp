@@ -5,6 +5,7 @@
 #include <SDL_syswm.h>
 #include <D3DCompiler.h>
 #include <d3d11.h>
+#include <d3d11_1.h>
 #include <d3d10.h>
 #include <stdio.h>
 #include <ThirdParty/Imgui/imgui.h>
@@ -91,6 +92,7 @@ struct Context
 	ID3D11Device* pDevice;
 	ID3D11DeviceContext* pDeviceContext;
 	ID3D11InfoQueue* pDebugInfoQueue;
+	ID3DUserDefinedAnnotation* pUserDefinedAnnotation;
 	ID3D11RenderTargetView* pBackBuffer;
 
 	// resources
@@ -210,6 +212,9 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 
 	// Setup debug
 	pCtx->pDevice->QueryInterface(__uuidof(ID3D11InfoQueue), (void **)&pCtx->pDebugInfoQueue);
+
+	// #TODO: Note that this interface is only available on windows 8 or later. Might fail on older machines
+	pCtx->pDeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void **)&pCtx->pUserDefinedAnnotation);
 
 	// Init Imgui (ideally one day imgui uses GfxDevice, and exists outside here)
 	IMGUI_CHECKVERSION();
@@ -1015,4 +1020,27 @@ void GfxDevice::BindConstantBuffer(ConstBufferHandle handle, const void* bufferD
 			pCtx->pDeviceContext->GSSetConstantBuffers(slot, 1, &buffer.pBuffer);
 			break;
 	}
+}
+
+// ***********************************************************************
+
+GfxDevice::AutoEvent::AutoEvent(std::string label)
+{
+	std::wstring wide(label.begin(), label.end());
+	pCtx->pUserDefinedAnnotation->BeginEvent(wide.c_str());
+}
+
+// ***********************************************************************
+
+GfxDevice::AutoEvent::~AutoEvent()
+{
+	pCtx->pUserDefinedAnnotation->EndEvent();
+}
+
+// ***********************************************************************
+
+void GfxDevice::SetDebugMarker(std::string label)
+{
+	std::wstring wide(label.begin(), label.end());
+	pCtx->pUserDefinedAnnotation->SetMarker(wide.c_str());
 }

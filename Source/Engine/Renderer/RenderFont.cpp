@@ -117,6 +117,8 @@ RenderFont::RenderFont(std::string fontFile, int size)
 
 void RenderFont::DrawSceneText(Scene& scene)
 {
+	GFX_SCOPED_EVENT("Drawing text");
+
 	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 	// Set vertex buffer as active

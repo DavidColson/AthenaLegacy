@@ -53,8 +53,8 @@ void Renderer::OnGameStart(Scene& scene)
 		baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
 	}
 
-  // Create a program for drawing full screen quads to
-  {
+	// Create a program for drawing full screen quads to
+	{
 		std::vector<VertexInputElement> layout;
 		layout.push_back({"POSITION", AttributeType::float3});
 		layout.push_back({"COLOR", AttributeType::float3});
@@ -139,6 +139,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// Render Drawables
 	// ****************
 	{
+		GFX_SCOPED_EVENT("Rendering drawables");
+
 		// First we draw the scene into a render target
 		GfxDevice::BindRenderTarget(preProcessedFrame);
 		GfxDevice::ClearRenderTarget(preProcessedFrame, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
@@ -153,6 +155,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		{
 			CDrawable* pDrawable = scene.Get<CDrawable>(ent);
 			CTransform* pTransform = scene.Get<CTransform>(ent);
+
+			GfxDevice::SetDebugMarker("Jonny Young");
 
 			pDrawable->renderProxy.SetTransform(pTransform->pos, pTransform->rot, pTransform->sca);
 			pDrawable->renderProxy.lineThickness = pDrawable->lineThickness;
@@ -180,73 +184,77 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// ***************
 
 	bool wasPostProcessing = false;
-	for (EntityID ent : SceneView<CPostProcessing>(scene))
 	{
-		wasPostProcessing = true;
-		CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
-
-		GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
-		GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
-		GfxDevice::SetViewport(0.f, 0.f, GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f);
-		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
-
-		// Bind bloom shader data
-		GfxDevice::BindProgram(pp->bloomShaderProgram);
-		GfxDevice::BindVertexBuffer(fullScreenQuad);
-		GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
-
-		CPostProcessing::BloomShaderData bloomData;
-		bloomData.resolution = Vec2f(900, 500);
+		GFX_SCOPED_EVENT("Doing post processing");
 		
-		// Iteratively calculate bloom
-		int blurIterations = 8;
-		for (int i = 0; i < blurIterations; ++i)
+		for (EntityID ent : SceneView<CPostProcessing>(scene))
 		{
-			// Bind data
-			float radius = float(blurIterations - i - 1) * 0.04f;
-			bloomData.direction = i % 2 == 0 ? Vec2f(radius, 0.0f) : Vec2f(0.0f, radius);
-			GfxDevice::BindConstantBuffer(pp->bloomDataBuffer, &bloomData, ShaderType::Pixel, 0);
+			wasPostProcessing = true;
+			CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
 
-			if (i == 0)
+			GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
+			GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
+			GfxDevice::SetViewport(0.f, 0.f, GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f);
+			GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
+
+			// Bind bloom shader data
+			GfxDevice::BindProgram(pp->bloomShaderProgram);
+			GfxDevice::BindVertexBuffer(fullScreenQuad);
+			GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
+
+			CPostProcessing::BloomShaderData bloomData;
+			bloomData.resolution = Vec2f(900, 500);
+			
+			// Iteratively calculate bloom
+			int blurIterations = 8;
+			for (int i = 0; i < blurIterations; ++i)
 			{
-				// First iteration, bind the plain, preprocessed frame
-				TextureHandle tex = GfxDevice::GetTexture(preProcessedFrame);
-				GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
-			}
-			else
-			{
-				GfxDevice::UnbindRenderTarget(pp->blurredFrame[(i + 1) % 2]);
-				TextureHandle tex = GfxDevice::GetTexture(pp->blurredFrame[(i + 1) % 2]);
-				GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
-				GfxDevice::BindRenderTarget(pp->blurredFrame[i % 2]);
-				GfxDevice::ClearRenderTarget(pp->blurredFrame[i % 2], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
+				// Bind data
+				float radius = float(blurIterations - i - 1) * 0.04f;
+				bloomData.direction = i % 2 == 0 ? Vec2f(radius, 0.0f) : Vec2f(0.0f, radius);
+				GfxDevice::BindConstantBuffer(pp->bloomDataBuffer, &bloomData, ShaderType::Pixel, 0);
+
+				if (i == 0)
+				{
+					// First iteration, bind the plain, preprocessed frame
+					TextureHandle tex = GfxDevice::GetTexture(preProcessedFrame);
+					GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
+				}
+				else
+				{
+					GfxDevice::UnbindRenderTarget(pp->blurredFrame[(i + 1) % 2]);
+					TextureHandle tex = GfxDevice::GetTexture(pp->blurredFrame[(i + 1) % 2]);
+					GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
+					GfxDevice::BindRenderTarget(pp->blurredFrame[i % 2]);
+					GfxDevice::ClearRenderTarget(pp->blurredFrame[i % 2], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
+				}
+
+				GfxDevice::Draw(4, 0);
 			}
 
+			// Now we'll actually render onto the backbuffer and do our final post process stage
+			GfxDevice::SetBackBufferActive();
+			GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
+			GfxDevice::SetViewport(0, 0, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+
+			GfxDevice::BindProgram(pp->postProcessShaderProgram);
+			GfxDevice::BindVertexBuffer(fullScreenQuad);
+
+			TextureHandle ppFrameTex = GfxDevice::GetTexture(preProcessedFrame);
+			GfxDevice::BindTexture(ppFrameTex, ShaderType::Pixel, 0);
+			TextureHandle blurFrameTex = GfxDevice::GetTexture(pp->blurredFrame[1]);
+			GfxDevice::BindTexture(blurFrameTex, ShaderType::Pixel, 1);
+
+			GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
+			
+			CPostProcessing::PostProcessShaderData ppData;
+			ppData.resolution = Vec2f(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+			ppData.time = float(SDL_GetTicks()) / 1000.0f;
+			GfxDevice::BindConstantBuffer(pp->postProcessDataBuffer, &ppData, ShaderType::Pixel, 0);
+
+			// Draw post processed frame
 			GfxDevice::Draw(4, 0);
 		}
-
-		// Now we'll actually render onto the backbuffer and do our final post process stage
-		GfxDevice::SetBackBufferActive();
-		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
-		GfxDevice::SetViewport(0, 0, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
-
-		GfxDevice::BindProgram(pp->postProcessShaderProgram);
-		GfxDevice::BindVertexBuffer(fullScreenQuad);
-
-		TextureHandle ppFrameTex = GfxDevice::GetTexture(preProcessedFrame);
-		GfxDevice::BindTexture(ppFrameTex, ShaderType::Pixel, 0);
-		TextureHandle blurFrameTex = GfxDevice::GetTexture(pp->blurredFrame[1]);
-		GfxDevice::BindTexture(blurFrameTex, ShaderType::Pixel, 1);
-
-		GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
-		
-		CPostProcessing::PostProcessShaderData ppData;
-		ppData.resolution = Vec2f(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
-		ppData.time = float(SDL_GetTicks()) / 1000.0f;
-		GfxDevice::BindConstantBuffer(pp->postProcessDataBuffer, &ppData, ShaderType::Pixel, 0);
-
-		// Draw post processed frame
-		GfxDevice::Draw(4, 0);
 	}
 
 	// If there was no post processing to do, just draw the pre-processed frame on screen
@@ -271,9 +279,12 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// *******************
 	// Draw Imgui Overlays
 	// *******************
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
+	{
+		GFX_SCOPED_EVENT("Drawing imgui");
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	}
 
 	// ***********************
 	// Present Frame to screen

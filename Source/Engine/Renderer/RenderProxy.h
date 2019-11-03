@@ -31,6 +31,8 @@ struct RenderProxy
 	float rot{ 0.0f };
 	float lineThickness{ 1.0f };
 
+	std::string debugName;
+
 	VertexBufferHandle vertBuffer;
 	IndexBufferHandle indexBuffer;
 };

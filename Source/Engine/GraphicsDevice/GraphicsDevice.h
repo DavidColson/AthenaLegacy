@@ -225,4 +225,16 @@ namespace GfxDevice
 	ConstBufferHandle CreateConstantBuffer(uint32_t bufferSize, const std::string& debugName = "");
 
 	void BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot);
+
+	// Debugging
+
+	struct AutoEvent
+	{
+		AutoEvent(std::string label);
+		~AutoEvent();
+	};
+
+	void SetDebugMarker(std::string label);
 }
+
+#define GFX_SCOPED_EVENT(label) GfxDevice::AutoEvent e(label)

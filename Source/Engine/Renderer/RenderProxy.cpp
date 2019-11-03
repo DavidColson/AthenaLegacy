@@ -20,6 +20,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices,
 	vertBuffer = GfxDevice::CreateVertexBuffer(vertices.size(), sizeof(Vertex), vertices.data(), name);
 	indexBuffer = GfxDevice::CreateIndexBuffer(indices.size(), indices.data(), name);
 	transformBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), name);
+	debugName = name;
 }
 
 void RenderProxy::Draw()

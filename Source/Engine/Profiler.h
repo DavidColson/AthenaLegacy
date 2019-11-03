@@ -29,7 +29,7 @@ struct AutoProfile
   AutoProfile(const char* _name)
   {
     name = _name;
-    start = SDL_GetPerformanceCounter();;
+    start = SDL_GetPerformanceCounter();
   }
 
   ~AutoProfile()

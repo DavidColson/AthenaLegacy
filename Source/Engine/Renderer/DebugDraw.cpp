@@ -100,6 +100,7 @@ void DebugDraw::Detail::Init()
 void DebugDraw::Detail::DrawQueue()
 {
 	PROFILE();
+	GFX_SCOPED_EVENT("Drawing debug");
 
 	if (drawQueue.empty())
 		return;
