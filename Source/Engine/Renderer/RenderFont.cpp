@@ -54,8 +54,8 @@ RenderFont::RenderFont(std::string fontFile, int size)
   layout.push_back({"COLOR", AttributeType::float3});
   layout.push_back({"TEXCOORD", AttributeType::float2});
 
-  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout);
-  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain");
+  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout, "Fonts");
+  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
 
   fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
@@ -79,8 +79,8 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	// Create a constant buffer for the WVP
 	// **********************************************
 
-	wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
-	charTextureSampler = GfxDevice::CreateSampler();
+	wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Font transforms");
+	charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Font char");
 
 	for (int i = 0; i < 128; i++)
 	{

@@ -178,17 +178,17 @@ namespace GfxDevice
 
 	// Shaders And Programs
 
-	VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout);
+	VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName = "");
 
-	VertexShaderHandle CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout);
+	VertexShaderHandle CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName = "");
 
-	PixelShaderHandle CreatePixelShader(const wchar_t* fileName, const char* entry);
+	PixelShaderHandle CreatePixelShader(const wchar_t* fileName, const char* entry, const std::string& debugName = "");
 
-	PixelShaderHandle CreatePixelShader(std::string& fileContents, const char* entry);
+	PixelShaderHandle CreatePixelShader(std::string& fileContents, const char* entry, const std::string& debugName = "");
 
-	GeometryShaderHandle CreateGeometryShader(const wchar_t* fileName, const char* entry);
+	GeometryShaderHandle CreateGeometryShader(const wchar_t* fileName, const char* entry, const std::string& debugName = "");
 
-	GeometryShaderHandle CreateGeometryShader(std::string& fileContents, const char* entry);
+	GeometryShaderHandle CreateGeometryShader(std::string& fileContents, const char* entry, const std::string& debugName = "");
 
 	ProgramHandle CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader);
 
@@ -210,7 +210,7 @@ namespace GfxDevice
 
 	// Samplers
 
-	SamplerHandle CreateSampler(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap);
+	SamplerHandle CreateSampler(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap, const std::string& debugName = "");
 
 	void BindSampler(SamplerHandle handle, ShaderType shader, int slot);
 
@@ -222,7 +222,7 @@ namespace GfxDevice
 
 	// Shader Constants
 
-	ConstBufferHandle CreateConstantBuffer(uint32_t bufferSize);
+	ConstBufferHandle CreateConstantBuffer(uint32_t bufferSize, const std::string& debugName = "");
 
 	void BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot);
 }

@@ -42,15 +42,15 @@ void Renderer::OnGameStart(Scene& scene)
 	// Should be eventually moved to a material type when that exists
 	{
 		std::vector<VertexInputElement> baselayout;
-	  baselayout.push_back({"POSITION", AttributeType::float3});
-	  baselayout.push_back({"COLOR", AttributeType::float3 });
-	  baselayout.push_back({"TEXCOORD", AttributeType::float2});
+		baselayout.push_back({"POSITION", AttributeType::float3});
+		baselayout.push_back({"COLOR", AttributeType::float3 });
+		baselayout.push_back({"TEXCOORD", AttributeType::float2});
 
-	  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout);
-	  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain");
-	  GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain");
+		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout, "Base shape");
+		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain", "Base shape");
+		GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain", "Base shape");
 
-	  baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
+		baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
 	}
 
   // Create a program for drawing full screen quads to
@@ -60,8 +60,8 @@ void Renderer::OnGameStart(Scene& scene)
 		layout.push_back({"COLOR", AttributeType::float3});
 		layout.push_back({"TEXCOORD", AttributeType::float2});
 
-		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/FullScreenTexture.hlsl", "VSMain", layout);
-		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/FullScreenTexture.hlsl", "PSMain");
+		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/FullScreenTexture.hlsl", "VSMain", layout, "Fullscreen quad");
+		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/FullScreenTexture.hlsl", "PSMain", "Fullscreen quad");
 
 		// Vertex Buffer for fullscreen quad
 		std::vector<Vertex> quadVertices = {
@@ -74,17 +74,17 @@ void Renderer::OnGameStart(Scene& scene)
 		quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
 		quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
 		quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-		fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Fullscreen Quad");
+		fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Fullscreen quad");
 
 		fullScreenTextureProgram = GfxDevice::CreateProgram(vertShader, pixShader);
-		fullScreenTextureSampler = GfxDevice::CreateSampler();
+		fullScreenTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Fullscreen texture");
 	}
 
-  preProcessedFrame = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), "Pre processed frame");
+	preProcessedFrame = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), "Pre processed frame");
 
 	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
-  DebugDraw::Detail::Init();
+	DebugDraw::Detail::Init();
 
 	// *****************
 	// Post processing
@@ -100,24 +100,24 @@ void Renderer::OnGameStart(Scene& scene)
 		}
 
 		// Create constant data buffers
-		pp->postProcessDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::PostProcessShaderData));
-		pp->bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData));
+		pp->postProcessDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::PostProcessShaderData), "Post process shader data");
+		pp->bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData), "Bloom shader data");
 
 		// Compile and create post processing shaders
 		std::vector<VertexInputElement> layout;
-	  layout.push_back({"POSITION", AttributeType::float3});
-	  layout.push_back({"COLOR", AttributeType::float3});
-	  layout.push_back({"TEXCOORD", AttributeType::float2});
+		layout.push_back({"POSITION", AttributeType::float3});
+		layout.push_back({"COLOR", AttributeType::float3});
+		layout.push_back({"TEXCOORD", AttributeType::float2});
 
-	  VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout);
-	  PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain");
+		VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
+		PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain", "Post processing");
 
-	  pp->postProcessShaderProgram = GfxDevice::CreateProgram(vertPostProcessShader, pixPostProcessShader);
+		pp->postProcessShaderProgram = GfxDevice::CreateProgram(vertPostProcessShader, pixPostProcessShader);
 
-    VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Shaders/Bloom.hlsl", "VSMain", layout);
-	  PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Shaders/Bloom.hlsl", "PSMain");
+		VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Shaders/Bloom.hlsl", "VSMain", layout, "Bloom");
+		PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Shaders/Bloom.hlsl", "PSMain", "Bloom");
 
-	  pp->bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
+		pp->bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
 	}
 }
 

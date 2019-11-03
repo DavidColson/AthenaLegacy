@@ -85,16 +85,16 @@ void DebugDraw::Detail::Init()
 	}";
 
 	std::vector<VertexInputElement> layout;
-  layout.push_back({"POSITION",AttributeType::float3});
-  layout.push_back({"COLOR", AttributeType::float3});
+	layout.push_back({"POSITION",AttributeType::float3});
+	layout.push_back({"COLOR", AttributeType::float3});
 
-  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout);
-  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain");
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Debug Draw");
+	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Debug Draw");
 
-  debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+	debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	// Create constant buffer for WVP
-	transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData));
+	transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
 }
 
 void DebugDraw::Detail::DrawQueue()

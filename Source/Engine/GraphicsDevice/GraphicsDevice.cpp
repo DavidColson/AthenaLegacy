@@ -701,7 +701,7 @@ std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<V
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout)
+VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName)
 {
 	VertexShader shader;
 
@@ -711,6 +711,8 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const 
 	ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
+	SetDebugName(shader.pVertLayout, "[INPUT_LAYOUT] " + debugName);
 
 	pCtx->vertexShaders.push_back(shader);
 	return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
@@ -718,7 +720,7 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const 
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout)
+VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName)
 {
 	VertexShader shader;
 
@@ -728,6 +730,7 @@ VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, cons
 	ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
 
 	pCtx->vertexShaders.push_back(shader);
 	return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
@@ -735,13 +738,14 @@ VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, cons
 
 // ***********************************************************************
 
-PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const char* entry)
+PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const char* entry, const std::string& debugName)
 {
 	PixelShader shader;
 
 	ID3DBlob* pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "ps_5_0", &pBlob);
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
 
 	pCtx->pixelShaders.push_back(shader);
 	return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
@@ -749,13 +753,14 @@ PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const ch
 
 // ***********************************************************************
 
-PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const char* entry)
+PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const char* entry, const std::string& debugName)
 {
 	PixelShader shader;
 
 	ID3DBlob* pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "ps_5_0", &pBlob);
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
 
 	pCtx->pixelShaders.push_back(shader);
 	return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
@@ -763,13 +768,14 @@ PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const 
 
 // ***********************************************************************
 
-GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, const char* entry)
+GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, const char* entry, const std::string& debugName)
 {
 	GeometryShader shader;
 
 	ID3DBlob* pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "gs_5_0", &pBlob);
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
 
 	pCtx->geometryShaders.push_back(shader);
 	return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
@@ -777,13 +783,14 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, co
 
 // ***********************************************************************
 
-GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, const char* entry)
+GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, const char* entry, const std::string& debugName)
 {
 	GeometryShader shader;
 
 	ID3DBlob* pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "gs_5_0", &pBlob);
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
+	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
 
 	pCtx->geometryShaders.push_back(shader);
 	return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
@@ -830,7 +837,7 @@ void GfxDevice::BindProgram(ProgramHandle handle)
 
 // ***********************************************************************
 
-SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode)
+SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const std::string& debugName)
 {
 	Sampler sampler;
 
@@ -861,6 +868,7 @@ SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode)
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	pCtx->pDevice->CreateSamplerState(&sampDesc, &sampler.pSampler);
+	SetDebugName(sampler.pSampler, "[SAMPLER] " + debugName);
 
 	pCtx->samplers.push_back(sampler);
 	return SamplerHandle{uint16_t(pCtx->samplers.size()-1)};
@@ -969,7 +977,7 @@ void GfxDevice::BindVertexBuffer(VertexBufferHandle handle)
 
 // ***********************************************************************
 
-ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize)
+ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize, const std::string& debugName)
 {
 	ConstantBuffer buffer;
 
@@ -981,6 +989,7 @@ ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize)
 	bufferDesc.CPUAccessFlags = 0;
 	bufferDesc.MiscFlags = 0;
 	pCtx->pDevice->CreateBuffer(&bufferDesc, nullptr, &buffer.pBuffer);
+	SetDebugName(buffer.pBuffer, "[CONST_BUFFER] " + debugName);
 
 	pCtx->constBuffers.push_back(buffer);
 	return ConstBufferHandle{uint16_t(pCtx->constBuffers.size()-1)};
