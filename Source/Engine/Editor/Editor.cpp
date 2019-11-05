@@ -13,10 +13,10 @@
 #include <ThirdParty/Imgui/misc/cpp/imgui_stdlib.h>
 
 namespace {
-	bool showEditor = false;
-	bool showLog = true;
-	bool showEntityInspector = true;
-	bool showEntityList = true;
+	bool showEditor = true;
+	bool showLog = false;
+	bool showEntityInspector = false;
+	bool showEntityList = false;
 	bool showFrameStats = true;
 	EntityID selectedEntity = -1;
 

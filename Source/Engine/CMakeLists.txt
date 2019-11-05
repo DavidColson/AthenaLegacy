@@ -34,6 +34,8 @@ set(SOURCES
     "Renderer/DebugDraw.cpp"
     "GraphicsDevice/GraphicsDevice.h"
     "GraphicsDevice/GraphicsDevice.cpp"
+    "AudioDevice/AudioDevice.h"
+    "AudioDevice/AudioDevice.cpp"
     "Editor/Editor.h"
     "Editor/Editor.cpp"
     "Input/Input.h"

@@ -7,6 +7,7 @@
 #include <ThirdParty/Imgui/imgui.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
+#include "AudioDevice/AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
 #include "Renderer/Renderer.h"
@@ -73,6 +74,8 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 	pGame->OnStart(*pCurrentScene);
 
 	Renderer::OnGameStart(*pCurrentScene);
+	
+	AudioDevice::Initialize();
 
 	// Game update loop
 	double frameTime = 0.016f;
@@ -84,6 +87,7 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 
 		// Update flow for the engine
 		Renderer::OnFrameStart();
+		AudioDevice::Update();
 		Input::OnFrame(shutdown);
 		g_pGame->OnFrame(*pCurrentScene, (float)frameTime);
 		Editor::OnFrame(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
@@ -109,6 +113,7 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 
 	// Shutdown everything
 	g_pGame->OnEnd(*pCurrentScene);
+	AudioDevice::Destroy();
 	Renderer::OnGameEnd();
 
 	SDL_DestroyWindow(g_pWindow);

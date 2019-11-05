@@ -7,12 +7,14 @@
 #include <Editor/Editor.h>
 #include <Scene.h>
 #include <Engine.h>
+#include <Input/Input.h>
 #include <IGame.h>
 #include <Profiler.h>
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
 #include <ThirdParty/Imgui/imgui.h>
 #include <TypeSystem.h>
+#include <AudioDevice/AudioDevice.h>
 
 #include <functional>
 #include <time.h>
@@ -226,6 +228,11 @@ struct Asteroids : public IGame
 	{
 		PROFILE();
 
+		if (Input::GetKeyDown(SDL_SCANCODE_B))
+		{
+			AudioDevice::Initialize();
+		}
+
 		ShipControlSystemUpdate(scene, deltaTime);
 		MovementSystemUpdate(scene, deltaTime);
 		CollisionSystemUpdate(scene, deltaTime);
@@ -234,7 +241,6 @@ struct Asteroids : public IGame
 
 	void OnEnd(Scene& scene) override
 	{
-
 	}
 };
 
