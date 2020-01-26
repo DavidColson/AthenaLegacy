@@ -17,6 +17,7 @@ struct Sound
     uint8_t* buffer{ nullptr };
     uint8_t* currentBufferPosition{ nullptr };
 
+    float volume{ 1.0f };
     uint32_t length{ 0 };
     uint32_t remainingLength{ 0 };
     SDL_AudioSpec spec;
@@ -29,6 +30,7 @@ struct AudioCallbackData
 
 namespace
 {
+    float globalVolume = 1.0f;
     SDL_AudioDeviceID device;
     uint32_t currentNumSounds{ 0 };
     AudioCallbackData callbackData; // Do not write without locking audio callback thread
@@ -58,17 +60,32 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
 
         int length = requestedLength > (int)sound->remainingLength ? sound->remainingLength : requestedLength;
 
-        // We're dealing with 16 bit audio here, so cast up
-        uint16_t* dest = (uint16_t*)stream;
-        uint16_t* src = (uint16_t*)sound->currentBufferPosition;
+        // We're dealing with signed 16 bit audio here, so cast up
+        int16_t* dest = (int16_t*)stream;
+        int16_t* src = (int16_t*)sound->currentBufferPosition;
+
+        // 1 << x will be 2^x, so we're getting the highest number you can get with a signed 16 bit number
+        int max = ((1 << (16 - 1)) - 1);
+        int min = -(1 << (16 - 1));
 
         // Mix into the destination stream
         int len = length / 2; // Length is assuming 8 bit, so divide by 2
         while (len--)
         {
-           *dest = *dest + *src;
-           dest++;
-           src++;
+            // volume adjust and mix
+            int srcSample = *src;
+            srcSample = int(srcSample * globalVolume * sound->volume);
+            int destSample = (*dest + srcSample);
+
+            // clipping
+            if (destSample > max)
+                destSample = max;
+            else if (destSample < min)
+                destSample = min;
+
+            *dest = destSample;
+            dest++;
+            src++;
         }
 
         sound->currentBufferPosition += length;
@@ -103,12 +120,12 @@ void AudioDevice::Initialize()
 
     SDL_PauseAudioDevice(device, 0);
 
-    PlayAudio("Resources/Audio/Shoot.wav");
-    PlayAudio("Resources/Audio/Bluezone-Abyss-sound-004.wav");
-    PlayAudio("Resources/Audio/Detunized_Urban-Crows_01.wav");
+    PlayAudio("Resources/Audio/Shoot.wav", 1.0f);
+    PlayAudio("Resources/Audio/Bluezone-Abyss-sound-004.wav", 1.0f);
+    PlayAudio("Resources/Audio/Detunized_Urban-Crows_01.wav", 1.0f);
 }
 
-void AudioDevice::PlayAudio(const char* fileName)
+void AudioDevice::PlayAudio(const char* fileName, float volume)
 {
     if (currentNumSounds < AUDIO_MAX_SOUNDS)
     {
@@ -123,6 +140,7 @@ void AudioDevice::PlayAudio(const char* fileName)
         tempNewSound.currentBufferPosition = tempNewSound.buffer; // Start at the beginning of the buffer
         tempNewSound.remainingLength = tempNewSound.length;
         tempNewSound.active = true;
+        tempNewSound.volume = volume;
 
         SDL_LockAudioDevice(device);
         // Find the next free slot in the memory pool of sounds
