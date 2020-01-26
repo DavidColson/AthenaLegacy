@@ -48,7 +48,7 @@ char* readFile(const char* filename)
 void Engine::Run(IGame* pGame, Scene *pScene)
 {	
 	// Startup flow
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 
 	float width = 1800.0f;
 	float height = 1000.0f;

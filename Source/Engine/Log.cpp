@@ -27,6 +27,7 @@ void Log::Print(LogType type, const char* text, ...)
 	case EWarn: prefix = "[WARN] "; break;
 	case EErr: prefix = "[ERR] "; break;
 	case EGraphics: prefix = "[GFXDEVICE] "; break;
+	case EAudio: prefix = "[AUDIO] "; break;
 	default: break;
 	}
 

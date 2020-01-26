@@ -9,7 +9,8 @@ namespace Log
 		EMsg,
 		EWarn,
 		EErr,
-    EGraphics
+    	EGraphics,
+    	EAudio,
 	};
 
 	void Print(LogType type, const char* text, ...);
