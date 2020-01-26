@@ -9,35 +9,71 @@
 #define AUDIO_FREQUENCY 48000
 #define AUDIO_CHANNELS 2 // Number of concurrent audio channels
 #define AUDIO_SAMPLES 4096 // Amount of audio data in the buffer at once (always power of 2)
+#define AUDIO_MAX_SOUNDS 16 // Maximum amount of concurrent sounds
 
+struct Sound
+{
+    bool active{false};
+    uint8_t* buffer{ nullptr };
+    uint8_t* currentBufferPosition{ nullptr };
+
+    uint32_t length{ 0 };
+    uint32_t remainingLength{ 0 };
+    SDL_AudioSpec spec;
+};
+
+struct AudioCallbackData
+{
+    Sound currentSounds[AUDIO_MAX_SOUNDS];
+};
 
 namespace
 {
-    uint8_t* audioBufferPos;
-    uint32_t audioBufferRemainingLength;
+    SDL_AudioDeviceID device;
+    uint32_t currentNumSounds{ 0 };
+    AudioCallbackData callbackData; // Do not write without locking audio callback thread
 }
 
 void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
 {
-    //Log::Print(Log::EMsg, "Audio Callback asking for %i data, audio buffer remaining %i", requestedLength, audioBufferRemainingLength);
-    memset(stream, 0, requestedLength);
+    AudioCallbackData* data = (AudioCallbackData*)userdata;
+    memset(stream, 0, requestedLength);    
 
-    if (audioBufferRemainingLength == 0)
+    for (uint32_t i = 0; i < AUDIO_MAX_SOUNDS; i++)
     {
-        return;
+        Sound* sound = &data->currentSounds[i];
+        if (!sound->active)
+            continue;
+
+        if (sound->remainingLength == 0)
+        {
+            // Free sound
+            SDL_FreeWAV(sound->buffer);
+            sound->buffer = nullptr;
+            sound->currentBufferPosition = nullptr;
+            currentNumSounds--;
+            sound->active = false;
+            continue;
+        }
+
+        int length = requestedLength > (int)sound->remainingLength ? sound->remainingLength : requestedLength;
+
+        // We're dealing with 16 bit audio here, so cast up
+        uint16_t* dest = (uint16_t*)stream;
+        uint16_t* src = (uint16_t*)sound->currentBufferPosition;
+
+        // Mix into the destination stream
+        int len = length / 2; // Length is assuming 8 bit, so divide by 2
+        while (len--)
+        {
+           *dest = *dest + *src;
+           dest++;
+           src++;
+        }
+
+        sound->currentBufferPosition += length;
+        sound->remainingLength -= length;   
     }
-
-    int length = requestedLength > (int)audioBufferRemainingLength ? audioBufferRemainingLength : requestedLength;
-
-    // Copy the appropriate amount from the buffer into the stream
-    memcpy(stream, audioBufferPos, length);
-
-    audioBufferPos += length;
-    audioBufferRemainingLength -= length;
-
-    // We'll have a userdata to pass in a list of currently playing audio elements
-    // We'll loop over them, and copy from their current position, the appropriate length, adding to the existing stream memory
-
 }
 
 void AudioDevice::Initialize()
@@ -48,11 +84,9 @@ void AudioDevice::Initialize()
         Log::Print(Log::EAudio, "   - Device %i - %s", i,  SDL_GetAudioDeviceName(i, 0));
     }
 
-    SDL_AudioDeviceID device;
-
     SDL_AudioSpec desiredWaveSpec, gotWaveSpec;
     desiredWaveSpec.callback = AudioCallback;
-    desiredWaveSpec.userdata = nullptr;
+    desiredWaveSpec.userdata = &callbackData;
     desiredWaveSpec.channels = AUDIO_CHANNELS;
     desiredWaveSpec.format = AUDIO_FORMAT;
     desiredWaveSpec.freq = AUDIO_FREQUENCY;
@@ -66,21 +100,43 @@ void AudioDevice::Initialize()
     {
         Log::Print(Log::EAudio, "Failed to open audio device - %s",  SDL_GetAudioDeviceName(0, 0));        
     }
-    
-
-    // @Improvement: check if the imported data actually has the right format
-    SDL_AudioSpec testAudioSpec;
-    uint32_t waveLength;
-    uint8_t* waveBuffer;
-    if (SDL_LoadWAV("Resources/Audio/Shoot.wav", &testAudioSpec, &waveBuffer, &waveLength) == nullptr)
-    {
-        Log::Print(Log::EErr, "%s", SDL_GetError());
-        return;
-    }
-    audioBufferPos = waveBuffer; // Start at the beginning of the buffer
-    audioBufferRemainingLength = waveLength;
 
     SDL_PauseAudioDevice(device, 0);
+
+    PlayAudio("Resources/Audio/Shoot.wav");
+    PlayAudio("Resources/Audio/Bluezone-Abyss-sound-004.wav");
+    PlayAudio("Resources/Audio/Detunized_Urban-Crows_01.wav");
+}
+
+void AudioDevice::PlayAudio(const char* fileName)
+{
+    if (currentNumSounds < AUDIO_MAX_SOUNDS)
+    {
+        Sound tempNewSound;
+
+         // @Improvement: check if the imported data actually has the right format
+        if (SDL_LoadWAV(fileName, &(tempNewSound.spec), &(tempNewSound.buffer), &(tempNewSound.length)) == nullptr)
+        {
+            Log::Print(Log::EErr, "%s", SDL_GetError());
+            return;
+        }
+        tempNewSound.currentBufferPosition = tempNewSound.buffer; // Start at the beginning of the buffer
+        tempNewSound.remainingLength = tempNewSound.length;
+        tempNewSound.active = true;
+
+        SDL_LockAudioDevice(device);
+        // Find the next free slot in the memory pool of sounds
+        for (int i = 0; i < AUDIO_MAX_SOUNDS; i++)
+        {
+            if (callbackData.currentSounds[i].active == false)
+            {
+                callbackData.currentSounds[currentNumSounds] = tempNewSound;
+                break;
+            }
+        }
+        SDL_UnlockAudioDevice(device);
+        currentNumSounds++;
+    }
 }
 
 void AudioDevice::Update()
@@ -90,6 +146,6 @@ void AudioDevice::Update()
 void AudioDevice::Destroy()
 {
     SDL_PauseAudio(1);
-    SDL_CloseAudio();
+    SDL_CloseAudioDevice(device);
 }
 
