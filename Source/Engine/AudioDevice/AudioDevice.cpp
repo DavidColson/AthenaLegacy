@@ -13,7 +13,9 @@
 
 struct Sound
 {
-    bool active{false};
+    SoundID id{ SoundID(-1) };
+    bool paused{ false };
+    bool active{ false };
     uint8_t* buffer{ nullptr };
     uint8_t* currentBufferPosition{ nullptr };
 
@@ -44,17 +46,15 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
     for (uint32_t i = 0; i < AUDIO_MAX_SOUNDS; i++)
     {
         Sound* sound = &data->currentSounds[i];
-        if (!sound->active)
+        if (!sound->active || sound->paused)
             continue;
 
         if (sound->remainingLength == 0)
         {
             // Free sound
             SDL_FreeWAV(sound->buffer);
-            sound->buffer = nullptr;
-            sound->currentBufferPosition = nullptr;
+            *sound = Sound();
             currentNumSounds--;
-            sound->active = false;
             continue;
         }
 
@@ -119,13 +119,9 @@ void AudioDevice::Initialize()
     }
 
     SDL_PauseAudioDevice(device, 0);
-
-    PlayAudio("Resources/Audio/Shoot.wav", 1.0f);
-    PlayAudio("Resources/Audio/Bluezone-Abyss-sound-004.wav", 1.0f);
-    PlayAudio("Resources/Audio/Detunized_Urban-Crows_01.wav", 1.0f);
 }
 
-void AudioDevice::PlayAudio(const char* fileName, float volume)
+SoundID AudioDevice::PlaySound(const char* fileName, float volume)
 {
     if (currentNumSounds < AUDIO_MAX_SOUNDS)
     {
@@ -135,7 +131,7 @@ void AudioDevice::PlayAudio(const char* fileName, float volume)
         if (SDL_LoadWAV(fileName, &(tempNewSound.spec), &(tempNewSound.buffer), &(tempNewSound.length)) == nullptr)
         {
             Log::Print(Log::EErr, "%s", SDL_GetError());
-            return;
+            return SoundID(-1);
         }
         tempNewSound.currentBufferPosition = tempNewSound.buffer; // Start at the beginning of the buffer
         tempNewSound.remainingLength = tempNewSound.length;
@@ -144,17 +140,45 @@ void AudioDevice::PlayAudio(const char* fileName, float volume)
 
         SDL_LockAudioDevice(device);
         // Find the next free slot in the memory pool of sounds
+        SoundID id = -1;
         for (int i = 0; i < AUDIO_MAX_SOUNDS; i++)
         {
             if (callbackData.currentSounds[i].active == false)
             {
+                // cast to 32bit and increment to get new version, then build new id
+                uint32_t version = ((uint32_t)callbackData.currentSounds[currentNumSounds].id) + 1;
+                tempNewSound.id = ((SoundID)i << 32) | ((SoundID)version);
                 callbackData.currentSounds[currentNumSounds] = tempNewSound;
                 break;
             }
         }
         SDL_UnlockAudioDevice(device);
         currentNumSounds++;
+        return tempNewSound.id;
     }
+    return SoundID(-1);
+}
+
+void AudioDevice::PauseSound(SoundID sound)
+{
+    SDL_LockAudioDevice(device);
+    uint32_t index = sound >> 32;
+    if (callbackData.currentSounds[index].id == sound)
+    {
+        callbackData.currentSounds[index].paused = true;
+    }
+    SDL_UnlockAudioDevice(device);
+}
+
+void AudioDevice::UnPauseSound(SoundID sound)
+{
+    SDL_LockAudioDevice(device);
+    uint32_t index = sound >> 32;
+    if (callbackData.currentSounds[index].id == sound)
+    {
+        callbackData.currentSounds[index].paused = false;
+    }
+    SDL_UnlockAudioDevice(device);
 }
 
 void AudioDevice::Update()

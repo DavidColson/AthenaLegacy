@@ -228,11 +228,6 @@ struct Asteroids : public IGame
 	{
 		PROFILE();
 
-		if (Input::GetKeyDown(SDL_SCANCODE_B))
-		{
-			AudioDevice::Initialize();
-		}
-
 		ShipControlSystemUpdate(scene, deltaTime);
 		MovementSystemUpdate(scene, deltaTime);
 		CollisionSystemUpdate(scene, deltaTime);

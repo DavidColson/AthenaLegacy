@@ -1,9 +1,15 @@
 
+typedef unsigned long long SoundID;
+
 namespace AudioDevice
 {
     void Initialize();
 
-    void PlayAudio(const char* fileName, float volume);
+    SoundID PlaySound(const char* fileName, float volume);
+
+    void PauseSound(SoundID sound);
+
+    void UnPauseSound(SoundID sound);
 
     void Update();
 
