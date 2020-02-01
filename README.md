@@ -9,6 +9,7 @@ Athena is a small, personal game development library built as simply as possible
 The asteroids clone isn't quite finished yet, but so far we have the following features:
 
 - 2D vector like graphics
+- Post processing with bloom, chromatic abberation, screen warping and a few other things
 - Font drawing
 - Simple audio 
 - Entity system
