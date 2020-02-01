@@ -6,6 +6,7 @@
 #include <Renderer/RenderProxy.h>
 #include <Log.h>
 #include <Scene.h>
+#include <AudioDevice/AudioDevice.h>
 
 struct CPlayerControl
 {
@@ -14,6 +15,8 @@ struct CPlayerControl
 	float dampening{ 0.f };
 	float respawnTimer{ 0.0f };
 	int 	lives = 3;
+	SoundID engineSound{ SoundID(-1) };
+
 	// #RefactorNote: move this into the singleton HUD component
 	EntityID lifeEntities[3]; // Stores the entityID of the three lives living in the corner of the screen
 	REFLECT()

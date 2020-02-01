@@ -3,6 +3,7 @@
 #include "Asteroids.h"
 #include "Components.h"
 
+#include <AudioDevice/AudioDevice.h>
 #include <Renderer/DebugDraw.h>
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
@@ -39,6 +40,8 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 		}, "Bullet");
 	pDrawable->lineThickness = 5.0f;
 	scene.Assign<CCollidable>(bullet)->radius = 4.0f;
+
+	AudioDevice::PlaySound("Resources/Audio/Shoot.wav", 1.0f, false);
 }
 
 
@@ -58,6 +61,8 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 		pPlayerScore->score += 50;
 	if (hits == 2)
 		pPlayerScore->score += 100;
+
+	AudioDevice::PlaySound("Resources/Audio/Explosion.wav", 1.0f, false);
 		
 	scene.Get<CText>(scoreEnt)->text = StringFormat("%i", pPlayerScore->score);
 
@@ -265,6 +270,12 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 			accel.y = sin(pTransform->rot);
 			accel = accel * -pControl->thrust;
 		}
+
+		if (Input::GetKeyDown(SDL_SCANCODE_UP))
+			AudioDevice::UnPauseSound(pControl->engineSound);
+		else if (Input::GetKeyUp(SDL_SCANCODE_UP))
+			AudioDevice::PauseSound(pControl->engineSound);
+
 		pTransform->accel = accel - pTransform->vel * pControl->dampening;
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_LEFT))

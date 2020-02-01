@@ -163,6 +163,8 @@ struct Asteroids : public IGame
 		scene.Assign<CDrawable>(ship)->renderProxy = Game::g_shipMesh;
 		CPlayerUI* pPlayerUI = scene.Assign<CPlayerUI>(ship);
 		scene.Assign<CPostProcessing>(ship);
+		pPlayer->engineSound = AudioDevice::PlaySound("Resources/Audio/Engine.wav", 0.3f, true);
+		AudioDevice::PauseSound(pPlayer->engineSound);
 
 		// Create some asteroids
 		for (int i = 0; i < 15; i++)

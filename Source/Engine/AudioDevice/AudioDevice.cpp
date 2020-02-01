@@ -6,8 +6,8 @@
 
 // Defines the supported audio format (based on wav files)
 #define AUDIO_FORMAT AUDIO_S16LSB
-#define AUDIO_FREQUENCY 48000
-#define AUDIO_CHANNELS 2 // Number of concurrent audio channels
+#define AUDIO_FREQUENCY 44100
+#define AUDIO_CHANNELS 1 // Number of concurrent audio channels
 #define AUDIO_SAMPLES 4096 // Amount of audio data in the buffer at once (always power of 2)
 #define AUDIO_MAX_SOUNDS 16 // Maximum amount of concurrent sounds
 
@@ -16,6 +16,7 @@ struct Sound
     SoundID id{ SoundID(-1) };
     bool paused{ false };
     bool active{ false };
+    bool loop{ false };
     uint8_t* buffer{ nullptr };
     uint8_t* currentBufferPosition{ nullptr };
 
@@ -27,6 +28,7 @@ struct Sound
 
 struct AudioCallbackData
 {
+    // @todo: this does make more sense as a linked list
     Sound currentSounds[AUDIO_MAX_SOUNDS];
 };
 
@@ -49,15 +51,6 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
         if (!sound->active || sound->paused)
             continue;
 
-        if (sound->remainingLength == 0)
-        {
-            // Free sound
-            SDL_FreeWAV(sound->buffer);
-            *sound = Sound();
-            currentNumSounds--;
-            continue;
-        }
-
         int length = requestedLength > (int)sound->remainingLength ? sound->remainingLength : requestedLength;
 
         // We're dealing with signed 16 bit audio here, so cast up
@@ -68,6 +61,7 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
         int max = ((1 << (16 - 1)) - 1);
         int min = -(1 << (16 - 1));
 
+        loopContinue:
         // Mix into the destination stream
         int len = length / 2; // Length is assuming 8 bit, so divide by 2
         while (len--)
@@ -75,7 +69,7 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
             // volume adjust and mix
             int srcSample = *src;
             srcSample = int(srcSample * globalVolume * sound->volume);
-            int destSample = (*dest + srcSample);
+            int destSample = (*dest + srcSample);         
 
             // clipping
             if (destSample > max)
@@ -90,6 +84,27 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
 
         sound->currentBufferPosition += length;
         sound->remainingLength -= length;   
+
+        if (sound->remainingLength == 0)
+        {
+            if (sound->loop == false)
+            {
+                // Free sound
+                SDL_FreeWAV(sound->buffer);
+                *sound = Sound();
+                currentNumSounds--;
+                continue;
+            }
+            else
+            {
+                sound->remainingLength = sound->length;
+                sound->currentBufferPosition = sound->buffer;
+
+                length = requestedLength - length;
+                src = (int16_t*)sound->currentBufferPosition;
+                goto loopContinue;
+            }
+        }
     }
 }
 
@@ -121,7 +136,7 @@ void AudioDevice::Initialize()
     SDL_PauseAudioDevice(device, 0);
 }
 
-SoundID AudioDevice::PlaySound(const char* fileName, float volume)
+SoundID AudioDevice::PlaySound(const char* fileName, float volume, bool loop)
 {
     if (currentNumSounds < AUDIO_MAX_SOUNDS)
     {
@@ -136,6 +151,7 @@ SoundID AudioDevice::PlaySound(const char* fileName, float volume)
         tempNewSound.currentBufferPosition = tempNewSound.buffer; // Start at the beginning of the buffer
         tempNewSound.remainingLength = tempNewSound.length;
         tempNewSound.active = true;
+        tempNewSound.loop = loop;
         tempNewSound.volume = volume;
 
         SDL_LockAudioDevice(device);

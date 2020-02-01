@@ -5,7 +5,7 @@ namespace AudioDevice
 {
     void Initialize();
 
-    SoundID PlaySound(const char* fileName, float volume);
+    SoundID PlaySound(const char* fileName, float volume, bool loop);
 
     void PauseSound(SoundID sound);
 
