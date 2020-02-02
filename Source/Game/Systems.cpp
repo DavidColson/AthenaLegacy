@@ -40,8 +40,6 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 		}, "Bullet");
 	pDrawable->lineThickness = 5.0f;
 	scene.Assign<CCollidable>(bullet)->radius = 4.0f;
-
-	AudioDevice::PlaySound("Resources/Audio/Shoot.wav", 1.0f, false);
 }
 
 
@@ -62,7 +60,7 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 	if (hits == 2)
 		pPlayerScore->score += 100;
 
-	AudioDevice::PlaySound("Resources/Audio/Explosion.wav", 1.0f, false);
+	AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->explosionSound, 1.0f, false);
 		
 	scene.Get<CText>(scoreEnt)->text = StringFormat("%i", pPlayerScore->score);
 
@@ -107,7 +105,7 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	scene.Remove<CDrawable>(player);
 	pPlayerControl->lives -= 1;
 	scene.DestroyEntity(pPlayerControl->lifeEntities[pPlayerControl->lives]);
-	AudioDevice::PauseSound(pPlayerControl->engineSound);
+	AudioDevice::PauseSound(pPlayerControl->enginePlayingSound);
 
 	Log::Print(Log::EMsg, "Player died");
 	
@@ -273,9 +271,9 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		}
 
 		if (Input::GetKeyDown(SDL_SCANCODE_UP))
-			AudioDevice::UnPauseSound(pControl->engineSound);
+			AudioDevice::UnPauseSound(pControl->enginePlayingSound);
 		else if (Input::GetKeyUp(SDL_SCANCODE_UP))
-			AudioDevice::PauseSound(pControl->engineSound);
+			AudioDevice::PauseSound(pControl->enginePlayingSound);
 
 		pTransform->accel = accel - pTransform->vel * pControl->dampening;
 
@@ -288,6 +286,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		if (Input::GetKeyDown(SDL_SCANCODE_SPACE))
 		{
 			SpawnBullet(scene, pTransform);
+			AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->shootSound, 1.0f, false);
 		}
 	}
 }

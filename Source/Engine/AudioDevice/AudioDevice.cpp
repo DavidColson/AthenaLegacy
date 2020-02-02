@@ -1,6 +1,7 @@
 #include "AudioDevice/AudioDevice.h"
 
 #include <SDL.h>
+#include <vector>
 
 #include "Log.h"
 
@@ -11,25 +12,30 @@
 #define AUDIO_SAMPLES 4096 // Amount of audio data in the buffer at once (always power of 2)
 #define AUDIO_MAX_SOUNDS 16 // Maximum amount of concurrent sounds
 
-struct Sound
+struct LoadedSound
+{
+    uint8_t* buffer{ nullptr };
+    uint32_t length{ 0 };
+    SDL_AudioSpec spec;
+};
+
+struct PlayingSound
 {
     SoundID id{ SoundID(-1) };
     bool paused{ false };
     bool active{ false };
     bool loop{ false };
-    uint8_t* buffer{ nullptr };
     uint8_t* currentBufferPosition{ nullptr };
 
     float volume{ 1.0f };
-    uint32_t length{ 0 };
     uint32_t remainingLength{ 0 };
-    SDL_AudioSpec spec;
+    LoadedSound* loadedSound;
 };
 
 struct AudioCallbackData
 {
     // @todo: this does make more sense as a linked list
-    Sound currentSounds[AUDIO_MAX_SOUNDS];
+    PlayingSound currentSounds[AUDIO_MAX_SOUNDS];
 };
 
 namespace
@@ -38,6 +44,7 @@ namespace
     SDL_AudioDeviceID device;
     uint32_t currentNumSounds{ 0 };
     AudioCallbackData callbackData; // Do not write without locking audio callback thread
+    std::vector<LoadedSound> loadedSounds;
 }
 
 void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
@@ -47,7 +54,7 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
 
     for (uint32_t i = 0; i < AUDIO_MAX_SOUNDS; i++)
     {
-        Sound* sound = &data->currentSounds[i];
+        PlayingSound* sound = &(data->currentSounds[i]);
         if (!sound->active || sound->paused)
             continue;
 
@@ -63,7 +70,7 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
 
         loopContinue:
         // Mix into the destination stream
-        int nBytesToUse = sound->spec.channels == 1 ? nBytesToReturn / 2 : nBytesToReturn; // For single channel audio we're using every sample twice
+        int nBytesToUse = sound->loadedSound->spec.channels == 1 ? nBytesToReturn / 2 : nBytesToReturn; // For single channel audio we're using every sample twice
         int nSamplesToMix = nBytesToUse / 2;
         while (nSamplesToMix--)
         {
@@ -80,7 +87,7 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
 
             *dest = destSample;
             dest++;
-            if (sound->spec.channels == 1)
+            if (sound->loadedSound->spec.channels == 1)
             {
                 *dest = destSample;
                 dest++;
@@ -95,16 +102,14 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
         {
             if (sound->loop == false)
             {
-                // Free sound
-                SDL_FreeWAV(sound->buffer);
-                *sound = Sound();
+                *sound = PlayingSound();
                 currentNumSounds--;
                 continue;
             }
             else
             {
-                sound->remainingLength = sound->length;
-                sound->currentBufferPosition = sound->buffer;
+                sound->remainingLength = sound->loadedSound->length;
+                sound->currentBufferPosition = sound->loadedSound->buffer;
 
                 nBytesToReturn = nRequestedBytes - nBytesToReturn;
                 src = (int16_t*)sound->currentBufferPosition;
@@ -142,26 +147,32 @@ void AudioDevice::Initialize()
     SDL_PauseAudioDevice(device, 0);
 }
 
-SoundID AudioDevice::PlaySound(const char* fileName, float volume, bool loop)
+LoadedSoundHandle AudioDevice::LoadSound(const char* fileName)
+{
+    loadedSounds.emplace_back();
+
+    LoadedSound* newSound = &(loadedSounds.back());
+    if (SDL_LoadWAV(fileName, &(newSound->spec), &(newSound->buffer), &(newSound->length)) == nullptr)
+    {
+        Log::Print(Log::EErr, "%s", SDL_GetError());
+    }
+
+    if (newSound->spec.channels == 1) // doubling our actual buffer length since we reuse the samples for stereo
+        newSound->length *= 2;
+
+    // @TODO Ensure the loaded audio file is of the correct format and give errors otherwise
+    return loadedSounds.size() - 1;
+}
+
+SoundID AudioDevice::PlaySound(LoadedSoundHandle sound, float volume, bool loop)
 {
     if (currentNumSounds < AUDIO_MAX_SOUNDS)
     {
-        Sound tempNewSound;
+        PlayingSound tempNewSound;
+        tempNewSound.loadedSound = &(loadedSounds[(size_t)sound]);
 
-         // @Improvement: check if the imported data actually has the right format
-        if (SDL_LoadWAV(fileName, &(tempNewSound.spec), &(tempNewSound.buffer), &(tempNewSound.length)) == nullptr)
-        {
-            Log::Print(Log::EErr, "%s", SDL_GetError());
-            return SoundID(-1);
-        }
-        tempNewSound.currentBufferPosition = tempNewSound.buffer; // Start at the beginning of the buffer
-        tempNewSound.remainingLength = tempNewSound.length; // We reuse samples if the audio is single channel
-        if (tempNewSound.spec.channels == 1)
-        {
-            tempNewSound.length *= 2;
-            tempNewSound.remainingLength *= 2;
-        }
-
+        tempNewSound.currentBufferPosition = tempNewSound.loadedSound->buffer; // Start at the beginning of the buffer
+        tempNewSound.remainingLength = tempNewSound.loadedSound->length;
 
         tempNewSound.active = true;
         tempNewSound.loop = loop;
@@ -216,7 +227,10 @@ void AudioDevice::Update()
 
 void AudioDevice::Destroy()
 {
+	for (LoadedSound& sound : loadedSounds)
+	{
+		SDL_FreeWAV(sound.buffer);
+	}
     SDL_PauseAudio(1);
     SDL_CloseAudioDevice(device);
 }
-
