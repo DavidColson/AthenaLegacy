@@ -7,7 +7,7 @@
 // Defines the supported audio format (based on wav files)
 #define AUDIO_FORMAT AUDIO_S16LSB
 #define AUDIO_FREQUENCY 44100
-#define AUDIO_CHANNELS 1 // Number of concurrent audio channels
+#define AUDIO_CHANNELS 2 // Number of concurrent audio channels
 #define AUDIO_SAMPLES 4096 // Amount of audio data in the buffer at once (always power of 2)
 #define AUDIO_MAX_SOUNDS 16 // Maximum amount of concurrent sounds
 
@@ -40,10 +40,10 @@ namespace
     AudioCallbackData callbackData; // Do not write without locking audio callback thread
 }
 
-void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
+void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
 {
     AudioCallbackData* data = (AudioCallbackData*)userdata;
-    memset(stream, 0, requestedLength);    
+    memset(stream, 0, nRequestedBytes);    
 
     for (uint32_t i = 0; i < AUDIO_MAX_SOUNDS; i++)
     {
@@ -51,7 +51,7 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
         if (!sound->active || sound->paused)
             continue;
 
-        int length = requestedLength > (int)sound->remainingLength ? sound->remainingLength : requestedLength;
+        int nBytesToReturn = nRequestedBytes > (int)sound->remainingLength ? sound->remainingLength : nRequestedBytes;
 
         // We're dealing with signed 16 bit audio here, so cast up
         int16_t* dest = (int16_t*)stream;
@@ -63,8 +63,9 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
 
         loopContinue:
         // Mix into the destination stream
-        int len = length / 2; // Length is assuming 8 bit, so divide by 2
-        while (len--)
+        int nBytesToUse = sound->spec.channels == 1 ? nBytesToReturn / 2 : nBytesToReturn; // For single channel audio we're using every sample twice
+        int nSamplesToMix = nBytesToUse / 2;
+        while (nSamplesToMix--)
         {
             // volume adjust and mix
             int srcSample = *src;
@@ -79,13 +80,18 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
 
             *dest = destSample;
             dest++;
+            if (sound->spec.channels == 1)
+            {
+                *dest = destSample;
+                dest++;
+            }
             src++;
         }
 
-        sound->currentBufferPosition += length;
-        sound->remainingLength -= length;   
+        sound->currentBufferPosition += nBytesToUse;
+        sound->remainingLength -= nBytesToReturn;   
 
-        if (sound->remainingLength == 0)
+        if (sound->remainingLength <= 0)
         {
             if (sound->loop == false)
             {
@@ -100,7 +106,7 @@ void AudioCallback(void *userdata, Uint8 *stream, int requestedLength)
                 sound->remainingLength = sound->length;
                 sound->currentBufferPosition = sound->buffer;
 
-                length = requestedLength - length;
+                nBytesToReturn = nRequestedBytes - nBytesToReturn;
                 src = (int16_t*)sound->currentBufferPosition;
                 goto loopContinue;
             }
@@ -149,7 +155,14 @@ SoundID AudioDevice::PlaySound(const char* fileName, float volume, bool loop)
             return SoundID(-1);
         }
         tempNewSound.currentBufferPosition = tempNewSound.buffer; // Start at the beginning of the buffer
-        tempNewSound.remainingLength = tempNewSound.length;
+        tempNewSound.remainingLength = tempNewSound.length; // We reuse samples if the audio is single channel
+        if (tempNewSound.spec.channels == 1)
+        {
+            tempNewSound.length *= 2;
+            tempNewSound.remainingLength *= 2;
+        }
+
+
         tempNewSound.active = true;
         tempNewSound.loop = loop;
         tempNewSound.volume = volume;

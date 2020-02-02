@@ -107,7 +107,8 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	scene.Remove<CDrawable>(player);
 	pPlayerControl->lives -= 1;
 	scene.DestroyEntity(pPlayerControl->lifeEntities[pPlayerControl->lives]);
-	
+	AudioDevice::PauseSound(pPlayerControl->engineSound);
+
 	Log::Print(Log::EMsg, "Player died");
 	
 	if (pPlayerControl->lives <= 0)
