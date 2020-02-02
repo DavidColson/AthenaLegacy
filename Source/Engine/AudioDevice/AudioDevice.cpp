@@ -186,9 +186,9 @@ SoundID AudioDevice::PlaySound(LoadedSoundHandle sound, float volume, bool loop)
             if (callbackData.currentSounds[i].active == false)
             {
                 // cast to 32bit and increment to get new version, then build new id
-                uint32_t version = ((uint32_t)callbackData.currentSounds[currentNumSounds].id) + 1;
+                uint32_t version = ((uint32_t)callbackData.currentSounds[i].id) + 1;
                 tempNewSound.id = ((SoundID)i << 32) | ((SoundID)version);
-                callbackData.currentSounds[currentNumSounds] = tempNewSound;
+                callbackData.currentSounds[i] = tempNewSound;
                 break;
             }
         }
