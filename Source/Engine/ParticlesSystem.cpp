@@ -4,7 +4,9 @@
 #include "Maths/Matrix.h"
 
 REFLECT_BEGIN(CParticleEmitter)
-REFLECT_MEMBER(count)
+REFLECT_MEMBER(initial_count)
+REFLECT_MEMBER(per_frame)
+REFLECT_MEMBER(lifetime)
 REFLECT_END()
 
 struct ParticlesTransform
@@ -18,9 +20,23 @@ void ParticlesSystem::OnSceneStart(Scene& scene)
 	for (EntityID ent : SceneView<CParticleEmitter>(scene))
 	{
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
+		pEmitter->particlePool = std::make_unique<ParticlePool>();
 
+		// Create initial particles
+		for (size_t i = 0; i < pEmitter->initial_count; i++)
+		{
+			Particle* pNewParticle = pEmitter->particlePool->NewParticle();
+
+			Vec3f randomLocation = Vec3f(200.0f + float(rand() % 200), 200.0f + float(rand() % 200), 0.0f);
+			Matrixf posMat = Matrixf::Translate(randomLocation);
+			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, 1.0f));
+			Matrixf scaMat = Matrixf::Scale(10.0f);
+			Matrixf world = posMat * rotMat * scaMat;
+			pNewParticle->transform = world;
+			pNewParticle->lifeRemaining = pEmitter->lifetime;
+		}
+		
 		// @TODO: debug names should be derivative of the entity name
-
 		std::vector<VertexInputElement> particleLayout;
 		particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
 		particleLayout.push_back({"COLOR", AttributeType::Float3, 0 });
@@ -41,30 +57,67 @@ void ParticlesSystem::OnSceneStart(Scene& scene)
 		quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
 		quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
 		quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-
-		std::vector<Matrixf> particleTransforms;
-		for(int i = 0; i < 50; i++)
-		{
-			Matrixf posMat = Matrixf::Translate(Vec3f(200.0f + 50.0f * i, 200.0f, 0.0f));
-			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, 1.0f));
-			Matrixf scaMat = Matrixf::Scale(10.0f);
-			Matrixf world = posMat * rotMat * scaMat;
-			particleTransforms.push_back(world);
-		}
 		
 		pEmitter->vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Particles Vert Buffer");
-		pEmitter->instanceBuffer = GfxDevice::CreateVertexBuffer(particleTransforms.size(), sizeof(Matrixf), particleTransforms.data(), "Particles Instance Buffer");
 		pEmitter->transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
 	}
 }
 
-void ParticlesSystem::OnFrame(Scene& scene)
+void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 {
-	// simulate and render
 	for (EntityID ent : SceneView<CParticleEmitter>(scene))
 	{
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
 
+		// Spawn new particles this frame
+		// ******************************
+		for (size_t i = 0; i < pEmitter->per_frame; i++)
+		{
+			Particle* pNewParticle = pEmitter->particlePool->NewParticle();
+			if (pNewParticle)
+			{
+				Vec3f randomLocation = Vec3f(200.0f + float(rand() % 200), 200.0f + float(rand() % 200), 0.0f);
+				Matrixf posMat = Matrixf::Translate(randomLocation);
+				Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, 1.0f));
+				Matrixf scaMat = Matrixf::Scale(10.0f);
+				Matrixf world = posMat * rotMat * scaMat;
+				pNewParticle->transform = world;
+				pNewParticle->lifeRemaining = pEmitter->lifetime;
+			}
+		}
+
+		// Simulate particles and update transforms
+		// ****************************************
+		std::vector<Matrixf> particleTransforms;
+		for(int i = 0; i < pEmitter->particlePool->currentMaxParticleIndex; i++)
+		{
+			Particle* pParticle = &(pEmitter->particlePool->pPool[i]);
+			if (!pParticle->bIsAlive)
+				continue;
+
+			pParticle->lifeRemaining -= deltaTime;
+			if (pParticle->lifeRemaining < 0.0f)
+			{
+				pEmitter->particlePool->KillParticle(pParticle);
+				continue;
+			}
+
+			particleTransforms.push_back(pParticle->transform);
+		}
+
+
+		// Render particles
+		// ****************
+		if (particleTransforms.empty())
+			return;
+
+		// Update instance data
+		if (IsValid(pEmitter->instanceBuffer) || pEmitter->instanceBufferSize < particleTransforms.size())
+		{
+			pEmitter->instanceBufferSize = (int)particleTransforms.size() + 10;
+			pEmitter->instanceBuffer = GfxDevice::CreateDynamicVertexBuffer(particleTransforms.size(), sizeof(Matrixf), "Particles Instance Buffer");
+		}
+		GfxDevice::UpdateDynamicVertexBuffer(pEmitter->instanceBuffer, particleTransforms.data(), particleTransforms.size() * sizeof(Matrixf));
 		GfxDevice::BindProgram(pEmitter->shaderProgram);
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
@@ -78,11 +131,9 @@ void ParticlesSystem::OnFrame(Scene& scene)
 		Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f));
 		Matrixf projection = Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f);
 		Matrixf vp = projection * view;
-
-		// TODO: Consider using a flag here for picking a shader, so we don't have to do memcpy twice
 		ParticlesTransform trans{ vp };
 		GfxDevice::BindConstantBuffer(pEmitter->transBuffer, &trans, ShaderType::Vertex, 0);
 
-		GfxDevice::DrawInstanced(4, pEmitter->count, 0, 0);
+		GfxDevice::DrawInstanced(4, (int)particleTransforms.size(), 0, 0);
 	}
 }

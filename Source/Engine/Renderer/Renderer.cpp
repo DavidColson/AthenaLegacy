@@ -170,7 +170,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// Render particles
 	// ****************
 
-	ParticlesSystem::OnFrame(scene);
+	ParticlesSystem::OnFrame(scene, deltaTime);
 
 	// *********
 	// Render Text
