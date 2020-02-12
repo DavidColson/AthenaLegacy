@@ -12,6 +12,7 @@
 #include "RenderFont.h"
 #include "DebugDraw.h"
 #include "Scene.h"
+#include "Maths/Vec4.h"
 
 REFLECT_BEGIN(CDrawable)
 REFLECT_MEMBER(lineThickness)
@@ -19,6 +20,12 @@ REFLECT_END()
 
 REFLECT_BEGIN(CPostProcessing)
 REFLECT_END()
+
+
+struct ParticlesTransform
+{
+	Matrixf vp;
+};
 
 namespace
 {
@@ -32,6 +39,11 @@ namespace
   // Will eventually be a "material" type, assigned to drawables
   ProgramHandle baseShaderProgram;
 
+  ProgramHandle particleShaderProgram;
+  VertexBufferHandle particlesVertBuffer;
+  VertexBufferHandle particlesInstanceBuffer;
+  ConstBufferHandle particlesTransBuffer;
+
   // Need a separate font render system, which pre processes text
   // into meshes
   RenderFont* pFontRender;
@@ -42,9 +54,9 @@ void Renderer::OnGameStart(Scene& scene)
 	// Should be eventually moved to a material type when that exists
 	{
 		std::vector<VertexInputElement> baselayout;
-		baselayout.push_back({"POSITION", AttributeType::float3});
-		baselayout.push_back({"COLOR", AttributeType::float3 });
-		baselayout.push_back({"TEXCOORD", AttributeType::float2});
+		baselayout.push_back({"POSITION", AttributeType::Float3});
+		baselayout.push_back({"COLOR", AttributeType::Float3 });
+		baselayout.push_back({"TEXCOORD", AttributeType::Float2});
 
 		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout, "Base shape");
 		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain", "Base shape");
@@ -53,12 +65,49 @@ void Renderer::OnGameStart(Scene& scene)
 		baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
 	}
 
+	{
+		std::vector<VertexInputElement> particleLayout;
+		particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
+		particleLayout.push_back({"COLOR", AttributeType::Float3, 0 });
+		particleLayout.push_back({"TEXCOORD", AttributeType::Float2, 0 });
+		particleLayout.push_back({"INSTANCE_TRANSFORM", AttributeType::InstanceTransform, 1 });
+
+		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Particles.hlsl", "VSMain", particleLayout, "Particles");
+		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Particles.hlsl", "PSMain", "Particles");
+		particleShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+
+		std::vector<Vertex> quadVertices = {
+		  Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
+		  Vertex(Vec3f(-1.f, 1.f, 0.5f)),
+		  Vertex(Vec3f(1.f, -1.f, 0.5f)),
+		  Vertex(Vec3f(1.f, 1.f, 0.5f))
+		};
+		quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
+		quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
+		quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
+		quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
+
+		std::vector<Matrixf> particleTransforms;
+		for(int i = 0; i < 4; i++)
+		{
+			Matrixf posMat = Matrixf::Translate(Vec3f(200.0f + 50.0f * i, 200.0f, 0.0f));
+			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, 1.0f));
+			Matrixf scaMat = Matrixf::Scale(10.0f);
+			Matrixf world = posMat * rotMat * scaMat;
+			particleTransforms.push_back(world);
+		}
+		
+		particlesVertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Particles Vert Buffer");
+		particlesInstanceBuffer = GfxDevice::CreateVertexBuffer(particleTransforms.size(), sizeof(Matrixf), particleTransforms.data(), "Particles Instance Buffer");
+		particlesTransBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
+	}
+
 	// Create a program for drawing full screen quads to
 	{
 		std::vector<VertexInputElement> layout;
-		layout.push_back({"POSITION", AttributeType::float3});
-		layout.push_back({"COLOR", AttributeType::float3});
-		layout.push_back({"TEXCOORD", AttributeType::float2});
+		layout.push_back({"POSITION", AttributeType::Float3});
+		layout.push_back({"COLOR", AttributeType::Float3});
+		layout.push_back({"TEXCOORD", AttributeType::Float2});
 
 		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/FullScreenTexture.hlsl", "VSMain", layout, "Fullscreen quad");
 		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/FullScreenTexture.hlsl", "PSMain", "Fullscreen quad");
@@ -105,9 +154,9 @@ void Renderer::OnGameStart(Scene& scene)
 
 		// Compile and create post processing shaders
 		std::vector<VertexInputElement> layout;
-		layout.push_back({"POSITION", AttributeType::float3});
-		layout.push_back({"COLOR", AttributeType::float3});
-		layout.push_back({"TEXCOORD", AttributeType::float2});
+		layout.push_back({"POSITION", AttributeType::Float3});
+		layout.push_back({"COLOR", AttributeType::Float3});
+		layout.push_back({"TEXCOORD", AttributeType::Float2});
 
 		VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
 		PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain", "Post processing");
@@ -164,6 +213,28 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		}
 	}
 
+	{
+		GfxDevice::BindProgram(particleShaderProgram);
+		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
+
+		// Set vertex buffer as active
+		// Binding two buffers Here
+		VertexBufferHandle buffers[2];
+		buffers[0] = particlesVertBuffer;
+		buffers[1] = particlesInstanceBuffer;
+		GfxDevice::BindVertexBuffers(2, buffers);
+
+		Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f));
+		Matrixf projection = Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f);
+		Matrixf vp = projection * view;
+
+		// TODO: Consider using a flag here for picking a shader, so we don't have to do memcpy twice
+		ParticlesTransform trans{ vp };
+		GfxDevice::BindConstantBuffer(particlesTransBuffer, &trans, ShaderType::Vertex, 0);
+
+		GfxDevice::DrawInstanced(4, 4, 0, 0);
+	}
+
 	// *********
 	// Draw Text
 	// *********
@@ -199,7 +270,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 			// Bind bloom shader data
 			GfxDevice::BindProgram(pp->bloomShaderProgram);
-			GfxDevice::BindVertexBuffer(fullScreenQuad);
+			GfxDevice::BindVertexBuffers(1, &fullScreenQuad);
 			GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
 
 			CPostProcessing::BloomShaderData bloomData;
@@ -238,7 +309,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			GfxDevice::SetViewport(0, 0, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
 			GfxDevice::BindProgram(pp->postProcessShaderProgram);
-			GfxDevice::BindVertexBuffer(fullScreenQuad);
+			GfxDevice::BindVertexBuffers(1, &fullScreenQuad);
 
 			TextureHandle ppFrameTex = GfxDevice::GetTexture(preProcessedFrame);
 			GfxDevice::BindTexture(ppFrameTex, ShaderType::Pixel, 0);
@@ -266,7 +337,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		GfxDevice::BindProgram(fullScreenTextureProgram);
-		GfxDevice::BindVertexBuffer(fullScreenQuad);
+		GfxDevice::BindVertexBuffers(1, &fullScreenQuad);
 
 		TextureHandle tex = GfxDevice::GetTexture(preProcessedFrame);
 		GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);

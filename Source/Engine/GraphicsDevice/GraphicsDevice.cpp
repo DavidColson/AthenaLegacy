@@ -326,6 +326,11 @@ void GfxDevice::Draw(int numVerts, int startVertex)
 	pCtx->pDeviceContext->Draw(numVerts, startVertex);
 }
 
+void GfxDevice::DrawInstanced(int numVerts, int numInstances, int startVertex, int startInstance)
+{
+	pCtx->pDeviceContext->DrawInstanced(numVerts, numInstances, startVertex, startInstance);
+}
+
 // ***********************************************************************
 
 void GfxDevice::SetBlending(const BlendingInfo& info)
@@ -691,11 +696,17 @@ std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<V
 		// Todo: might want to replace with a lookup
 		switch(elem.type)
 		{
-			case AttributeType::float3:
-				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
+			case AttributeType::Float3:
+				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32B32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
 				break;
-			case AttributeType::float2:
-				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
+			case AttributeType::Float2:
+				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
+				break;
+			case AttributeType::InstanceTransform:
+				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
+				d3d11Layout.push_back( { elem.name, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
+				d3d11Layout.push_back( { elem.name, 2, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
+				d3d11Layout.push_back( { elem.name, 3, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
 				break;
 			default:
 				break;  
@@ -973,11 +984,22 @@ void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data,
 
 // ***********************************************************************
 
-void GfxDevice::BindVertexBuffer(VertexBufferHandle handle)
+void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle* handles)
 {
-	VertexBuffer& buffer = pCtx->vertexBuffers[handle.id];
-	UINT offset = 0;
-	pCtx->pDeviceContext->IASetVertexBuffers(0, 1, &buffer.pBuffer, &buffer.elementSize, &offset);
+	// Improvement: good opportunity for single frame allocator, or stack allocation here
+	std::vector<ID3D11Buffer*> pBuffers; pBuffers.reserve(nBuffers);
+	std::vector<UINT> offsets; offsets.reserve(nBuffers);
+	std::vector<UINT> strides; strides.reserve(nBuffers);
+
+	for (int i = 0; i < nBuffers; i++)
+	{
+		VertexBuffer& buffer = pCtx->vertexBuffers[handles[i].id];
+		
+		pBuffers.push_back(buffer.pBuffer);
+		offsets.push_back(0);
+		strides.push_back(buffer.elementSize);
+	}
+	pCtx->pDeviceContext->IASetVertexBuffers(0, (UINT)nBuffers, pBuffers.data(), strides.data(), offsets.data());
 }
 
 // ***********************************************************************

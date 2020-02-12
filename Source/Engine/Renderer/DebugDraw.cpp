@@ -85,8 +85,8 @@ void DebugDraw::Detail::Init()
 	}";
 
 	std::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION",AttributeType::float3});
-	layout.push_back({"COLOR", AttributeType::float3});
+	layout.push_back({"POSITION",AttributeType::Float3});
+	layout.push_back({"COLOR", AttributeType::Float3});
 
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Debug Draw");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Debug Draw");
@@ -130,7 +130,7 @@ void DebugDraw::Detail::DrawQueue()
 
 	GfxDevice::SetTopologyType(TopologyType::LineStrip);
 
-	GfxDevice::BindVertexBuffer(vertexBuffer);
+	GfxDevice::BindVertexBuffers(1, &vertexBuffer);
 	GfxDevice::BindIndexBuffer(indexBuffer);
 
 	int vertOffset = 0;

@@ -67,8 +67,9 @@ enum class ShaderType
 enum class AttributeType
 {
 	// Need to fill this out
-	float3,
-	float2
+	Float3,
+	Float2,
+	InstanceTransform,
 };
 
 enum class TextureFormat
@@ -108,6 +109,7 @@ struct VertexInputElement
 {
 	const char* name;
 	AttributeType type;
+	unsigned int slot{ 0 };
 };
 
 struct BlendingInfo
@@ -150,6 +152,8 @@ namespace GfxDevice
 
 	void Draw(int numVerts, int startVertex);
 
+	void DrawInstanced(int numVerts, int numInstances, int startVertex, int startInstance);
+
 	// Blend States
 
 	void SetBlending(const BlendingInfo& info);
@@ -162,7 +166,7 @@ namespace GfxDevice
 
 	void UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize);
 
-	void BindVertexBuffer(VertexBufferHandle handle);
+	void BindVertexBuffers(size_t nBuffers, VertexBufferHandle* handles);
 
 	// Index Buffers
 

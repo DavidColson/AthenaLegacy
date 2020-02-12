@@ -26,7 +26,7 @@ RenderProxy::RenderProxy(std::vector<Vertex> vertices, std::vector<int> indices,
 void RenderProxy::Draw()
 {
 	// Set vertex buffer as active
-	GfxDevice::BindVertexBuffer(vertBuffer);
+	GfxDevice::BindVertexBuffers(1, &vertBuffer);
 	GfxDevice::BindIndexBuffer(indexBuffer);
 
 	Matrixf posMat = Matrixf::Translate(pos);

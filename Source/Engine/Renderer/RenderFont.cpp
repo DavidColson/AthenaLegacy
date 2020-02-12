@@ -50,9 +50,9 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	}";
 
 	std::vector<VertexInputElement> layout;
-  layout.push_back({"POSITION", AttributeType::float3});
-  layout.push_back({"COLOR", AttributeType::float3});
-  layout.push_back({"TEXCOORD", AttributeType::float2});
+  layout.push_back({"POSITION", AttributeType::Float3});
+  layout.push_back({"COLOR", AttributeType::Float3});
+  layout.push_back({"TEXCOORD", AttributeType::Float2});
 
   VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout, "Fonts");
   PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
@@ -122,7 +122,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 	// Set vertex buffer as active
-	GfxDevice::BindVertexBuffer(quadBuffer);
+	GfxDevice::BindVertexBuffers(1, &quadBuffer);
 
 	// Set Shaders to active
 	GfxDevice::BindProgram(fontShaderProgram);
