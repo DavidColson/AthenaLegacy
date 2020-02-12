@@ -13,6 +13,7 @@
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
 #include <ThirdParty/Imgui/imgui.h>
+#include <ParticlesSystem.h>
 #include <TypeSystem.h>
 #include <AudioDevice/AudioDevice.h>
 
@@ -152,6 +153,7 @@ struct Asteroids : public IGame
 		EntityID ship = scene.NewEntity("Player Ship");
 		ASSERT(ship == PLAYER_ID, "Player must be spawned first");
 		CTransform* pTransform = scene.Assign<CTransform>(ship);
+		scene.Assign<CParticleEmitter>(ship);
 
 		const float w = GfxDevice::GetWindowWidth();
 		const float h = GfxDevice::GetWindowHeight();

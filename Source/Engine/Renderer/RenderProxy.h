@@ -6,15 +6,6 @@
 
 #include <vector>
 
-struct Vertex
-{
-	Vertex(Vec3f _pos) : pos(_pos) {}
-
-	Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec2f texCoords{ Vec2f(0.0f, 0.0f) };
-};
-
 struct RenderProxy
 {
 	RenderProxy() {};

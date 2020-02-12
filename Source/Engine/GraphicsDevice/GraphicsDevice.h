@@ -3,6 +3,9 @@
 #include <array>
 #include <vector>
 
+#include "Maths/Vec2.h"
+#include "Maths/Vec3.h"
+
 // *************************
 // Graphics Driver Interface
 // *************************
@@ -11,6 +14,15 @@ struct SDL_Window;
 
 class RenderFont;
 struct Context;
+
+struct Vertex
+{
+	Vertex(Vec3f _pos) : pos(_pos) {}
+
+	Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
+	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
+	Vec2f texCoords{ Vec2f(0.0f, 0.0f) };
+};
 
 enum class TopologyType
 {

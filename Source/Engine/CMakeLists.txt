@@ -32,6 +32,8 @@ set(SOURCES
     "Renderer/RenderFont.cpp"
     "Renderer/DebugDraw.h"
     "Renderer/DebugDraw.cpp"
+    "ParticlesSystem.h"
+    "ParticlesSystem.cpp"
     "GraphicsDevice/GraphicsDevice.h"
     "GraphicsDevice/GraphicsDevice.cpp"
     "AudioDevice/AudioDevice.h"

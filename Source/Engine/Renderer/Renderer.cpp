@@ -13,6 +13,7 @@
 #include "DebugDraw.h"
 #include "Scene.h"
 #include "Maths/Vec4.h"
+#include "ParticlesSystem.h"
 
 REFLECT_BEGIN(CDrawable)
 REFLECT_MEMBER(lineThickness)
@@ -20,12 +21,6 @@ REFLECT_END()
 
 REFLECT_BEGIN(CPostProcessing)
 REFLECT_END()
-
-
-struct ParticlesTransform
-{
-	Matrixf vp;
-};
 
 namespace
 {
@@ -38,11 +33,6 @@ namespace
 
   // Will eventually be a "material" type, assigned to drawables
   ProgramHandle baseShaderProgram;
-
-  ProgramHandle particleShaderProgram;
-  VertexBufferHandle particlesVertBuffer;
-  VertexBufferHandle particlesInstanceBuffer;
-  ConstBufferHandle particlesTransBuffer;
 
   // Need a separate font render system, which pre processes text
   // into meshes
@@ -63,43 +53,6 @@ void Renderer::OnGameStart(Scene& scene)
 		GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain", "Base shape");
 
 		baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
-	}
-
-	{
-		std::vector<VertexInputElement> particleLayout;
-		particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
-		particleLayout.push_back({"COLOR", AttributeType::Float3, 0 });
-		particleLayout.push_back({"TEXCOORD", AttributeType::Float2, 0 });
-		particleLayout.push_back({"INSTANCE_TRANSFORM", AttributeType::InstanceTransform, 1 });
-
-		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Particles.hlsl", "VSMain", particleLayout, "Particles");
-		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Particles.hlsl", "PSMain", "Particles");
-		particleShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
-
-		std::vector<Vertex> quadVertices = {
-		  Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
-		  Vertex(Vec3f(-1.f, 1.f, 0.5f)),
-		  Vertex(Vec3f(1.f, -1.f, 0.5f)),
-		  Vertex(Vec3f(1.f, 1.f, 0.5f))
-		};
-		quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
-		quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
-		quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
-		quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-
-		std::vector<Matrixf> particleTransforms;
-		for(int i = 0; i < 4; i++)
-		{
-			Matrixf posMat = Matrixf::Translate(Vec3f(200.0f + 50.0f * i, 200.0f, 0.0f));
-			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, 1.0f));
-			Matrixf scaMat = Matrixf::Scale(10.0f);
-			Matrixf world = posMat * rotMat * scaMat;
-			particleTransforms.push_back(world);
-		}
-		
-		particlesVertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Particles Vert Buffer");
-		particlesInstanceBuffer = GfxDevice::CreateVertexBuffer(particleTransforms.size(), sizeof(Matrixf), particleTransforms.data(), "Particles Instance Buffer");
-		particlesTransBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
 	}
 
 	// Create a program for drawing full screen quads to
@@ -134,6 +87,8 @@ void Renderer::OnGameStart(Scene& scene)
 	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
 	DebugDraw::Detail::Init();
+
+	ParticlesSystem::OnSceneStart(scene);
 
 	// *****************
 	// Post processing
@@ -205,38 +160,20 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			CDrawable* pDrawable = scene.Get<CDrawable>(ent);
 			CTransform* pTransform = scene.Get<CTransform>(ent);
 
-			GfxDevice::SetDebugMarker("Jonny Young");
-
 			pDrawable->renderProxy.SetTransform(pTransform->pos, pTransform->rot, pTransform->sca);
 			pDrawable->renderProxy.lineThickness = pDrawable->lineThickness;
 			pDrawable->renderProxy.Draw();
 		}
 	}
 
-	{
-		GfxDevice::BindProgram(particleShaderProgram);
-		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
+	// ****************
+	// Render particles
+	// ****************
 
-		// Set vertex buffer as active
-		// Binding two buffers Here
-		VertexBufferHandle buffers[2];
-		buffers[0] = particlesVertBuffer;
-		buffers[1] = particlesInstanceBuffer;
-		GfxDevice::BindVertexBuffers(2, buffers);
-
-		Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f));
-		Matrixf projection = Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f);
-		Matrixf vp = projection * view;
-
-		// TODO: Consider using a flag here for picking a shader, so we don't have to do memcpy twice
-		ParticlesTransform trans{ vp };
-		GfxDevice::BindConstantBuffer(particlesTransBuffer, &trans, ShaderType::Vertex, 0);
-
-		GfxDevice::DrawInstanced(4, 4, 0, 0);
-	}
+	ParticlesSystem::OnFrame(scene);
 
 	// *********
-	// Draw Text
+	// Render Text
 	// *********
 
 	// Ideally font is just another mesh with a material to draw
