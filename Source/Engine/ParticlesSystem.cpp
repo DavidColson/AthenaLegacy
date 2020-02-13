@@ -2,11 +2,16 @@
 
 #include "Scene.h"
 #include "Maths/Matrix.h"
+#include "Maths/Maths.h"
 
 REFLECT_BEGIN(CParticleEmitter)
-REFLECT_MEMBER(initial_count)
-REFLECT_MEMBER(per_frame)
+REFLECT_MEMBER(looping)
 REFLECT_MEMBER(lifetime)
+REFLECT_MEMBER(initialCount)
+REFLECT_MEMBER(initialVelocityMin)
+REFLECT_MEMBER(initialVelocityMax)
+REFLECT_MEMBER(initialRotationMin)
+REFLECT_MEMBER(initialRotationMax)
 REFLECT_END()
 
 struct ParticlesTransform
@@ -14,28 +19,38 @@ struct ParticlesTransform
 	Matrixf vp;
 };
 
+void StartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
+{
+	// Create initial particles
+	for (size_t i = 0; i < emitter.initialCount; i++)
+	{
+		Particle* pNewParticle = emitter.particlePool->NewParticle();
+		pNewParticle->lifeRemaining = emitter.lifetime;
+
+		auto randf = []() { return float(rand()) / float(RAND_MAX); };
+
+		pNewParticle->position = Vec2f::Project3D(emitterTransform.pos);
+		pNewParticle->rotation = LinearMap(randf(), 0.0f, 1.0f, emitter.initialRotationMin, emitter.initialRotationMax);
+		pNewParticle->scale = Vec2f(5.0f, 5.0f);
+
+		Vec2f initialVelocity;
+		initialVelocity.x = LinearMap(randf(), 0.0f, 1.0f, emitter.initialVelocityMin.x, emitter.initialVelocityMax.x);
+		initialVelocity.y = LinearMap(randf(), 0.0f, 1.0f, emitter.initialVelocityMin.y, emitter.initialVelocityMax.y);
+		pNewParticle->velocity = initialVelocity;
+	}
+}
+
 void ParticlesSystem::OnSceneStart(Scene& scene)
 {
 	// loop through particle emitters in the scene, initializing their data correctly
-	for (EntityID ent : SceneView<CParticleEmitter>(scene))
+	for (EntityID ent : SceneView<CParticleEmitter, CTransform>(scene))
 	{
+		CTransform* pTrans = scene.Get<CTransform>(ent);
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
 		pEmitter->particlePool = std::make_unique<ParticlePool>();
-
-		// Create initial particles
-		for (size_t i = 0; i < pEmitter->initial_count; i++)
-		{
-			Particle* pNewParticle = pEmitter->particlePool->NewParticle();
-
-			Vec3f randomLocation = Vec3f(200.0f + float(rand() % 200), 200.0f + float(rand() % 200), 0.0f);
-			Matrixf posMat = Matrixf::Translate(randomLocation);
-			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, 1.0f));
-			Matrixf scaMat = Matrixf::Scale(10.0f);
-			Matrixf world = posMat * rotMat * scaMat;
-			pNewParticle->transform = world;
-			pNewParticle->lifeRemaining = pEmitter->lifetime;
-		}
 		
+		StartEmitter(*pEmitter, *pTrans);
+
 		// @TODO: debug names should be derivative of the entity name
 		std::vector<VertexInputElement> particleLayout;
 		particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
@@ -65,26 +80,10 @@ void ParticlesSystem::OnSceneStart(Scene& scene)
 
 void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 {
-	for (EntityID ent : SceneView<CParticleEmitter>(scene))
+	for (EntityID ent : SceneView<CParticleEmitter, CTransform>(scene))
 	{
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
-
-		// Spawn new particles this frame
-		// ******************************
-		for (size_t i = 0; i < pEmitter->per_frame; i++)
-		{
-			Particle* pNewParticle = pEmitter->particlePool->NewParticle();
-			if (pNewParticle)
-			{
-				Vec3f randomLocation = Vec3f(200.0f + float(rand() % 200), 200.0f + float(rand() % 200), 0.0f);
-				Matrixf posMat = Matrixf::Translate(randomLocation);
-				Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, 1.0f));
-				Matrixf scaMat = Matrixf::Scale(10.0f);
-				Matrixf world = posMat * rotMat * scaMat;
-				pNewParticle->transform = world;
-				pNewParticle->lifeRemaining = pEmitter->lifetime;
-			}
-		}
+		CTransform* pTrans = scene.Get<CTransform>(ent);
 
 		// Simulate particles and update transforms
 		// ****************************************
@@ -102,14 +101,27 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 				continue;
 			}
 
-			particleTransforms.push_back(pParticle->transform);
+			pParticle->position += pParticle->velocity * deltaTime;
+
+			Matrixf posMat = Matrixf::Translate(Vec3f::Embed2D(pParticle->position));
+			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, pParticle->rotation));
+			Matrixf scaMat = Matrixf::Scale(Vec3f::Embed2D(pParticle->scale));
+			Matrixf world = posMat * rotMat * scaMat;
+			particleTransforms.push_back(world);
 		}
 
+		// If a looping emitter, and all particles are dead, reset it
+		// **********************************************************
+		if (particleTransforms.empty())
+		{
+			if (pEmitter->looping == true)
+				StartEmitter(*pEmitter, *pTrans);
+
+			continue;
+		}
 
 		// Render particles
 		// ****************
-		if (particleTransforms.empty())
-			return;
 
 		// Update instance data
 		if (IsValid(pEmitter->instanceBuffer) || pEmitter->instanceBufferSize < particleTransforms.size())

@@ -12,8 +12,12 @@ struct Scene;
 struct Particle
 {
 	bool bIsAlive{ false };
-	Matrixf transform;
 	float lifeRemaining{ 0.0f };
+
+	Vec2f position{ 0.0f, 0.0f };
+	Vec2f scale{ 0.0f, 0.0f };
+	float rotation{ 0.0f };
+	Vec2f velocity{ 0.0f, 0.0f };
 };
 
 struct ParticlePool
@@ -53,9 +57,13 @@ struct ParticlePool
 
 struct CParticleEmitter
 {
-	int initial_count{ 16 };
-	int per_frame{ 2 };
-	float lifetime{ 0.1f };
+	bool looping{ true };
+	float lifetime{ 1.f };
+	int initialCount{ 16 };
+	Vec2f initialVelocityMin{ -100.0f, -100.0f};
+	Vec2f initialVelocityMax{ 100.0f, 100.0f };
+	float initialRotationMin{ 0.f };
+	float initialRotationMax{ 0.f };
 
 	ProgramHandle shaderProgram;
   	VertexBufferHandle vertBuffer;
