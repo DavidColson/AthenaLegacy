@@ -105,13 +105,13 @@ void DebugDraw::Detail::DrawQueue()
 	if (drawQueue.empty())
 		return;
 
-	if (IsValid(vertexBuffer) || vertBufferSize < vertBufferData.size())
+	if (!IsValid(vertexBuffer) || vertBufferSize < vertBufferData.size())
 	{
 		vertBufferSize = (int)vertBufferData.size() + 1000;
 		vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(vertBufferSize, sizeof(DebugVertex), "Debug Drawer");
 	}
 
-	if (IsValid(indexBuffer) || indexBufferSize < indexBufferData.size())
+	if (!IsValid(indexBuffer) || indexBufferSize < indexBufferData.size())
 	{
 		indexBufferSize = (int)indexBufferData.size() + 1000;
 		indexBuffer = GfxDevice::CreateDynamicIndexBuffer(indexBufferSize, "Debug Drawer");

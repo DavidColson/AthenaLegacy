@@ -47,7 +47,9 @@ void ParticlesSystem::OnSceneStart(Scene& scene)
 	{
 		CTransform* pTrans = scene.Get<CTransform>(ent);
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
-		pEmitter->particlePool = std::make_unique<ParticlePool>();
+
+		if (!pEmitter->particlePool)
+			pEmitter->particlePool = std::make_unique<ParticlePool>();
 		
 		StartEmitter(*pEmitter, *pTrans);
 
@@ -124,8 +126,9 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		// ****************
 
 		// Update instance data
-		if (IsValid(pEmitter->instanceBuffer) || pEmitter->instanceBufferSize < particleTransforms.size())
+		if (!IsValid(pEmitter->instanceBuffer) || pEmitter->instanceBufferSize < particleTransforms.size())
 		{
+			// TODO: release buffer before creating
 			pEmitter->instanceBufferSize = (int)particleTransforms.size() + 10;
 			pEmitter->instanceBuffer = GfxDevice::CreateDynamicVertexBuffer(particleTransforms.size(), sizeof(Matrixf), "Particles Instance Buffer");
 		}
