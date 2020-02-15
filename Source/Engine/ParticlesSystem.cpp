@@ -12,6 +12,8 @@ REFLECT_MEMBER(initialVelocityMin)
 REFLECT_MEMBER(initialVelocityMax)
 REFLECT_MEMBER(initialRotationMin)
 REFLECT_MEMBER(initialRotationMax)
+REFLECT_MEMBER(initialScaleMin)
+REFLECT_MEMBER(initialScaleMax)
 REFLECT_END()
 
 struct ParticlesTransform
@@ -19,7 +21,35 @@ struct ParticlesTransform
 	Matrixf vp;
 };
 
-void StartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
+void InitializeEmitter(CParticleEmitter& emitter)
+{
+	// @TODO: debug names should be derivative of the entity name
+	std::vector<VertexInputElement> particleLayout;
+	particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
+	particleLayout.push_back({"COLOR", AttributeType::Float3, 0 });
+	particleLayout.push_back({"TEXCOORD", AttributeType::Float2, 0 });
+	particleLayout.push_back({"INSTANCE_TRANSFORM", AttributeType::InstanceTransform, 1 });
+
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Particles.hlsl", "VSMain", particleLayout, "Particles");
+	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Particles.hlsl", "PSMain", "Particles");
+	emitter.shaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+
+	std::vector<Vertex> quadVertices = {
+		Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
+		Vertex(Vec3f(-1.f, 1.f, 0.5f)),
+		Vertex(Vec3f(1.f, -1.f, 0.5f)),
+		Vertex(Vec3f(1.f, 1.f, 0.5f))
+	};
+	quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
+	quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
+	quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
+	quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
+	
+	emitter.vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Particles Vert Buffer");
+	emitter.transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
+}
+
+void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 {
 	// Create initial particles
 	for (size_t i = 0; i < emitter.initialCount; i++)
@@ -36,48 +66,15 @@ void StartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 		Vec2f initialVelocity;
 		initialVelocity.x = LinearMap(randf(), 0.0f, 1.0f, emitter.initialVelocityMin.x, emitter.initialVelocityMax.x);
 		initialVelocity.y = LinearMap(randf(), 0.0f, 1.0f, emitter.initialVelocityMin.y, emitter.initialVelocityMax.y);
+
+		float scale = LinearMap(randf(), 0.0f, 1.0f, emitter.initialScaleMin, emitter.initialScaleMax); 
+		pNewParticle->scale = Vec2f(scale);
 		pNewParticle->velocity = initialVelocity;
 	}
 }
 
 void ParticlesSystem::OnSceneStart(Scene& scene)
 {
-	// loop through particle emitters in the scene, initializing their data correctly
-	for (EntityID ent : SceneView<CParticleEmitter, CTransform>(scene))
-	{
-		CTransform* pTrans = scene.Get<CTransform>(ent);
-		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
-
-		if (!pEmitter->particlePool)
-			pEmitter->particlePool = std::make_unique<ParticlePool>();
-		
-		StartEmitter(*pEmitter, *pTrans);
-
-		// @TODO: debug names should be derivative of the entity name
-		std::vector<VertexInputElement> particleLayout;
-		particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
-		particleLayout.push_back({"COLOR", AttributeType::Float3, 0 });
-		particleLayout.push_back({"TEXCOORD", AttributeType::Float2, 0 });
-		particleLayout.push_back({"INSTANCE_TRANSFORM", AttributeType::InstanceTransform, 1 });
-
-		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Particles.hlsl", "VSMain", particleLayout, "Particles");
-		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Particles.hlsl", "PSMain", "Particles");
-		pEmitter->shaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
-
-		std::vector<Vertex> quadVertices = {
-		  Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
-		  Vertex(Vec3f(-1.f, 1.f, 0.5f)),
-		  Vertex(Vec3f(1.f, -1.f, 0.5f)),
-		  Vertex(Vec3f(1.f, 1.f, 0.5f))
-		};
-		quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
-		quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
-		quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
-		quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-		
-		pEmitter->vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Particles Vert Buffer");
-		pEmitter->transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
-	}
 }
 
 void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
@@ -86,6 +83,15 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 	{
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);
+
+		// Initialize new particle emitters this frame
+		// ****************************************
+		if (!pEmitter->particlePool)
+		{
+			InitializeEmitter(*pEmitter);
+			pEmitter->particlePool = std::make_unique<ParticlePool>();
+			RestartEmitter(*pEmitter, *pTrans);
+		}
 
 		// Simulate particles and update transforms
 		// ****************************************
@@ -117,7 +123,9 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		if (particleTransforms.empty())
 		{
 			if (pEmitter->looping == true)
-				StartEmitter(*pEmitter, *pTrans);
+				RestartEmitter(*pEmitter, *pTrans);
+			else if (pEmitter->destroyEntityOnEnd == true)
+				scene.DestroyEntity(ent);
 
 			continue;
 		}

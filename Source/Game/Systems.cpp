@@ -10,6 +10,7 @@
 #include <Input/Input.h>
 #include <Utility.h>
 #include <Profiler.h>
+#include <ParticlesSystem.h>
 
 
 // **********
@@ -63,6 +64,11 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 	AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->explosionSound, 1.0f, false);
 		
 	scene.Get<CText>(scoreEnt)->text = StringFormat("%i", pPlayerScore->score);
+
+	// Spawn death particles
+	EntityID particles = scene.NewEntity("Asteroid Particles");
+	scene.Assign<CTransform>(particles)->pos = scene.Get<CTransform>(asteroid)->pos;
+	scene.Assign<CParticleEmitter>(particles);
 
 	// Asteroid vs bullet collision
 	if (scene.Get<CAsteroid>(asteroid)->hitCount >= 2) // Smallest type asteroid, destroy and return

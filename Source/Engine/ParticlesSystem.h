@@ -57,13 +57,16 @@ struct ParticlePool
 
 struct CParticleEmitter
 {
-	bool looping{ true };
-	float lifetime{ 1.f };
+	bool looping{ false };
+	bool destroyEntityOnEnd{ true };
+	float lifetime{ 0.7f };
 	int initialCount{ 16 };
-	Vec2f initialVelocityMin{ -100.0f, -100.0f};
-	Vec2f initialVelocityMax{ 100.0f, 100.0f };
+	Vec2f initialVelocityMin{ -70.0f, -70.0f};
+	Vec2f initialVelocityMax{ 70.0f, 70.0f };
 	float initialRotationMin{ 0.f };
-	float initialRotationMax{ 0.f };
+	float initialRotationMax{ 3.14159f };
+	float initialScaleMin{ 2.0f };
+	float initialScaleMax{ 4.5f };
 
 	ProgramHandle shaderProgram;
   	VertexBufferHandle vertBuffer;
