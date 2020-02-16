@@ -45,8 +45,13 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
-void Engine::Run(IGame* pGame, Scene *pScene)
-{	
+void Engine::SetActiveScene(Scene* pScene)
+{
+	pCurrentScene = pScene;
+}
+
+void Engine::Initialize()
+{
 	// Startup flow
 	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 
@@ -54,7 +59,7 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 	float height = 1000.0f;
 
 	g_pWindow = SDL_CreateWindow(
-		"DirectX",
+		"Asteroids",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		int(width),
@@ -65,18 +70,19 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 	Log::Print(Log::EMsg, "Engine starting up");
 	Log::Print(Log::EMsg, "Window size W: %.1f H: %.1f", width, height);
 
-	pCurrentScene = pScene;
-
 	GfxDevice::Initialize(g_pWindow, width, height);
-	Input::CreateInputState();
-
-	g_pGame = pGame;
-	pGame->OnStart(*pCurrentScene);
-
-	Renderer::OnGameStart(*pCurrentScene);
-	
 	AudioDevice::Initialize();
+	Input::CreateInputState();
+}
 
+void Engine::Run(IGame* pGame, Scene *pScene)
+{	
+	pCurrentScene = pScene;
+	g_pGame = pGame;
+
+	// Move to a SceneStartFunction
+	Renderer::OnGameStart_Deprecated(*pCurrentScene);
+	
 	// Game update loop
 	double frameTime = 0.016f;
 	double targetFrameTime = 0.016f;
@@ -112,7 +118,6 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 	}
 
 	// Shutdown everything
-	g_pGame->OnEnd(*pCurrentScene);
 	AudioDevice::Destroy();
 	Renderer::OnGameEnd();
 

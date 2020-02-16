@@ -73,10 +73,6 @@ void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 	}
 }
 
-void ParticlesSystem::OnSceneStart(Scene& scene)
-{
-}
-
 void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 {
 	for (EntityID ent : SceneView<CParticleEmitter, CTransform>(scene))

@@ -81,7 +81,5 @@ struct CParticleEmitter
 
 namespace ParticlesSystem
 {
-	void OnSceneStart(Scene& scene);
-
 	void OnFrame(Scene& scene, float deltaTime);
 }

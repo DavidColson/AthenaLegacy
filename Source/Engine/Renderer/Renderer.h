@@ -12,7 +12,7 @@ struct Scene;
 namespace Renderer
 {
 	// Render System callbacks
-	void OnGameStart(Scene& scene); // should eventually be unecessary, moved to other systems/components
+	void OnGameStart_Deprecated(Scene& scene); // should eventually be unecessary, moved to other systems/components
 
 	void OnFrameStart();
 
@@ -56,6 +56,8 @@ struct CPostProcessing
 	ProgramHandle bloomShaderProgram;
 	ConstBufferHandle postProcessDataBuffer;
 	ConstBufferHandle bloomDataBuffer;
+
+	bool bInitialized{ false };
 
 	REFLECT()
 };

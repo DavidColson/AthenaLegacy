@@ -17,7 +17,8 @@ namespace {
 	bool showLog = false;
 	bool showEntityInspector = false;
 	bool showEntityList = false;
-	bool showFrameStats = true;
+	bool showFrameStats = false;
+	bool showImGuiDemo = false;
 	EntityID selectedEntity = -1;
 
 	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
@@ -191,7 +192,7 @@ void Editor::OnFrame(Scene& scene, bool& shutdown, double realFrameTime, double 
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Pause")) {}
+			if (ImGui::MenuItem("Show Imgui Demo")) { showImGuiDemo = !showImGuiDemo; }
 			ImGui::Separator();
 			if (ImGui::MenuItem("Quit")) { shutdown = true; }
 			ImGui::EndMenu();
@@ -211,5 +212,6 @@ void Editor::OnFrame(Scene& scene, bool& shutdown, double realFrameTime, double 
 	ShowEntityInspector(scene);
 	ShowEntityList(scene);
 	ShowFrameStats(realFrameTime, observedFrameTime);
-	// ImGui::ShowDemoWindow();
+	if (showImGuiDemo)
+		ImGui::ShowDemoWindow();
 }
