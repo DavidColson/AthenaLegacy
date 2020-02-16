@@ -80,7 +80,7 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	// **********************************************
 
 	wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Font transforms");
-	charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Font char");
+	charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
 
 	for (int i = 0; i < 128; i++)
 	{

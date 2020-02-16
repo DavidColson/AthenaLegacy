@@ -227,8 +227,34 @@ Scene* CreateMainMenuScene()
 
 	EntityID titleText =scene.NewEntity("Main Menu Title");
 	scene.Assign<CText>(titleText)->text = "Asteroids!";
-	scene.Assign<CTransform>(titleText)->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+	scene.Assign<CTransform>(titleText)->pos = Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f);
 	scene.Assign<CPostProcessing>(titleText);
+
+	EntityID startOption =scene.NewEntity("Start Option");
+	scene.Assign<CText>(startOption)->text = "Start";
+	scene.Assign<CTransform>(startOption)->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+	scene.Assign<CPostProcessing>(startOption);
+
+	EntityID quitOption =scene.NewEntity("Quit Option");
+	scene.Assign<CText>(quitOption)->text = "Quit";
+	scene.Assign<CTransform>(quitOption)->pos = Vec3f(w / 2.0f, h / 2.0f - 50.0f, 0.0f);
+	scene.Assign<CPostProcessing>(quitOption);
+
+	EntityID buttonSelector =scene.NewEntity("Button Selector");
+	RenderProxy buttonSelectorMesh = RenderProxy(
+		{
+			Vertex(Vec3f(0.f, 0.0f, 0.f)),
+			Vertex(Vec3f(0.7f, 0.5f, 0.f)),
+			Vertex(Vec3f(0.f, 1.f, 0.f)),
+		}, {
+			// Note, has adjacency data
+			2, 0, 1, 2, 0, 1
+		}, "ButtonSelector");
+
+	scene.Assign<CDrawable>(buttonSelector)->renderProxy = buttonSelectorMesh;
+	CTransform* pTransform = scene.Assign<CTransform>(buttonSelector);
+	pTransform->pos = Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f);
+	pTransform->sca = Vec3f(30.f, 30.0f, 1.0f);
 
 	return &scene;
 }
@@ -284,7 +310,7 @@ int main(int argc, char *argv[])
 	pMainMenuScene = CreateMainMenuScene();
 
 	// Run everything
-	Engine::Run(new Asteroids(), pMainScene);
+	Engine::Run(new Asteroids(), pMainMenuScene);
 
 	return 0;
 }
