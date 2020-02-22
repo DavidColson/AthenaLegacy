@@ -1,5 +1,6 @@
 
 #include "Input.h"
+#include "Engine.h"
 
 #include <windows.h>
 #include <ThirdParty/Imgui/imgui.h>
@@ -27,8 +28,10 @@ bool Input::GetKeyHeld(int keyCode)
 	return pInput->keyStates[keyCode];
 }
 
-void Input::OnFrame(bool& shutdownEngine)
+void Input::OnFrame(Scene& scene, float deltaTime)
 {
+	// TODO: This should be storing input state in a singleton component
+	
 	std::bitset<NKEYS> prevKeyStates = pInput->keyStates;
 	
 	// Copy the SDL keystate into our own bitset
@@ -53,7 +56,7 @@ void Input::OnFrame(bool& shutdownEngine)
 		ImGui_ImplSDL2_ProcessEvent(&event);
 		switch (event.type) {
 		case SDL_QUIT:
-			shutdownEngine = true;
+			Engine::StartShutdown();
 			break;
 		}
 	}

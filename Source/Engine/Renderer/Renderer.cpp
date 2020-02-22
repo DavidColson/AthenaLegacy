@@ -91,7 +91,7 @@ void Renderer::OnGameStart_Deprecated(Scene& scene)
 	DebugDraw::Detail::Init();
 }
 
-void Renderer::OnFrameStart()
+void Renderer::OnFrameStart(Scene& scene, float deltaTime)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplSDL2_NewFrame(GfxDevice::GetWindow());

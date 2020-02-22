@@ -2,12 +2,13 @@
 
 #include "SDL.h"
 
-struct IGame;
 struct Scene;
 
 namespace Engine
 {
 	void Initialize();
-	void Run(IGame* pGame, Scene* pInitialScene);
+	void Run(Scene* pInitialScene);
 	void SetActiveScene(Scene* pScene);
+	void GetFrameRates(double& outReal, double& outLimited);
+	void StartShutdown();
 }

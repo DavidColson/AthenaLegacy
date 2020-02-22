@@ -4,5 +4,5 @@ struct Scene;
 
 namespace Editor
 {
-	void OnFrame(Scene& scene, bool& shutdown, double realFrameTime, double observedFrameTime);
+	void OnFrame(Scene& scene, float deltaTime);
 }

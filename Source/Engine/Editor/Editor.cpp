@@ -6,6 +6,7 @@
 #include "Maths/Vec3.h"
 #include "Maths/Vec2.h"
 #include "Profiler.h"
+#include "Engine.h"
 
 #include <vector>
 #include <string>
@@ -149,10 +150,14 @@ void ShowEntityList(Scene& scene)
 	ImGui::End();
 }
 
-void ShowFrameStats(double realFrameTime, double observedFrameTime)
+void ShowFrameStats()
 {
 	if (!showFrameStats)
 		return;
+
+	double realFrameTime;
+	double observedFrameTime;
+	Engine::GetFrameRates(realFrameTime, observedFrameTime);
 
 	if (++frameStatsCounter > 30)
 	{
@@ -163,24 +168,26 @@ void ShowFrameStats(double realFrameTime, double observedFrameTime)
 
 	ImGui::Begin("Frame Stats", &showFrameStats);
 
-  ImGui::Text("Real frame time %.6f ms/frame (%.3f FPS)", oldRealFrameTime * 1000.0, 1.0 / oldRealFrameTime);
-  ImGui::Text("Observed frame time %.6f ms/frame (%.3f FPS)", oldObservedFrameTime * 1000.0, 1.0 / oldObservedFrameTime);
+	ImGui::Text("Real frame time %.6f ms/frame (%.3f FPS)", oldRealFrameTime * 1000.0, 1.0 / oldRealFrameTime);
+	ImGui::Text("Observed frame time %.6f ms/frame (%.3f FPS)", oldObservedFrameTime * 1000.0, 1.0 / oldObservedFrameTime);
 
-  ImGui::Separator();
+	ImGui::Separator();
 
-  std::vector<Profiler::ScopeData>& data = Profiler::GetFrameData();
-  for (size_t i = 0; i < data.size(); ++i)
-  {
-  	// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
-  	// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
-  	double inMs = data[i].time * 1000.0;
-  	ImGui::Text(StringFormat("%s - %fms/frame", data[i].name, inMs).c_str());
-  }
+	std::vector<Profiler::ScopeData>& data = Profiler::GetFrameData();
+	for (size_t i = 0; i < data.size(); ++i)
+	{
+		// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
+		// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
+		double inMs = data[i].time * 1000.0;
+		ImGui::Text(StringFormat("%s - %fms/frame", data[i].name, inMs).c_str());
+	}
 
 	ImGui::End();
+
+	Profiler::ClearFrameData();
 }
 
-void Editor::OnFrame(Scene& scene, bool& shutdown, double realFrameTime, double observedFrameTime)
+void Editor::OnFrame(Scene& scene, float deltaTime)
 {
 	if (Input::GetKeyDown(SDL_SCANCODE_F8))
 		showEditor = !showEditor;
@@ -194,7 +201,7 @@ void Editor::OnFrame(Scene& scene, bool& shutdown, double realFrameTime, double 
 		{
 			if (ImGui::MenuItem("Show Imgui Demo")) { showImGuiDemo = !showImGuiDemo; }
 			ImGui::Separator();
-			if (ImGui::MenuItem("Quit")) { shutdown = true; }
+			if (ImGui::MenuItem("Quit")) { Engine::StartShutdown(); }
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Editors"))
@@ -211,7 +218,7 @@ void Editor::OnFrame(Scene& scene, bool& shutdown, double realFrameTime, double 
 	ShowLog();
 	ShowEntityInspector(scene);
 	ShowEntityList(scene);
-	ShowFrameStats(realFrameTime, observedFrameTime);
+	ShowFrameStats();
 	if (showImGuiDemo)
 		ImGui::ShowDemoWindow();
 }

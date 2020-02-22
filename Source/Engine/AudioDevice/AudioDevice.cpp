@@ -221,10 +221,6 @@ void AudioDevice::UnPauseSound(SoundID sound)
     SDL_UnlockAudioDevice(device);
 }
 
-void AudioDevice::Update()
-{
-}
-
 void AudioDevice::Destroy()
 {
 	for (LoadedSound& sound : loadedSounds)

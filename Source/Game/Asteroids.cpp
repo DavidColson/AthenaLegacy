@@ -8,7 +8,6 @@
 #include <Scene.h>
 #include <Engine.h>
 #include <Input/Input.h>
-#include <IGame.h>
 #include <Profiler.h>
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
@@ -42,6 +41,11 @@ REFLECT_END()
 Scene* CreateMainAsteroidsScene()
 {
 	Scene& scene = *(new Scene());
+
+	scene.RegisterSystem(SystemPhase::Update, ShipControlSystemUpdate);
+	scene.RegisterSystem(SystemPhase::Update, MovementSystemUpdate);
+	scene.RegisterSystem(SystemPhase::Update, CollisionSystemUpdate);
+	scene.RegisterSystem(SystemPhase::Update, InvincibilitySystemUpdate);
 
 	Game::g_asteroidMeshes.emplace_back(RenderProxy(
 		{
@@ -259,26 +263,6 @@ Scene* CreateMainMenuScene()
 	return &scene;
 }
 
-struct Asteroids : public IGame
-{
-	void OnFrame(Scene& scene, float deltaTime) override
-	{
-		PROFILE();
-
-		if (Input::GetKeyDown(SDL_SCANCODE_L))
-			Engine::SetActiveScene(pMainScene);
-
-			
-		if (Input::GetKeyDown(SDL_SCANCODE_K))
-			Engine::SetActiveScene(pMainMenuScene);
-
-		ShipControlSystemUpdate(scene, deltaTime);
-		MovementSystemUpdate(scene, deltaTime);
-		CollisionSystemUpdate(scene, deltaTime);
-		InvincibilitySystemUpdate(scene, deltaTime);
-	}
-};
-
 int main(int argc, char *argv[])
 {
 	Engine::Initialize();
@@ -310,7 +294,7 @@ int main(int argc, char *argv[])
 	pMainMenuScene = CreateMainMenuScene();
 
 	// Run everything
-	Engine::Run(new Asteroids(), pMainMenuScene);
+	Engine::Run(pMainScene);
 
 	return 0;
 }

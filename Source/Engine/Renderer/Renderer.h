@@ -14,7 +14,7 @@ namespace Renderer
 	// Render System callbacks
 	void OnGameStart_Deprecated(Scene& scene); // should eventually be unecessary, moved to other systems/components
 
-	void OnFrameStart();
+	void OnFrameStart(Scene& scene, float deltaTime);
 
 	void OnFrame(Scene& scene, float deltaTime);
 

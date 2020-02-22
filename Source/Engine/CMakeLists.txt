@@ -23,7 +23,6 @@ set(SOURCES
     "Engine.cpp"
     "Profiler.h"
     "Profiler.cpp"
-    "IGame.h"
     "Renderer/Renderer.h"
     "Renderer/Renderer.cpp"
     "Renderer/RenderProxy.h"

@@ -17,7 +17,5 @@ namespace AudioDevice
 
     void UnPauseSound(SoundID sound);
 
-    void Update();
-
     void Destroy();
 }

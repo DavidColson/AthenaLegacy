@@ -22,9 +22,12 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 
 }
 
-// Update the system by simply calling it with the current scene
+// Then register them with the system
+scene.RegisterSystem(SystemPhase::Update, ShipControlSystem);
 
-ShipControlSystem(scene, deltaTime);
+// Simulate the whole scene by simply calling SimulateScene
+
+scene.SimulateScene(deltaTime);
 
 // To create entities and assign entities to them do this:
 
@@ -55,6 +58,13 @@ typedef unsigned long long EntityID;
 const int MAX_COMPONENTS = 20;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
+
+enum class SystemPhase
+{
+	PreUpdate,
+	Update,
+	Render
+};
 
 struct Scene;
 
@@ -267,6 +277,41 @@ struct Scene
 		return Get<CName>(entity)->name;
 	}
 
+	typedef void (*SystemFunc)(Scene&, float);
+	void RegisterSystem(SystemPhase phase, SystemFunc func)
+	{
+		switch (phase)
+		{
+		case SystemPhase::PreUpdate:
+			preUpdateSystems.push_back(func);
+			break;			
+		case SystemPhase::Update:
+			updateSystems.push_back(func);
+			break;
+		case SystemPhase::Render:
+			renderSystems.push_back(func);
+			break;
+		default:
+			break;
+		}
+	}
+
+	void SimulateScene(float deltaTime)
+	{
+		for (SystemFunc func : preUpdateSystems)
+		{
+			func(*this, deltaTime);
+		}
+		for (SystemFunc func : updateSystems)
+		{
+			func(*this, deltaTime);
+		}
+		for (SystemFunc func : renderSystems)
+		{
+			func(*this, deltaTime);
+		}
+	}
+
 	std::vector<BaseComponentPool*> componentPools;
 
 	struct EntityDesc
@@ -276,6 +321,10 @@ struct Scene
 	};
 	std::vector<EntityDesc> entities;
 	std::vector<EntityIndex> freeEntities;
+
+	std::vector<SystemFunc> preUpdateSystems;
+	std::vector<SystemFunc> updateSystems;
+	std::vector<SystemFunc> renderSystems;
 };
 
 // View into the Scene for a given set of components

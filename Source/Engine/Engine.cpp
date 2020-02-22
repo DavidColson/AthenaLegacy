@@ -14,7 +14,6 @@
 #include "Editor/Editor.h"
 #include "Log.h"
 #include "Profiler.h"
-#include "IGame.h"
 
 namespace
 {
@@ -22,7 +21,8 @@ namespace
 	double g_observedFrameTime;
 	double g_realFrameTime;
 
-	IGame* g_pGame{ nullptr };
+	bool g_gameRunning{ true };
+
 	Scene* pCurrentScene{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
 }
@@ -45,8 +45,25 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
+void Engine::GetFrameRates(double& outReal, double& outLimited)
+{
+	outReal = g_realFrameTime;
+	outLimited = g_observedFrameTime;
+}
+
+void Engine::StartShutdown()
+{
+	g_gameRunning = false;
+}
+
 void Engine::SetActiveScene(Scene* pScene)
 {
+	// Register systems!
+	pScene->RegisterSystem(SystemPhase::PreUpdate, Renderer::OnFrameStart);
+	pScene->RegisterSystem(SystemPhase::Update, Input::OnFrame);
+	pScene->RegisterSystem(SystemPhase::Update, Editor::OnFrame);
+	pScene->RegisterSystem(SystemPhase::Render, Renderer::OnFrame);
+
 	pCurrentScene = pScene;
 }
 
@@ -75,10 +92,9 @@ void Engine::Initialize()
 	Input::CreateInputState();
 }
 
-void Engine::Run(IGame* pGame, Scene *pScene)
+void Engine::Run(Scene *pScene)
 {	
-	pCurrentScene = pScene;
-	g_pGame = pGame;
+	SetActiveScene(pScene);
 
 	// Move to a SceneStartFunction
 	Renderer::OnGameStart_Deprecated(*pCurrentScene);
@@ -86,19 +102,12 @@ void Engine::Run(IGame* pGame, Scene *pScene)
 	// Game update loop
 	double frameTime = 0.016f;
 	double targetFrameTime = 0.016f;
-	bool shutdown = false;
-	while (!shutdown)
+	while (g_gameRunning)
 	{
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
-		// Update flow for the engine
-		Renderer::OnFrameStart();
-		AudioDevice::Update();
-		Input::OnFrame(shutdown);
-		g_pGame->OnFrame(*pCurrentScene, (float)frameTime);
-		Editor::OnFrame(*pCurrentScene, shutdown, g_realFrameTime, g_observedFrameTime);
-		Profiler::ClearFrameData();
-		Renderer::OnFrame(*pCurrentScene, (float)frameTime); // This should take in the scene as a paramter and work from that, instead of
+		pCurrentScene->SimulateScene((float)frameTime);
+		
 		GfxDevice::PrintQueuedDebugMessages();
 
 		// Framerate counter
