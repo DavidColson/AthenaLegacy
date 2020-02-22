@@ -91,6 +91,35 @@ void Renderer::OnGameStart_Deprecated(Scene& scene)
 	DebugDraw::Detail::Init();
 }
 
+void Renderer::OnPostProcessingAdded(Scene& scene, EntityID ent)
+{
+	CPostProcessing& pp = *(scene.Get<CPostProcessing>(ent));
+	for (int i = 0; i < 2; ++i)
+	{
+		pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f, StringFormat("Blurred frame %i", i));
+	}
+
+	// Create constant data buffers
+	pp.postProcessDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::PostProcessShaderData), "Post process shader data");
+	pp.bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData), "Bloom shader data");
+
+	// Compile and create post processing shaders
+	std::vector<VertexInputElement> layout;
+	layout.push_back({"POSITION", AttributeType::Float3});
+	layout.push_back({"COLOR", AttributeType::Float3});
+	layout.push_back({"TEXCOORD", AttributeType::Float2});
+
+	VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
+	PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain", "Post processing");
+
+	pp.postProcessShaderProgram = GfxDevice::CreateProgram(vertPostProcessShader, pixPostProcessShader);
+
+	VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Shaders/Bloom.hlsl", "VSMain", layout, "Bloom");
+	PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Shaders/Bloom.hlsl", "PSMain", "Bloom");
+
+	pp.bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
+}
+
 void Renderer::OnFrameStart(Scene& scene, float deltaTime)
 {
 	ImGui_ImplDX11_NewFrame();
@@ -105,6 +134,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// RenderPostProcessing -- Need a scene post process component, lives on singleton?
 	// RenderImgui - Editor components? Maybe something for future
 
+	// TODO: Render proxies should store all their data in the actual component, and be initialized with a reactive system
 	// ****************
 	// Render Drawables
 	// ****************
@@ -164,37 +194,6 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		{
 			wasPostProcessing = true;
 			CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
-
-			// Initialize any new post processing components
-			if (!pp->bInitialized)
-			{
-				for (int i = 0; i < 2; ++i)
-				{
-					pp->blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f, StringFormat("Blurred frame %i", i));
-				}
-
-				// Create constant data buffers
-				pp->postProcessDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::PostProcessShaderData), "Post process shader data");
-				pp->bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData), "Bloom shader data");
-
-				// Compile and create post processing shaders
-				std::vector<VertexInputElement> layout;
-				layout.push_back({"POSITION", AttributeType::Float3});
-				layout.push_back({"COLOR", AttributeType::Float3});
-				layout.push_back({"TEXCOORD", AttributeType::Float2});
-
-				VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
-				PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain", "Post processing");
-
-				pp->postProcessShaderProgram = GfxDevice::CreateProgram(vertPostProcessShader, pixPostProcessShader);
-
-				VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Shaders/Bloom.hlsl", "VSMain", layout, "Bloom");
-				PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Shaders/Bloom.hlsl", "PSMain", "Bloom");
-
-				pp->bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
-
-				pp->bInitialized = true;
-			}
 
 			GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
 			GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
@@ -297,9 +296,4 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// switch the back buffer and the front buffer
 	GfxDevice::PresentBackBuffer();
 	GfxDevice::ClearRenderState();
-}
-
-void Renderer::OnGameEnd()
-{
-	// #TODO: Release things
 }

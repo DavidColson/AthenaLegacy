@@ -4,8 +4,7 @@
 #include "Maths/Matrix.h"
 #include "GraphicsDevice/GraphicsDevice.h"
 #include "Log.h"
-
-struct Scene;
+#include "Scene.h"
 
 #define MAX_PARTICLES_PER_EMITTER 1000
 
@@ -81,5 +80,6 @@ struct CParticleEmitter
 
 namespace ParticlesSystem
 {
+	void OnAddEmitter(Scene& scene, EntityID entity);
 	void OnFrame(Scene& scene, float deltaTime);
 }

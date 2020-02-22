@@ -7,6 +7,7 @@
 #include <ThirdParty/Imgui/imgui.h>
 #include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
 
+#include "ParticlesSystem.h"
 #include "AudioDevice/AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
@@ -54,6 +55,12 @@ void Engine::GetFrameRates(double& outReal, double& outLimited)
 void Engine::StartShutdown()
 {
 	g_gameRunning = false;
+}
+
+void Engine::NewSceneCreated(Scene& scene)
+{
+	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
+	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, Renderer::OnPostProcessingAdded);
 }
 
 void Engine::SetActiveScene(Scene* pScene)
@@ -128,7 +135,6 @@ void Engine::Run(Scene *pScene)
 
 	// Shutdown everything
 	AudioDevice::Destroy();
-	Renderer::OnGameEnd();
 
 	SDL_DestroyWindow(g_pWindow);
 	SDL_Quit();

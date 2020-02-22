@@ -3,22 +3,25 @@
 #include <vector>
 #include <array>
 
+#include "Scene.h"
 #include "GraphicsDevice/GraphicsDevice.h" 
 #include "Renderer/RenderProxy.h"
 
 class RenderFont;
-struct Scene;
 
 namespace Renderer
 {
 	// Render System callbacks
 	void OnGameStart_Deprecated(Scene& scene); // should eventually be unecessary, moved to other systems/components
 
-	void OnFrameStart(Scene& scene, float deltaTime);
+	// Reactive Systems
+	void OnPostProcessingAdded(Scene& scene, EntityID ent);
 
+	// Systems
+	void OnFrameStart(Scene& scene, float deltaTime);
 	void OnFrame(Scene& scene, float deltaTime);
 
-	void OnGameEnd();
+	// TODO: there should be a component removed reactive system that releases GfxDevice resources appropriately
 };
 
 
@@ -56,8 +59,6 @@ struct CPostProcessing
 	ProgramHandle bloomShaderProgram;
 	ConstBufferHandle postProcessDataBuffer;
 	ConstBufferHandle bloomDataBuffer;
-
-	bool bInitialized{ false };
 
 	REFLECT()
 };

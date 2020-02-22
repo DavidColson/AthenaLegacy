@@ -48,9 +48,12 @@ scene.Assign<Shape>(circle);
 #include "ErrorHandling.h"
 #include "Log.h"
 #include "Maths/Vec3.h"
+#include "Engine.h"
 
 #include <bitset>
 #include <vector>
+
+struct Scene;
 
 typedef unsigned int EntityIndex;
 typedef unsigned int EntityVersion;
@@ -58,6 +61,14 @@ typedef unsigned long long EntityID;
 const int MAX_COMPONENTS = 20;
 const int MAX_ENTITIES = 64;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
+typedef void (*ReactiveSystemFunc)(Scene&, EntityID);
+typedef void (*SystemFunc)(Scene&, float);
+
+enum class Reaction
+{
+	OnAdd,
+	OnRemove
+};
 
 enum class SystemPhase
 {
@@ -65,8 +76,6 @@ enum class SystemPhase
 	Update,
 	Render
 };
-
-struct Scene;
 
 // Move into the detail namespace
 inline EntityID CreateEntityId(EntityIndex index, EntityVersion version)
@@ -150,6 +159,10 @@ struct BaseComponentPool
 	char* pData{ nullptr };
 	size_t elementSize{ 0 };
 	TypeData* pTypeData{ nullptr };
+
+	// Systems that have requested to know when this component has been added or removed from an entity
+	std::vector<ReactiveSystemFunc> onAddedCallbacks;
+	std::vector<ReactiveSystemFunc> onRemovedCallbacks;
 };
 
 template <typename T>
@@ -173,6 +186,11 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 
 struct Scene
 {
+	Scene()
+	{
+		Engine::NewSceneCreated(*this);
+	}
+
 	// Creates an entity, simply makes a new id and mask
 	EntityID NewEntity(const char* name)// #TODO: Move implementation to cpp
 	{
@@ -232,6 +250,13 @@ struct Scene
 
 		// Set the bit for this component to true
 		entities[GetEntityIndex(id)].mask.set(componentId);
+
+		// Send OnAdd events
+		for (ReactiveSystemFunc func : componentPools[componentId]->onAddedCallbacks)
+		{
+			func(*this, id);
+		}
+		
 		return pComponent;
 	}
 
@@ -243,7 +268,17 @@ struct Scene
 
 		int componentId = GetId<T>();
 		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
-		entities[GetEntityIndex(id)].mask.reset(componentId); // Turn off the component bit
+		
+		// Send OnRemoved events
+		for (ReactiveSystemFunc func : componentPools[componentId]->onRemovedCallbacks)
+		{
+			func(*this, id);
+		}
+ 		
+		 // Turn off the component bit
+		entities[GetEntityIndex(id)].mask.reset(componentId);
+		// Destroy the component
+		componentPools[componentId]->destroy(GetEntityIndex(id));
 	}
 
 
@@ -277,7 +312,32 @@ struct Scene
 		return Get<CName>(entity)->name;
 	}
 
-	typedef void (*SystemFunc)(Scene&, float);
+	template<typename T>
+	void RegisterReactiveSystem(Reaction reaction, ReactiveSystemFunc func)
+	{
+		int componentId = GetId<T>();
+		if (componentPools.size() <= componentId) // Not enough component pool
+		{
+			componentPools.resize(componentId + 1, nullptr);
+		}
+		if (componentPools[componentId] == nullptr) // New component, make a new pool
+		{
+			componentPools[componentId] = new ComponentPool<T>(sizeof(T));
+		}
+
+		switch (reaction)
+		{
+		case Reaction::OnAdd:
+			componentPools[componentId]->onAddedCallbacks.push_back(func);
+			break;
+		case Reaction::OnRemove:
+			componentPools[componentId]->onRemovedCallbacks.push_back(func);
+			break;
+		default:
+			break;
+		}
+	}
+
 	void RegisterSystem(SystemPhase phase, SystemFunc func)
 	{
 		switch (phase)
