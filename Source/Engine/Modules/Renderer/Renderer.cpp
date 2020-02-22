@@ -153,6 +153,12 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 		for (EntityID ent : SceneView<CDrawable, CTransform>(scene))
 		{
+			if (scene.Has<CVisibility>(ent))
+			{
+				if (scene.Get<CVisibility>(ent)->visible == false)
+					continue;
+			}
+
 			CDrawable* pDrawable = scene.Get<CDrawable>(ent);
 			CTransform* pTransform = scene.Get<CTransform>(ent);
 

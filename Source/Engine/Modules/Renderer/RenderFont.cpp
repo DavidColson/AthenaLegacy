@@ -13,7 +13,6 @@
 
 REFLECT_BEGIN(CText)
 REFLECT_MEMBER(text)
-REFLECT_MEMBER(visible)
 REFLECT_END()
 
 RenderFont::RenderFont(std::string fontFile, int size)
@@ -139,44 +138,48 @@ void RenderFont::DrawSceneText(Scene& scene)
 
 	for (EntityID ent : SceneView<CText, CTransform>(scene))
 	{
-		CText* pText = scene.Get<CText>(ent);
-		if (pText->visible)
+		// Skip if these entity has a visiblity component set to false
+		if (scene.Has<CVisibility>(ent))
 		{
-			CTransform* pTransform = scene.Get<CTransform>(ent);
-			
-			float textWidth = 0.0f;
-			float x = pTransform->pos.x;
-			float y = pTransform->pos.y;
+			if (scene.Get<CVisibility>(ent)->visible == false)
+				continue;
+		}
 
-			for (char const& c : pText->text)
+		CText* pText = scene.Get<CText>(ent);
+		CTransform* pTransform = scene.Get<CTransform>(ent);
+		
+		float textWidth = 0.0f;
+		float x = pTransform->pos.x;
+		float y = pTransform->pos.y;
+
+		for (char const& c : pText->text)
+		{
+			Character ch = characters[c];
+			textWidth += ch.advance;
+		}
+
+		for (char const& c : pText->text) {
+			// Draw a font character
+			Character ch = characters[c];
+
+			if (IsValid(characters[c].charTexture))
 			{
-				Character ch = characters[c];
-				textWidth += ch.advance;
+				Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth * 0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
+				Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
+
+				Matrixf world = posmat * scalemat; // transform into world space
+				Matrixf wvp = projection * world;
+
+				TransformData transformData{ wvp };
+				GfxDevice::BindConstantBuffer(wvpBuffer, &transformData, ShaderType::Vertex, 0);
+				GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
+
+				// do 3D rendering on the back buffer here
+				// Todo::Instance render the entire string
+				GfxDevice::Draw(4, 0);
 			}
 
-			for (char const& c : pText->text) {
-				// Draw a font character
-				Character ch = characters[c];
-
-				if (IsValid(characters[c].charTexture))
-				{
-					Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth * 0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
-					Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
-
-					Matrixf world = posmat * scalemat; // transform into world space
-					Matrixf wvp = projection * world;
-
-					TransformData transformData{ wvp };
-					GfxDevice::BindConstantBuffer(wvpBuffer, &transformData, ShaderType::Vertex, 0);
-					GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
-
-					// do 3D rendering on the back buffer here
-					// Todo::Instance render the entire string
-					GfxDevice::Draw(4, 0);
-				}
-
-				x += ch.advance;
-			}
+			x += ch.advance;
 		}
 	}
 }

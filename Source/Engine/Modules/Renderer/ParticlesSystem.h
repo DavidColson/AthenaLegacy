@@ -10,7 +10,7 @@
 
 struct Particle
 {
-	bool bIsAlive{ false };
+	bool isAlive{ false };
 	float lifeRemaining{ 0.0f };
 
 	Vec2f position{ 0.0f, 0.0f };
@@ -39,13 +39,13 @@ struct ParticlePool
 		}
 
 		if (pNewParticle) 
-			pNewParticle->bIsAlive = true;
+			pNewParticle->isAlive = true;
 		return pNewParticle;
 	}
 
 	void KillParticle(Particle* particle)
 	{
-		particle->bIsAlive = false;
+		particle->isAlive = false;
 		deadParticles.push_back(particle);
 	}
 

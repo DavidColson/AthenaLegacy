@@ -82,6 +82,13 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 {
 	for (EntityID ent : SceneView<CParticleEmitter, CTransform>(scene))
 	{
+		// Skip if this entity has a visibility component that is false
+		if (scene.Has<CVisibility>(ent))
+		{
+			if (scene.Get<CVisibility>(ent)->visible == false)
+				continue;
+		}
+
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);
 
@@ -91,7 +98,7 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		for(int i = 0; i < pEmitter->particlePool->currentMaxParticleIndex; i++)
 		{
 			Particle* pParticle = &(pEmitter->particlePool->pPool[i]);
-			if (!pParticle->bIsAlive)
+			if (!pParticle->isAlive)
 				continue;
 
 			pParticle->lifeRemaining -= deltaTime;

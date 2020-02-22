@@ -149,6 +149,7 @@ Scene* CreateMainAsteroidsScene()
 	CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
 	scene.Assign<CCollidable>(ship)->radius = 17.f;
 	scene.Assign<CDrawable>(ship)->renderProxy = Game::g_shipMesh;
+	scene.Assign<CVisibility>(ship);
 	CPlayerUI* pPlayerUI = scene.Assign<CPlayerUI>(ship);
 	scene.Assign<CPostProcessing>(ship);
 	scene.Assign<CInvincibility>(ship);
@@ -176,6 +177,7 @@ Scene* CreateMainAsteroidsScene()
 		pTranform->rot = randomRotation;
 
 		scene.Assign<CDrawable>(asteroid)->renderProxy = Game::g_asteroidMeshes[rand() % 4];
+		scene.Assign<CVisibility>(asteroid);
 		scene.Assign<CAsteroid>(asteroid);
 	}
 
@@ -192,6 +194,7 @@ Scene* CreateMainAsteroidsScene()
 		offset += 30.0f;
 		
 		scene.Assign<CDrawable>(life)->renderProxy = Game::g_shipMesh;
+		scene.Assign<CVisibility>(life);
 		pPlayer->lifeEntities[i] = life;
 	}
 
@@ -215,9 +218,9 @@ Scene* CreateMainAsteroidsScene()
 		pPlayerUI->gameOverEntity = gameOver;
 		scene.Assign<CTransform>(gameOver)->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 		scene.Assign<CGameOver>(gameOver);
+		scene.Assign<CVisibility>(gameOver)->visible = false;
 		CText* pText = scene.Assign<CText>(gameOver);
 		pText->text = "Game Over";
-		pText->visible = false;
 	}
 	return &scene;
 }
@@ -256,6 +259,7 @@ Scene* CreateMainMenuScene()
 		}, "ButtonSelector");
 
 	scene.Assign<CDrawable>(buttonSelector)->renderProxy = buttonSelectorMesh;
+	scene.Assign<CVisibility>(buttonSelector);
 	CTransform* pTransform = scene.Assign<CTransform>(buttonSelector);
 	pTransform->pos = Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f);
 	pTransform->sca = Vec3f(30.f, 30.0f, 1.0f);

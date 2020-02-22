@@ -108,6 +108,13 @@ struct CName
 	REFLECT()
 };
 
+struct CVisibility
+{
+	bool visible{ true };
+
+	REFLECT()
+};
+
 struct CTransform
 {
 	Vec3f pos;

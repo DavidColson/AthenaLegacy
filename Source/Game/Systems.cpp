@@ -28,6 +28,7 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 	pBulletTrans->vel = pAtTransform->vel + travelDir * pBullet->speed;
 	pBulletTrans->rot = pAtTransform->rot;
 
+	scene.Assign<CVisibility>(bullet);
 	CDrawable* pDrawable = scene.Assign<CDrawable>(bullet);
 	pDrawable->renderProxy = RenderProxy(
 		{
@@ -95,6 +96,7 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 		pNewTransform->rot = randomRotation;
 
 		scene.Assign<CDrawable>(newAsteroid)->renderProxy = Game::g_asteroidMeshes[rand() % 4];
+		scene.Assign<CVisibility>(newAsteroid);
 		scene.Assign<CAsteroid>(newAsteroid)->hitCount = scene.Get<CAsteroid>(asteroid)->hitCount + 1;
 	}
 
@@ -104,11 +106,11 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 
 void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 {
-	if (!scene.Has<CDrawable>(player))
+	if (scene.Get<CVisibility>(player)->visible == false)
 		return; // Can't kill a player who is dead
 
 	CPlayerControl* pPlayerControl = scene.Get<CPlayerControl>(player);
-	scene.Remove<CDrawable>(player);
+	scene.Get<CVisibility>(player)->visible = false;
 	pPlayerControl->lives -= 1;
 	scene.DestroyEntity(pPlayerControl->lifeEntities[pPlayerControl->lives]);
 	AudioDevice::PauseSound(pPlayerControl->enginePlayingSound);
@@ -118,7 +120,7 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	if (pPlayerControl->lives <= 0)
 	{
 		EntityID gameOverEnt = scene.Get<CPlayerUI>(player)->gameOverEntity;
-		scene.Get<CText>(gameOverEnt)->visible = true;
+		scene.Get<CVisibility>(gameOverEnt)->visible = true;
 		return; // Game over
 	} 
 
@@ -199,10 +201,11 @@ void InvincibilitySystemUpdate(Scene& scene, float deltaTime)
 		if (pInvincibility->m_flashTimer <= 0.0f)
 		{
 			pInvincibility->m_flashTimer = 0.3f;
-			if (scene.Has<CDrawable>(PLAYER_ID))
-				scene.Remove<CDrawable>(PLAYER_ID);
+			CVisibility* visiblity = scene.Get<CVisibility>(PLAYER_ID);
+			if (visiblity->visible)
+				visiblity->visible = false;
 			else
-				scene.Assign<CDrawable>(PLAYER_ID)->renderProxy = Game::g_shipMesh;
+				visiblity->visible = true;
 		}
 	}
 }
@@ -252,15 +255,14 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		CPlayerControl* pControl = scene.Get<CPlayerControl>(id);
 
 		// If player doesn't have a drawable component we consider them dead
-		if (!scene.Has<CDrawable>(id) && !scene.Has<CInvincibility>(id))
+		if (scene.Get<CVisibility>(id)->visible == false && !scene.Has<CInvincibility>(id))
 		{
 			if (pControl->respawnTimer > 0.0f)
 			{
 				pControl->respawnTimer -= deltaTime;
 				if (pControl->respawnTimer <= 0.0f)
 				{
-					// #RefactorNote: Assign and remove a visibility component instead
-					scene.Assign<CDrawable>(id)->renderProxy = Game::g_shipMesh;
+					scene.Get<CVisibility>(id)->visible = true;
 					scene.Assign<CInvincibility>(id);
 				}
 			}

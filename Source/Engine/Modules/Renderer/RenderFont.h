@@ -17,7 +17,6 @@ struct Scene;
 struct CText
 {
 	std::string text;
-	bool visible = true;
 
 	REFLECT()
 };
