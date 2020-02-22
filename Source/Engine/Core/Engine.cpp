@@ -16,6 +16,7 @@
 #include "Editor/Editor.h"
 #include "Log.h"
 #include "Profiler.h"
+#include "Renderer/DebugDraw.h"
 
 namespace
 {
@@ -24,6 +25,8 @@ namespace
 	double g_realFrameTime;
 
 	bool g_gameRunning{ true };
+
+	EntityID g_engineSingleton{ INVALID_ENTITY };
 
 	Scene* pCurrentScene{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
@@ -63,6 +66,10 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnPostProcessingAdded);
 	scene.RegisterReactiveSystem<CDrawable>(Reaction::OnAdd, Renderer::OnDrawableAdded);
+	scene.RegisterReactiveSystem<CDebugDrawingState>(Reaction::OnAdd, DebugDraw::OnDebugDrawStateAdded);
+
+	scene.NewEntity("Engine Singletons");
+	scene.Assign<CDebugDrawingState>(ENGINE_SINGLETON);
 }
 
 void Engine::SetActiveScene(Scene* pScene)

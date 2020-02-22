@@ -31,8 +31,6 @@ void Renderer::OnGameStart_Deprecated(Scene& scene)
 {
 	// This should be part of an actual font pre-rendering system, which will initialize and manage itself and give actual commands to the core rendering queue
 	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
-
-	DebugDraw::Detail::Init();
 }
 
 void Renderer::OnDrawableAdded(Scene& scene, EntityID ent)
@@ -139,8 +137,8 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// Draw Debug 
 	// **********
 
-	DebugDraw::Detail::DrawQueue();
-
+	DebugDraw::OnFrame(scene, deltaTime);
+	
 	// ***************
 	// Post Processing
 	// ***************
@@ -158,6 +156,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 
 	// After all this is done, the entire Renderer class will collapse and simply become a list of OnRender systems to execute
 	PostProcessingSystem::OnFrame(scene, deltaTime);
+
 
 	// *******************
 	// Draw Imgui Overlays

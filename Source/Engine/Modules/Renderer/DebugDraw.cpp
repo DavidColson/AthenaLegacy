@@ -1,67 +1,40 @@
 #include "DebugDraw.h"
 
-#include "Matrix.h"
 #include "Renderer.h"
 #include "Profiler.h"
 
-namespace
+void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)
 {
-	struct DrawCall
-	{
-		int vertexCount{ 0 };
-		int indexCount{ 0 };
-	};
-	std::vector<DrawCall> drawQueue;
-	
-	struct DebugVertex
-	{
-		Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
-		Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
-	};
+	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
 
-	std::vector<DebugVertex> vertBufferData;
-	int vertBufferSize = 0;
-	std::vector<int> indexBufferData;
-	int indexBufferSize = 0;
-
-	ProgramHandle debugShaderProgram;
-	VertexBufferHandle vertexBuffer;
-	IndexBufferHandle indexBuffer;
-
-	struct TransformData
-	{
-		Matrixf wvp;
-	};
-
-	ConstBufferHandle transformDataBuffer;
-}
-
-void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec3f color)
-{
 	float div = 6.282f / 20.f;
 	for (int i = 0; i < 20; i++)
 	{
 		float x = div * (float)i;
 		Vec3f point = Vec3f(radius*cos(x), radius*sin(x), 0.0f) + Vec3f(pos.x, pos.y, 0.5f);
-		vertBufferData.emplace_back(DebugVertex{ point, color });
-		indexBufferData.push_back(i);
+		state.vertexList.emplace_back(DebugVertex{ point, color });
+		state.indexList.push_back(i);
 	}
-	indexBufferData.push_back(0);
-	drawQueue.emplace_back(DrawCall{20, 21});
+	state.indexList.push_back(0);
+	state.drawQueue.emplace_back(DrawCall{20, 21});
 }
 
-void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec3f color)
+void DebugDraw::Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color)
 {
-	vertBufferData.emplace_back(DebugVertex{ Vec3f(start.x, start.y, 0.5f), color });
-	vertBufferData.emplace_back(DebugVertex{ Vec3f(end.x, end.y, 0.5f), color });
-	indexBufferData.push_back(0);
-	indexBufferData.push_back(1);
+	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
 
-	drawQueue.emplace_back(DrawCall{ 2, 2 });
+	state.vertexList.emplace_back(DebugVertex{ Vec3f(start.x, start.y, 0.5f), color });
+	state.vertexList.emplace_back(DebugVertex{ Vec3f(end.x, end.y, 0.5f), color });
+	state.indexList.push_back(0);
+	state.indexList.push_back(1);
+
+	state.drawQueue.emplace_back(DrawCall{ 2, 2 });
 }
 
-void DebugDraw::Detail::Init()
+void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
 {
+	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
+
 	std::string shaderSrc = "\
 	cbuffer cbTransform\
 	{\
@@ -91,59 +64,61 @@ void DebugDraw::Detail::Init()
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Debug Draw");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Debug Draw");
 
-	debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+	state.debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	// Create constant buffer for WVP
-	transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
+	state.transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
 }
 
-void DebugDraw::Detail::DrawQueue()
+void DebugDraw::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing debug");
 
-	if (drawQueue.empty())
+	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
+
+	if (state.drawQueue.empty())
 		return;
 
 	// TODO: MEMORY LEAK HERE Release the old buffer when you create new one
-	if (!IsValid(vertexBuffer) || vertBufferSize < vertBufferData.size())
+	if (!IsValid(state.vertexBuffer) || state.vertBufferSize < state.vertexList.size())
 	{
-		vertBufferSize = (int)vertBufferData.size() + 1000;
-		vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(vertBufferSize, sizeof(DebugVertex), "Debug Drawer");
+		state.vertBufferSize = (int)state.vertexList.size() + 1000;
+		state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(state.vertBufferSize, sizeof(DebugVertex), "Debug Drawer");
 	}
 
-	if (!IsValid(indexBuffer) || indexBufferSize < indexBufferData.size())
+	if (!IsValid(state.indexBuffer) || state.indexBufferSize < state.indexList.size())
 	{
-		indexBufferSize = (int)indexBufferData.size() + 1000;
-		indexBuffer = GfxDevice::CreateDynamicIndexBuffer(indexBufferSize, "Debug Drawer");
+		state.indexBufferSize = (int)state.indexList.size() + 1000;
+		state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(state.indexBufferSize, "Debug Drawer");
 	}
 
 	// Update vert and index buffer data
-	GfxDevice::UpdateDynamicVertexBuffer(vertexBuffer, vertBufferData.data(), vertBufferData.size() * sizeof(DebugVertex));
-	GfxDevice::UpdateDynamicIndexBuffer(indexBuffer, indexBufferData.data(), indexBufferData.size() * sizeof(int));
+	GfxDevice::UpdateDynamicVertexBuffer(state.vertexBuffer, state.vertexList.data(), state.vertexList.size() * sizeof(DebugVertex));
+	GfxDevice::UpdateDynamicIndexBuffer(state.indexBuffer, state.indexList.data(), state.indexList.size() * sizeof(int));
 
 	// Update constant buffer data
 	TransformData trans{ Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f) };
-	GfxDevice::BindConstantBuffer(transformDataBuffer, &trans, ShaderType::Vertex, 0);
+	GfxDevice::BindConstantBuffer(state.transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders
-	GfxDevice::BindProgram(debugShaderProgram);
+	GfxDevice::BindProgram(state.debugShaderProgram);
 
 	GfxDevice::SetTopologyType(TopologyType::LineStrip);
 
-	GfxDevice::BindVertexBuffers(1, &vertexBuffer);
-	GfxDevice::BindIndexBuffer(indexBuffer);
+	GfxDevice::BindVertexBuffers(1, &state.vertexBuffer);
+	GfxDevice::BindIndexBuffer(state.indexBuffer);
 
 	int vertOffset = 0;
 	int indexOffset = 0;
-	for (DrawCall& draw : drawQueue)
+	for (DrawCall& draw : state.drawQueue)
 	{
 		GfxDevice::DrawIndexed(draw.indexCount, indexOffset, vertOffset);
 		vertOffset += draw.vertexCount;
 		indexOffset += draw.indexCount;
 	}
 
-	drawQueue.clear();
-	vertBufferData.clear();
-	indexBufferData.clear();
+	state.drawQueue.clear();
+	state.vertexList.clear();
+	state.indexList.clear();
 }
