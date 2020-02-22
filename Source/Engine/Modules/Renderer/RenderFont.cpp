@@ -4,8 +4,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include "Maths/Matrix.h"
-#include "Maths/Vec3.h"
+#include "Matrix.h"
+#include "Vec3.h"
 #include "RenderProxy.h"
 #include "Log.h"
 #include "Renderer.h"

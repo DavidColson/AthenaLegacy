@@ -1,12 +1,12 @@
 #pragma once
 
 #include <TypeSystem.h>
-#include <Maths/Vec2.h>
-#include <Maths/Vec3.h>
+#include <Vec2.h>
+#include <Vec3.h>
 #include <Renderer/RenderProxy.h>
 #include <Log.h>
 #include <Scene.h>
-#include <AudioDevice/AudioDevice.h>
+#include <AudioDevice.h>
 
 struct CPlayerControl
 {

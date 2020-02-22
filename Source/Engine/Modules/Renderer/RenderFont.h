@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Maths/Matrix.h"
-#include "Maths/Vec2.h"
+#include "Matrix.h"
+#include "Vec2.h"
 #include "Renderer/Renderer.h"
-#include "GraphicsDevice/GraphicsDevice.h"
+#include "GraphicsDevice.h"
 
 #include <string>
 #include <vector>

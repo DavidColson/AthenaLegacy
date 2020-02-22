@@ -1,0 +1,13 @@
+target_sources(Engine
+    PRIVATE
+        "DebugDraw.h"
+        "DebugDraw.cpp"
+        "ParticlesSystem.h"
+        "ParticlesSystem.cpp"
+        "Renderer.h"
+        "Renderer.cpp"
+        "RenderFont.h"
+        "RenderFont.cpp"
+        "RenderProxy.h"
+        "RenderProxy.cpp"
+)

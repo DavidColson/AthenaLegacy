@@ -2,8 +2,8 @@
 #include "Systems.h"
 #include "Components.h"
 
-#include <Maths/Vec4.h>
-#include <Maths/Matrix.h>
+#include <Vec4.h>
+#include <Matrix.h>
 #include <Editor/Editor.h>
 #include <Scene.h>
 #include <Engine.h>
@@ -11,10 +11,10 @@
 #include <Profiler.h>
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
-#include <ThirdParty/Imgui/imgui.h>
-#include <ParticlesSystem.h>
+#include <Renderer/ParticlesSystem.h>
+#include <Imgui/imgui.h>
 #include <TypeSystem.h>
-#include <AudioDevice/AudioDevice.h>
+#include <AudioDevice.h>
 
 #include <functional>
 #include <time.h>

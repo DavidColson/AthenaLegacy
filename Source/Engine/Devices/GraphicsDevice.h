@@ -3,8 +3,8 @@
 #include <array>
 #include <vector>
 
-#include "Maths/Vec2.h"
-#include "Maths/Vec3.h"
+#include "Vec2.h"
+#include "Vec3.h"
 
 // *************************
 // Graphics Driver Interface

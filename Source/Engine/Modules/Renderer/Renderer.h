@@ -4,7 +4,7 @@
 #include <array>
 
 #include "Scene.h"
-#include "GraphicsDevice/GraphicsDevice.h" 
+#include "GraphicsDevice.h" 
 #include "Renderer/RenderProxy.h"
 
 class RenderFont;

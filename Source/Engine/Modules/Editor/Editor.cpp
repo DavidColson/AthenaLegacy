@@ -3,15 +3,15 @@
 #include "Input/Input.h"
 #include "Log.h"
 #include "Scene.h"
-#include "Maths/Vec3.h"
-#include "Maths/Vec2.h"
+#include "Vec3.h"
+#include "Vec2.h"
 #include "Profiler.h"
 #include "Engine.h"
 
 #include <vector>
 #include <string>
-#include <ThirdParty/Imgui/imgui.h>
-#include <ThirdParty/Imgui/misc/cpp/imgui_stdlib.h>
+#include <Imgui/imgui.h>
+#include <Imgui/misc/cpp/imgui_stdlib.h>
 
 namespace {
 	bool showEditor = true;

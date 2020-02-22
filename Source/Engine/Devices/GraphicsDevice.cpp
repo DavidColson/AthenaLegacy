@@ -8,9 +8,9 @@
 #include <d3d11_1.h>
 #include <d3d10.h>
 #include <stdio.h>
-#include <ThirdParty/Imgui/imgui.h>
-#include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
-#include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
+#include <Imgui/imgui.h>
+#include <Imgui/examples/imgui_impl_sdl.h>
+#include <Imgui/examples/imgui_impl_dx11.h>
 
 #include "Log.h"
 

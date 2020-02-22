@@ -1,8 +1,8 @@
 #include "ParticlesSystem.h"
 
 #include "Scene.h"
-#include "Maths/Matrix.h"
-#include "Maths/Maths.h"
+#include "Matrix.h"
+#include "Maths.h"
 
 REFLECT_BEGIN(CParticleEmitter)
 REFLECT_MEMBER(looping)

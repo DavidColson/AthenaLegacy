@@ -47,7 +47,7 @@ scene.Assign<Shape>(circle);
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
 #include "Log.h"
-#include "Maths/Vec3.h"
+#include "Vec3.h"
 #include "Engine.h"
 
 #include <bitset>

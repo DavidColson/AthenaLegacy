@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Maths/Vec2.h"
-#include "Maths/Matrix.h"
-#include "GraphicsDevice/GraphicsDevice.h"
+#include "Vec2.h"
+#include "Matrix.h"
+#include "GraphicsDevice.h"
 #include "Log.h"
 #include "Scene.h"
 

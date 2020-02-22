@@ -4,11 +4,11 @@
 #include <SDL_syswm.h>
 #include <comdef.h>
 #include <vector>
-#include <ThirdParty/Imgui/imgui.h>
-#include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
+#include <Imgui/imgui.h>
+#include <Imgui/examples/imgui_impl_sdl.h>
 
-#include "ParticlesSystem.h"
-#include "AudioDevice/AudioDevice.h"
+#include "Renderer/ParticlesSystem.h"
+#include "AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
 #include "Renderer/Renderer.h"

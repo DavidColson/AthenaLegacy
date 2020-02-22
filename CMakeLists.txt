@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.13)
 
 project (Athena)
 
@@ -17,6 +17,8 @@ if ("$ENV{${ProgramFiles_x86}}")
 else ()
     set (ProgramFiles "$ENV{ProgramFiles}")
 endif ()
+
+include(GroupSources)
 
 # Find DirectX include directories
 # Make an error message that complains if directx files cannot be found

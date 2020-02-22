@@ -3,16 +3,16 @@
 
 #include <SDL.h>
 #include <SDL_syswm.h>
-#include <ThirdParty/Imgui/imgui.h>
-#include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
-#include <ThirdParty/Imgui/examples/imgui_impl_dx11.h>
+#include <Imgui/imgui.h>
+#include <Imgui/examples/imgui_impl_sdl.h>
+#include <Imgui/examples/imgui_impl_dx11.h>
 
 #include "Profiler.h"
 #include "Log.h"
 #include "RenderFont.h"
 #include "DebugDraw.h"
 #include "Scene.h"
-#include "Maths/Vec4.h"
+#include "Vec4.h"
 #include "ParticlesSystem.h"
 
 REFLECT_BEGIN(CDrawable)

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Maths/Vec2.h"
-#include "Maths/Vec3.h"
+#include "Vec2.h"
+#include "Vec3.h"
 
 namespace DebugDraw
 {

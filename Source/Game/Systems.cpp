@@ -3,14 +3,14 @@
 #include "Asteroids.h"
 #include "Components.h"
 
-#include <AudioDevice/AudioDevice.h>
+#include <AudioDevice.h>
 #include <Renderer/DebugDraw.h>
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
+#include <Renderer/ParticlesSystem.h>
 #include <Input/Input.h>
 #include <Utility.h>
 #include <Profiler.h>
-#include <ParticlesSystem.h>
 
 
 // **********

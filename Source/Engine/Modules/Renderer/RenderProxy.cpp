@@ -1,9 +1,9 @@
 
 #include "renderproxy.h"
 
-#include "Maths/Matrix.h"
-#include "Maths/Vec4.h"
-#include "Maths/Vec3.h"
+#include "Matrix.h"
+#include "Vec4.h"
+#include "Vec3.h"
 #include "Renderer/Renderer.h"
 
 struct TransformData

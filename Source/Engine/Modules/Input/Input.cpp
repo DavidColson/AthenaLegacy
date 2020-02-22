@@ -3,8 +3,8 @@
 #include "Engine.h"
 
 #include <windows.h>
-#include <ThirdParty/Imgui/imgui.h>
-#include <ThirdParty/Imgui/examples/imgui_impl_sdl.h>
+#include <Imgui/imgui.h>
+#include <Imgui/examples/imgui_impl_sdl.h>
 
 InputState* pInput;
 

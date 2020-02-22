@@ -1,4 +1,4 @@
-#include "AudioDevice/AudioDevice.h"
+#include "AudioDevice.h"
 
 #include <SDL.h>
 #include <vector>

@@ -1,5 +1,6 @@
 build/*
 !build/FindSDL2.cmake
+!build/GroupSources.cmake
 .vs/
 *.obj
 *.exp

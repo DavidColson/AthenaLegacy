@@ -1,63 +1,14 @@
 project(Engine)
 
-set(SOURCES
-    "Log.h"
-    "Log.cpp"
-    "Utility.h"
-    "Utility.cpp"
-    "TypeSystem.h"
-    "TypeSystem.cpp"
-    "ErrorHandling.h"
-    "ErrorHandling.cpp"
-    "Scene.h"
-    "Scene.cpp"
-    "Maths/Vec2.h"
-    "Maths/Vec2.cpp"
-    "Maths/Vec3.h"
-    "Maths/Vec3.cpp"
-    "Maths/Vec4.h"
-    "Maths/Vec4.cpp"
-    "Maths/Matrix.h"
-    "Maths/Matrix.cpp"
-    "Engine.h"
-    "Engine.cpp"
-    "Profiler.h"
-    "Profiler.cpp"
-    "Renderer/Renderer.h"
-    "Renderer/Renderer.cpp"
-    "Renderer/RenderProxy.h"
-    "Renderer/RenderProxy.cpp"
-    "Renderer/RenderFont.h"
-    "Renderer/RenderFont.cpp"
-    "Renderer/DebugDraw.h"
-    "Renderer/DebugDraw.cpp"
-    "ParticlesSystem.h"
-    "ParticlesSystem.cpp"
-    "GraphicsDevice/GraphicsDevice.h"
-    "GraphicsDevice/GraphicsDevice.cpp"
-    "AudioDevice/AudioDevice.h"
-    "AudioDevice/AudioDevice.cpp"
-    "Editor/Editor.h"
-    "Editor/Editor.cpp"
-    "Input/Input.h"
-    "Input/Input.cpp"
-    )
+include_directories("Core/")
+include_directories("Devices/")
+include_directories("Modules/")
+include_directories("ThirdParty/")
+add_Library(Engine "")
 
-set(SHADERS
-    "../../Shaders/PostProcessing.hlsl"
-    "../../Shaders/Shader.hlsl"
-    )
-
-foreach(source IN LISTS SOURCES)
-    get_filename_component(source_path "${source}" PATH)
-    string(REPLACE "/" "\\" source_path_msvc "${source_path}")
-    source_group("${source_path_msvc}" FILES "${source}")
-endforeach()
-
+add_subdirectory(Core)
+add_subdirectory(Devices)
+add_subdirectory(Modules)
 add_subdirectory(ThirdParty/Imgui)
 
-# Bit of a hack to stop VS compiling the shaders
-set_source_files_properties(${SHADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
-
-include_directories("/")
-add_Library(Engine ${SOURCES} ${SHADERS})
+GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
