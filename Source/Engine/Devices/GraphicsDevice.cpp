@@ -82,14 +82,14 @@ struct ConstantBuffer
 
 struct Context
 {
-	SDL_Window* pWindow;
+	SDL_Window* pWindow{ nullptr };
 
-	IDXGISwapChain* pSwapChain;
-	ID3D11Device* pDevice;
-	ID3D11DeviceContext* pDeviceContext;
-	ID3D11InfoQueue* pDebugInfoQueue;
-	ID3DUserDefinedAnnotation* pUserDefinedAnnotation;
-	ID3D11RenderTargetView* pBackBuffer;
+	IDXGISwapChain* pSwapChain{ nullptr };
+	ID3D11Device* pDevice{ nullptr };
+	ID3D11DeviceContext* pDeviceContext{ nullptr };
+	ID3D11InfoQueue* pDebugInfoQueue{ nullptr };
+	ID3DUserDefinedAnnotation* pUserDefinedAnnotation{ nullptr };
+	RenderTargetHandle backBuffer;
 
 	// resources
 	std::vector<RenderTarget> renderTargets;
@@ -198,13 +198,59 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 		NULL,
 		&pCtx->pDeviceContext);
 
-	// Create back buffer render target
-	ID3D11Texture2D *pBackBuffer;
-	pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
-	pCtx->pDevice->CreateRenderTargetView(pBackBuffer, NULL, &pCtx->pBackBuffer);
-	SetDebugName(pCtx->pBackBuffer, "[RENDER_TGT] Back buffer");
-	SetDebugName(pBackBuffer, "[TEXTURE_2D] Back buffer");
-	pBackBuffer->Release();
+	
+	{
+		RenderTarget renderTarget;
+
+		// First create render target texture and shader resource view
+		Texture texture;
+		{
+			pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&(texture.pTexture));
+			SetDebugName(texture.pTexture, "[TEXTURE_2D] Back Buffer");
+
+			D3D11_TEXTURE2D_DESC textureDesc;
+			texture.pTexture->GetDesc(&textureDesc);
+
+			pCtx->textures.push_back(texture);
+			renderTarget.texture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+		}
+
+		// Then create the render target view
+		pCtx->pDevice->CreateRenderTargetView(texture.pTexture, nullptr, &renderTarget.pView);
+		SetDebugName(renderTarget.pView, "[RENDER_TGT] Back Buffer");
+
+		// Need to create a depth stencil texture now
+		Texture depthStencilTexture;
+		{
+			D3D11_TEXTURE2D_DESC textureDesc;
+			ZeroMemory(&textureDesc, sizeof(textureDesc));
+			textureDesc.Width = UINT(width);
+			textureDesc.Height = UINT(height);
+			textureDesc.MipLevels = textureDesc.ArraySize = 1;
+			textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			textureDesc.SampleDesc.Count = 4;
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			textureDesc.CPUAccessFlags = 0;
+			textureDesc.MiscFlags = 0;
+			pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &depthStencilTexture.pTexture);
+			SetDebugName(depthStencilTexture.pTexture, "[DEPTH_STCL] Back Buffer");
+
+			pCtx->textures.push_back(depthStencilTexture);
+			renderTarget.depthStencilTexture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+		}
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+		ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+		depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+		depthStencilViewDesc.Texture2D.MipSlice = 0;
+		pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
+		SetDebugName(renderTarget.pDepthStencilView, "[DEPTH_STCL_VIEW] Back Buffer");
+
+		pCtx->renderTargets.push_back(renderTarget);
+		pCtx->backBuffer = RenderTargetHandle{uint16_t(pCtx->renderTargets.size()-1)};
+	}
 
 	// Setup debug
 	pCtx->pDevice->QueryInterface(__uuidof(ID3D11InfoQueue), (void **)&pCtx->pDebugInfoQueue);
@@ -284,14 +330,19 @@ void GfxDevice::SetViewport(float x, float y, float width, float height)
 
 void GfxDevice::ClearBackBuffer(std::array<float, 4> color)
 {
-	pCtx->pDeviceContext->ClearRenderTargetView(pCtx->pBackBuffer, color.data());
+	RenderTarget& renderTarget = pCtx->renderTargets[pCtx->backBuffer.id];
+
+	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
+	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 // ***********************************************************************
 
 void GfxDevice::SetBackBufferActive()
 {
-	pCtx->pDeviceContext->OMSetRenderTargets(1, &pCtx->pBackBuffer, NULL);  
+	RenderTarget& renderTarget = pCtx->renderTargets[pCtx->backBuffer.id];
+
+	pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);  
 }
 
 // ***********************************************************************
@@ -299,6 +350,37 @@ void GfxDevice::SetBackBufferActive()
 void GfxDevice::PresentBackBuffer()
 {
 	pCtx->pSwapChain->Present(0, 0);
+}
+
+// ***********************************************************************
+
+TextureHandle GfxDevice::CopyAndResolveBackBuffer()
+{
+	ID3D11Texture2D *pBackBufferTex;
+	pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBufferTex);
+
+	Texture texture;
+
+	D3D11_TEXTURE2D_DESC textureDesc;
+	pBackBufferTex->GetDesc(&textureDesc);
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.SampleDesc.Count = 1;
+	pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &texture.pTexture);
+	SetDebugName(texture.pTexture, "[TEXTURE_2D] Back Buffer Copy");
+
+	// Since the backbuffer texture is a multisampled resource, we're going to resolve the multisampling into a single sampled texture (effectively doing the anti-aliasing)
+	pCtx->pDeviceContext->ResolveSubresource(texture.pTexture, D3D11CalcSubresource(0, 0, 1), pBackBufferTex, D3D11CalcSubresource(0, 0, 1), textureDesc.Format);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+	pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
+	SetDebugName(texture.pShaderResourceView, "[SHADER_RSRC_VIEW] Back Buffer Copy");
+
+	pCtx->textures.push_back(texture);
+	return TextureHandle{uint16_t(pCtx->textures.size()-1)};
 }
 
 // ***********************************************************************

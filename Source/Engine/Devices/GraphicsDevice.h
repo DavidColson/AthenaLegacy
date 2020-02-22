@@ -158,6 +158,8 @@ namespace GfxDevice
 
 	void PresentBackBuffer();
 
+	TextureHandle CopyAndResolveBackBuffer();
+
 	void ClearRenderState();
 
 	void DrawIndexed(int indexCount, int startIndex, int startVertex);

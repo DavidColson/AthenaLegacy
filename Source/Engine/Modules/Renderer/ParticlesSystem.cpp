@@ -92,6 +92,8 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);
 
+		// TODO: Move particle simulation to another system that can be modified. We're going to move all the rendering code inside the rendering device.
+		// Particle lifetime management also stays here. But we want to give the opportunity to write your own particle simulators
 		// Simulate particles and update transforms
 		// ****************************************
 		std::vector<Matrixf> particleTransforms;

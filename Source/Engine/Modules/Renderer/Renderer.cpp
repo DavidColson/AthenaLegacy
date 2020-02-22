@@ -26,7 +26,7 @@ namespace
 {
 	// We render the scene into this framebuffer to give systems an opportunity to do 
   // post processing before we render into the backbuffer
-  RenderTargetHandle preProcessedFrame;
+  RenderTargetHandle preProcessedFrame_deprecated;
   VertexBufferHandle fullScreenQuad;
   SamplerHandle fullScreenTextureSampler;
   ProgramHandle fullScreenTextureProgram; // simple shader program that draws a texture onscreen
@@ -69,7 +69,7 @@ void Renderer::OnGameStart_Deprecated(Scene& scene)
 		fullScreenTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Fullscreen texture");
 	}
 
-	preProcessedFrame = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), "Pre processed frame");
+	preProcessedFrame_deprecated = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), "Pre processed frame");
 
 	// This should be part of an actual font pre-rendering system, which will initialize and manage itself and give actual commands to the core rendering queue
 	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
@@ -134,16 +134,15 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
+	GfxDevice::SetBackBufferActive();
+	GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
+	GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+	
 	// ****************
 	// Render Drawables
 	// ****************
 	{
 		GFX_SCOPED_EVENT("Rendering drawables");
-
-		// First we draw the scene into a render target
-		GfxDevice::BindRenderTarget(preProcessedFrame);
-		GfxDevice::ClearRenderTarget(preProcessedFrame, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
-		GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
 		GfxDevice::SetTopologyType(TopologyType::LineStripAdjacency);
 
@@ -216,10 +215,24 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// ***************
 	// Post Processing
 	// ***************
+	
+	// Post processing system should be separated out. It should start by copying the current back buffer contents into a new texture.
+	// That copied texture will be pre-processed frame. At it's end it should render everything back into the back buffer.
+	// This means that the renderer file no longer needs to hold this full screen frame rendering setup anymore.
+	// This decouples post processing from the flow of everything else. Since prior systems don't need to render into this pre-processed frame render target, 
+	// Following that post processing should be moved to it's own file and system
 
+	// Debug drawing should store it's queue in an engine singleton component and become a fully fledged system
+	// Font rendering should should become it's own component and system sets, can render straight into the back buffer
+	// Drawable rendering will go away and be replaced by Shape components that define vector shapes and will get drawn by a vector drawing system
+	// (convenience functions can be made to do CreateRectangleShape(x, x, x...), which assign components and set them up)
+
+	// After all this is done, the entire Renderer class will collapse and simply become a list of OnRender systems to execute
 	bool wasPostProcessing = false;
 	{
 		GFX_SCOPED_EVENT("Doing post processing");	
+		TextureHandle preProcessedFrame = GfxDevice::CopyAndResolveBackBuffer();
+
 		for (EntityID ent : SceneView<CPostProcessing>(scene))
 		{
 			wasPostProcessing = true;
@@ -250,7 +263,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 				if (i == 0)
 				{
 					// First iteration, bind the plain, preprocessed frame
-					TextureHandle tex = GfxDevice::GetTexture(preProcessedFrame);
+					TextureHandle tex = preProcessedFrame;
 					GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
 				}
 				else
@@ -273,7 +286,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			GfxDevice::BindProgram(pp->postProcessShaderProgram);
 			GfxDevice::BindVertexBuffers(1, &fullScreenQuad);
 
-			TextureHandle ppFrameTex = GfxDevice::GetTexture(preProcessedFrame);
+			TextureHandle ppFrameTex = preProcessedFrame;
 			GfxDevice::BindTexture(ppFrameTex, ShaderType::Pixel, 0);
 			TextureHandle blurFrameTex = GfxDevice::GetTexture(pp->blurredFrame[1]);
 			GfxDevice::BindTexture(blurFrameTex, ShaderType::Pixel, 1);
@@ -288,25 +301,6 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			// Draw post processed frame
 			GfxDevice::Draw(4, 0);
 		}
-	}
-
-	// If there was no post processing to do, just draw the pre-processed frame on screen
-	if (!wasPostProcessing)
-	{
-		GfxDevice::SetBackBufferActive();
-		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
-		GfxDevice::SetViewport(0, 0, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
-		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
-
-		GfxDevice::BindProgram(fullScreenTextureProgram);
-		GfxDevice::BindVertexBuffers(1, &fullScreenQuad);
-
-		TextureHandle tex = GfxDevice::GetTexture(preProcessedFrame);
-		GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
-
-		GfxDevice::BindSampler(fullScreenTextureSampler, ShaderType::Pixel, 0);
-
-		GfxDevice::Draw(4, 0);
 	}
 
 	// *******************
