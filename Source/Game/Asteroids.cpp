@@ -19,8 +19,8 @@
 #include <functional>
 #include <time.h>
 
-std::vector<RenderProxy> Game::g_asteroidMeshes;
-RenderProxy Game::g_shipMesh;
+std::vector<Shape> Game::g_asteroidMeshes;
+Shape Game::g_shipMesh;
 
 Scene* pMainScene{ nullptr };
 Scene* pMainMenuScene{ nullptr };
@@ -47,8 +47,8 @@ Scene* CreateMainAsteroidsScene()
 	scene.RegisterSystem(SystemPhase::Update, CollisionSystemUpdate);
 	scene.RegisterSystem(SystemPhase::Update, InvincibilitySystemUpdate);
 
-	Game::g_asteroidMeshes.emplace_back(RenderProxy(
-		{
+	Shape asteroid1;
+	asteroid1.vertices = {
 			Vertex(Vec3f(0.03f, 0.379f, 0.0f)),
 			Vertex(Vec3f(0.03f, 0.64f, 0.0f)),
 			Vertex(Vec3f(0.314f, 0.69f, 0.0f)),
@@ -59,13 +59,12 @@ Scene* CreateMainAsteroidsScene()
 			Vertex(Vec3f(0.936f, 0.228f, 0.f)),
 			Vertex(Vec3f(0.555f, 0.028f, 0.f)),
 			Vertex(Vec3f(0.22f, 0.123f, 0.f))
-		}, {
-			// Note has adjacency data
-			9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1
-		}, "Asteroid Type 1"));
+		};
+	asteroid1.indices = { 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1 };
+	Game::g_asteroidMeshes.push_back(asteroid1);
 
-	Game::g_asteroidMeshes.emplace_back(RenderProxy(
-		{
+	Shape asteroid2;
+	asteroid2.vertices = {
 			Vertex(Vec3f(0.05f, 0.54f, 0.0f)),
 			Vertex(Vec3f(0.213f, 0.78f, 0.0f)),
 			Vertex(Vec3f(0.37f, 0.65f, 0.0f)),
@@ -78,13 +77,12 @@ Scene* CreateMainAsteroidsScene()
 			Vertex(Vec3f(0.683f, 0.086f, 0.f)),
 			Vertex(Vec3f(0.312f, 0.074f, 0.f)),
 			Vertex(Vec3f(0.056f, 0.265f, 0.f))
-		}, {
-			// Note has adjacency data
-			10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1
-		}, "Asteroid Type 2"));
+		};
+	asteroid2.indices = { 10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 1 };
+	Game::g_asteroidMeshes.push_back(asteroid2);
 
-	Game::g_asteroidMeshes.emplace_back(RenderProxy(
-		{
+	Shape asteroid3;
+	asteroid3.vertices = {
 			Vertex(Vec3f(0.066f, 0.335f, 0.0f)),
 			Vertex(Vec3f(0.077f, 0.683f, 0.0f)),
 			Vertex(Vec3f(0.3f, 0.762f, 0.0f)),
@@ -97,13 +95,12 @@ Scene* CreateMainAsteroidsScene()
 			Vertex(Vec3f(0.767f, 0.07f, 0.f)),
 			Vertex(Vec3f(0.37f, 0.07f, 0.f)),
 			Vertex(Vec3f(0.21f, 0.33f, 0.f))
-		}, {
-			// Note has adjacency data
-			11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
-		}, "Asteroid Type 3"));
+		};
+	asteroid3.indices = { 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1 };
+	Game::g_asteroidMeshes.push_back(asteroid3);
 
-	Game::g_asteroidMeshes.emplace_back(RenderProxy(
-		{
+	Shape asteroid4;
+	asteroid4.vertices = {
 			Vertex(Vec3f(0.056f, 0.284f, 0.0f)),
 			Vertex(Vec3f(0.064f, 0.752f, 0.0f)),
 			Vertex(Vec3f(0.353f, 0.762f, 0.0f)),
@@ -116,22 +113,18 @@ Scene* CreateMainAsteroidsScene()
 			Vertex(Vec3f(0.857f, 0.16f, 0.f)),
 			Vertex(Vec3f(0.563f, 0.217f, 0.f)),
 			Vertex(Vec3f(0.358f, 0.043f, 0.f))
-		}, {
-			// Note has adjacency data
-			11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1
-		}, "Asteroid Type 3"));
+		};
+	asteroid4.indices = { 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1 };
+	Game::g_asteroidMeshes.push_back(asteroid4);
 
-	Game::g_shipMesh = RenderProxy(
-		{
+	Game::g_shipMesh.vertices = {
 			Vertex(Vec3f(0.f, 0.5f, 0.f)),
 			Vertex(Vec3f(1.f, 0.8f, 0.f)),
 			Vertex(Vec3f(0.9f, 0.7f, 0.f)),
 			Vertex(Vec3f(0.9f, 0.3f, 0.f)),
-			Vertex(Vec3f(1.0f, 0.2f, 0.f)),
-		}, {
-			// Note, has adjacency data
-			4, 0, 1, 2, 3, 4, 0, 1
-		}, "Ship");
+			Vertex(Vec3f(1.0f, 0.2f, 0.f))
+		};
+	Game::g_shipMesh.indices = { 4, 0, 1, 2, 3, 4, 0, 1 };
 
 	srand(unsigned int(time(nullptr)));
 	auto randf = []() { return float(rand()) / float(RAND_MAX); };
@@ -148,11 +141,13 @@ Scene* CreateMainAsteroidsScene()
 
 	CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
 	scene.Assign<CCollidable>(ship)->radius = 17.f;
-	scene.Assign<CDrawable>(ship)->renderProxy = Game::g_shipMesh;
 	scene.Assign<CVisibility>(ship);
 	CPlayerUI* pPlayerUI = scene.Assign<CPlayerUI>(ship);
 	scene.Assign<CPostProcessing>(ship);
 	scene.Assign<CInvincibility>(ship);
+	CDrawable* pDrawable = scene.Assign<CDrawable>(ship);
+	pDrawable->vertices = Game::g_shipMesh.vertices;
+	pDrawable->indices = Game::g_shipMesh.indices;
 
 	CSounds* pSounds = scene.Assign<CSounds>(ship);
 	pSounds->engineSound = AudioDevice::LoadSound("Resources/Audio/Engine.wav");
@@ -176,9 +171,12 @@ Scene* CreateMainAsteroidsScene()
 		pTranform->vel = randomVelocity;
 		pTranform->rot = randomRotation;
 
-		scene.Assign<CDrawable>(asteroid)->renderProxy = Game::g_asteroidMeshes[rand() % 4];
 		scene.Assign<CVisibility>(asteroid);
 		scene.Assign<CAsteroid>(asteroid);
+		CDrawable* pDrawable = scene.Assign<CDrawable>(asteroid);
+		int mesh = rand() % 4;
+		pDrawable->vertices = Game::g_asteroidMeshes[mesh].vertices;
+		pDrawable->indices = Game::g_asteroidMeshes[mesh].indices;
 	}
 
 	// Create the lives
@@ -193,7 +191,9 @@ Scene* CreateMainAsteroidsScene()
 		pTransform->rot = -3.14159f / 2.0f;
 		offset += 30.0f;
 		
-		scene.Assign<CDrawable>(life)->renderProxy = Game::g_shipMesh;
+		CDrawable* pDrawable = scene.Assign<CDrawable>(life);
+		pDrawable->vertices = Game::g_shipMesh.vertices;
+		pDrawable->indices = Game::g_shipMesh.indices;
 		scene.Assign<CVisibility>(life);
 		pPlayer->lifeEntities[i] = life;
 	}
@@ -248,17 +248,13 @@ Scene* CreateMainMenuScene()
 	scene.Assign<CPostProcessing>(quitOption);
 
 	EntityID buttonSelector =scene.NewEntity("Button Selector");
-	RenderProxy buttonSelectorMesh = RenderProxy(
-		{
+	CDrawable* pDrawable = scene.Assign<CDrawable>(buttonSelector);
+	pDrawable->vertices = {
 			Vertex(Vec3f(0.f, 0.0f, 0.f)),
 			Vertex(Vec3f(0.7f, 0.5f, 0.f)),
 			Vertex(Vec3f(0.f, 1.f, 0.f)),
-		}, {
-			// Note, has adjacency data
-			2, 0, 1, 2, 0, 1
-		}, "ButtonSelector");
-
-	scene.Assign<CDrawable>(buttonSelector)->renderProxy = buttonSelectorMesh;
+		};
+	pDrawable->indices = { 2, 0, 1, 2, 0, 1 };
 	scene.Assign<CVisibility>(buttonSelector);
 	CTransform* pTransform = scene.Assign<CTransform>(buttonSelector);
 	pTransform->pos = Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f);

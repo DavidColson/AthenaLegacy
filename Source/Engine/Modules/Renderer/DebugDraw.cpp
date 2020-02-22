@@ -105,6 +105,7 @@ void DebugDraw::Detail::DrawQueue()
 	if (drawQueue.empty())
 		return;
 
+	// TODO: MEMORY LEAK HERE Release the old buffer when you create new one
 	if (!IsValid(vertexBuffer) || vertBufferSize < vertBufferData.size())
 	{
 		vertBufferSize = (int)vertBufferData.size() + 1000;

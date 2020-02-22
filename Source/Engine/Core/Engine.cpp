@@ -61,6 +61,7 @@ void Engine::NewSceneCreated(Scene& scene)
 {
 	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, Renderer::OnPostProcessingAdded);
+	scene.RegisterReactiveSystem<CDrawable>(Reaction::OnAdd, Renderer::OnDrawableAdded);
 }
 
 void Engine::SetActiveScene(Scene* pScene)

@@ -30,16 +30,13 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 
 	scene.Assign<CVisibility>(bullet);
 	CDrawable* pDrawable = scene.Assign<CDrawable>(bullet);
-	pDrawable->renderProxy = RenderProxy(
-		{
+	pDrawable->vertices = {
 			Vertex(Vec3f(0.f, 0.0f, 0.f)),
 			Vertex(Vec3f(0.f, 1.0f, 0.f)),
 			Vertex(Vec3f(1.f, 1.0f, 0.f)),
 			Vertex(Vec3f(1.f, 0.0f, 0.f)),
-		}, {
-			// Note, has adjacency data
-			3, 0, 1, 2, 3, 0, 1
-		}, "Bullet");
+		};
+	pDrawable->indices = { 3, 0, 1, 2, 3, 0, 1 };
 	pDrawable->lineThickness = 5.0f;
 	scene.Assign<CCollidable>(bullet)->radius = 4.0f;
 }
@@ -95,7 +92,10 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 		pNewTransform->vel = randomVelocity;
 		pNewTransform->rot = randomRotation;
 
-		scene.Assign<CDrawable>(newAsteroid)->renderProxy = Game::g_asteroidMeshes[rand() % 4];
+		CDrawable* pDrawable = scene.Assign<CDrawable>(newAsteroid);
+		int mesh = rand() % 4;
+		pDrawable->vertices = Game::g_asteroidMeshes[mesh].vertices;
+		pDrawable->indices = Game::g_asteroidMeshes[mesh].indices;
 		scene.Assign<CVisibility>(newAsteroid);
 		scene.Assign<CAsteroid>(newAsteroid)->hitCount = scene.Get<CAsteroid>(asteroid)->hitCount + 1;
 	}

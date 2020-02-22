@@ -6,7 +6,6 @@
 
 #include "Matrix.h"
 #include "Vec3.h"
-#include "RenderProxy.h"
 #include "Log.h"
 #include "Renderer.h"
 #include "Scene.h"

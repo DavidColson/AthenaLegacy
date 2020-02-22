@@ -14,10 +14,6 @@
 
 #include "Log.h"
 
-// #TODO: These should not be part of GfxDevice
-#include "Renderer/RenderProxy.h"
-#include "Renderer/DebugDraw.h"
-
 
 // ***********************************
 // D3D11 specific resource definitions

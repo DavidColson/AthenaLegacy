@@ -1,11 +1,17 @@
 #include <vector>
 
-#include <Renderer/RenderProxy.h>
+#include <Renderer/Renderer.h>
 
 #define PLAYER_ID 0
 
+struct Shape
+{
+	std::vector<Vertex> vertices;
+	std::vector<int> indices;
+};
+
 namespace Game
 {
-  	extern std::vector<RenderProxy> g_asteroidMeshes;
-	extern RenderProxy g_shipMesh;
+  	extern std::vector<Shape> g_asteroidMeshes;
+ 	extern Shape g_shipMesh;
 }

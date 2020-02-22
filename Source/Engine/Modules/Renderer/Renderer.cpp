@@ -41,20 +41,6 @@ namespace
 
 void Renderer::OnGameStart_Deprecated(Scene& scene)
 {
-	// Should be eventually moved to a material type when that exists
-	{
-		std::vector<VertexInputElement> baselayout;
-		baselayout.push_back({"POSITION", AttributeType::Float3});
-		baselayout.push_back({"COLOR", AttributeType::Float3 });
-		baselayout.push_back({"TEXCOORD", AttributeType::Float2});
-
-		VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout, "Base shape");
-		PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain", "Base shape");
-		GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain", "Base shape");
-
-		baseShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
-	}
-
 	// Create a program for drawing full screen quads to
 	// This has the most reason to be initialized in the rendering system for the entire game
 	{
@@ -89,6 +75,23 @@ void Renderer::OnGameStart_Deprecated(Scene& scene)
 	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 
 	DebugDraw::Detail::Init();
+}
+
+void Renderer::OnDrawableAdded(Scene& scene, EntityID ent)
+{
+	CDrawable& drawable = *(scene.Get<CDrawable>(ent));
+
+	std::vector<VertexInputElement> baselayout;
+	baselayout.push_back({"POSITION", AttributeType::Float3});
+	baselayout.push_back({"COLOR", AttributeType::Float3 });
+	baselayout.push_back({"TEXCOORD", AttributeType::Float2});
+
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Shader.hlsl", "VSMain", baselayout, "Base shape");
+	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Shader.hlsl", "PSMain", "Base shape");
+	GeometryShaderHandle geomShader = GfxDevice::CreateGeometryShader(L"Shaders/Shader.hlsl", "GSMain", "Base shape");
+
+	drawable.baseProgram = GfxDevice::CreateProgram(vertShader, pixShader, geomShader);
+	drawable.transformBuffer = GfxDevice::CreateConstantBuffer(sizeof(CDrawable::TransformData), scene.GetEntityName(ent));
 }
 
 void Renderer::OnPostProcessingAdded(Scene& scene, EntityID ent)
@@ -130,11 +133,7 @@ void Renderer::OnFrameStart(Scene& scene, float deltaTime)
 void Renderer::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();
-	// RenderFonts -- Picks up text component data
-	// RenderPostProcessing -- Need a scene post process component, lives on singleton?
-	// RenderImgui - Editor components? Maybe something for future
 
-	// TODO: Render proxies should store all their data in the actual component, and be initialized with a reactive system
 	// ****************
 	// Render Drawables
 	// ****************
@@ -146,10 +145,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::ClearRenderTarget(preProcessedFrame, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
 		GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
-		// Set Shaders to active
-		GfxDevice::BindProgram(baseShaderProgram);
 		GfxDevice::SetTopologyType(TopologyType::LineStripAdjacency);
-
 
 		for (EntityID ent : SceneView<CDrawable, CTransform>(scene))
 		{
@@ -162,9 +158,37 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 			CDrawable* pDrawable = scene.Get<CDrawable>(ent);
 			CTransform* pTransform = scene.Get<CTransform>(ent);
 
-			pDrawable->renderProxy.SetTransform(pTransform->pos, pTransform->rot, pTransform->sca);
-			pDrawable->renderProxy.lineThickness = pDrawable->lineThickness;
-			pDrawable->renderProxy.Draw();
+			// TODO: At some point there should be a shape/mesh data type which will create it's own buffers and they can be queried
+			if (!IsValid(pDrawable->vertBuffer))
+				pDrawable->vertBuffer = GfxDevice::CreateVertexBuffer(pDrawable->vertices.size(), sizeof(Vertex), pDrawable->vertices.data(), scene.GetEntityName(ent));
+
+			if (!IsValid(pDrawable->indexBuffer))
+				pDrawable->indexBuffer = GfxDevice::CreateIndexBuffer(pDrawable->indices.size(), pDrawable->indices.data(), scene.GetEntityName(ent));
+
+
+			// Set vertex buffer as active
+			GfxDevice::BindProgram(pDrawable->baseProgram);
+			GfxDevice::BindVertexBuffers(1, &pDrawable->vertBuffer);
+			GfxDevice::BindIndexBuffer(pDrawable->indexBuffer);
+
+			Matrixf posMat = Matrixf::Translate(pTransform->pos);
+			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, pTransform->rot));
+			Matrixf scaMat = Matrixf::Scale(pTransform->sca);
+			Matrixf pivotAdjust = Matrixf::Translate(Vec3f(-0.5f, -0.5f, 0.0f));
+
+			Matrixf world = posMat * rotMat * scaMat * pivotAdjust; // transform into world space
+			Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f)); // transform into camera space
+
+			Matrixf projection = Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f); // transform into screen space
+			
+			Matrixf wvp = projection * view * world;
+
+			// TODO: Consider using a flag here for picking a shader, so we don't have to do memcpy twice
+			CDrawable::TransformData trans{ wvp, pDrawable->lineThickness };
+			GfxDevice::BindConstantBuffer(pDrawable->transformBuffer, &trans, ShaderType::Vertex, 0);
+			GfxDevice::BindConstantBuffer(pDrawable->transformBuffer, &trans, ShaderType::Geometry, 0);
+
+			GfxDevice::DrawIndexed(GfxDevice::GetIndexBufferSize(pDrawable->indexBuffer), 0, 0);
 		}
 	}
 

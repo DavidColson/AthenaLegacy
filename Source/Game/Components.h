@@ -3,7 +3,6 @@
 #include <TypeSystem.h>
 #include <Vec2.h>
 #include <Vec3.h>
-#include <Renderer/RenderProxy.h>
 #include <Log.h>
 #include <Scene.h>
 #include <AudioDevice.h>

@@ -3,9 +3,9 @@
 #include <vector>
 #include <array>
 
+#include "Matrix.h"
 #include "Scene.h"
 #include "GraphicsDevice.h" 
-#include "Renderer/RenderProxy.h"
 
 class RenderFont;
 
@@ -16,6 +16,7 @@ namespace Renderer
 
 	// Reactive Systems
 	void OnPostProcessingAdded(Scene& scene, EntityID ent);
+	void OnDrawableAdded(Scene& scene, EntityID ent);
 
 	// Systems
 	void OnFrameStart(Scene& scene, float deltaTime);
@@ -31,8 +32,24 @@ namespace Renderer
 
 struct CDrawable
 {
-	RenderProxy renderProxy;
+	// Shader constants 
+	struct TransformData
+	{
+		Matrixf wvp;
+		float lineThickness;
+		float pad1{ 0.0f };
+		float pad2{ 0.0f };
+		float pad3{ 0.0f };
+	};
+
 	float lineThickness{ 1.5f };
+	std::vector<Vertex> vertices;
+	std::vector<int> indices;
+
+	ProgramHandle baseProgram;
+	VertexBufferHandle vertBuffer;
+	IndexBufferHandle indexBuffer;
+	ConstBufferHandle transformBuffer;
 
 	REFLECT()
 };

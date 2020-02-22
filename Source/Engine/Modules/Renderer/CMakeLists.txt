@@ -8,6 +8,4 @@ target_sources(Engine
         "Renderer.cpp"
         "RenderFont.h"
         "RenderFont.cpp"
-        "RenderProxy.h"
-        "RenderProxy.cpp"
 )

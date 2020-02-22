@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <Renderer/RenderProxy.h>
 #include <Scene.h>
 
 void CollisionSystemUpdate(Scene& scene, float deltaTime);
