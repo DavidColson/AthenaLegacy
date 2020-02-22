@@ -8,6 +8,7 @@
 #include <Imgui/examples/imgui_impl_sdl.h>
 
 #include "Renderer/ParticlesSystem.h"
+#include "Renderer/PostProcessingSystem.h"
 #include "AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
@@ -60,7 +61,7 @@ void Engine::StartShutdown()
 void Engine::NewSceneCreated(Scene& scene)
 {
 	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
-	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, Renderer::OnPostProcessingAdded);
+	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnPostProcessingAdded);
 	scene.RegisterReactiveSystem<CDrawable>(Reaction::OnAdd, Renderer::OnDrawableAdded);
 }
 

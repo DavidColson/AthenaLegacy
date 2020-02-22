@@ -8,4 +8,6 @@ target_sources(Engine
         "Renderer.cpp"
         "RenderFont.h"
         "RenderFont.cpp"
+        "PostProcessingSystem.h"
+        "PostProcessingSystem.cpp"
 )
