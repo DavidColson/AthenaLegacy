@@ -14,12 +14,24 @@ REFLECT_BEGIN(CText)
 REFLECT_MEMBER(text)
 REFLECT_END()
 
+namespace 
+{
+	// Cant' wait to replace this with stb_truetype
+	FT_Library freetype;
+	FT_Face face;
+	bool startedFreeType = false;
+}
+
 void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 {
 	CFontSystemState& state = *(scene.Get<CFontSystemState>(entity));
 
-	FT_Library freetype;
-	FT_Init_FreeType(&freetype);
+	if (startedFreeType == false)
+	{
+		FT_Init_FreeType(&freetype);
+		FT_New_Face(freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &face);
+		startedFreeType = true;
+	}
 
 	std::string fontShaderSrc = "\
 	cbuffer cbTransform\
@@ -84,9 +96,6 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 
 	for (int i = 0; i < 128; i++)
 	{
-		FT_Face face;
-		FT_New_Face(freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &face);
-
 		FT_Set_Pixel_Sizes(face, 0, 50);
 
 		FT_Load_Char(face, i, FT_LOAD_RENDER);
@@ -160,7 +169,7 @@ void FontSystem::OnFrame(Scene& scene, float deltaTime)
 		for (char const& c : pText->text)
 		{
 			Character ch = state.characters[c];
-			textWidth += ch.advance;
+			textWidth += ch.advance * pTransform->sca.x;
 		}
 
 		for (char const& c : pText->text) {
@@ -170,7 +179,7 @@ void FontSystem::OnFrame(Scene& scene, float deltaTime)
 			if (IsValid(state.characters[c].charTexture))
 			{
 				Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth * 0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
-				Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
+				Matrixf scalemat = Matrixf::Scale(Vec3f(pTransform->sca.x * ch.size.x / 10.0f, pTransform->sca.y * ch.size.y / 10.0f, 1.0f));
 
 				Matrixf world = posmat * scalemat; // transform into world space
 				Matrixf wvp = projection * world;
@@ -184,7 +193,7 @@ void FontSystem::OnFrame(Scene& scene, float deltaTime)
 				GfxDevice::Draw(4, 0);
 			}
 
-			x += ch.advance;
+			x += ch.advance * pTransform->sca.x;
 		}
 	}
 }

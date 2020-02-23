@@ -7,6 +7,17 @@
 #include <Scene.h>
 #include <AudioDevice.h>
 
+struct CMenuInteraction
+{
+	enum State
+	{
+		Start,
+		Quit
+	};
+
+	State currentState;
+};
+
 struct CPolyShape
 {
 	std::vector<Vec2f> points;

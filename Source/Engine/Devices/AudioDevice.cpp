@@ -201,6 +201,9 @@ SoundID AudioDevice::PlaySound(LoadedSoundHandle sound, float volume, bool loop)
 
 void AudioDevice::PauseSound(SoundID sound)
 {
+    if (sound == SoundID(-1))
+        return;
+
     SDL_LockAudioDevice(device);
     uint32_t index = sound >> 32;
     if (callbackData.currentSounds[index].id == sound)
@@ -212,6 +215,9 @@ void AudioDevice::PauseSound(SoundID sound)
 
 void AudioDevice::UnPauseSound(SoundID sound)
 {
+    if (sound == SoundID(-1))
+        return;
+        
     SDL_LockAudioDevice(device);
     uint32_t index = sound >> 32;
     if (callbackData.currentSounds[index].id == sound)

@@ -155,6 +155,11 @@ struct BaseComponentPool
 		pData = new char[elementSize * MAX_ENTITIES];
 	}
 
+	~BaseComponentPool()
+	{
+		delete[] pData;
+	}
+
 	inline void* get(size_t index)
 	{
 		ASSERT(index < MAX_ENTITIES, "Entity overrun, delete some entities");
@@ -193,9 +198,27 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 
 struct Scene
 {
+	struct EntityDesc
+	{
+		EntityID id;
+		ComponentMask mask;
+	};
+
 	Scene()
 	{
 		Engine::NewSceneCreated(*this);
+	}
+
+	~Scene()
+	{
+		for (EntityDesc& desc : entities)
+		{
+			DestroyEntity(desc.id);
+		}
+		for (BaseComponentPool* pPool : componentPools)
+		{
+			delete pPool;
+		}
 	}
 
 	// Creates an entity, simply makes a new id and mask
@@ -385,11 +408,6 @@ struct Scene
 
 	std::vector<BaseComponentPool*> componentPools;
 
-	struct EntityDesc
-	{
-		EntityID id;
-		ComponentMask mask;
-	};
 	std::vector<EntityDesc> entities;
 	std::vector<EntityIndex> freeEntities;
 

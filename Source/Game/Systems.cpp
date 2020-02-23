@@ -348,6 +348,11 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		CTransform* pTransform = scene.Get<CTransform>(id);
 		CPlayerControl* pControl = scene.Get<CPlayerControl>(id);
 
+		if (Input::GetKeyDown(SDL_SCANCODE_ESCAPE))
+		{
+			LoadMenu();
+		}
+
 		// If player doesn't have a drawable component we consider them dead
 		if (scene.Get<CVisibility>(id)->visible == false && !scene.Has<CInvincibility>(id))
 		{
@@ -389,6 +394,46 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		{
 			SpawnBullet(scene, pTransform);
 			AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->shootSound, 1.0f, false);
+		}
+	}
+}
+
+void MenuInterationSystem(Scene& scene, float deltaTime)
+{
+	PROFILE();
+
+	for (EntityID id : SceneView<CTransform, CMenuInteraction>(scene))
+	{
+		CTransform* pTransform = scene.Get<CTransform>(id);
+		CMenuInteraction* pInteraction = scene.Get<CMenuInteraction>(id);
+
+		const float w = GfxDevice::GetWindowWidth();
+		const float h = GfxDevice::GetWindowHeight();
+		float validPositions[] = { h / 2.0f + 18.0f, h / 2.0f - 62.0f};
+
+		if (Input::GetKeyDown(SDL_SCANCODE_UP) && pInteraction->currentState == CMenuInteraction::Quit)
+		{
+			pInteraction->currentState = CMenuInteraction::Start;
+		}
+		if (Input::GetKeyDown(SDL_SCANCODE_DOWN) && pInteraction->currentState == CMenuInteraction::Start)
+		{
+			pInteraction->currentState = CMenuInteraction::Quit;
+		}
+		pTransform->pos.y = validPositions[pInteraction->currentState];
+
+		if (Input::GetKeyDown(SDL_SCANCODE_RETURN))
+		{
+			switch (pInteraction->currentState)
+			{
+			case CMenuInteraction::Start:
+				LoadMainScene();
+				break;
+			case CMenuInteraction::Quit:
+				Engine::StartShutdown();
+				break;
+			default:
+				break;
+			}
 		}
 	}
 }

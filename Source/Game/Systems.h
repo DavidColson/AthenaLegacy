@@ -21,3 +21,5 @@ void AsteroidSystemUpdate(Scene& scene, float deltaTime);
 void MovementSystemUpdate(Scene& scene, float deltaTime);
 
 void ShipControlSystemUpdate(Scene& scene, float deltaTime);
+
+void MenuInterationSystem(Scene& scene, float deltaTime);

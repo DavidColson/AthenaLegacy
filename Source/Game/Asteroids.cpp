@@ -19,9 +19,6 @@
 #include <functional>
 #include <time.h>
 
-Scene* pMainScene{ nullptr };
-Scene* pMainMenuScene{ nullptr };
-
 struct Component
 {
   int myInt{ 5 };
@@ -149,13 +146,16 @@ Scene* CreateMainMenuScene()
 {
 	Scene& scene = *(new Scene());
 	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
+	scene.RegisterSystem(SystemPhase::Update, MenuInterationSystem);
 
 	const float w = GfxDevice::GetWindowWidth();
 	const float h = GfxDevice::GetWindowHeight();
 
 	EntityID titleText =scene.NewEntity("Main Menu Title");
 	scene.Assign<CText>(titleText)->text = "Asteroids!";
-	scene.Assign<CTransform>(titleText)->pos = Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f);
+	CTransform* pTrans = scene.Assign<CTransform>(titleText);
+	pTrans->pos = Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f);
+	pTrans->sca = Vec3f(2.0f, 2.0f, 2.0f);
 	scene.Assign<CPostProcessing>(titleText);
 
 	EntityID startOption =scene.NewEntity("Start Option");
@@ -164,10 +164,11 @@ Scene* CreateMainMenuScene()
 
 	EntityID quitOption =scene.NewEntity("Quit Option");
 	scene.Assign<CText>(quitOption)->text = "Quit";
-	scene.Assign<CTransform>(quitOption)->pos = Vec3f(w / 2.0f, h / 2.0f - 50.0f, 0.0f);
+	scene.Assign<CTransform>(quitOption)->pos = Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f);
 
 	EntityID buttonSelector =scene.NewEntity("Button Selector");
 	scene.Assign<CVisibility>(buttonSelector);
+	scene.Assign<CMenuInteraction>(buttonSelector);
 
 	Vec2f verts[3] = {
 		Vec2f(0.f, 0.0f),
@@ -180,6 +181,16 @@ Scene* CreateMainMenuScene()
 	pTransform->sca = Vec3f(30.f, 30.0f, 1.0f);
 
 	return &scene;
+}
+
+void LoadMainScene()
+{
+	Engine::SetActiveScene(CreateMainAsteroidsScene());
+}
+
+void LoadMenu()
+{
+	Engine::SetActiveScene(CreateMainMenuScene());
 }
 
 int main(int argc, char *argv[])
@@ -208,12 +219,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	// Make the main scene
-	pMainScene = CreateMainAsteroidsScene();
-	pMainMenuScene = CreateMainMenuScene();
-
 	// Run everything
-	Engine::Run(pMainScene);
+	Engine::Run(CreateMainMenuScene());
 
 	return 0;
 }

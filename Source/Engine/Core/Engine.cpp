@@ -31,6 +31,7 @@ namespace
 	EntityID g_engineSingleton{ INVALID_ENTITY };
 
 	Scene* pCurrentScene{ nullptr };
+	Scene* pPendingSceneLoad{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
 }
 
@@ -85,6 +86,16 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterReactiveSystem<CShapesSystemState>(Reaction::OnAdd, Shapes::OnShapesSystemStateAdded);
 	scene.RegisterReactiveSystem<CFontSystemState>(Reaction::OnAdd, FontSystem::OnAddFontSystemState);
 
+	scene.RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
+	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
+	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, ImGuiRender);
+
 	scene.NewEntity("Engine Singletons");
 	scene.Assign<CDebugDrawingState>(ENGINE_SINGLETON);
 	scene.Assign<CShapesSystemState>(ENGINE_SINGLETON);
@@ -93,19 +104,7 @@ void Engine::NewSceneCreated(Scene& scene)
 
 void Engine::SetActiveScene(Scene* pScene)
 {
-	// Register systems!
-	pScene->RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
-	pScene->RegisterSystem(SystemPhase::Update, Input::OnFrame);
-	pScene->RegisterSystem(SystemPhase::Update, Editor::OnFrame);
-
-	pScene->RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
-	pScene->RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
-	pScene->RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
-	pScene->RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
-	pScene->RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
-	pScene->RegisterSystem(SystemPhase::Render, ImGuiRender);
-	
-	pCurrentScene = pScene;
+	pPendingSceneLoad = pScene;
 }
 
 void Engine::Initialize()
@@ -135,7 +134,7 @@ void Engine::Initialize()
 
 void Engine::Run(Scene *pScene)
 {	
-	SetActiveScene(pScene);
+	pCurrentScene = pScene;
 	
 	// Game update loop
 	double frameTime = 0.016f;
@@ -155,6 +154,13 @@ void Engine::Run(Scene *pScene)
 		GfxDevice::PresentBackBuffer();
 		GfxDevice::ClearRenderState();
 		GfxDevice::PrintQueuedDebugMessages();
+
+		if (pPendingSceneLoad)
+		{
+			delete pCurrentScene;
+			pCurrentScene = pPendingSceneLoad;
+			pPendingSceneLoad = nullptr;
+		}
 
 		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
