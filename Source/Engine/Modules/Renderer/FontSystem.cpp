@@ -1,5 +1,5 @@
 
-#include "RenderFont.h"
+#include "FontSystem.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -9,18 +9,21 @@
 #include "Log.h"
 #include "Renderer.h"
 #include "Scene.h"
+#include "Profiler.h"
 
 REFLECT_BEGIN(CText)
 REFLECT_MEMBER(text)
 REFLECT_END()
 
-RenderFont::RenderFont(std::string fontFile, int size)
+void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 {
+	CFontSystemState& state = *(scene.Get<CFontSystemState>(entity));
+
 	FT_Library freetype;
 	FT_Init_FreeType(&freetype);
 
 	std::string fontShaderSrc = "\
-		cbuffer cbTransform\
+	cbuffer cbTransform\
 	{\
 		float4x4 WVP;\
 	};\
@@ -48,14 +51,14 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	}";
 
 	std::vector<VertexInputElement> layout;
-  layout.push_back({"POSITION", AttributeType::Float3});
-  layout.push_back({"COLOR", AttributeType::Float3});
-  layout.push_back({"TEXCOORD", AttributeType::Float2});
+	layout.push_back({"POSITION", AttributeType::Float3});
+	layout.push_back({"COLOR", AttributeType::Float3});
+	layout.push_back({"TEXCOORD", AttributeType::Float2});
 
-  VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout, "Fonts");
-  PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout, "Fonts");
+	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
 
-  fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+	state.fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	std::vector<Vertex> quadVertices = {
 		Vertex(Vec3f(0.0f, 0.0f, 0.5f)),
@@ -72,20 +75,20 @@ RenderFont::RenderFont(std::string fontFile, int size)
 	// Create vertex buffer
 	// ********************
 
-	quadBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Font Quad");
+	state.quadBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Font Quad");
 
 	// Create a constant buffer for the WVP
 	// **********************************************
 
-	wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Font transforms");
-	charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
+	state.wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(CFontSystemState::TransformData), "Font transforms");
+	state.charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
 
 	for (int i = 0; i < 128; i++)
 	{
 		FT_Face face;
-		FT_New_Face(freetype, fontFile.c_str(), 0, &face);
+		FT_New_Face(freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &face);
 
-		FT_Set_Pixel_Sizes(face, 0, size);
+		FT_Set_Pixel_Sizes(face, 0, 50);
 
 		FT_Load_Char(face, i, FT_LOAD_RENDER);
 
@@ -109,21 +112,25 @@ RenderFont::RenderFont(std::string fontFile, int size)
 		int size = sizeof(character);
 		int size2 = sizeof(character.size);
 
-		characters.push_back(character);
+		state.characters.push_back(character);
 	}
 }
 
-void RenderFont::DrawSceneText(Scene& scene)
+void FontSystem::OnFrame(Scene& scene, float deltaTime)
 {
+	PROFILE();
+	
 	GFX_SCOPED_EVENT("Drawing text");
+	
+	CFontSystemState& state = *(scene.Get<CFontSystemState>(ENGINE_SINGLETON));
 
 	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 	// Set vertex buffer as active
-	GfxDevice::BindVertexBuffers(1, &quadBuffer);
+	GfxDevice::BindVertexBuffers(1, &state.quadBuffer);
 
 	// Set Shaders to active
-	GfxDevice::BindProgram(fontShaderProgram);
+	GfxDevice::BindProgram(state.fontShaderProgram);
 
 	BlendingInfo blender;
 	blender.enabled = true;
@@ -133,7 +140,7 @@ void RenderFont::DrawSceneText(Scene& scene)
 
 	Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
 	
-	GfxDevice::BindSampler(charTextureSampler, ShaderType::Pixel, 0);
+	GfxDevice::BindSampler(state.charTextureSampler, ShaderType::Pixel, 0);
 
 	for (EntityID ent : SceneView<CText, CTransform>(scene))
 	{
@@ -153,15 +160,15 @@ void RenderFont::DrawSceneText(Scene& scene)
 
 		for (char const& c : pText->text)
 		{
-			Character ch = characters[c];
+			Character ch = state.characters[c];
 			textWidth += ch.advance;
 		}
 
 		for (char const& c : pText->text) {
 			// Draw a font character
-			Character ch = characters[c];
+			Character ch = state.characters[c];
 
-			if (IsValid(characters[c].charTexture))
+			if (IsValid(state.characters[c].charTexture))
 			{
 				Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth * 0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
 				Matrixf scalemat = Matrixf::Scale(Vec3f(ch.size.x / 10.0f, ch.size.y / 10.0f, 1.0f));
@@ -169,9 +176,9 @@ void RenderFont::DrawSceneText(Scene& scene)
 				Matrixf world = posmat * scalemat; // transform into world space
 				Matrixf wvp = projection * world;
 
-				TransformData transformData{ wvp };
-				GfxDevice::BindConstantBuffer(wvpBuffer, &transformData, ShaderType::Vertex, 0);
-				GfxDevice::BindTexture(characters[c].charTexture, ShaderType::Pixel, 0);
+				CFontSystemState::TransformData transformData{ wvp };
+				GfxDevice::BindConstantBuffer(state.wvpBuffer, &transformData, ShaderType::Vertex, 0);
+				GfxDevice::BindTexture(state.characters[c].charTexture, ShaderType::Pixel, 0);
 
 				// do 3D rendering on the back buffer here
 				// Todo::Instance render the entire string
@@ -182,4 +189,3 @@ void RenderFont::DrawSceneText(Scene& scene)
 		}
 	}
 }
-

@@ -185,8 +185,6 @@ void ShowFrameStats()
 	}
 
 	ImGui::End();
-
-	Profiler::ClearFrameData();
 }
 
 void Editor::OnFrame(Scene& scene, float deltaTime)
@@ -223,4 +221,6 @@ void Editor::OnFrame(Scene& scene, float deltaTime)
 	ShowFrameStats();
 	if (showImGuiDemo)
 		ImGui::ShowDemoWindow();
+
+	Profiler::ClearFrameData();
 }

@@ -6,7 +6,7 @@
 #include <AudioDevice.h>
 #include <Renderer/DebugDraw.h>
 #include <Renderer/Renderer.h>
-#include <Renderer/RenderFont.h>
+#include <Renderer/FontSystem.h>
 #include <Renderer/ParticlesSystem.h>
 #include <Renderer/ShapesSystem.h>
 #include <Input/Input.h>

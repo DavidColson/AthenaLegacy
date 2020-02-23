@@ -6,10 +6,10 @@ target_sources(Engine
         "ParticlesSystem.cpp"
         "Renderer.h"
         "Renderer.cpp"
-        "RenderFont.h"
-        "RenderFont.cpp"
         "PostProcessingSystem.h"
         "PostProcessingSystem.cpp"
         "ShapesSystem.h"
         "ShapesSystem.cpp"
+        "FontSystem.h"
+        "FontSystem.cpp"
 )

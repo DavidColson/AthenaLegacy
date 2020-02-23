@@ -8,6 +8,7 @@
 #include <Imgui/examples/imgui_impl_sdl.h>
 
 #include "Renderer/ParticlesSystem.h"
+#include "Renderer/FontSystem.h"
 #include "Renderer/PostProcessingSystem.h"
 #include "Renderer/DebugDraw.h"
 #include "Renderer/ShapesSystem.h"
@@ -68,10 +69,12 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnPostProcessingAdded);;
 	scene.RegisterReactiveSystem<CDebugDrawingState>(Reaction::OnAdd, DebugDraw::OnDebugDrawStateAdded);
 	scene.RegisterReactiveSystem<CShapesSystemState>(Reaction::OnAdd, Shapes::OnShapesSystemStateAdded);
+	scene.RegisterReactiveSystem<CFontSystemState>(Reaction::OnAdd, FontSystem::OnAddFontSystemState);
 
 	scene.NewEntity("Engine Singletons");
 	scene.Assign<CDebugDrawingState>(ENGINE_SINGLETON);
 	scene.Assign<CShapesSystemState>(ENGINE_SINGLETON);
+	scene.Assign<CFontSystemState>(ENGINE_SINGLETON);
 }
 
 void Engine::SetActiveScene(Scene* pScene)
@@ -113,9 +116,6 @@ void Engine::Initialize()
 void Engine::Run(Scene *pScene)
 {	
 	SetActiveScene(pScene);
-
-	// Move to a SceneStartFunction
-	Renderer::OnGameStart_Deprecated(*pCurrentScene);
 	
 	// Game update loop
 	double frameTime = 0.016f;
@@ -127,8 +127,6 @@ void Engine::Run(Scene *pScene)
 		pCurrentScene->SimulateScene((float)frameTime);
 		
 		GfxDevice::PrintQueuedDebugMessages();
-
-		Profiler::ClearFrameData();
 
 		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();

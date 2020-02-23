@@ -9,7 +9,7 @@
 
 #include "Profiler.h"
 #include "Log.h"
-#include "RenderFont.h"
+#include "FontSystem.h"
 #include "DebugDraw.h"
 #include "Scene.h"
 #include "Vec4.h"
@@ -22,12 +22,6 @@ namespace
   // Need a separate font render system, which pre processes text
   // into meshes
   RenderFont* pFontRender;
-}
-
-void Renderer::OnGameStart_Deprecated(Scene& scene)
-{
-	// This should be part of an actual font pre-rendering system, which will initialize and manage itself and give actual commands to the core rendering queue
-	pFontRender = new RenderFont("Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 50);
 }
 
 void Renderer::OnFrameStart(Scene& scene, float deltaTime)
@@ -64,7 +58,7 @@ void Renderer::OnFrame(Scene& scene, float deltaTime)
 	// Ideally font is just another mesh with a material to draw
 	// So it would go through the normal channels, specialness is in it's material and probably
 	// an earlier system that prepares the quads to render
-	pFontRender->DrawSceneText(scene);
+	FontSystem::OnFrame(scene, deltaTime);
 
 	// **********
 	// Draw Debug 

@@ -3,6 +3,7 @@
 #include "Scene.h"
 #include "Matrix.h"
 #include "Maths.h"
+#include "Profiler.h"
 
 REFLECT_BEGIN(CParticleEmitter)
 REFLECT_MEMBER(looping)
@@ -80,6 +81,8 @@ void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 
 void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	for (EntityID ent : SceneView<CParticleEmitter, CTransform>(scene))
 	{
 		// Skip if this entity has a visibility component that is false

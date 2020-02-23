@@ -1,5 +1,7 @@
 #include "Renderer/PostProcessingSystem.h"
 
+#include "Profiler.h"
+
 REFLECT_BEGIN(CPostProcessing)
 REFLECT_END()
 
@@ -49,6 +51,7 @@ void PostProcessingSystem::OnPostProcessingAdded(Scene& scene, EntityID entity)
 
 void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
 {
+    PROFILE();
     GFX_SCOPED_EVENT("Doing post processing");	
     TextureHandle preProcessedFrame = GfxDevice::CopyAndResolveBackBuffer();
 
