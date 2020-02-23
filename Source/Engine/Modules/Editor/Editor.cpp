@@ -173,13 +173,15 @@ void ShowFrameStats()
 
 	ImGui::Separator();
 
-	std::vector<Profiler::ScopeData>& data = Profiler::GetFrameData();
-	for (size_t i = 0; i < data.size(); ++i)
+	int elements = 0;
+	Profiler::ScopeData* pFrameData = nullptr;
+	Profiler::GetFrameData(&pFrameData, elements);
+	for (size_t i = 0; i < elements; ++i)
 	{
 		// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
 		// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
-		double inMs = data[i].time * 1000.0;
-		ImGui::Text(StringFormat("%s - %fms/frame", data[i].name, inMs).c_str());
+		double inMs = pFrameData[i].time * 1000.0;
+		ImGui::Text(StringFormat("%s - %fms/frame", pFrameData[i].name, inMs).c_str());
 	}
 
 	ImGui::End();

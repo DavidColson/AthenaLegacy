@@ -7,6 +7,14 @@
 #include <Scene.h>
 #include <AudioDevice.h>
 
+struct CPolyShape
+{
+	std::vector<Vec2f> points;
+	float thickness = 5.0f;
+	bool connected = true;
+	REFLECT();
+};
+
 struct CPlayerControl
 {
 	float thrust{ 160.f };

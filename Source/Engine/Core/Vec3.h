@@ -334,7 +334,7 @@ struct Vec3
 	**/
 	inline static Vec3 Embed2D(const Vec2<T>& vec)
 	{
-		return Vec3(vec.x, vec.y, 0.0f);
+		return Vec3(vec.x, vec.y, 1.0f);
 	}
 };
 

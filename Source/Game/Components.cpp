@@ -1,5 +1,10 @@
 #include "Components.h"
 
+REFLECT_BEGIN(CPolyShape)
+REFLECT_MEMBER(thickness)
+REFLECT_MEMBER(connected)
+REFLECT_END()
+
 REFLECT_BEGIN(CPlayerControl)
 REFLECT_MEMBER(thrust)
 REFLECT_MEMBER(rotateSpeed)

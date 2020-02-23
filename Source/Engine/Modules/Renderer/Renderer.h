@@ -14,41 +14,9 @@ namespace Renderer
 	// Render System callbacks
 	void OnGameStart_Deprecated(Scene& scene); // should eventually be unecessary, moved to other systems/components
 
-	// Reactive Systems
-	void OnDrawableAdded(Scene& scene, EntityID ent);
-
 	// Systems
 	void OnFrameStart(Scene& scene, float deltaTime);
 	void OnFrame(Scene& scene, float deltaTime);
 
 	// TODO: there should be a component removed reactive system that releases GfxDevice resources appropriately
-};
-
-
-// *******************
-// Renderer Components
-// *******************
-
-struct CDrawable
-{
-	// Shader constants 
-	struct TransformData
-	{
-		Matrixf wvp;
-		float lineThickness;
-		float pad1{ 0.0f };
-		float pad2{ 0.0f };
-		float pad3{ 0.0f };
-	};
-
-	float lineThickness{ 1.5f };
-	std::vector<Vertex> vertices;
-	std::vector<int> indices;
-
-	ProgramHandle baseProgram;
-	VertexBufferHandle vertBuffer;
-	IndexBufferHandle indexBuffer;
-	ConstBufferHandle transformBuffer;
-
-	REFLECT()
 };

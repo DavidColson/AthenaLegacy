@@ -2,20 +2,24 @@
 #include "Profiler.h"
 
 namespace {
-  std::vector<Profiler::ScopeData> singleFrameData; // cleared at the end of every frame
+  Profiler::ScopeData singleFrameData[100]; // cleared at the end of every frame
+  int inUseSlots = 0;
 }
 
 void Profiler::ClearFrameData()
 {
-  singleFrameData.clear();
+  inUseSlots = 0;
 }
 
 void Profiler::PushProfile(const char* name, double time)
 {
-  singleFrameData.emplace_back(name, time);
+  singleFrameData[inUseSlots].name = name;
+  singleFrameData[inUseSlots].time = time;
+  inUseSlots++;
 }
 
-std::vector<Profiler::ScopeData>& Profiler::GetFrameData()
+void Profiler::GetFrameData(Profiler::ScopeData** pOutData, int& outNumElements)
 {
-  return singleFrameData;
+  *pOutData = singleFrameData;
+  outNumElements = inUseSlots;
 }

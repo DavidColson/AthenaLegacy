@@ -341,7 +341,7 @@ struct Vec4
 	**/
 	inline static Vec4 Embed3D(const Vec3<T>& vec)
 	{
-		return Vec4(vec.x, vec.y, vec.z, 0.0f);
+		return Vec4(vec.x, vec.y, vec.z, 1.0f);
 	}
 
 	/**
@@ -352,7 +352,7 @@ struct Vec4
 	**/
 	inline static Vec4 Embed2D(const Vec2<T>& vec)
 	{
-		return Vec4(vec.x, vec.y, 0.0f, 0.0f);
+		return Vec4(vec.x, vec.y, 1.0f, 1.0f);
 	}
 };
 

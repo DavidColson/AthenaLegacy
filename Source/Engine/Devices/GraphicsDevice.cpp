@@ -564,6 +564,17 @@ void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
 
 // ***********************************************************************
 
+void GfxDevice::FreeTexture(TextureHandle handle)
+{
+	Texture& texture = pCtx->textures[handle.id];
+
+	texture.pTexture->Release();
+	texture.pShaderResourceView->Release();
+	pCtx->textures.erase(pCtx->textures.begin() + handle.id);
+}
+
+// ***********************************************************************
+
 RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const std::string& debugName)
 {
 	RenderTarget renderTarget;
@@ -1037,6 +1048,7 @@ VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size
 	vertexBufferDesc.StructureByteStride = 0;
 
 	pCtx->pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &vBufferData.pBuffer);
+	SetDebugName(vBufferData.pBuffer, "[VERT_BUFFER] " + debugName);
 
 	pCtx->vertexBuffers.push_back(vBufferData);
 	return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};

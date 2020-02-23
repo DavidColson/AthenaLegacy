@@ -9,6 +9,8 @@
 
 #include "Renderer/ParticlesSystem.h"
 #include "Renderer/PostProcessingSystem.h"
+#include "Renderer/DebugDraw.h"
+#include "Renderer/ShapesSystem.h"
 #include "AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
@@ -16,7 +18,6 @@
 #include "Editor/Editor.h"
 #include "Log.h"
 #include "Profiler.h"
-#include "Renderer/DebugDraw.h"
 
 namespace
 {
@@ -64,12 +65,13 @@ void Engine::StartShutdown()
 void Engine::NewSceneCreated(Scene& scene)
 {
 	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
-	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnPostProcessingAdded);
-	scene.RegisterReactiveSystem<CDrawable>(Reaction::OnAdd, Renderer::OnDrawableAdded);
+	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnPostProcessingAdded);;
 	scene.RegisterReactiveSystem<CDebugDrawingState>(Reaction::OnAdd, DebugDraw::OnDebugDrawStateAdded);
+	scene.RegisterReactiveSystem<CShapesSystemState>(Reaction::OnAdd, Shapes::OnShapesSystemStateAdded);
 
 	scene.NewEntity("Engine Singletons");
 	scene.Assign<CDebugDrawingState>(ENGINE_SINGLETON);
+	scene.Assign<CShapesSystemState>(ENGINE_SINGLETON);
 }
 
 void Engine::SetActiveScene(Scene* pScene)
@@ -125,6 +127,8 @@ void Engine::Run(Scene *pScene)
 		pCurrentScene->SimulateScene((float)frameTime);
 		
 		GfxDevice::PrintQueuedDebugMessages();
+
+		Profiler::ClearFrameData();
 
 		// Framerate counter
 		double realframeTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();

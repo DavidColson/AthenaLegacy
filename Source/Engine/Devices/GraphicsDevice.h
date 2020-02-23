@@ -236,7 +236,9 @@ namespace GfxDevice
 
 	TextureHandle CreateTexture(int width, int height, TextureFormat format, void* data, const std::string& debugName = "");
 
-	void BindTexture(TextureHandle, ShaderType shader, int slot);
+	void BindTexture(TextureHandle handle, ShaderType shader, int slot);
+
+	void FreeTexture(TextureHandle handle);
 
 	// Shader Constants
 

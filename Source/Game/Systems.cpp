@@ -8,9 +8,11 @@
 #include <Renderer/Renderer.h>
 #include <Renderer/RenderFont.h>
 #include <Renderer/ParticlesSystem.h>
+#include <Renderer/ShapesSystem.h>
 #include <Input/Input.h>
 #include <Utility.h>
 #include <Profiler.h>
+#include <Vec4.h>
 
 
 // **********
@@ -27,18 +29,19 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 	Vec3f travelDir = Vec3f(-cos(pAtTransform->rot), -sin(pAtTransform->rot), 0.0f);
 	pBulletTrans->vel = pAtTransform->vel + travelDir * pBullet->speed;
 	pBulletTrans->rot = pAtTransform->rot;
+	pBulletTrans->sca = Vec3f(7.0f);
 
 	scene.Assign<CVisibility>(bullet);
-	CDrawable* pDrawable = scene.Assign<CDrawable>(bullet);
-	pDrawable->vertices = {
-			Vertex(Vec3f(0.f, 0.0f, 0.f)),
-			Vertex(Vec3f(0.f, 1.0f, 0.f)),
-			Vertex(Vec3f(1.f, 1.0f, 0.f)),
-			Vertex(Vec3f(1.f, 0.0f, 0.f)),
-		};
-	pDrawable->indices = { 3, 0, 1, 2, 3, 0, 1 };
-	pDrawable->lineThickness = 5.0f;
 	scene.Assign<CCollidable>(bullet)->radius = 4.0f;
+	
+	Vec2f verts[2] = {
+		Vec2f(0.f, 0.0f),
+		Vec2f(0.f, 1.0f)
+	};
+	CPolyShape* pPolyShape = scene.Assign<CPolyShape>(bullet);
+	pPolyShape->points.assign(verts, verts + 2);
+	pPolyShape->thickness = 17.0f;
+	pPolyShape->connected = false;
 }
 
 
@@ -92,12 +95,10 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 		pNewTransform->vel = randomVelocity;
 		pNewTransform->rot = randomRotation;
 
-		CDrawable* pDrawable = scene.Assign<CDrawable>(newAsteroid);
 		int mesh = rand() % 4;
-		pDrawable->vertices = Game::g_asteroidMeshes[mesh].vertices;
-		pDrawable->indices = Game::g_asteroidMeshes[mesh].indices;
 		scene.Assign<CVisibility>(newAsteroid);
 		scene.Assign<CAsteroid>(newAsteroid)->hitCount = scene.Get<CAsteroid>(asteroid)->hitCount + 1;
+		scene.Assign<CPolyShape>(newAsteroid)->points = GetRandomAsteroidMesh();
 	}
 
 	scene.DestroyEntity(asteroid);
@@ -136,9 +137,102 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	pTransform->accel = Vec3f(0.0f, 0.0f, 0.0f);
 }
 
+std::vector<Vec2f> GetRandomAsteroidMesh()
+{
+	static Vec2f asteroidMesh1[] = {
+		Vec2f(0.03f, 0.379f),
+		Vec2f(0.03f, 0.64f),
+		Vec2f(0.314f, 0.69f),
+		Vec2f(0.348f, 0.96f),
+		Vec2f(0.673f, 0.952f),
+		Vec2f(0.698f, 0.724f),
+		Vec2f(0.97f, 0.645f),
+		Vec2f(0.936f, 0.228f),
+		Vec2f(0.555f, 0.028f),
+		Vec2f(0.22f, 0.123f)
+	};
+	static Vec2f asteroidMesh2[] = {
+		Vec2f(0.05f, 0.54f),
+		Vec2f(0.213f, 0.78f),
+		Vec2f(0.37f, 0.65f),
+		Vec2f(0.348f, 0.96f),
+		Vec2f(0.673f, 0.952f),
+		Vec2f(0.64f, 0.75f),
+		Vec2f(0.83f, 0.85f),
+		Vec2f(0.974f, 0.65f),
+		Vec2f(0.943f, 0.298f),
+		Vec2f(0.683f, 0.086f),
+		Vec2f(0.312f, 0.074f),
+		Vec2f(0.056f, 0.265f)
+	};
+	static Vec2f asteroidMesh3[] = {
+		Vec2f(0.066f, 0.335f),
+		Vec2f(0.077f, 0.683f),
+		Vec2f(0.3f, 0.762f),
+		Vec2f(0.348f, 0.96f),
+		Vec2f(0.673f, 0.952f),
+		Vec2f(0.724f, 0.752f),
+		Vec2f(0.967f, 0.63f),
+		Vec2f(0.946f, 0.312f),
+		Vec2f(0.706f, 0.353f),
+		Vec2f(0.767f, 0.07f),
+		Vec2f(0.37f, 0.07f),
+		Vec2f(0.21f, 0.33f)
+	};
+	static Vec2f asteroidMesh4[] = {
+		Vec2f(0.056f, 0.284f),
+		Vec2f(0.064f, 0.752f),
+		Vec2f(0.353f, 0.762f),
+		Vec2f(0.286f, 0.952f),
+		Vec2f(0.72f, 0.944f),
+		Vec2f(0.928f, 0.767f),
+		Vec2f(0.962f, 0.604f),
+		Vec2f(0.568f, 0.501f),
+		Vec2f(0.967f, 0.366f),
+		Vec2f(0.857f, 0.16f),
+		Vec2f(0.563f, 0.217f),
+		Vec2f(0.358f, 0.043f)
+	};
+
+	std::vector<Vec2f> vec;
+	switch (rand() % 4)
+	{
+	case 0: vec.assign(asteroidMesh1, asteroidMesh1 + 10); break;
+	case 1: vec.assign(asteroidMesh2, asteroidMesh2 + 12); break;
+	case 2: vec.assign(asteroidMesh3, asteroidMesh3 + 12); break;
+	case 3: vec.assign(asteroidMesh4, asteroidMesh4 + 12); break;
+	default: break;
+	}
+	return vec;
+}
+
 // **********
 // SYSTEMS
 // **********
+
+void DrawPolyShapes(Scene& scene, float deltaTime)
+{
+	PROFILE();
+
+	for (EntityID shape : SceneView<CPolyShape, CTransform, CVisibility>(scene))
+	{
+		if (scene.Get<CVisibility>(shape)->visible == false)
+			continue;
+
+		CTransform* pTrans = scene.Get<CTransform>(shape);
+		Matrixf posMat = Matrixf::Translate(pTrans->pos);
+		Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, pTrans->rot));
+		Matrixf scaMat = Matrixf::Scale(pTrans->sca);
+		Matrixf pivotAdjust = Matrixf::Translate(Vec3f(-0.5f, -0.5f, 0.0f));
+		Matrixf world = posMat * rotMat * scaMat * pivotAdjust;
+
+		std::vector<Vec2f> transformedVerts;
+		for (const Vec2f& vert : scene.Get<CPolyShape>(shape)->points)
+			transformedVerts.push_back(Vec2f::Project4D(world * Vec4f::Embed2D(vert)));
+
+		Shapes::DrawPolyLine(scene, transformedVerts, scene.Get<CPolyShape>(shape)->thickness, Vec3f(1.0f, 1.0f, 1.0f), scene.Get<CPolyShape>(shape)->connected);
+	}	
+}
 
 void CollisionSystemUpdate(Scene& scene, float deltaTime)
 {

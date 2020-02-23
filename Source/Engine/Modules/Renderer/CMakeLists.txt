@@ -10,4 +10,6 @@ target_sources(Engine
         "RenderFont.cpp"
         "PostProcessingSystem.h"
         "PostProcessingSystem.cpp"
+        "ShapesSystem.h"
+        "ShapesSystem.cpp"
 )

@@ -81,8 +81,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
             if (i == 0)
             {
                 // First iteration, bind the plain, preprocessed frame
-                TextureHandle tex = preProcessedFrame;
-                GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
+                GfxDevice::BindTexture(preProcessedFrame, ShaderType::Pixel, 0);
             }
             else
             {
@@ -104,8 +103,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
         GfxDevice::BindProgram(pp->postProcessShaderProgram);
         GfxDevice::BindVertexBuffers(1, &pp->fullScreenQuad);
 
-        TextureHandle ppFrameTex = preProcessedFrame;
-        GfxDevice::BindTexture(ppFrameTex, ShaderType::Pixel, 0);
+        GfxDevice::BindTexture(preProcessedFrame, ShaderType::Pixel, 0);
         TextureHandle blurFrameTex = GfxDevice::GetTexture(pp->blurredFrame[1]);
         GfxDevice::BindTexture(blurFrameTex, ShaderType::Pixel, 1);
 
@@ -118,5 +116,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
 
         // Draw post processed frame
         GfxDevice::Draw(4, 0);
+
     }
+    GfxDevice::FreeTexture(preProcessedFrame);
 }

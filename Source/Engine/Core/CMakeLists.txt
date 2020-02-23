@@ -16,6 +16,7 @@ target_sources(Engine
         "Vec3.cpp"
         "Vec4.h"
         "Vec4.cpp"
+        "Maths.h"
         "Matrix.h"
         "Matrix.cpp"
         "Engine.h"
