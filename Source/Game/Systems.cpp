@@ -4,11 +4,10 @@
 #include "Components.h"
 
 #include <AudioDevice.h>
-#include <Renderer/DebugDraw.h>
-#include <Renderer/Renderer.h>
-#include <Renderer/FontSystem.h>
-#include <Renderer/ParticlesSystem.h>
-#include <Renderer/ShapesSystem.h>
+#include <Rendering/DebugDraw.h>
+#include <Rendering/FontSystem.h>
+#include <Rendering/ParticlesSystem.h>
+#include <Rendering/ShapesSystem.h>
 #include <Input/Input.h>
 #include <Utility.h>
 #include <Profiler.h>
@@ -226,6 +225,7 @@ void DrawPolyShapes(Scene& scene, float deltaTime)
 		Matrixf pivotAdjust = Matrixf::Translate(Vec3f(-0.5f, -0.5f, 0.0f));
 		Matrixf world = posMat * rotMat * scaMat * pivotAdjust;
 
+		// TODO: Lots of memory thrashing here, do better
 		std::vector<Vec2f> transformedVerts;
 		for (const Vec2f& vert : scene.Get<CPolyShape>(shape)->points)
 			transformedVerts.push_back(Vec2f::Project4D(world * Vec4f::Embed2D(vert)));

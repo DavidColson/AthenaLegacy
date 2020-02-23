@@ -1,3 +1,3 @@
 add_subdirectory(Editor)
 add_subdirectory(Input)
-add_subdirectory(Renderer)
+add_subdirectory(Rendering)

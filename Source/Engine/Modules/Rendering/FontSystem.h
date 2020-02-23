@@ -2,7 +2,6 @@
 
 #include "Matrix.h"
 #include "Vec2.h"
-#include "Renderer/Renderer.h"
 #include "GraphicsDevice.h"
 #include "Scene.h"
 

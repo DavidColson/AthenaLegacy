@@ -9,10 +9,9 @@
 #include <Engine.h>
 #include <Input/Input.h>
 #include <Profiler.h>
-#include <Renderer/Renderer.h>
-#include <Renderer/FontSystem.h>
-#include <Renderer/ParticlesSystem.h>
-#include <Renderer/PostProcessingSystem.h>
+#include <Rendering/FontSystem.h>
+#include <Rendering/ParticlesSystem.h>
+#include <Rendering/PostProcessingSystem.h>
 #include <Imgui/imgui.h>
 #include <TypeSystem.h>
 #include <AudioDevice.h>

@@ -4,8 +4,6 @@ target_sources(Engine
         "DebugDraw.cpp"
         "ParticlesSystem.h"
         "ParticlesSystem.cpp"
-        "Renderer.h"
-        "Renderer.cpp"
         "PostProcessingSystem.h"
         "PostProcessingSystem.cpp"
         "ShapesSystem.h"

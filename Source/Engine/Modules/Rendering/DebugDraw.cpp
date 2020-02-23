@@ -1,6 +1,5 @@
 #include "DebugDraw.h"
 
-#include "Renderer.h"
 #include "Profiler.h"
 
 void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)

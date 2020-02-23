@@ -8,6 +8,9 @@ void Shapes::DrawPolyLine(Scene& scene, const std::vector<Vec2f>& verts, float t
 {
 	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
     
+	// Vector manipulation here is slow, can do better
+	// I recommend using a single frame allocator, or some other with a custom container
+	
     std::vector<Vec2f> normals;
     normals.reserve(verts.size() - 1);
     for (int i = 0; i < verts.size(); i++)

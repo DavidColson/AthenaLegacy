@@ -6,16 +6,16 @@
 #include <vector>
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
+#include <Imgui/examples/imgui_impl_dx11.h>
 
-#include "Renderer/ParticlesSystem.h"
-#include "Renderer/FontSystem.h"
-#include "Renderer/PostProcessingSystem.h"
-#include "Renderer/DebugDraw.h"
-#include "Renderer/ShapesSystem.h"
+#include "Rendering/ParticlesSystem.h"
+#include "Rendering/FontSystem.h"
+#include "Rendering/PostProcessingSystem.h"
+#include "Rendering/DebugDraw.h"
+#include "Rendering/ShapesSystem.h"
 #include "AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
-#include "Renderer/Renderer.h"
 #include "Editor/Editor.h"
 #include "Log.h"
 #include "Profiler.h"
@@ -52,6 +52,20 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
+void ImGuiPreUpdate(Scene& scene, float deltaTime)
+{
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplSDL2_NewFrame(GfxDevice::GetWindow());
+	ImGui::NewFrame();
+}
+
+void ImGuiRender(Scene& scene, float deltaTime)
+{
+	GFX_SCOPED_EVENT("Drawing imgui");
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
 void Engine::GetFrameRates(double& outReal, double& outLimited)
 {
 	outReal = g_realFrameTime;
@@ -80,11 +94,17 @@ void Engine::NewSceneCreated(Scene& scene)
 void Engine::SetActiveScene(Scene* pScene)
 {
 	// Register systems!
-	pScene->RegisterSystem(SystemPhase::PreUpdate, Renderer::OnFrameStart);
+	pScene->RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
 	pScene->RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	pScene->RegisterSystem(SystemPhase::Update, Editor::OnFrame);
-	pScene->RegisterSystem(SystemPhase::Render, Renderer::OnFrame);
 
+	pScene->RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
+	pScene->RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
+	pScene->RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
+	pScene->RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
+	pScene->RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
+	pScene->RegisterSystem(SystemPhase::Render, ImGuiRender);
+	
 	pCurrentScene = pScene;
 }
 
@@ -125,7 +145,15 @@ void Engine::Run(Scene *pScene)
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
 		pCurrentScene->SimulateScene((float)frameTime);
-		
+
+		GfxDevice::SetBackBufferActive();
+		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
+		GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+
+		pCurrentScene->RenderScene((float)frameTime);
+
+		GfxDevice::PresentBackBuffer();
+		GfxDevice::ClearRenderState();
 		GfxDevice::PrintQueuedDebugMessages();
 
 		// Framerate counter

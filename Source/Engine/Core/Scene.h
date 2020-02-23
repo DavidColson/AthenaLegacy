@@ -373,6 +373,10 @@ struct Scene
 		{
 			func(*this, deltaTime);
 		}
+	}
+
+	void RenderScene(float deltaTime)
+	{
 		for (SystemFunc func : renderSystems)
 		{
 			func(*this, deltaTime);
