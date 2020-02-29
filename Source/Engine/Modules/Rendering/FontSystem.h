@@ -46,5 +46,6 @@ struct CFontSystemState
 namespace FontSystem
 {
 	void OnAddFontSystemState(Scene& scene, EntityID entity);
+	void OnRemoveFontSystemState(Scene& scene, EntityID entity);
 	void OnFrame(Scene& scene, float deltaTime);
 }

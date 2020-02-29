@@ -246,6 +246,10 @@ struct Scene
 			mask.set(i, true);
 			if (mask == (entities[GetEntityIndex(id)].mask & mask))
 			{
+				for (ReactiveSystemFunc func : componentPools[i]->onRemovedCallbacks)
+				{
+					func(*this, id);
+				}
 				componentPools[i]->destroy(GetEntityIndex(id));
 			}
 		}

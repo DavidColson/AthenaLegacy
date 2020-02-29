@@ -568,9 +568,11 @@ void GfxDevice::FreeTexture(TextureHandle handle)
 {
 	Texture& texture = pCtx->textures[handle.id];
 
-	texture.pTexture->Release();
-	texture.pShaderResourceView->Release();
-	pCtx->textures.erase(pCtx->textures.begin() + handle.id);
+	if (texture.pTexture)
+		texture.pTexture->Release();
+	if (texture.pShaderResourceView)
+		texture.pShaderResourceView->Release();
+	//pCtx->textures.erase(pCtx->textures.begin() + handle.id);
 }
 
 // ***********************************************************************

@@ -124,6 +124,17 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 	}
 }
 
+void FontSystem::OnRemoveFontSystemState(Scene& scene, EntityID entity)
+{
+	CFontSystemState& state = *(scene.Get<CFontSystemState>(entity));
+
+	for(Character& chara : state.characters)
+	{
+		if (IsValid(chara.charTexture))
+			GfxDevice::FreeTexture(chara.charTexture);
+	}
+}
+
 void FontSystem::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();
