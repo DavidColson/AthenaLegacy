@@ -23,4 +23,5 @@ target_sources(Engine
         "Engine.cpp"
         "Profiler.h"
         "Profiler.cpp"
+        "Memory.h"
 )

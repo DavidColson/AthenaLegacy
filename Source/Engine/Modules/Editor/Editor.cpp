@@ -36,10 +36,9 @@ void ShowLog()
 
 	ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-	std::vector<std::string> entries = Log::GetLogHistory();
-	for (int i = 0; i < entries.size(); i++)
+	for (const Fixed1024String& str : Log::GetLogHistory())
 	{
-		const char* item = entries[i].c_str();
+		const char* item = str.c_str();
 
 		ImGui::TextUnformatted(item);
 	}

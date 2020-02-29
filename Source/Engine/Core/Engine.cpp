@@ -19,6 +19,9 @@
 #include "Editor/Editor.h"
 #include "Log.h"
 #include "Profiler.h"
+#include "Memory.h"
+
+#include "EASTL/vector.h"
 
 namespace
 {
@@ -124,6 +127,18 @@ void Engine::Initialize()
 		int(height),
 		0
 	);
+
+
+	eastl::vector<int> vec(eastl::allocator("Test Vector"));
+
+	vec.push_back(4);
+	vec.push_back(2);
+	vec.push_back(7);
+
+	for (int i = 0; i < 100000; i++)
+	{
+		vec.push_back(2);
+	}
 
 	Log::Print(Log::EMsg, "Engine starting up");
 	Log::Print(Log::EMsg, "Window size W: %.1f H: %.1f", width, height);

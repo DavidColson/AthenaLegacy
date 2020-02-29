@@ -1,7 +1,12 @@
 #pragma once
 
-#include <vector>
+#include <EASTL/vector.h>
+#include <EASTL/bonus/ring_buffer.h>
+#include <EASTL/fixed_string.h>
 #include <string>
+
+typedef eastl::fixed_string<char, 1024, false> Fixed1024String;
+typedef eastl::ring_buffer<Fixed1024String, eastl::vector<Fixed1024String>> StringHistoryBuffer;
 
 namespace Log
 {
@@ -16,5 +21,5 @@ namespace Log
 
 	void Print(LogType type, const char* text, ...);
 
-	std::vector<std::string> GetLogHistory();
+	const StringHistoryBuffer&  GetLogHistory();
 }

@@ -13,7 +13,8 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": false
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
         },
         {
             "name": "(Windows) Release Launch",
@@ -24,7 +25,8 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": false
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
         }
     ]
 }
