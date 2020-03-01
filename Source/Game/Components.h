@@ -57,9 +57,9 @@ struct CPlayerUI
 
 struct CSounds
 {
-	LoadedSoundHandle shootSound;
-	LoadedSoundHandle explosionSound;
-	LoadedSoundHandle engineSound;
+	LoadedSoundPtr shootSound;
+	LoadedSoundPtr explosionSound;
+	LoadedSoundPtr engineSound;
 };
 
 struct CInvincibility

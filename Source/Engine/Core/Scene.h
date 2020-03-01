@@ -239,6 +239,9 @@ struct Scene
 
 	void DestroyEntity(EntityID id)
 	{
+		if (!IsEntityValid(id))
+			return;
+
 		for (int i = 0; i < MAX_COMPONENTS; i++)
 		{
 			// For each component ID, check the bitmask, if no, continue, if yes, destroy the component

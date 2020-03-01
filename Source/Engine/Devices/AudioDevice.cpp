@@ -12,13 +12,6 @@
 #define AUDIO_SAMPLES 4096 // Amount of audio data in the buffer at once (always power of 2)
 #define AUDIO_MAX_SOUNDS 16 // Maximum amount of concurrent sounds
 
-struct LoadedSound
-{
-    uint8_t* buffer{ nullptr };
-    uint32_t length{ 0 };
-    SDL_AudioSpec spec;
-};
-
 struct PlayingSound
 {
     SoundID id{ SoundID(-1) };
@@ -44,7 +37,6 @@ namespace
     SDL_AudioDeviceID device;
     uint32_t currentNumSounds{ 0 };
     AudioCallbackData callbackData; // Do not write without locking audio callback thread
-    std::vector<LoadedSound> loadedSounds;
 }
 
 void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
@@ -147,11 +139,10 @@ void AudioDevice::Initialize()
     SDL_PauseAudioDevice(device, 0);
 }
 
-LoadedSoundHandle AudioDevice::LoadSound(const char* fileName)
+LoadedSoundPtr AudioDevice::LoadSound(const char* fileName)
 {
-    loadedSounds.emplace_back();
+    LoadedSoundPtr newSound = eastl::make_shared<LoadedSound>();
 
-    LoadedSound* newSound = &(loadedSounds.back());
     if (SDL_LoadWAV(fileName, &(newSound->spec), &(newSound->buffer), &(newSound->length)) == nullptr)
     {
         Log::Print(Log::EErr, "%s", SDL_GetError());
@@ -161,15 +152,15 @@ LoadedSoundHandle AudioDevice::LoadSound(const char* fileName)
         newSound->length *= 2;
 
     // @TODO Ensure the loaded audio file is of the correct format and give errors otherwise
-    return loadedSounds.size() - 1;
+    return newSound;
 }
 
-SoundID AudioDevice::PlaySound(LoadedSoundHandle sound, float volume, bool loop)
+SoundID AudioDevice::PlaySound(LoadedSoundPtr sound, float volume, bool loop)
 {
     if (currentNumSounds < AUDIO_MAX_SOUNDS)
     {
         PlayingSound tempNewSound;
-        tempNewSound.loadedSound = &(loadedSounds[(size_t)sound]);
+        tempNewSound.loadedSound = sound.get();
 
         tempNewSound.currentBufferPosition = tempNewSound.loadedSound->buffer; // Start at the beginning of the buffer
         tempNewSound.remainingLength = tempNewSound.loadedSound->length;
@@ -227,12 +218,19 @@ void AudioDevice::UnPauseSound(SoundID sound)
     SDL_UnlockAudioDevice(device);
 }
 
+void AudioDevice::StopAllSounds()
+{
+    SDL_LockAudioDevice(device);
+    for (int i = 0; i < AUDIO_MAX_SOUNDS; i++)
+    {
+        callbackData.currentSounds[i] = PlayingSound();
+    }
+    SDL_UnlockAudioDevice(device);
+    currentNumSounds = 0;
+}
+
 void AudioDevice::Destroy()
 {
-	for (LoadedSound& sound : loadedSounds)
-	{
-		SDL_FreeWAV(sound.buffer);
-	}
     SDL_PauseAudio(1);
     SDL_CloseAudioDevice(device);
 }
