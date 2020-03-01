@@ -31,6 +31,7 @@ namespace Shapes
 	void DrawPolyLine(Scene& scene, const std::vector<Vec2f>& verts, float thickness, Vec3f color, bool connected = true);
 
 	void OnShapesSystemStateAdded(Scene& scene, EntityID entity);
+	void OnShapesSystemStateRemoved(Scene& scene, EntityID entity);
 	void OnFrame(Scene& scene, float deltaTime);
 }
 

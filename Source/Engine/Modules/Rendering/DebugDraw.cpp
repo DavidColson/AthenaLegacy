@@ -69,6 +69,16 @@ void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
 	state.transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
 }
 
+void DebugDraw::OnDebugDrawStateRemoved(Scene& scene, EntityID entity)
+{
+	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
+
+	GfxDevice::FreeProgram(state.debugShaderProgram);
+	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
+	GfxDevice::FreeIndexBuffer(state.indexBuffer);
+	GfxDevice::FreeConstBuffer(state.transformDataBuffer);
+}
+
 void DebugDraw::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();

@@ -29,6 +29,7 @@ namespace DebugDraw
 	void Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color);
 
 	void OnDebugDrawStateAdded(Scene& scene, EntityID entity);
+	void OnDebugDrawStateRemoved(Scene& scene, EntityID entity);
 	void OnFrame(Scene& scene, float deltaTime);
 }
 

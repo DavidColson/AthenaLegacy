@@ -33,6 +33,8 @@ struct CPostProcessing
 
 namespace PostProcessingSystem
 {
-	void OnPostProcessingAdded(Scene& scene, EntityID entity);
+	void OnAddPostProcessing(Scene& scene, EntityID entity);
+	void OnRemovePostProcessing(Scene& scene, EntityID entity);
+
 	void OnFrame(Scene& scene, float deltaTime);
 }

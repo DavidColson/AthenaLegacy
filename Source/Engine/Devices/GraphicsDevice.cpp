@@ -23,73 +23,85 @@
 struct RenderTarget
 {
 	TextureHandle texture;
-	ID3D11RenderTargetView* pView{ nullptr };
+	ID3D11RenderTargetView *pView{nullptr};
 	TextureHandle depthStencilTexture;
-	ID3D11DepthStencilView* pDepthStencilView { nullptr };
+	ID3D11DepthStencilView *pDepthStencilView{nullptr};
 };
 
 struct IndexBuffer
 {
 	int nElements;
-	bool isDynamic{ false };
-	ID3D11Buffer* pBuffer{ nullptr };
+	bool isDynamic{false};
+	ID3D11Buffer *pBuffer{nullptr};
 };
 
 struct VertexBuffer
 {
-	bool isDynamic{ false };
-	UINT elementSize{ 0 };
-	ID3D11Buffer* pBuffer{ nullptr };
+	bool isDynamic{false};
+	UINT elementSize{0};
+	ID3D11Buffer *pBuffer{nullptr};
 };
 
 struct VertexShader
 {
-	ID3D11InputLayout* pVertLayout{ nullptr };
-	ID3D11VertexShader* pShader{ nullptr };
+	ID3D11InputLayout *pVertLayout{nullptr};
+	ID3D11VertexShader *pShader{nullptr};
 };
 
 struct PixelShader
 {
-	ID3D11PixelShader* pShader{ nullptr };
+	ID3D11PixelShader *pShader{nullptr};
 };
 
 struct GeometryShader
 {
-	ID3D11GeometryShader* pShader{ nullptr };
+	ID3D11GeometryShader *pShader{nullptr};
 };
 
 struct Program
 {
+	VertexShaderHandle vHandle;
 	VertexShader vertShader;
+
+	PixelShaderHandle pHandle;
 	PixelShader pixelShader;
+
+	GeometryShaderHandle gHandle;
 	GeometryShader geomShader;
 };
 
 struct Sampler
 {
-	ID3D11SamplerState* pSampler;
+	ID3D11SamplerState *pSampler;
 };
 
 struct Texture
 {
-	ID3D11ShaderResourceView* pShaderResourceView{ nullptr };
-	ID3D11Texture2D* pTexture{ nullptr };
+	ID3D11ShaderResourceView *pShaderResourceView{nullptr};
+	ID3D11Texture2D *pTexture{nullptr};
 };
 
 struct ConstantBuffer
- {
-	ID3D11Buffer* pBuffer{ nullptr };
+{
+	ID3D11Buffer *pBuffer{nullptr};
+};
+
+struct BlendState
+{
+	BlendingInfo info;
+	ID3D11BlendState *pState;
 };
 
 struct Context
 {
-	SDL_Window* pWindow{ nullptr };
+	SDL_Window *pWindow{nullptr};
 
-	IDXGISwapChain* pSwapChain{ nullptr };
-	ID3D11Device* pDevice{ nullptr };
-	ID3D11DeviceContext* pDeviceContext{ nullptr };
-	ID3D11InfoQueue* pDebugInfoQueue{ nullptr };
-	ID3DUserDefinedAnnotation* pUserDefinedAnnotation{ nullptr };
+	IDXGISwapChain *pSwapChain{nullptr};
+	ID3D11Device *pDevice{nullptr};
+	ID3D11DeviceContext *pDeviceContext{nullptr};
+	ID3D11InfoQueue *pDebugInfoQueue{nullptr};
+	ID3D11Debug *pDebug{nullptr};
+	ID3DUserDefinedAnnotation *pUserDefinedAnnotation{nullptr};
 	RenderTargetHandle backBuffer;
 
 	// resources
@@ -104,14 +116,15 @@ struct Context
 	DEFINE_RESOURCE_POOLS(SamplerHandle, Sampler)
 	DEFINE_RESOURCE_POOLS(TextureHandle, Texture)
 	DEFINE_RESOURCE_POOLS(ConstBufferHandle, ConstantBuffer)
+	DEFINE_RESOURCE_POOLS(BlendStateHandle, BlendState)
 
-	float windowWidth{ 0 };
-	float windowHeight{ 0 };
+	float windowWidth{0};
+	float windowHeight{0};
 };
 
 namespace
 {
-	Context* pCtx = nullptr;
+	Context *pCtx = nullptr;
 }
 
 DEFINE_GFX_HANDLE(RenderTargetHandle)
@@ -124,53 +137,51 @@ DEFINE_GFX_HANDLE(ProgramHandle)
 DEFINE_GFX_HANDLE(SamplerHandle)
 DEFINE_GFX_HANDLE(TextureHandle)
 DEFINE_GFX_HANDLE(ConstBufferHandle)
+DEFINE_GFX_HANDLE(BlendStateHandle)
 
 // ***********************************
 // D3D11 Flag conversions
 // ***********************************
 
 // Should probably expand this to more formats at some point
-static const DXGI_FORMAT formatLookup[3] = 
-{
-	DXGI_FORMAT_R32G32B32A32_FLOAT,
-	DXGI_FORMAT_R8_UNORM,
-	DXGI_FORMAT_D24_UNORM_S8_UINT
-};
+static const DXGI_FORMAT formatLookup[3] =
+	{
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		DXGI_FORMAT_R8_UNORM,
+		DXGI_FORMAT_D24_UNORM_S8_UINT};
 
-static const D3D11_BLEND_OP blendOpLookup[5] = 
-{
-	D3D11_BLEND_OP_ADD,
-	D3D11_BLEND_OP_SUBTRACT,
-	D3D11_BLEND_OP_REV_SUBTRACT,
-	D3D11_BLEND_OP_MIN,
-	D3D11_BLEND_OP_MAX
-};
+static const D3D11_BLEND_OP blendOpLookup[5] =
+	{
+		D3D11_BLEND_OP_ADD,
+		D3D11_BLEND_OP_SUBTRACT,
+		D3D11_BLEND_OP_REV_SUBTRACT,
+		D3D11_BLEND_OP_MIN,
+		D3D11_BLEND_OP_MAX};
 
-static const D3D11_BLEND blendLookup[12] = 
-{
-	D3D11_BLEND_ZERO,
-	D3D11_BLEND_ONE,
-	D3D11_BLEND_SRC_COLOR,
-	D3D11_BLEND_INV_SRC_COLOR,
-	D3D11_BLEND_SRC_ALPHA,
-	D3D11_BLEND_INV_SRC_ALPHA,
-	D3D11_BLEND_DEST_ALPHA,
-	D3D11_BLEND_INV_DEST_ALPHA,
-	D3D11_BLEND_DEST_COLOR,
-	D3D11_BLEND_INV_DEST_COLOR,
-	D3D11_BLEND_BLEND_FACTOR,
-	D3D11_BLEND_INV_BLEND_FACTOR
-};
+static const D3D11_BLEND blendLookup[12] =
+	{
+		D3D11_BLEND_ZERO,
+		D3D11_BLEND_ONE,
+		D3D11_BLEND_SRC_COLOR,
+		D3D11_BLEND_INV_SRC_COLOR,
+		D3D11_BLEND_SRC_ALPHA,
+		D3D11_BLEND_INV_SRC_ALPHA,
+		D3D11_BLEND_DEST_ALPHA,
+		D3D11_BLEND_INV_DEST_ALPHA,
+		D3D11_BLEND_DEST_COLOR,
+		D3D11_BLEND_INV_DEST_COLOR,
+		D3D11_BLEND_BLEND_FACTOR,
+		D3D11_BLEND_INV_BLEND_FACTOR};
 
-void SetDebugName(ID3D11DeviceChild* child, const std::string& name)
+void SetDebugName(ID3D11DeviceChild *child, const std::string &name)
 {
 	if (child != nullptr && !name.empty())
-    	child->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
+		child->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
 }
 
 // ***********************************************************************
 
-void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
+void GfxDevice::Initialize(SDL_Window *pWindow, float width, float height)
 {
 	pCtx = new Context();
 	pCtx->pWindow = pWindow;
@@ -189,36 +200,35 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 	// create a struct to hold information about the swap chain
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
-	scd.BufferCount = 1;                                    // one back buffer
-	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
-	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
-	scd.OutputWindow = hwnd;                                // the window to be used
-	scd.SampleDesc.Count = 4;                               // how many multisamples
-	scd.SampleDesc.Quality = 0;                    
-	scd.Windowed = TRUE;                                    // windowed/full-screen mode
+	scd.BufferCount = 1;								// one back buffer
+	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // use 32-bit color
+	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;  // how swap chain is to be used
+	scd.OutputWindow = hwnd;							// the window to be used
+	scd.SampleDesc.Count = 4;							// how many multisamples
+	scd.SampleDesc.Quality = 0;
+	scd.Windowed = TRUE; // windowed/full-screen mode
 
 	// create a device, device context and swap chain using the information in the scd struct
 	D3D11CreateDeviceAndSwapChain(NULL,
-		D3D_DRIVER_TYPE_HARDWARE,
-		NULL,
-		D3D11_CREATE_DEVICE_DEBUG,
-		NULL,
-		NULL,
-		D3D11_SDK_VERSION,
-		&scd,
-		&pCtx->pSwapChain,
-		&pCtx->pDevice,
-		NULL,
-		&pCtx->pDeviceContext);
+								  D3D_DRIVER_TYPE_HARDWARE,
+								  NULL,
+								  D3D11_CREATE_DEVICE_DEBUG,
+								  NULL,
+								  NULL,
+								  D3D11_SDK_VERSION,
+								  &scd,
+								  &pCtx->pSwapChain,
+								  &pCtx->pDevice,
+								  NULL,
+								  &pCtx->pDeviceContext);
 
-	
 	{
 		RenderTarget renderTarget;
 
 		// First create render target texture and shader resource view
 		Texture texture;
 		{
-			pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&(texture.pTexture));
+			pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *)&(texture.pTexture));
 			SetDebugName(texture.pTexture, "[TEXTURE_2D] Back Buffer");
 
 			D3D11_TEXTURE2D_DESC textureDesc;
@@ -250,7 +260,7 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 			SetDebugName(depthStencilTexture.pTexture, "[DEPTH_STCL] Back Buffer");
 
 			renderTarget.depthStencilTexture = pCtx->allocTextureHandle.NewHandle();
-			pCtx->poolTexture[renderTarget.depthStencilTexture.id] = texture;
+			pCtx->poolTexture[renderTarget.depthStencilTexture.id] = depthStencilTexture;
 		}
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -267,6 +277,7 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 
 	// Setup debug
 	pCtx->pDevice->QueryInterface(__uuidof(ID3D11InfoQueue), (void **)&pCtx->pDebugInfoQueue);
+	pCtx->pDevice->QueryInterface(__uuidof(ID3D11Debug), (void **)&pCtx->pDebug);
 
 	// #TODO: Note that this interface is only available on windows 8 or later. Might fail on older machines
 	pCtx->pDeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void **)&pCtx->pUserDefinedAnnotation);
@@ -274,7 +285,7 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 	// Init Imgui (ideally one day imgui uses GfxDevice, and exists outside here)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO &io = ImGui::GetIO();
 	ImGui_ImplSDL2_InitForVulkan(pWindow);
 	ImGui_ImplDX11_Init(pCtx->pDevice, pCtx->pDeviceContext);
 	io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
@@ -283,21 +294,42 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 
 // ***********************************************************************
 
+void GfxDevice::Destroy()
+{
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	pCtx->pSwapChain->Release();
+	FreeRenderTarget(pCtx->backBuffer);
+	pCtx->pUserDefinedAnnotation->Release();
+
+	pCtx->pDeviceContext->Flush();
+	pCtx->pDeviceContext->Release();
+	pCtx->pDevice->Release();
+	if (pCtx->pDebug)
+	{
+		pCtx->pDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+	}
+	pCtx->pDebug->Release();
+}
+
+// ***********************************************************************
+
 void GfxDevice::PrintQueuedDebugMessages()
 {
 	uint64_t message_count = pCtx->pDebugInfoQueue->GetNumStoredMessages();
 
-	for(uint64_t i = 0; i < message_count; i++){
-			size_t message_size = 0;
-			pCtx->pDebugInfoQueue->GetMessage(i, nullptr, &message_size); 
+	for (uint64_t i = 0; i < message_count; i++)
+	{
+		size_t message_size = 0;
+		pCtx->pDebugInfoQueue->GetMessage(i, nullptr, &message_size);
 
-			// Try get rid of this malloc if possible, maybe use a single frame allocator for reusing data 
-			D3D11_MESSAGE* message = (D3D11_MESSAGE*) malloc(message_size); 
-			pCtx->pDebugInfoQueue->GetMessage(i, message, &message_size);
+		// Try get rid of this malloc if possible, maybe use a single frame allocator for reusing data
+		D3D11_MESSAGE *message = (D3D11_MESSAGE *)malloc(message_size);
+		pCtx->pDebugInfoQueue->GetMessage(i, message, &message_size);
 
-			Log::Print(Log::EGraphics, "%s", message->pDescription);
+		Log::Print(Log::EGraphics, "%s", message->pDescription);
 
-			free(message);
+		free(message);
 	}
 
 	pCtx->pDebugInfoQueue->ClearStoredMessages();
@@ -305,7 +337,7 @@ void GfxDevice::PrintQueuedDebugMessages()
 
 // ***********************************************************************
 
-SDL_Window* GfxDevice::GetWindow()
+SDL_Window *GfxDevice::GetWindow()
 {
 	return pCtx->pWindow;
 }
@@ -343,7 +375,7 @@ void GfxDevice::SetViewport(float x, float y, float width, float height)
 
 void GfxDevice::ClearBackBuffer(std::array<float, 4> color)
 {
-	RenderTarget& renderTarget = pCtx->poolRenderTarget[pCtx->backBuffer.id];
+	RenderTarget &renderTarget = pCtx->poolRenderTarget[pCtx->backBuffer.id];
 
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
 	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -353,9 +385,9 @@ void GfxDevice::ClearBackBuffer(std::array<float, 4> color)
 
 void GfxDevice::SetBackBufferActive()
 {
-	RenderTarget& renderTarget = pCtx->poolRenderTarget[pCtx->backBuffer.id];
+	RenderTarget &renderTarget = pCtx->poolRenderTarget[pCtx->backBuffer.id];
 
-	pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);  
+	pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);
 }
 
 // ***********************************************************************
@@ -370,7 +402,7 @@ void GfxDevice::PresentBackBuffer()
 TextureHandle GfxDevice::CopyAndResolveBackBuffer()
 {
 	ID3D11Texture2D *pBackBufferTex;
-	pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBufferTex);
+	pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *)&pBackBufferTex);
 
 	Texture texture;
 
@@ -392,6 +424,7 @@ TextureHandle GfxDevice::CopyAndResolveBackBuffer()
 	pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
 	SetDebugName(texture.pShaderResourceView, "[SHADER_RSRC_VIEW] Back Buffer Copy");
 
+	pBackBufferTex->Release();
 	TextureHandle handle = pCtx->allocTextureHandle.NewHandle();
 	pCtx->poolTexture[handle.id] = texture;
 	return handle;
@@ -425,8 +458,11 @@ void GfxDevice::DrawInstanced(int numVerts, int numInstances, int startVertex, i
 
 // ***********************************************************************
 
-void GfxDevice::SetBlending(const BlendingInfo& info)
+BlendStateHandle GfxDevice::CreateBlendState(const BlendingInfo& info)
 {
+	BlendState state;
+	state.info = info;
+
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(blendDesc));
 
@@ -445,24 +481,50 @@ void GfxDevice::SetBlending(const BlendingInfo& info)
 	blendDesc.AlphaToCoverageEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
-	ID3D11BlendState* blendState;
-	pCtx->pDevice->CreateBlendState(&blendDesc, &blendState);
-	pCtx->pDeviceContext->OMSetBlendState(blendState, info.blendFactor.data(), 0xffffffff);
+	pCtx->pDevice->CreateBlendState(&blendDesc, &state.pState);
+	SetDebugName(state.pState, "[BLEND STATE]");
+
+	BlendStateHandle handle = pCtx->allocBlendStateHandle.NewHandle();
+	pCtx->poolBlendState[handle.id] = state;
+	return handle;
 }
 
 // ***********************************************************************
 
-bool ShaderCompileFromFile(const wchar_t* fileName, const char* entry, const char* target, ID3DBlob** pOutBlob)
+void GfxDevice::SetBlending(BlendStateHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+	BlendState &state = pCtx->poolBlendState[handle.id];
+
+	pCtx->pDeviceContext->OMSetBlendState(state.pState, state.info.blendFactor.data(), 0xffffffff);
+}
+
+// ***********************************************************************
+
+void GfxDevice::FreeBlendState(BlendStateHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+	BlendState &state = pCtx->poolBlendState[handle.id];
+
+	if (state.pState)
+		state.pState->Release();
+}
+
+// ***********************************************************************
+
+bool ShaderCompileFromFile(const wchar_t *fileName, const char *entry, const char *target, ID3DBlob **pOutBlob)
 {
 	HRESULT hr;
-	ID3DBlob* pErrorBlob = nullptr;
+	ID3DBlob *pErrorBlob = nullptr;
 	hr = D3DCompileFromFile(fileName, 0, 0, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
 		if (pErrorBlob)
 		{
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-			Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char*)pErrorBlob->GetBufferPointer());
+			OutputDebugStringA((char *)pErrorBlob->GetBufferPointer());
+			Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char *)pErrorBlob->GetBufferPointer());
 			pErrorBlob->Release();
 			return false;
 		}
@@ -472,48 +534,65 @@ bool ShaderCompileFromFile(const wchar_t* fileName, const char* entry, const cha
 
 // ***********************************************************************
 
-bool ShaderCompile(std::string& fileContents, const char* entry, const char* target, ID3DBlob** pOutBlob)
+bool ShaderCompile(std::string &fileContents, const char *entry, const char *target, ID3DBlob **pOutBlob)
 {
 	HRESULT hr;
-	ID3DBlob* pErrorBlob = nullptr;
+	ID3DBlob *pErrorBlob = nullptr;
 	hr = D3DCompile(fileContents.c_str(), fileContents.size(), NULL, 0, 0, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
 		if (pErrorBlob)
 		{
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-			Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char*)pErrorBlob->GetBufferPointer());
+			OutputDebugStringA((char *)pErrorBlob->GetBufferPointer());
+			Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char *)pErrorBlob->GetBufferPointer());
 			pErrorBlob->Release();
 			return false;
 		}
 	}
 	return true;
 }
-
 
 // ***********************************************************************
 
 void GfxDevice::SetTopologyType(TopologyType type)
 {
 	D3D11_PRIMITIVE_TOPOLOGY topologyType;
-	switch(type)
+	switch (type)
 	{
-		case TopologyType::TriangleStrip: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
-		case TopologyType::TriangleList: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
-		case TopologyType::LineStrip: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP; break;
-		case TopologyType::LineList: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break;
-		case TopologyType::PointList: topologyType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break;
-		case TopologyType::TriangleStripAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ; break;
-		case TopologyType::TriangleListAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ; break;
-		case TopologyType::LineStripAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ; break;
-		case TopologyType::LineListAdjacency: topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ; break;
+	case TopologyType::TriangleStrip:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		break;
+	case TopologyType::TriangleList:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		break;
+	case TopologyType::LineStrip:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+		break;
+	case TopologyType::LineList:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+		break;
+	case TopologyType::PointList:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+		break;
+	case TopologyType::TriangleStripAdjacency:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
+		break;
+	case TopologyType::TriangleListAdjacency:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+		break;
+	case TopologyType::LineStripAdjacency:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+		break;
+	case TopologyType::LineListAdjacency:
+		topologyType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+		break;
 	}
 	pCtx->pDeviceContext->IASetPrimitiveTopology(topologyType);
 }
 
 // ***********************************************************************
 
-TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void* data, const std::string& debugName)
+TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void *data, const std::string &debugName)
 {
 	Texture texture;
 
@@ -543,7 +622,7 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat form
 	}
 
 	SetDebugName(texture.pTexture, "[TEXTURE_2D] " + debugName);
-	
+
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 	shaderResourceViewDesc.Format = textureDesc.Format;
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -564,19 +643,19 @@ void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
 	if (!IsValid(handle))
 		return;
 
-	Texture& texture = pCtx->poolTexture[handle.id];
+	Texture &texture = pCtx->poolTexture[handle.id];
 
-	 switch (shader)
+	switch (shader)
 	{
-		case ShaderType::Vertex:
-			pCtx->pDeviceContext->VSSetShaderResources(slot, 1, &texture.pShaderResourceView);
-			break;
-		case ShaderType::Pixel:
-			pCtx->pDeviceContext->PSSetShaderResources(slot, 1, &texture.pShaderResourceView);
-			break;
-		case ShaderType::Geometry:
-			pCtx->pDeviceContext->GSSetShaderResources(slot, 1, &texture.pShaderResourceView);
-			break;
+	case ShaderType::Vertex:
+		pCtx->pDeviceContext->VSSetShaderResources(slot, 1, &texture.pShaderResourceView);
+		break;
+	case ShaderType::Pixel:
+		pCtx->pDeviceContext->PSSetShaderResources(slot, 1, &texture.pShaderResourceView);
+		break;
+	case ShaderType::Geometry:
+		pCtx->pDeviceContext->GSSetShaderResources(slot, 1, &texture.pShaderResourceView);
+		break;
 	}
 }
 
@@ -586,19 +665,22 @@ void GfxDevice::FreeTexture(TextureHandle handle)
 {
 	if (!IsValid(handle))
 		return;
-		
-	Texture& texture = pCtx->poolTexture[handle.id];
+
+	Texture &texture = pCtx->poolTexture[handle.id];
 
 	if (texture.pTexture)
 		texture.pTexture->Release();
 	if (texture.pShaderResourceView)
 		texture.pShaderResourceView->Release();
+
+	texture.pTexture = nullptr;
+	texture.pShaderResourceView = nullptr;
 	pCtx->allocTextureHandle.FreeHandle(handle);
 }
 
 // ***********************************************************************
 
-RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const std::string& debugName)
+RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const std::string &debugName)
 {
 	RenderTarget renderTarget;
 
@@ -657,7 +739,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 		SetDebugName(depthStencilTexture.pTexture, "[DEPTH_STCL] " + debugName);
 
 		renderTarget.depthStencilTexture = pCtx->allocTextureHandle.NewHandle();
-		pCtx->poolTexture[renderTarget.depthStencilTexture.id] = texture;
+		pCtx->poolTexture[renderTarget.depthStencilTexture.id] = depthStencilTexture;
 	}
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -680,7 +762,7 @@ void GfxDevice::BindRenderTarget(RenderTargetHandle handle)
 	if (!IsValid(handle))
 		return;
 
-	RenderTarget& renderTarget = pCtx->poolRenderTarget[handle.id];
+	RenderTarget &renderTarget = pCtx->poolRenderTarget[handle.id];
 
 	pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);
 }
@@ -689,7 +771,7 @@ void GfxDevice::BindRenderTarget(RenderTargetHandle handle)
 
 void GfxDevice::UnbindRenderTarget(RenderTargetHandle handle)
 {
-	ID3D11RenderTargetView* nullViews[] = { nullptr };
+	ID3D11RenderTargetView *nullViews[] = {nullptr};
 	pCtx->pDeviceContext->OMSetRenderTargets(1, nullViews, nullptr);
 }
 
@@ -699,8 +781,8 @@ void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4
 {
 	if (!IsValid(handle))
 		return;
-		
-	RenderTarget& renderTarget = pCtx->poolRenderTarget[handle.id];
+
+	RenderTarget &renderTarget = pCtx->poolRenderTarget[handle.id];
 
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
 	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -712,14 +794,33 @@ TextureHandle GfxDevice::GetTexture(RenderTargetHandle handle)
 {
 	if (!IsValid(handle))
 		return TextureHandle();
-		
-	RenderTarget& renderTarget = pCtx->poolRenderTarget[handle.id];
+
+	RenderTarget &renderTarget = pCtx->poolRenderTarget[handle.id];
 	return renderTarget.texture;
 }
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data, const std::string& debugName)
+void GfxDevice::FreeRenderTarget(RenderTargetHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	RenderTarget &target = pCtx->poolRenderTarget[handle.id];
+
+	FreeTexture(target.texture);
+	FreeTexture(target.depthStencilTexture);
+	if (target.pView)
+		target.pView->Release();
+	if (target.pDepthStencilView)
+		target.pDepthStencilView->Release();
+
+	pCtx->allocRenderTargetHandle.FreeHandle(handle);
+}
+
+// ***********************************************************************
+
+IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void *data, const std::string &debugName)
 {
 	IndexBuffer indexBuffer;
 
@@ -749,7 +850,7 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data, c
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const std::string& debugName)
+IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const std::string &debugName)
 {
 	IndexBuffer indexBuffer;
 
@@ -776,11 +877,11 @@ IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const 
 
 // ***********************************************************************
 
-void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize)
+void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void *data, size_t dataSize)
 {
 	if (!IsValid(handle))
 		return;
-	IndexBuffer& indexBuffer = pCtx->poolIndexBuffer[handle.id];
+	IndexBuffer &indexBuffer = pCtx->poolIndexBuffer[handle.id];
 
 	if (!indexBuffer.isDynamic)
 	{
@@ -801,7 +902,7 @@ int GfxDevice::GetIndexBufferSize(IndexBufferHandle handle)
 {
 	if (!IsValid(handle))
 		return -1;
-	IndexBuffer& indexBuffer = pCtx->poolIndexBuffer[handle.id];
+	IndexBuffer &indexBuffer = pCtx->poolIndexBuffer[handle.id];
 	return indexBuffer.nElements;
 }
 
@@ -811,35 +912,49 @@ void GfxDevice::BindIndexBuffer(IndexBufferHandle handle)
 {
 	if (!IsValid(handle))
 		return;
-	IndexBuffer& indexBuffer = pCtx->poolIndexBuffer[handle.id];
+	IndexBuffer &indexBuffer = pCtx->poolIndexBuffer[handle.id];
 	pCtx->pDeviceContext->IASetIndexBuffer(indexBuffer.pBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
 
 // ***********************************************************************
 
-std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<VertexInputElement>& layout)
+void GfxDevice::FreeIndexBuffer(IndexBufferHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	IndexBuffer &buffer = pCtx->poolIndexBuffer[handle.id];
+
+	if (buffer.pBuffer)
+		buffer.pBuffer->Release();
+	pCtx->allocIndexBufferHandle.FreeHandle(handle);
+}
+
+// ***********************************************************************
+
+std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<VertexInputElement> &layout)
 {
 	std::vector<D3D11_INPUT_ELEMENT_DESC> d3d11Layout;
 
-	for (const VertexInputElement& elem : layout)
+	for (const VertexInputElement &elem : layout)
 	{
 		// Todo: might want to replace with a lookup
-		switch(elem.type)
+		switch (elem.type)
 		{
-			case AttributeType::Float3:
-				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32B32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
-				break;
-			case AttributeType::Float2:
-				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 } );
-				break;
-			case AttributeType::InstanceTransform:
-				d3d11Layout.push_back( { elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
-				d3d11Layout.push_back( { elem.name, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
-				d3d11Layout.push_back( { elem.name, 2, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
-				d3d11Layout.push_back( { elem.name, 3, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 } );
-				break;
-			default:
-				break;  
+		case AttributeType::Float3:
+			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			break;
+		case AttributeType::Float2:
+			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			break;
+		case AttributeType::InstanceTransform:
+			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
+			d3d11Layout.push_back({elem.name, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
+			d3d11Layout.push_back({elem.name, 2, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
+			d3d11Layout.push_back({elem.name, 3, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
+			break;
+		default:
+			break;
 		}
 	}
 	return d3d11Layout;
@@ -847,13 +962,13 @@ std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<V
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName)
+VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const char *entry, const std::vector<VertexInputElement> &inputLayout, const std::string &debugName)
 {
 	VertexShader shader;
 
 	std::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
-	ID3DBlob* pBlob = nullptr;
+	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
@@ -867,13 +982,13 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const 
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName)
+VertexShaderHandle GfxDevice::CreateVertexShader(std::string &fileContents, const char *entry, const std::vector<VertexInputElement> &inputLayout, const std::string &debugName)
 {
 	VertexShader shader;
 
 	std::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
-	ID3DBlob* pBlob = nullptr;
+	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
@@ -886,11 +1001,27 @@ VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, cons
 
 // ***********************************************************************
 
-PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const char* entry, const std::string& debugName)
+void GfxDevice::FreeVertexShader(VertexShaderHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	VertexShader &shader = pCtx->poolVertexShader[handle.id];
+
+	if (shader.pShader)
+		shader.pShader->Release();
+	if (shader.pVertLayout)
+		shader.pVertLayout->Release();
+	pCtx->allocVertexShaderHandle.FreeHandle(handle);
+}
+
+// ***********************************************************************
+
+PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t *fileName, const char *entry, const std::string &debugName)
 {
 	PixelShader shader;
 
-	ID3DBlob* pBlob = nullptr;
+	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "ps_5_0", &pBlob);
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
@@ -902,11 +1033,11 @@ PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const ch
 
 // ***********************************************************************
 
-PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const char* entry, const std::string& debugName)
+PixelShaderHandle GfxDevice::CreatePixelShader(std::string &fileContents, const char *entry, const std::string &debugName)
 {
 	PixelShader shader;
 
-	ID3DBlob* pBlob = nullptr;
+	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "ps_5_0", &pBlob);
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
@@ -918,11 +1049,25 @@ PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const 
 
 // ***********************************************************************
 
-GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, const char* entry, const std::string& debugName)
+void GfxDevice::FreePixelShader(PixelShaderHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	PixelShader &shader = pCtx->poolPixelShader[handle.id];
+
+	if (shader.pShader)
+		shader.pShader->Release();
+	pCtx->allocPixelShaderHandle.FreeHandle(handle);
+}
+
+// ***********************************************************************
+
+GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t *fileName, const char *entry, const std::string &debugName)
 {
 	GeometryShader shader;
 
-	ID3DBlob* pBlob = nullptr;
+	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "gs_5_0", &pBlob);
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
@@ -934,11 +1079,11 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, co
 
 // ***********************************************************************
 
-GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, const char* entry, const std::string& debugName)
+GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string &fileContents, const char *entry, const std::string &debugName)
 {
 	GeometryShader shader;
 
-	ID3DBlob* pBlob = nullptr;
+	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "gs_5_0", &pBlob);
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
@@ -950,6 +1095,20 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, 
 
 // ***********************************************************************
 
+void GfxDevice::FreeGeometryShader(GeometryShaderHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	GeometryShader &shader = pCtx->poolGeometryShader[handle.id];
+
+	if (shader.pShader)
+		shader.pShader->Release();
+	pCtx->allocGeometryShaderHandle.FreeHandle(handle);
+}
+
+// ***********************************************************************
+
 ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader)
 {
 	Program program;
@@ -957,7 +1116,10 @@ ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHa
 	if (!IsValid(vShader) || !IsValid(pShader))
 		return ProgramHandle();
 
+	program.vHandle = vShader;
 	program.vertShader = pCtx->poolVertexShader[vShader.id];
+
+	program.pHandle = pShader;
 	program.pixelShader = pCtx->poolPixelShader[pShader.id];
 
 	ProgramHandle handle = pCtx->allocProgramHandle.NewHandle();
@@ -974,8 +1136,13 @@ ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHa
 	if (!IsValid(vShader) || !IsValid(pShader) || !IsValid(gShader))
 		return ProgramHandle();
 
+	program.vHandle = vShader;
 	program.vertShader = pCtx->poolVertexShader[vShader.id];
+
+	program.pHandle = pShader;
 	program.pixelShader = pCtx->poolPixelShader[pShader.id];
+
+	program.gHandle = gShader;
 	program.geomShader = pCtx->poolGeometryShader[gShader.id];
 
 	ProgramHandle handle = pCtx->allocProgramHandle.NewHandle();
@@ -985,11 +1152,11 @@ ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHa
 
 // ***********************************************************************
 
-void GfxDevice::BindProgram(ProgramHandle handle) 
+void GfxDevice::BindProgram(ProgramHandle handle)
 {
 	if (!IsValid(handle))
 		return;
-	Program& p = pCtx->poolProgram[handle.id];
+	Program &p = pCtx->poolProgram[handle.id];
 
 	pCtx->pDeviceContext->VSSetShader(p.vertShader.pShader, 0, 0);
 	pCtx->pDeviceContext->PSSetShader(p.pixelShader.pShader, 0, 0);
@@ -997,27 +1164,57 @@ void GfxDevice::BindProgram(ProgramHandle handle)
 	pCtx->pDeviceContext->IASetInputLayout(p.vertShader.pVertLayout);
 }
 
+void GfxDevice::FreeProgram(ProgramHandle handle, bool freeBoundShaders)
+{
+	if (!IsValid(handle))
+		return;
+
+	Program &program = pCtx->poolProgram[handle.id];
+
+	if (freeBoundShaders)
+	{
+		FreeVertexShader(program.vHandle);
+		FreePixelShader(program.pHandle);
+		FreeGeometryShader(program.gHandle);
+	}
+	pCtx->allocProgramHandle.FreeHandle(handle);
+}
+
 // ***********************************************************************
 
-SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const std::string& debugName)
+SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const std::string &debugName)
 {
 	Sampler sampler;
 
 	D3D11_FILTER samplerFilter;
-	switch(filter)
+	switch (filter)
 	{
-		case Filter::Linear: samplerFilter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; break;
-		case Filter::Point: samplerFilter = D3D11_FILTER_MIN_MAG_MIP_POINT; break;
-		case Filter::Anisotropic: samplerFilter = D3D11_FILTER_ANISOTROPIC; break;
+	case Filter::Linear:
+		samplerFilter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		break;
+	case Filter::Point:
+		samplerFilter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		break;
+	case Filter::Anisotropic:
+		samplerFilter = D3D11_FILTER_ANISOTROPIC;
+		break;
 	}
 
 	D3D11_TEXTURE_ADDRESS_MODE samplerAddressMode;
-	switch(wrapMode)
+	switch (wrapMode)
 	{
-		case WrapMode::Wrap: samplerAddressMode = D3D11_TEXTURE_ADDRESS_WRAP; break;
-		case WrapMode::Mirror: samplerAddressMode = D3D11_TEXTURE_ADDRESS_MIRROR; break;
-		case WrapMode::Clamp: samplerAddressMode = D3D11_TEXTURE_ADDRESS_CLAMP; break;
-		case WrapMode::Border: samplerAddressMode = D3D11_TEXTURE_ADDRESS_BORDER; break;
+	case WrapMode::Wrap:
+		samplerAddressMode = D3D11_TEXTURE_ADDRESS_WRAP;
+		break;
+	case WrapMode::Mirror:
+		samplerAddressMode = D3D11_TEXTURE_ADDRESS_MIRROR;
+		break;
+	case WrapMode::Clamp:
+		samplerAddressMode = D3D11_TEXTURE_ADDRESS_CLAMP;
+		break;
+	case WrapMode::Border:
+		samplerAddressMode = D3D11_TEXTURE_ADDRESS_BORDER;
+		break;
 	}
 
 	D3D11_SAMPLER_DESC sampDesc;
@@ -1043,25 +1240,40 @@ void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shader, int slot)
 {
 	if (!IsValid(handle))
 		return;
-	Sampler& sampler = pCtx->poolSampler[handle.id];
+	Sampler &sampler = pCtx->poolSampler[handle.id];
 
 	switch (shader)
 	{
-		case ShaderType::Vertex:
-			pCtx->pDeviceContext->VSSetSamplers(slot, 1, &sampler.pSampler);
-			break;
-		case ShaderType::Pixel:
-			pCtx->pDeviceContext->PSSetSamplers(slot, 1, &sampler.pSampler);
-			break;
-		case ShaderType::Geometry:
-			pCtx->pDeviceContext->GSSetSamplers(slot, 1, &sampler.pSampler);
-			break;
+	case ShaderType::Vertex:
+		pCtx->pDeviceContext->VSSetSamplers(slot, 1, &sampler.pSampler);
+		break;
+	case ShaderType::Pixel:
+		pCtx->pDeviceContext->PSSetSamplers(slot, 1, &sampler.pSampler);
+		break;
+	case ShaderType::Geometry:
+		pCtx->pDeviceContext->GSSetSamplers(slot, 1, &sampler.pSampler);
+		break;
 	}
 }
 
 // ***********************************************************************
 
-VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data, const std::string& debugName)
+void GfxDevice::FreeSampler(SamplerHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	Sampler &sampler = pCtx->poolSampler[handle.id];
+
+	if (sampler.pSampler)
+		sampler.pSampler->Release();
+
+	pCtx->allocSamplerHandle.FreeHandle(handle);
+}
+
+// ***********************************************************************
+
+VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void *data, const std::string &debugName)
 {
 	VertexBuffer vBufferData;
 
@@ -1091,7 +1303,7 @@ VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _ele
 
 // ***********************************************************************
 
-VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const std::string& debugName)
+VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const std::string &debugName)
 {
 	VertexBuffer vBufferData;
 
@@ -1118,12 +1330,12 @@ VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size
 
 // ***********************************************************************
 
-void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize)
+void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void *data, size_t dataSize)
 {
 	if (!IsValid(handle))
 		return;
 
-	VertexBuffer& buffer = pCtx->poolVertexBuffer[handle.id];
+	VertexBuffer &buffer = pCtx->poolVertexBuffer[handle.id];
 	if (!buffer.isDynamic)
 	{
 		Log::Print(Log::EErr, "Attempting to update non dynamic vertex buffer");
@@ -1139,19 +1351,22 @@ void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data,
 
 // ***********************************************************************
 
-void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle* handles)
+void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle *handles)
 {
 	// Improvement: good opportunity for single frame allocator, or stack allocation here
-	std::vector<ID3D11Buffer*> pBuffers; pBuffers.reserve(nBuffers);
-	std::vector<UINT> offsets; offsets.reserve(nBuffers);
-	std::vector<UINT> strides; strides.reserve(nBuffers);
+	std::vector<ID3D11Buffer *> pBuffers;
+	pBuffers.reserve(nBuffers);
+	std::vector<UINT> offsets;
+	offsets.reserve(nBuffers);
+	std::vector<UINT> strides;
+	strides.reserve(nBuffers);
 
 	for (int i = 0; i < nBuffers; i++)
 	{
 		if (!IsValid(handles[i]))
 			return;
-		VertexBuffer& buffer = pCtx->poolVertexBuffer[handles[i].id];
-		
+		VertexBuffer &buffer = pCtx->poolVertexBuffer[handles[i].id];
+
 		pBuffers.push_back(buffer.pBuffer);
 		offsets.push_back(0);
 		strides.push_back(buffer.elementSize);
@@ -1161,7 +1376,21 @@ void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle* handles)
 
 // ***********************************************************************
 
-ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize, const std::string& debugName)
+void GfxDevice::FreeVertexBuffer(VertexBufferHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	VertexBuffer &buffer = pCtx->poolVertexBuffer[handle.id];
+
+	if (buffer.pBuffer)
+		buffer.pBuffer->Release();
+	pCtx->allocVertexBufferHandle.FreeHandle(handle);
+}
+
+// ***********************************************************************
+
+ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize, const std::string &debugName)
 {
 	ConstantBuffer buffer;
 
@@ -1182,26 +1411,40 @@ ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize, const std
 
 // ***********************************************************************
 
-void GfxDevice::BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot)
+void GfxDevice::BindConstantBuffer(ConstBufferHandle handle, const void *bufferData, ShaderType shader, int slot)
 {
 	if (!IsValid(handle))
 		return;
-	ConstantBuffer& buffer = pCtx->poolConstantBuffer[handle.id];
+	ConstantBuffer &buffer = pCtx->poolConstantBuffer[handle.id];
 
 	pCtx->pDeviceContext->UpdateSubresource(buffer.pBuffer, 0, nullptr, bufferData, 0, 0);
 
 	switch (shader)
 	{
-		case ShaderType::Vertex:
-			pCtx->pDeviceContext->VSSetConstantBuffers(slot, 1, &buffer.pBuffer);
-			break;
-		case ShaderType::Pixel:
-			pCtx->pDeviceContext->PSSetConstantBuffers(slot, 1, &buffer.pBuffer);
-			break;
-		case ShaderType::Geometry:
-			pCtx->pDeviceContext->GSSetConstantBuffers(slot, 1, &buffer.pBuffer);
-			break;
+	case ShaderType::Vertex:
+		pCtx->pDeviceContext->VSSetConstantBuffers(slot, 1, &buffer.pBuffer);
+		break;
+	case ShaderType::Pixel:
+		pCtx->pDeviceContext->PSSetConstantBuffers(slot, 1, &buffer.pBuffer);
+		break;
+	case ShaderType::Geometry:
+		pCtx->pDeviceContext->GSSetConstantBuffers(slot, 1, &buffer.pBuffer);
+		break;
 	}
+}
+
+// ***********************************************************************
+
+void GfxDevice::FreeConstBuffer(ConstBufferHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+
+	ConstantBuffer &buffer = pCtx->poolConstantBuffer[handle.id];
+
+	if (buffer.pBuffer)
+		buffer.pBuffer->Release();
+	pCtx->allocConstBufferHandle.FreeHandle(handle);
 }
 
 // ***********************************************************************

@@ -35,6 +35,7 @@ struct CFontSystemState
 	SamplerHandle charTextureSampler;
 	ProgramHandle fontShaderProgram;
 	ConstBufferHandle wvpBuffer;
+	BlendStateHandle blendState;
 
 	struct TransformData
 	{

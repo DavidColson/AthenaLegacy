@@ -99,6 +99,7 @@ DECLARE_GFX_HANDLE(ProgramHandle)
 DECLARE_GFX_HANDLE(SamplerHandle)
 DECLARE_GFX_HANDLE(TextureHandle)
 DECLARE_GFX_HANDLE(ConstBufferHandle)
+DECLARE_GFX_HANDLE(BlendStateHandle)
 
 enum class Filter
 {
@@ -186,6 +187,8 @@ namespace GfxDevice
 {
 	void Initialize(SDL_Window* pWindow, float width, float height);
 
+	void Destroy();
+
 	void PrintQueuedDebugMessages();
 
 	SDL_Window* GetWindow();
@@ -216,7 +219,11 @@ namespace GfxDevice
 
 	// Blend States
 
-	void SetBlending(const BlendingInfo& info);
+	BlendStateHandle CreateBlendState(const BlendingInfo& info);
+	
+	void SetBlending(BlendStateHandle handle);
+
+	void FreeBlendState(BlendStateHandle handle);
 
 	// Vertex Buffers
 
@@ -227,6 +234,8 @@ namespace GfxDevice
 	void UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize);
 
 	void BindVertexBuffers(size_t nBuffers, VertexBufferHandle* handles);
+
+	void FreeVertexBuffer(VertexBufferHandle handle);
 
 	// Index Buffers
 
@@ -240,25 +249,35 @@ namespace GfxDevice
 
 	void BindIndexBuffer(IndexBufferHandle handle);
 
+	void FreeIndexBuffer(IndexBufferHandle handle);
+
 	// Shaders And Programs
 
 	VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName = "");
 
 	VertexShaderHandle CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName = "");
 
+	void FreeVertexShader(VertexShaderHandle handle);
+
 	PixelShaderHandle CreatePixelShader(const wchar_t* fileName, const char* entry, const std::string& debugName = "");
 
 	PixelShaderHandle CreatePixelShader(std::string& fileContents, const char* entry, const std::string& debugName = "");
 
+	void FreePixelShader(PixelShaderHandle handle);
+
 	GeometryShaderHandle CreateGeometryShader(const wchar_t* fileName, const char* entry, const std::string& debugName = "");
 
 	GeometryShaderHandle CreateGeometryShader(std::string& fileContents, const char* entry, const std::string& debugName = "");
+
+	void FreeGeometryShader(GeometryShaderHandle handle);
 
 	ProgramHandle CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader);
 
 	ProgramHandle CreateProgram(VertexShaderHandle vShader, PixelShaderHandle pShader, GeometryShaderHandle gShader);
 
 	void BindProgram(ProgramHandle handle);
+
+	void FreeProgram(ProgramHandle handle, bool freeBoundShaders = true); 
 
 	// Render Targets
 
@@ -272,11 +291,15 @@ namespace GfxDevice
 
 	TextureHandle GetTexture(RenderTargetHandle handle);
 
+	void FreeRenderTarget(RenderTargetHandle handle);
+
 	// Samplers
 
 	SamplerHandle CreateSampler(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap, const std::string& debugName = "");
 
 	void BindSampler(SamplerHandle handle, ShaderType shader, int slot);
+
+	void FreeSampler(SamplerHandle handle);
 
 	// Textures
 
@@ -291,6 +314,8 @@ namespace GfxDevice
 	ConstBufferHandle CreateConstantBuffer(uint32_t bufferSize, const std::string& debugName = "");
 
 	void BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot);
+
+	void FreeConstBuffer(ConstBufferHandle handle);
 
 	// Debugging
 

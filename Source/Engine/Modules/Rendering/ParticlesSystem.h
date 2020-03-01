@@ -81,5 +81,6 @@ struct CParticleEmitter
 namespace ParticlesSystem
 {
 	void OnAddEmitter(Scene& scene, EntityID entity);
+	void OnRemoveEmitter(Scene& scene, EntityID entity);
 	void OnFrame(Scene& scene, float deltaTime);
 }

@@ -87,6 +87,16 @@ void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
 	state.transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Shapes transforms");
 }
 
+void Shapes::OnShapesSystemStateRemoved(Scene& scene, EntityID entity)
+{
+	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
+
+	GfxDevice::FreeProgram(state.shaderProgram);
+	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
+	GfxDevice::FreeIndexBuffer(state.indexBuffer);
+	GfxDevice::FreeConstBuffer(state.transformDataBuffer);
+}
+
 void Shapes::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();

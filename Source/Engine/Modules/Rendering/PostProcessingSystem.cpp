@@ -5,7 +5,7 @@
 REFLECT_BEGIN(CPostProcessing)
 REFLECT_END()
 
-void PostProcessingSystem::OnPostProcessingAdded(Scene& scene, EntityID entity)
+void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 {
     CPostProcessing& pp = *(scene.Get<CPostProcessing>(entity));
 	for (int i = 0; i < 2; ++i)
@@ -47,6 +47,20 @@ void PostProcessingSystem::OnPostProcessingAdded(Scene& scene, EntityID entity)
     pp.fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Fullscreen quad");
 
     pp.fullScreenTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Fullscreen texture");
+}
+
+void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
+{
+    CPostProcessing& pp = *(scene.Get<CPostProcessing>(entity));
+
+	GfxDevice::FreeProgram(pp.bloomShaderProgram);
+	GfxDevice::FreeProgram(pp.postProcessShaderProgram);
+	GfxDevice::FreeConstBuffer(pp.postProcessDataBuffer);
+	GfxDevice::FreeConstBuffer(pp.bloomDataBuffer);
+	GfxDevice::FreeVertexBuffer(pp.fullScreenQuad);
+	GfxDevice::FreeSampler(pp.fullScreenTextureSampler);
+	GfxDevice::FreeRenderTarget(pp.blurredFrame[0]);
+	GfxDevice::FreeRenderTarget(pp.blurredFrame[1]);
 }
 
 void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)

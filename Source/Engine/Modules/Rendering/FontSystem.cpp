@@ -71,6 +71,12 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 
 	state.fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
+	BlendingInfo blender;
+	blender.enabled = true;
+	blender.source = Blend::SrcAlpha;
+	blender.destination = Blend::InverseSrcAlpha;
+	state.blendState = GfxDevice::CreateBlendState(blender);
+
 	std::vector<Vertex> quadVertices = {
 		Vertex(Vec3f(0.0f, 0.0f, 0.5f)),
 		Vertex(Vec3f(0.f, 10.f, 0.5f)),
@@ -128,6 +134,12 @@ void FontSystem::OnRemoveFontSystemState(Scene& scene, EntityID entity)
 {
 	CFontSystemState& state = *(scene.Get<CFontSystemState>(entity));
 
+	GfxDevice::FreeProgram(state.fontShaderProgram);
+	GfxDevice::FreeVertexBuffer(state.quadBuffer);
+	GfxDevice::FreeSampler(state.charTextureSampler);
+	GfxDevice::FreeConstBuffer(state.wvpBuffer);
+	GfxDevice::FreeBlendState(state.blendState);
+
 	for(Character& chara : state.characters)
 	{
 		if (GfxDevice::IsValid(chara.charTexture))
@@ -151,11 +163,7 @@ void FontSystem::OnFrame(Scene& scene, float deltaTime)
 	// Set Shaders to active
 	GfxDevice::BindProgram(state.fontShaderProgram);
 
-	BlendingInfo blender;
-	blender.enabled = true;
-	blender.source = Blend::SrcAlpha;
-	blender.destination = Blend::InverseSrcAlpha;
-	GfxDevice::SetBlending(blender);
+	GfxDevice::SetBlending(state.blendState);
 
 	Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
 	

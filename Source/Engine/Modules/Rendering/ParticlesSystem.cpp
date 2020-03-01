@@ -79,6 +79,16 @@ void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 	RestartEmitter(emitter, *(scene.Get<CTransform>(entity)));
 }
 
+void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
+{
+	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
+
+	GfxDevice::FreeProgram(emitter.shaderProgram);
+	GfxDevice::FreeVertexBuffer(emitter.vertBuffer);
+	GfxDevice::FreeConstBuffer(emitter.transBuffer);
+	GfxDevice::FreeVertexBuffer(emitter.instanceBuffer);
+}
+
 void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 {
 	PROFILE();
