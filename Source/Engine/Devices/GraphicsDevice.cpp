@@ -970,6 +970,9 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const 
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
+	if (pBlob == nullptr)
+		return INVALID_HANDLE;
+
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
@@ -991,6 +994,9 @@ VertexShaderHandle GfxDevice::CreateVertexShader(std::string &fileContents, cons
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
+	if (pBlob == nullptr)
+		return INVALID_HANDLE;
+
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
@@ -1025,6 +1031,9 @@ PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t *fileName, const ch
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "ps_5_0", &pBlob);
+	if (pBlob == nullptr)
+		return INVALID_HANDLE;
+
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
 	pBlob->Release();
@@ -1042,6 +1051,9 @@ PixelShaderHandle GfxDevice::CreatePixelShader(std::string &fileContents, const 
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "ps_5_0", &pBlob);
+	if (pBlob == nullptr)
+		return INVALID_HANDLE;
+
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
 	pBlob->Release();
@@ -1073,6 +1085,9 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t *fileName, co
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "gs_5_0", &pBlob);
+	if (pBlob == nullptr)
+		return INVALID_HANDLE;
+
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
 	pBlob->Release();
@@ -1090,6 +1105,9 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string &fileContents, 
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "gs_5_0", &pBlob);
+	if (pBlob == nullptr)
+		return INVALID_HANDLE;
+
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
 	pBlob->Release();
