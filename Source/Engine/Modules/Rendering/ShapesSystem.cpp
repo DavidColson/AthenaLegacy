@@ -4,15 +4,14 @@
 #include "Vec4.h"
 #include "Maths.h"
 
-void Shapes::DrawPolyLine(Scene& scene, const std::vector<Vec2f>& verts, float thickness, Vec3f color, bool connected)
+void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thickness, Vec3f color, bool connected)
 {
 	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
     
 	// Vector manipulation here is slow, can do better
 	// I recommend using a single frame allocator, or some other with a custom container
 	
-    std::vector<Vec2f> normals;
-    normals.reserve(verts.size() - 1);
+    VertsVector normals;
     for (int i = 0; i < verts.size(); i++)
     {
         Vec2f edge = verts[i] - verts[mod_floor(i + 1, verts.size())];

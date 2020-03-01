@@ -16,7 +16,6 @@ struct LoadedSound
 
     ~LoadedSound()
     {
-        Log::Print(Log::EMsg, "Deleting a sound");
         SDL_FreeWAV(buffer);
     }
 };

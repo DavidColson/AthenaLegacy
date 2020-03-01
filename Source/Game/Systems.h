@@ -3,10 +3,11 @@
 #include <vector>
 #include <Scene.h>
 #include <Vec2.h>
+#include <EASTL/fixed_vector.h>
 
 // Utilities
 
-std::vector<Vec2f> GetRandomAsteroidMesh();
+eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh();
 
 // Systems
 

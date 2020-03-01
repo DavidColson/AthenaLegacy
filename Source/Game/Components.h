@@ -6,6 +6,7 @@
 #include <Log.h>
 #include <Scene.h>
 #include <AudioDevice.h>
+#include <EASTL/fixed_vector.h>
 
 struct CMenuInteraction
 {
@@ -20,7 +21,7 @@ struct CMenuInteraction
 
 struct CPolyShape
 {
-	std::vector<Vec2f> points;
+	eastl::fixed_vector<Vec2f, 15> points;
 	float thickness = 5.0f;
 	bool connected = true;
 	REFLECT();

@@ -136,7 +136,7 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	pTransform->accel = Vec3f(0.0f, 0.0f, 0.0f);
 }
 
-std::vector<Vec2f> GetRandomAsteroidMesh()
+eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh()
 {
 	static Vec2f asteroidMesh1[] = {
 		Vec2f(0.03f, 0.379f),
@@ -193,7 +193,7 @@ std::vector<Vec2f> GetRandomAsteroidMesh()
 		Vec2f(0.358f, 0.043f)
 	};
 
-	std::vector<Vec2f> vec;
+	eastl::fixed_vector<Vec2f, 15> vec;
 	switch (rand() % 4)
 	{
 	case 0: vec.assign(asteroidMesh1, asteroidMesh1 + 10); break;
@@ -225,8 +225,7 @@ void DrawPolyShapes(Scene& scene, float deltaTime)
 		Matrixf pivotAdjust = Matrixf::Translate(Vec3f(-0.5f, -0.5f, 0.0f));
 		Matrixf world = posMat * rotMat * scaMat * pivotAdjust;
 
-		// TODO: Lots of memory thrashing here, do better
-		std::vector<Vec2f> transformedVerts;
+		VertsVector transformedVerts;
 		for (const Vec2f& vert : scene.Get<CPolyShape>(shape)->points)
 			transformedVerts.push_back(Vec2f::Project4D(world * Vec4f::Embed2D(vert)));
 

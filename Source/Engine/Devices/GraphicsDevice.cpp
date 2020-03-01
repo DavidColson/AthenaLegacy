@@ -974,6 +974,7 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const 
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
 	SetDebugName(shader.pVertLayout, "[INPUT_LAYOUT] " + debugName);
+	pBlob->Release();
 
 	VertexShaderHandle handle = pCtx->allocVertexShaderHandle.NewHandle();
 	pCtx->poolVertexShader[handle.id] = shader;
@@ -993,6 +994,7 @@ VertexShaderHandle GfxDevice::CreateVertexShader(std::string &fileContents, cons
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
+	pBlob->Release();
 
 	VertexShaderHandle handle = pCtx->allocVertexShaderHandle.NewHandle();
 	pCtx->poolVertexShader[handle.id] = shader;
@@ -1025,6 +1027,7 @@ PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t *fileName, const ch
 	ShaderCompileFromFile(fileName, entry, "ps_5_0", &pBlob);
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
+	pBlob->Release();
 
 	PixelShaderHandle handle = pCtx->allocPixelShaderHandle.NewHandle();
 	pCtx->poolPixelShader[handle.id] = shader;
@@ -1041,6 +1044,7 @@ PixelShaderHandle GfxDevice::CreatePixelShader(std::string &fileContents, const 
 	ShaderCompile(fileContents, entry, "ps_5_0", &pBlob);
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
+	pBlob->Release();
 
 	PixelShaderHandle handle = pCtx->allocPixelShaderHandle.NewHandle();
 	pCtx->poolPixelShader[handle.id] = shader;
@@ -1071,6 +1075,7 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t *fileName, co
 	ShaderCompileFromFile(fileName, entry, "gs_5_0", &pBlob);
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
+	pBlob->Release();
 
 	GeometryShaderHandle handle = pCtx->allocGeometryShaderHandle.NewHandle();
 	pCtx->poolGeometryShader[handle.id] = shader;
@@ -1087,6 +1092,7 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string &fileContents, 
 	ShaderCompile(fileContents, entry, "gs_5_0", &pBlob);
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
+	pBlob->Release();
 
 	GeometryShaderHandle handle = pCtx->allocGeometryShaderHandle.NewHandle();
 	pCtx->poolGeometryShader[handle.id] = shader;

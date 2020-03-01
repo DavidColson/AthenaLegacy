@@ -5,6 +5,8 @@
 #include "GraphicsDevice.h"
 #include "Scene.h"
 
+typedef eastl::fixed_vector<Vec2f, 50> VertsVector;
+
 namespace Shapes
 {	
 	struct DrawCall
@@ -28,7 +30,7 @@ namespace Shapes
 		float pad3{ 0.0f };
 	};
 
-	void DrawPolyLine(Scene& scene, const std::vector<Vec2f>& verts, float thickness, Vec3f color, bool connected = true);
+	void DrawPolyLine(Scene& scene, const VertsVector& verts, float thickness, Vec3f color, bool connected = true);
 
 	void OnShapesSystemStateAdded(Scene& scene, EntityID entity);
 	void OnShapesSystemStateRemoved(Scene& scene, EntityID entity);
