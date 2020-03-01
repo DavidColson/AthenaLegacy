@@ -92,12 +92,14 @@ void DebugDraw::OnFrame(Scene& scene, float deltaTime)
 	// TODO: MEMORY LEAK HERE Release the old buffer when you create new one
 	if (!GfxDevice::IsValid(state.vertexBuffer) || state.vertBufferSize < state.vertexList.size())
 	{
+		if (GfxDevice::IsValid(state.vertexBuffer)) { GfxDevice::FreeVertexBuffer(state.vertexBuffer); }
 		state.vertBufferSize = (int)state.vertexList.size() + 1000;
 		state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(state.vertBufferSize, sizeof(DebugVertex), "Debug Drawer");
 	}
 
 	if (!GfxDevice::IsValid(state.indexBuffer) || state.indexBufferSize < state.indexList.size())
 	{
+		if (GfxDevice::IsValid(state.indexBuffer)) { GfxDevice::FreeIndexBuffer(state.indexBuffer); }
 		state.indexBufferSize = (int)state.indexList.size() + 1000;
 		state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(state.indexBufferSize, "Debug Drawer");
 	}

@@ -39,9 +39,9 @@ namespace Shapes
 
 struct CShapesSystemState
 {
-	std::vector<Shapes::DrawCall> drawQueue;
-	std::vector<Shapes::ShapeVertex> vertexList;
-	std::vector<int> indexList;
+	eastl::vector<Shapes::DrawCall> drawQueue;
+	eastl::vector<Shapes::ShapeVertex> vertexList;
+	eastl::vector<int> indexList;
 
 	ProgramHandle shaderProgram;
 	VertexBufferHandle vertexBuffer;

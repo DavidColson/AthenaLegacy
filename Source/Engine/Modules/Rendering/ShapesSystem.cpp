@@ -53,6 +53,13 @@ void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
 {
 	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
 
+	state.vertexList.get_allocator().set_name("CShapeSystemState/vertexList");
+	state.drawQueue.get_allocator().set_name("CShapeSystemState/drawQueue");
+	state.indexList.get_allocator().set_name("CShapeSystemState/indexList");
+	state.vertexList.reserve(20480);
+	state.drawQueue.reserve(256);
+	state.indexList.reserve(4096);
+
     std::string shaderSrc = "\
 	cbuffer cbTransform\
 	{\
@@ -106,15 +113,16 @@ void Shapes::OnFrame(Scene& scene, float deltaTime)
 	if (state.drawQueue.empty())
 		return;
 
-	// TODO: MEMORY LEAK HERE Release the old buffer when you create new one
 	if (!GfxDevice::IsValid(state.vertexBuffer) || state.vertBufferSize < state.vertexList.size())
 	{
+		if (GfxDevice::IsValid(state.vertexBuffer)) { GfxDevice::FreeVertexBuffer(state.vertexBuffer); }
 		state.vertBufferSize = (int)state.vertexList.size() + 1000;
 		state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(state.vertBufferSize, sizeof(ShapeVertex), "Shapes System");
 	}
 
 	if (!GfxDevice::IsValid(state.indexBuffer) || state.indexBufferSize < state.indexList.size())
 	{
+		if (GfxDevice::IsValid(state.indexBuffer)) { GfxDevice::FreeIndexBuffer(state.indexBuffer); }
 		state.indexBufferSize = (int)state.indexList.size() + 1000;
 		state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(state.indexBufferSize, "Shapes System");
 	}
