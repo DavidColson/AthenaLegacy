@@ -22,6 +22,7 @@
 #include "Memory.h"
 
 #include "EASTL/vector.h"
+#include "EASTL/fixed_vector.h"
 
 namespace
 {
@@ -129,7 +130,7 @@ void Engine::Initialize()
 	);
 
 
-	eastl::vector<int> vec(eastl::allocator("Test Vector"));
+	eastl::fixed_vector<int, 100> vec;
 
 	vec.push_back(4);
 	vec.push_back(2);

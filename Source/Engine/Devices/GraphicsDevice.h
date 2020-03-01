@@ -3,6 +3,9 @@
 #include <array>
 #include <vector>
 
+#include <EASTL/bitset.h>
+#include <EASTL/fixed_vector.h>
+
 #include "Vec2.h"
 #include "Vec3.h"
 
@@ -37,22 +40,65 @@ enum class TopologyType
 	LineListAdjacency,
 };
 
-#define DEFINE_HANDLE(_name)                                                          \
-	struct _name { uint16_t id{ UINT16_MAX }; };                                        \
-	inline bool IsValid(_name _handle) { return UINT16_MAX != _handle.id; }
+template<typename HandleType, int MaxHandles>
+struct HandleAllocator
+{
+	HandleType NewHandle()
+	{
+		if (!freeHandles.empty())
+		{
+			uint16_t newId = freeHandles.back();
+			freeHandles.pop_back();
+			handleStates.set(newId, true);
+			return HandleType{ newId };
+		}
+		uint16_t newId = highestUnallocatedHandle;
+		highestUnallocatedHandle += 1;
+		handleStates.set(newId, true);
+		return HandleType{ newId };
+	}
+
+	void FreeHandle(HandleType handle)
+	{
+		if (handle.id == UINT16_MAX) return;
+		handleStates.set(handle.id, false);
+		freeHandles.push_back(handle.id);
+	}
+
+	bool IsValid(HandleType handle)
+	{
+		if (handle.id == UINT16_MAX) return false;
+		return handleStates.test(handle.id);
+	}
+
+	uint16_t highestUnallocatedHandle{ 0 };
+	eastl::bitset<MaxHandles> handleStates; // Stores whether each handle is valid
+	eastl::fixed_vector<uint16_t, MaxHandles> freeHandles; // Stores currently unused handles
+};
+
+#define DECLARE_GFX_HANDLE(name)                                                       \
+	struct name { uint16_t id{ UINT16_MAX }; };                                        \
+	namespace GfxDevice { bool IsValid(name handle); }										
+
+#define DEFINE_GFX_HANDLE(name) \
+	bool GfxDevice::IsValid(name handle) { return pCtx->alloc##name.IsValid(handle); }
+
+#define DEFINE_RESOURCE_POOLS(HandleType, CoreType)\
+	HandleAllocator<HandleType, MAX_HANDLES> alloc##HandleType;\
+	CoreType pool##CoreType[MAX_HANDLES];
 
 #define INVALID_HANDLE { UINT16_MAX }
 
-DEFINE_HANDLE(RenderTargetHandle)
-DEFINE_HANDLE(VertexBufferHandle)
-DEFINE_HANDLE(IndexBufferHandle)
-DEFINE_HANDLE(PixelShaderHandle)
-DEFINE_HANDLE(VertexShaderHandle)
-DEFINE_HANDLE(GeometryShaderHandle)
-DEFINE_HANDLE(ProgramHandle)
-DEFINE_HANDLE(SamplerHandle)
-DEFINE_HANDLE(TextureHandle)
-DEFINE_HANDLE(ConstBufferHandle)
+DECLARE_GFX_HANDLE(RenderTargetHandle)
+DECLARE_GFX_HANDLE(VertexBufferHandle)
+DECLARE_GFX_HANDLE(IndexBufferHandle)
+DECLARE_GFX_HANDLE(PixelShaderHandle)
+DECLARE_GFX_HANDLE(VertexShaderHandle)
+DECLARE_GFX_HANDLE(GeometryShaderHandle)
+DECLARE_GFX_HANDLE(ProgramHandle)
+DECLARE_GFX_HANDLE(SamplerHandle)
+DECLARE_GFX_HANDLE(TextureHandle)
+DECLARE_GFX_HANDLE(ConstBufferHandle)
 
 enum class Filter
 {

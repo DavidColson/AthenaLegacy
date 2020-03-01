@@ -138,7 +138,7 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		// ****************
 
 		// Update instance data
-		if (!IsValid(pEmitter->instanceBuffer) || pEmitter->instanceBufferSize < particleTransforms.size())
+		if (!GfxDevice::IsValid(pEmitter->instanceBuffer) || pEmitter->instanceBufferSize < particleTransforms.size())
 		{
 			// TODO: release buffer before creating
 			pEmitter->instanceBufferSize = (int)particleTransforms.size() + 10;

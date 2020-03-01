@@ -98,13 +98,13 @@ void Shapes::OnFrame(Scene& scene, float deltaTime)
 		return;
 
 	// TODO: MEMORY LEAK HERE Release the old buffer when you create new one
-	if (!IsValid(state.vertexBuffer) || state.vertBufferSize < state.vertexList.size())
+	if (!GfxDevice::IsValid(state.vertexBuffer) || state.vertBufferSize < state.vertexList.size())
 	{
 		state.vertBufferSize = (int)state.vertexList.size() + 1000;
 		state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(state.vertBufferSize, sizeof(ShapeVertex), "Shapes System");
 	}
 
-	if (!IsValid(state.indexBuffer) || state.indexBufferSize < state.indexList.size())
+	if (!GfxDevice::IsValid(state.indexBuffer) || state.indexBufferSize < state.indexList.size())
 	{
 		state.indexBufferSize = (int)state.indexList.size() + 1000;
 		state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(state.indexBufferSize, "Shapes System");

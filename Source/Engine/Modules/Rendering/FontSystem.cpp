@@ -130,7 +130,7 @@ void FontSystem::OnRemoveFontSystemState(Scene& scene, EntityID entity)
 
 	for(Character& chara : state.characters)
 	{
-		if (IsValid(chara.charTexture))
+		if (GfxDevice::IsValid(chara.charTexture))
 			GfxDevice::FreeTexture(chara.charTexture);
 	}
 }
@@ -187,7 +187,7 @@ void FontSystem::OnFrame(Scene& scene, float deltaTime)
 			// Draw a font character
 			Character ch = state.characters[c];
 
-			if (IsValid(state.characters[c].charTexture))
+			if (GfxDevice::IsValid(state.characters[c].charTexture))
 			{
 				Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth * 0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
 				Matrixf scalemat = Matrixf::Scale(Vec3f(pTransform->sca.x * ch.size.x / 10.0f, pTransform->sca.y * ch.size.y / 10.0f, 1.0f));

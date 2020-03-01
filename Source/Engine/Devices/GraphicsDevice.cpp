@@ -14,6 +14,7 @@
 
 #include "Log.h"
 
+#define MAX_HANDLES 512
 
 // ***********************************
 // D3D11 specific resource definitions
@@ -76,7 +77,7 @@ struct Texture
 };
 
 struct ConstantBuffer
-{
+ {
 	ID3D11Buffer* pBuffer{ nullptr };
 };
 
@@ -92,16 +93,17 @@ struct Context
 	RenderTargetHandle backBuffer;
 
 	// resources
-	std::vector<RenderTarget> renderTargets;
-	std::vector<VertexBuffer> vertexBuffers;
-	std::vector<IndexBuffer> indexBuffers;
-	std::vector<VertexShader> vertexShaders;
-	std::vector<PixelShader> pixelShaders;
-	std::vector<GeometryShader> geometryShaders;
-	std::vector<Program> programs;
-	std::vector<Sampler> samplers;
-	std::vector<Texture> textures;
-	std::vector<ConstantBuffer> constBuffers;
+
+	DEFINE_RESOURCE_POOLS(RenderTargetHandle, RenderTarget)
+	DEFINE_RESOURCE_POOLS(VertexBufferHandle, VertexBuffer)
+	DEFINE_RESOURCE_POOLS(IndexBufferHandle, IndexBuffer)
+	DEFINE_RESOURCE_POOLS(VertexShaderHandle, VertexShader)
+	DEFINE_RESOURCE_POOLS(PixelShaderHandle, PixelShader)
+	DEFINE_RESOURCE_POOLS(GeometryShaderHandle, GeometryShader)
+	DEFINE_RESOURCE_POOLS(ProgramHandle, Program)
+	DEFINE_RESOURCE_POOLS(SamplerHandle, Sampler)
+	DEFINE_RESOURCE_POOLS(TextureHandle, Texture)
+	DEFINE_RESOURCE_POOLS(ConstBufferHandle, ConstantBuffer)
 
 	float windowWidth{ 0 };
 	float windowHeight{ 0 };
@@ -111,6 +113,17 @@ namespace
 {
 	Context* pCtx = nullptr;
 }
+
+DEFINE_GFX_HANDLE(RenderTargetHandle)
+DEFINE_GFX_HANDLE(VertexBufferHandle)
+DEFINE_GFX_HANDLE(IndexBufferHandle)
+DEFINE_GFX_HANDLE(VertexShaderHandle)
+DEFINE_GFX_HANDLE(PixelShaderHandle)
+DEFINE_GFX_HANDLE(GeometryShaderHandle)
+DEFINE_GFX_HANDLE(ProgramHandle)
+DEFINE_GFX_HANDLE(SamplerHandle)
+DEFINE_GFX_HANDLE(TextureHandle)
+DEFINE_GFX_HANDLE(ConstBufferHandle)
 
 // ***********************************
 // D3D11 Flag conversions
@@ -211,8 +224,8 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 			D3D11_TEXTURE2D_DESC textureDesc;
 			texture.pTexture->GetDesc(&textureDesc);
 
-			pCtx->textures.push_back(texture);
-			renderTarget.texture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+			renderTarget.texture = pCtx->allocTextureHandle.NewHandle();
+			pCtx->poolTexture[renderTarget.texture.id] = texture;
 		}
 
 		// Then create the render target view
@@ -236,8 +249,8 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 			pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &depthStencilTexture.pTexture);
 			SetDebugName(depthStencilTexture.pTexture, "[DEPTH_STCL] Back Buffer");
 
-			pCtx->textures.push_back(depthStencilTexture);
-			renderTarget.depthStencilTexture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+			renderTarget.depthStencilTexture = pCtx->allocTextureHandle.NewHandle();
+			pCtx->poolTexture[renderTarget.depthStencilTexture.id] = texture;
 		}
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -248,8 +261,8 @@ void GfxDevice::Initialize(SDL_Window* pWindow, float width, float height)
 		pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
 		SetDebugName(renderTarget.pDepthStencilView, "[DEPTH_STCL_VIEW] Back Buffer");
 
-		pCtx->renderTargets.push_back(renderTarget);
-		pCtx->backBuffer = RenderTargetHandle{uint16_t(pCtx->renderTargets.size()-1)};
+		pCtx->backBuffer = pCtx->allocRenderTargetHandle.NewHandle();
+		pCtx->poolRenderTarget[pCtx->backBuffer.id] = renderTarget;
 	}
 
 	// Setup debug
@@ -330,7 +343,7 @@ void GfxDevice::SetViewport(float x, float y, float width, float height)
 
 void GfxDevice::ClearBackBuffer(std::array<float, 4> color)
 {
-	RenderTarget& renderTarget = pCtx->renderTargets[pCtx->backBuffer.id];
+	RenderTarget& renderTarget = pCtx->poolRenderTarget[pCtx->backBuffer.id];
 
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
 	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -340,7 +353,7 @@ void GfxDevice::ClearBackBuffer(std::array<float, 4> color)
 
 void GfxDevice::SetBackBufferActive()
 {
-	RenderTarget& renderTarget = pCtx->renderTargets[pCtx->backBuffer.id];
+	RenderTarget& renderTarget = pCtx->poolRenderTarget[pCtx->backBuffer.id];
 
 	pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);  
 }
@@ -379,8 +392,9 @@ TextureHandle GfxDevice::CopyAndResolveBackBuffer()
 	pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
 	SetDebugName(texture.pShaderResourceView, "[SHADER_RSRC_VIEW] Back Buffer Copy");
 
-	pCtx->textures.push_back(texture);
-	return TextureHandle{uint16_t(pCtx->textures.size()-1)};
+	TextureHandle handle = pCtx->allocTextureHandle.NewHandle();
+	pCtx->poolTexture[handle.id] = texture;
+	return handle;
 }
 
 // ***********************************************************************
@@ -538,15 +552,19 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat form
 	pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
 	SetDebugName(texture.pShaderResourceView, "[SHADER_RSRC_VIEW] " + debugName);
 
-	pCtx->textures.push_back(texture);
-	return TextureHandle{uint16_t(pCtx->textures.size()-1)};
+	TextureHandle handle = pCtx->allocTextureHandle.NewHandle();
+	pCtx->poolTexture[handle.id] = texture;
+	return handle;
 }
 
 // ***********************************************************************
 
 void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
 {
-	Texture& texture = pCtx->textures[handle.id];
+	if (!IsValid(handle))
+		return;
+
+	Texture& texture = pCtx->poolTexture[handle.id];
 
 	 switch (shader)
 	{
@@ -566,13 +584,16 @@ void GfxDevice::BindTexture(TextureHandle handle, ShaderType shader, int slot)
 
 void GfxDevice::FreeTexture(TextureHandle handle)
 {
-	Texture& texture = pCtx->textures[handle.id];
+	if (!IsValid(handle))
+		return;
+		
+	Texture& texture = pCtx->poolTexture[handle.id];
 
 	if (texture.pTexture)
 		texture.pTexture->Release();
 	if (texture.pShaderResourceView)
 		texture.pShaderResourceView->Release();
-	//pCtx->textures.erase(pCtx->textures.begin() + handle.id);
+	pCtx->allocTextureHandle.FreeHandle(handle);
 }
 
 // ***********************************************************************
@@ -606,8 +627,8 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 		pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
 		SetDebugName(texture.pShaderResourceView, "[SHADER_RSRC_VIEW] " + debugName);
 
-		pCtx->textures.push_back(texture);
-		renderTarget.texture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+		renderTarget.texture = pCtx->allocTextureHandle.NewHandle();
+		pCtx->poolTexture[renderTarget.texture.id] = texture;
 	}
 
 	// Then create the render target view
@@ -635,8 +656,8 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 		pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &depthStencilTexture.pTexture);
 		SetDebugName(depthStencilTexture.pTexture, "[DEPTH_STCL] " + debugName);
 
-		pCtx->textures.push_back(depthStencilTexture);
-		renderTarget.depthStencilTexture = TextureHandle{uint16_t(pCtx->textures.size()-1)};
+		renderTarget.depthStencilTexture = pCtx->allocTextureHandle.NewHandle();
+		pCtx->poolTexture[renderTarget.depthStencilTexture.id] = texture;
 	}
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -647,15 +668,19 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 	pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
 	SetDebugName(renderTarget.pDepthStencilView, "[DEPTH_STCL_VIEW] " + debugName);
 
-	pCtx->renderTargets.push_back(renderTarget);
-	return RenderTargetHandle{uint16_t(pCtx->renderTargets.size()-1)};
+	RenderTargetHandle handle = pCtx->allocRenderTargetHandle.NewHandle();
+	pCtx->poolRenderTarget[handle.id] = renderTarget;
+	return handle;
 }
 
 // ***********************************************************************
 
 void GfxDevice::BindRenderTarget(RenderTargetHandle handle)
 {
-	RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
+	if (!IsValid(handle))
+		return;
+
+	RenderTarget& renderTarget = pCtx->poolRenderTarget[handle.id];
 
 	pCtx->pDeviceContext->OMSetRenderTargets(1, &renderTarget.pView, renderTarget.pDepthStencilView);
 }
@@ -672,7 +697,10 @@ void GfxDevice::UnbindRenderTarget(RenderTargetHandle handle)
 
 void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4> color, bool clearDepth, bool clearStencil)
 {
-	RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
+	if (!IsValid(handle))
+		return;
+		
+	RenderTarget& renderTarget = pCtx->poolRenderTarget[handle.id];
 
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
 	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -682,7 +710,10 @@ void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4
 
 TextureHandle GfxDevice::GetTexture(RenderTargetHandle handle)
 {
-	RenderTarget& renderTarget = pCtx->renderTargets[handle.id];
+	if (!IsValid(handle))
+		return TextureHandle();
+		
+	RenderTarget& renderTarget = pCtx->poolRenderTarget[handle.id];
 	return renderTarget.texture;
 }
 
@@ -711,8 +742,9 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void* data, c
 
 	SetDebugName(indexBuffer.pBuffer, "[INDEX_BUFFER] " + debugName);
 
-	pCtx->indexBuffers.push_back(indexBuffer);
-	return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
+	IndexBufferHandle handle = pCtx->allocIndexBufferHandle.NewHandle();
+	pCtx->poolIndexBuffer[handle.id] = indexBuffer;
+	return handle;
 }
 
 // ***********************************************************************
@@ -737,15 +769,18 @@ IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const 
 
 	SetDebugName(indexBuffer.pBuffer, "[INDEX_BUFFER] " + debugName);
 
-	pCtx->indexBuffers.push_back(indexBuffer);
-	return IndexBufferHandle{uint16_t(pCtx->indexBuffers.size()-1)};
+	IndexBufferHandle handle = pCtx->allocIndexBufferHandle.NewHandle();
+	pCtx->poolIndexBuffer[handle.id] = indexBuffer;
+	return handle;
 }
 
 // ***********************************************************************
 
 void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize)
 {
-	IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
+	if (!IsValid(handle))
+		return;
+	IndexBuffer& indexBuffer = pCtx->poolIndexBuffer[handle.id];
 
 	if (!indexBuffer.isDynamic)
 	{
@@ -764,7 +799,9 @@ void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, s
 
 int GfxDevice::GetIndexBufferSize(IndexBufferHandle handle)
 {
-	IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
+	if (!IsValid(handle))
+		return -1;
+	IndexBuffer& indexBuffer = pCtx->poolIndexBuffer[handle.id];
 	return indexBuffer.nElements;
 }
 
@@ -772,7 +809,9 @@ int GfxDevice::GetIndexBufferSize(IndexBufferHandle handle)
 
 void GfxDevice::BindIndexBuffer(IndexBufferHandle handle)
 {
-	IndexBuffer& indexBuffer = pCtx->indexBuffers[handle.id];
+	if (!IsValid(handle))
+		return;
+	IndexBuffer& indexBuffer = pCtx->poolIndexBuffer[handle.id];
 	pCtx->pDeviceContext->IASetIndexBuffer(indexBuffer.pBuffer, DXGI_FORMAT_R32_UINT, 0);
 }
 
@@ -821,8 +860,9 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t* fileName, const 
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
 	SetDebugName(shader.pVertLayout, "[INPUT_LAYOUT] " + debugName);
 
-	pCtx->vertexShaders.push_back(shader);
-	return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
+	VertexShaderHandle handle = pCtx->allocVertexShaderHandle.NewHandle();
+	pCtx->poolVertexShader[handle.id] = shader;
+	return handle;
 }
 
 // ***********************************************************************
@@ -839,8 +879,9 @@ VertexShaderHandle GfxDevice::CreateVertexShader(std::string& fileContents, cons
 	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
 
-	pCtx->vertexShaders.push_back(shader);
-	return VertexShaderHandle{uint16_t(pCtx->vertexShaders.size()-1)};
+	VertexShaderHandle handle = pCtx->allocVertexShaderHandle.NewHandle();
+	pCtx->poolVertexShader[handle.id] = shader;
+	return handle;
 }
 
 // ***********************************************************************
@@ -854,8 +895,9 @@ PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t* fileName, const ch
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
 
-	pCtx->pixelShaders.push_back(shader);
-	return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
+	PixelShaderHandle handle = pCtx->allocPixelShaderHandle.NewHandle();
+	pCtx->poolPixelShader[handle.id] = shader;
+	return handle;
 }
 
 // ***********************************************************************
@@ -869,8 +911,9 @@ PixelShaderHandle GfxDevice::CreatePixelShader(std::string& fileContents, const 
 	pCtx->pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_PIXEL] " + debugName);
 
-	pCtx->pixelShaders.push_back(shader);
-	return PixelShaderHandle{uint16_t(pCtx->pixelShaders.size()-1)};
+	PixelShaderHandle handle = pCtx->allocPixelShaderHandle.NewHandle();
+	pCtx->poolPixelShader[handle.id] = shader;
+	return handle;
 }
 
 // ***********************************************************************
@@ -884,8 +927,9 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t* fileName, co
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
 
-	pCtx->geometryShaders.push_back(shader);
-	return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
+	GeometryShaderHandle handle = pCtx->allocGeometryShaderHandle.NewHandle();
+	pCtx->poolGeometryShader[handle.id] = shader;
+	return handle;
 }
 
 // ***********************************************************************
@@ -899,8 +943,9 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string& fileContents, 
 	pCtx->pDevice->CreateGeometryShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
 	SetDebugName(shader.pShader, "[SHADER_GEOM] " + debugName);
 
-	pCtx->geometryShaders.push_back(shader);
-	return GeometryShaderHandle{uint16_t(pCtx->geometryShaders.size()-1)};
+	GeometryShaderHandle handle = pCtx->allocGeometryShaderHandle.NewHandle();
+	pCtx->poolGeometryShader[handle.id] = shader;
+	return handle;
 }
 
 // ***********************************************************************
@@ -909,11 +954,15 @@ ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHa
 {
 	Program program;
 
-	program.vertShader = pCtx->vertexShaders[vShader.id];
-	program.pixelShader = pCtx->pixelShaders[pShader.id];
+	if (!IsValid(vShader) || !IsValid(pShader))
+		return ProgramHandle();
 
-	pCtx->programs.push_back(program);
-	return ProgramHandle{uint16_t(pCtx->programs.size()-1)};
+	program.vertShader = pCtx->poolVertexShader[vShader.id];
+	program.pixelShader = pCtx->poolPixelShader[pShader.id];
+
+	ProgramHandle handle = pCtx->allocProgramHandle.NewHandle();
+	pCtx->poolProgram[handle.id] = program;
+	return handle;
 }
 
 // ***********************************************************************
@@ -922,19 +971,25 @@ ProgramHandle GfxDevice::CreateProgram(VertexShaderHandle vShader, PixelShaderHa
 {
 	Program program;
 
-	program.vertShader = pCtx->vertexShaders[vShader.id];
-	program.pixelShader = pCtx->pixelShaders[pShader.id];
-	program.geomShader = pCtx->geometryShaders[gShader.id];
+	if (!IsValid(vShader) || !IsValid(pShader) || !IsValid(gShader))
+		return ProgramHandle();
 
-	pCtx->programs.push_back(program);
-	return ProgramHandle{uint16_t(pCtx->programs.size()-1)};
+	program.vertShader = pCtx->poolVertexShader[vShader.id];
+	program.pixelShader = pCtx->poolPixelShader[pShader.id];
+	program.geomShader = pCtx->poolGeometryShader[gShader.id];
+
+	ProgramHandle handle = pCtx->allocProgramHandle.NewHandle();
+	pCtx->poolProgram[handle.id] = program;
+	return handle;
 }
 
 // ***********************************************************************
 
 void GfxDevice::BindProgram(ProgramHandle handle) 
 {
-	Program& p = pCtx->programs[handle.id];
+	if (!IsValid(handle))
+		return;
+	Program& p = pCtx->poolProgram[handle.id];
 
 	pCtx->pDeviceContext->VSSetShader(p.vertShader.pShader, 0, 0);
 	pCtx->pDeviceContext->PSSetShader(p.pixelShader.pShader, 0, 0);
@@ -977,15 +1032,18 @@ SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const s
 	pCtx->pDevice->CreateSamplerState(&sampDesc, &sampler.pSampler);
 	SetDebugName(sampler.pSampler, "[SAMPLER] " + debugName);
 
-	pCtx->samplers.push_back(sampler);
-	return SamplerHandle{uint16_t(pCtx->samplers.size()-1)};
+	SamplerHandle handle = pCtx->allocSamplerHandle.NewHandle();
+	pCtx->poolSampler[handle.id] = sampler;
+	return handle;
 }
 
 // ***********************************************************************
 
 void GfxDevice::BindSampler(SamplerHandle handle, ShaderType shader, int slot)
 {
-	Sampler& sampler = pCtx->samplers[handle.id];
+	if (!IsValid(handle))
+		return;
+	Sampler& sampler = pCtx->poolSampler[handle.id];
 
 	switch (shader)
 	{
@@ -1026,8 +1084,9 @@ VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _ele
 
 	SetDebugName(vBufferData.pBuffer, "[VERT_BUFFER] " + debugName);
 
-	pCtx->vertexBuffers.push_back(vBufferData);
-	return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};
+	VertexBufferHandle handle = pCtx->allocVertexBufferHandle.NewHandle();
+	pCtx->poolVertexBuffer[handle.id] = vBufferData;
+	return handle;
 }
 
 // ***********************************************************************
@@ -1052,15 +1111,19 @@ VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size
 	pCtx->pDevice->CreateBuffer(&vertexBufferDesc, nullptr, &vBufferData.pBuffer);
 	SetDebugName(vBufferData.pBuffer, "[VERT_BUFFER] " + debugName);
 
-	pCtx->vertexBuffers.push_back(vBufferData);
-	return VertexBufferHandle{uint16_t(pCtx->vertexBuffers.size()-1)};
+	VertexBufferHandle handle = pCtx->allocVertexBufferHandle.NewHandle();
+	pCtx->poolVertexBuffer[handle.id] = vBufferData;
+	return handle;
 }
 
 // ***********************************************************************
 
 void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize)
 {
-	VertexBuffer& buffer = pCtx->vertexBuffers[handle.id];
+	if (!IsValid(handle))
+		return;
+
+	VertexBuffer& buffer = pCtx->poolVertexBuffer[handle.id];
 	if (!buffer.isDynamic)
 	{
 		Log::Print(Log::EErr, "Attempting to update non dynamic vertex buffer");
@@ -1085,7 +1148,9 @@ void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle* handles)
 
 	for (int i = 0; i < nBuffers; i++)
 	{
-		VertexBuffer& buffer = pCtx->vertexBuffers[handles[i].id];
+		if (!IsValid(handles[i]))
+			return;
+		VertexBuffer& buffer = pCtx->poolVertexBuffer[handles[i].id];
 		
 		pBuffers.push_back(buffer.pBuffer);
 		offsets.push_back(0);
@@ -1110,15 +1175,18 @@ ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize, const std
 	pCtx->pDevice->CreateBuffer(&bufferDesc, nullptr, &buffer.pBuffer);
 	SetDebugName(buffer.pBuffer, "[CONST_BUFFER] " + debugName);
 
-	pCtx->constBuffers.push_back(buffer);
-	return ConstBufferHandle{uint16_t(pCtx->constBuffers.size()-1)};
+	ConstBufferHandle handle = pCtx->allocConstBufferHandle.NewHandle();
+	pCtx->poolConstantBuffer[handle.id] = buffer;
+	return handle;
 }
 
 // ***********************************************************************
 
 void GfxDevice::BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot)
 {
-	ConstantBuffer& buffer = pCtx->constBuffers[handle.id];
+	if (!IsValid(handle))
+		return;
+	ConstantBuffer& buffer = pCtx->poolConstantBuffer[handle.id];
 
 	pCtx->pDeviceContext->UpdateSubresource(buffer.pBuffer, 0, nullptr, bufferData, 0, 0);
 
