@@ -56,12 +56,12 @@ Scene* CreateMainAsteroidsScene()
 
 	EntityID ship = scene.NewEntity("Player Ship");
 	ASSERT(ship == PLAYER_ID, "Player must be spawned first");
-	CTransform* pTransform = scene.Assign<CTransform>(ship);
+	CTransform* pShipTransform = scene.Assign<CTransform>(ship);
 
 	const float w = GfxDevice::GetWindowWidth();
 	const float h = GfxDevice::GetWindowHeight();
-	pTransform->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
-	pTransform->sca = Vec3f(30.f, 35.f, 1.0f);
+	pShipTransform->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+	pShipTransform->sca = Vec3f(30.f, 35.f, 1.0f);
 
 	CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
 	scene.Assign<CCollidable>(ship)->radius = 17.f;
@@ -91,7 +91,7 @@ Scene* CreateMainAsteroidsScene()
 		pTranform->pos = randomLocation;
 		pTranform->sca = Vec3f(90.0f, 90.0f, 1.0f);
 		pTranform->vel = randomVelocity;
-		//pTranform->rot = randomRotation;
+		pTranform->rot = randomRotation;
 
 		scene.Assign<CVisibility>(asteroid);
 		scene.Assign<CAsteroid>(asteroid);
@@ -195,6 +195,10 @@ void LoadMenu()
 
 int main(int argc, char *argv[])
 {
+	// Unused at the moment
+	(void)argc;
+	(void)argv;
+
 	Engine::Initialize();
 
 	// Type system testing
@@ -202,13 +206,7 @@ int main(int argc, char *argv[])
 		Component testComponent;
 
 		TypeData& typeData = TypeDatabase::Get<Component>();
-
-		TypeData& sameTypeData = TypeDatabase::GetFromString("Component");
-		TypeData& intTypeData = TypeDatabase::GetFromString("int");
-
 		Member& myInMember = typeData.GetMember("myInt");
-
-		bool isInt = myInMember.IsType<int>();
 
 		myInMember.Set(&testComponent, 1337);
 

@@ -556,7 +556,7 @@ bool ShaderCompile(std::string &fileContents, const char *entry, const char *tar
 
 void GfxDevice::SetTopologyType(TopologyType type)
 {
-	D3D11_PRIMITIVE_TOPOLOGY topologyType;
+	D3D11_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 	switch (type)
 	{
 	case TopologyType::TriangleStrip:
@@ -771,6 +771,9 @@ void GfxDevice::BindRenderTarget(RenderTargetHandle handle)
 
 void GfxDevice::UnbindRenderTarget(RenderTargetHandle handle)
 {
+	if (!IsValid(handle))
+		return;
+
 	ID3D11RenderTargetView *nullViews[] = {nullptr};
 	pCtx->pDeviceContext->OMSetRenderTargets(1, nullViews, nullptr);
 }
@@ -784,8 +787,11 @@ void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4
 
 	RenderTarget &renderTarget = pCtx->poolRenderTarget[handle.id];
 
+	UINT clearFlags = 0;
+	if (clearDepth) clearFlags |= D3D11_CLEAR_DEPTH;
+	if (clearStencil) clearFlags |= D3D11_CLEAR_STENCIL;
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
-	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView,  clearFlags, 1.0f, 0);
 }
 
 // ***********************************************************************
@@ -1210,7 +1216,7 @@ SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const s
 {
 	Sampler sampler;
 
-	D3D11_FILTER samplerFilter;
+	D3D11_FILTER samplerFilter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	switch (filter)
 	{
 	case Filter::Linear:
@@ -1224,7 +1230,7 @@ SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const s
 		break;
 	}
 
-	D3D11_TEXTURE_ADDRESS_MODE samplerAddressMode;
+	D3D11_TEXTURE_ADDRESS_MODE samplerAddressMode = D3D11_TEXTURE_ADDRESS_WRAP;
 	switch (wrapMode)
 	{
 	case WrapMode::Wrap:

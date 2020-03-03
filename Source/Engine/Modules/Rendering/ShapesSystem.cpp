@@ -51,7 +51,7 @@ void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thicknes
 
 void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
 {
-	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
+	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(entity));
 
 	state.vertexList.get_allocator().set_name("CShapeSystemState/vertexList");
 	state.drawQueue.get_allocator().set_name("CShapeSystemState/drawQueue");
@@ -95,7 +95,7 @@ void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
 
 void Shapes::OnShapesSystemStateRemoved(Scene& scene, EntityID entity)
 {
-	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
+	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(entity));
 
 	GfxDevice::FreeProgram(state.shaderProgram);
 	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
@@ -103,7 +103,7 @@ void Shapes::OnShapesSystemStateRemoved(Scene& scene, EntityID entity)
 	GfxDevice::FreeConstBuffer(state.transformDataBuffer);
 }
 
-void Shapes::OnFrame(Scene& scene, float deltaTime)
+void Shapes::OnFrame(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing Shapes");

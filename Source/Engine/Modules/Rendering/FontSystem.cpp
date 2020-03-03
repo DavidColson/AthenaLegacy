@@ -29,7 +29,12 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 	if (startedFreeType == false)
 	{
 		FT_Init_FreeType(&freetype);
-		FT_New_Face(freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &face);
+
+		FT_Error err = FT_New_Face(freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &face);
+		if (err)
+		{
+			Log::Print(Log::EMsg, "FreeType Error: %s", FT_Error_String(err));
+		}
 		startedFreeType = true;
 	}
 
@@ -123,9 +128,6 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 		character.bearing = Vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
 		character.advance = (face->glyph->advance.x) >> 6;
 
-		int size = sizeof(character);
-		int size2 = sizeof(character.size);
-
 		state.characters.push_back(character);
 	}
 }
@@ -147,7 +149,7 @@ void FontSystem::OnRemoveFontSystemState(Scene& scene, EntityID entity)
 	}
 }
 
-void FontSystem::OnFrame(Scene& scene, float deltaTime)
+void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 	

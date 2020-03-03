@@ -69,3 +69,9 @@ if (WIN32)
   target_compile_definitions(
     freetype PRIVATE _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS)
 endif ()
+
+if(MSVC)
+  target_compile_options(freetype PRIVATE /W0)
+else()
+  target_compile_options(freetype PRIVATE -w)
+endif()

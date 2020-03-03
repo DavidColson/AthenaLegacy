@@ -32,7 +32,7 @@ void DebugDraw::Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color)
 
 void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
 {
-	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
+	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(entity));
 
 	std::string shaderSrc = "\
 	cbuffer cbTransform\
@@ -71,7 +71,7 @@ void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
 
 void DebugDraw::OnDebugDrawStateRemoved(Scene& scene, EntityID entity)
 {
-	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
+	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(entity));
 
 	GfxDevice::FreeProgram(state.debugShaderProgram);
 	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
@@ -79,7 +79,7 @@ void DebugDraw::OnDebugDrawStateRemoved(Scene& scene, EntityID entity)
 	GfxDevice::FreeConstBuffer(state.transformDataBuffer);
 }
 
-void DebugDraw::OnFrame(Scene& scene, float deltaTime)
+void DebugDraw::OnFrame(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing debug");

@@ -6,7 +6,7 @@
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
 
-InputState* pInput;
+InputState *pInput;
 
 void Input::CreateInputState()
 {
@@ -28,14 +28,14 @@ bool Input::GetKeyHeld(int keyCode)
 	return pInput->keyStates[keyCode];
 }
 
-void Input::OnFrame(Scene& scene, float deltaTime)
+void Input::OnFrame(Scene& /* scene */, float /* deltaTime */)
 {
 	// TODO: This should be storing input state in a singleton component
-	
+
 	std::bitset<NKEYS> prevKeyStates = pInput->keyStates;
-	
+
 	// Copy the SDL keystate into our own bitset
-	const Uint8* pSdlKeyState = SDL_GetKeyboardState(nullptr);
+	const Uint8 *pSdlKeyState = SDL_GetKeyboardState(nullptr);
 	for (int i = 0; i < SDL_NUM_SCANCODES; i++)
 	{
 		pInput->keyStates[i] = bool(pSdlKeyState[i]);
@@ -51,10 +51,12 @@ void Input::OnFrame(Scene& scene, float deltaTime)
 	pInput->keyUps = keyChanges & ~pInput->keyStates;
 
 	SDL_Event event;
-	if (SDL_PollEvent(&event)) {
+	if (SDL_PollEvent(&event))
+	{
 		/* an event was found */
 		ImGui_ImplSDL2_ProcessEvent(&event);
-		switch (event.type) {
+		switch (event.type)
+		{
 		case SDL_QUIT:
 			Engine::StartShutdown();
 			break;

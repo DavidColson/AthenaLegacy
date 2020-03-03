@@ -57,14 +57,14 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
-void ImGuiPreUpdate(Scene& scene, float deltaTime)
+void ImGuiPreUpdate(Scene& /* scene */, float /* deltaTime */)
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplSDL2_NewFrame(GfxDevice::GetWindow());
 	ImGui::NewFrame();
 }
 
-void ImGuiRender(Scene& scene, float deltaTime)
+void ImGuiRender(Scene& /* scene */, float /* deltaTime */)
 {
 	GFX_SCOPED_EVENT("Drawing imgui");
 	ImGui::Render();

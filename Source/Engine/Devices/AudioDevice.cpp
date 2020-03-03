@@ -56,10 +56,6 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
         int16_t* dest = (int16_t*)stream;
         int16_t* src = (int16_t*)sound->currentBufferPosition;
 
-        // 1 << x will be 2^x, so we're getting the highest number you can get with a signed 16 bit number
-        int max = ((1 << (16 - 1)) - 1);
-        int min = -(1 << (16 - 1));
-
         loopContinue:
         // Mix into the destination stream
         int nBytesToUse = sound->loadedSound->spec.channels == 1 ? nBytesToReturn / 2 : nBytesToReturn; // For single channel audio we're using every sample twice
@@ -67,15 +63,15 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
         while (nSamplesToMix--)
         {
             // volume adjust and mix
-            int srcSample = *src;
-            srcSample = int(srcSample * globalVolume * sound->volume);
-            int destSample = (*dest + srcSample);         
+            int16_t srcSample = *src;
+            srcSample = int16_t(srcSample * globalVolume * sound->volume);
+            int16_t destSample = (*dest + srcSample);         
 
             // clipping
-            if (destSample > max)
-                destSample = max;
-            else if (destSample < min)
-                destSample = min;
+            if (destSample > INT16_MAX)
+                destSample = INT16_MAX;
+            else if (destSample < INT16_MIN)
+                destSample = INT16_MIN;
 
             *dest = destSample;
             dest++;
@@ -171,7 +167,6 @@ SoundID AudioDevice::PlaySound(LoadedSoundPtr sound, float volume, bool loop)
 
         SDL_LockAudioDevice(device);
         // Find the next free slot in the memory pool of sounds
-        SoundID id = -1;
         for (int i = 0; i < AUDIO_MAX_SOUNDS; i++)
         {
             if (callbackData.currentSounds[i].active == false)

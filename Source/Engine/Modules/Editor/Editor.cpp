@@ -20,7 +20,7 @@ namespace {
 	bool showEntityList = false;
 	bool showFrameStats = false;
 	bool showImGuiDemo = false;
-	EntityID selectedEntity = -1;
+	EntityID selectedEntity = INVALID_ENTITY;
 
 	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
 	double oldRealFrameTime;
@@ -186,7 +186,7 @@ void ShowFrameStats()
 	ImGui::End();
 }
 
-void Editor::OnFrame(Scene& scene, float deltaTime)
+void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 {
 	if (Input::GetKeyDown(SDL_SCANCODE_F8))
 		showEditor = !showEditor;

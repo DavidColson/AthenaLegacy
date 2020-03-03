@@ -171,12 +171,12 @@ namespace TypeDatabase
 
 #define REFLECT_BEGIN(Struct)\
 	TypeData Struct::typeData{Struct::initReflection};\
-	void Struct::initReflection(TypeData* typeData) {\
+	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, typeData);\
-		typeData->name = #Struct;\
-		typeData->size = sizeof(XX);\
-		typeData->members = {
+		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->name = #Struct;\
+		selfTypeData->size = sizeof(XX);\
+		selfTypeData->members = {
 
 #define REFLECT_MEMBER(member)\
 			{#member, {#member, offsetof(XX, member), &TypeDatabase::Get<decltype(XX::member)>()}},
@@ -190,9 +190,9 @@ namespace TypeDatabase
 #define REFLECT_TEMPLATED_BEGIN(Struct)\
 	TypeData Struct::typeData{Struct::initReflection};\
 	template<>\
-	void Struct::initReflection(TypeData* typeData) {\
+	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, typeData);\
-		typeData->name = #Struct;\
-		typeData->size = sizeof(XX);\
-		typeData->members = {
+		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->name = #Struct;\
+		selfTypeData->size = sizeof(XX);\
+		selfTypeData->members = {

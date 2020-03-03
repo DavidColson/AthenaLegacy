@@ -427,17 +427,16 @@ struct Scene
 template<typename... ComponentTypes>
 struct SceneView
 {
+	template <std::size_t comps = sizeof...(ComponentTypes), std::enable_if_t<comps == 0, int> = 0>
 	SceneView(Scene& scene) : pScene(&scene) {
-		if (sizeof...(ComponentTypes) == 0)
-		{
-			all = true;
-		}
-		else
-		{
-			int componentIds[] = { 0, GetId<ComponentTypes>() ... };
-			for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)
-				componentMask.set(componentIds[i]);
-		}
+		all = true;
+	}
+
+	template <std::size_t comps = sizeof...(ComponentTypes), std::enable_if_t<comps != 0, int> = 0>
+	SceneView(Scene& scene) : pScene(&scene) {
+		int componentIds[] = { 0, GetId<ComponentTypes>() ... };
+		for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)
+			componentMask.set(componentIds[i]);
 	}
 
 	struct Iterator

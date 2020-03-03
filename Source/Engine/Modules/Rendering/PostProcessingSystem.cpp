@@ -63,7 +63,7 @@ void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
 	GfxDevice::FreeRenderTarget(pp.blurredFrame[1]);
 }
 
-void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
+void PostProcessingSystem::OnFrame(Scene& scene, float /* deltaTime */)
 {
     PROFILE();
     GFX_SCOPED_EVENT("Doing post processing");	
@@ -74,7 +74,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
         CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
 
         GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
-        GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
+        GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, true, true);
         GfxDevice::SetViewport(0.f, 0.f, GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f);
         GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
@@ -106,7 +106,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
                 TextureHandle tex = GfxDevice::GetTexture(pp->blurredFrame[(i + 1) % 2]);
                 GfxDevice::BindTexture(tex, ShaderType::Pixel, 0);
                 GfxDevice::BindRenderTarget(pp->blurredFrame[i % 2]);
-                GfxDevice::ClearRenderTarget(pp->blurredFrame[i % 2], { 0.0f, 0.f, 0.f, 1.0f }, false, false);
+                GfxDevice::ClearRenderTarget(pp->blurredFrame[i % 2], { 0.0f, 0.f, 0.f, 1.0f }, true, true);
             }
 
             GfxDevice::Draw(4, 0);

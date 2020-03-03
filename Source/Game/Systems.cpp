@@ -51,7 +51,6 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 	// Do scoring for the player
 	EntityID scoreEnt = scene.Get<CPlayerUI>(PLAYER_ID)->currentScoreEntity;
 	CPlayerScore* pPlayerScore = scene.Get<CPlayerScore>(scoreEnt);
-	CText* pText = scene.Get<CText>(scoreEnt);
 
 	int hits = scene.Get<CAsteroid>(asteroid)->hitCount;
 	if (hits == 0)
@@ -94,7 +93,6 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 		pNewTransform->vel = randomVelocity;
 		pNewTransform->rot = randomRotation;
 
-		int mesh = rand() % 4;
 		scene.Assign<CVisibility>(newAsteroid);
 		scene.Assign<CAsteroid>(newAsteroid)->hitCount = scene.Get<CAsteroid>(asteroid)->hitCount + 1;
 		scene.Assign<CPolyShape>(newAsteroid)->points = GetRandomAsteroidMesh();
@@ -209,7 +207,7 @@ eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh()
 // SYSTEMS
 // **********
 
-void DrawPolyShapes(Scene& scene, float deltaTime)
+void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 
@@ -233,7 +231,7 @@ void DrawPolyShapes(Scene& scene, float deltaTime)
 	}	
 }
 
-void CollisionSystemUpdate(Scene& scene, float deltaTime)
+void CollisionSystemUpdate(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 
@@ -241,9 +239,9 @@ void CollisionSystemUpdate(Scene& scene, float deltaTime)
 	for (EntityID asteroid : SceneView<CAsteroid>(scene))
 	{
 		float asteroidRad = scene.Get<CCollidable>(asteroid)->radius;
-		CTransform* pTrans = scene.Get<CTransform>(asteroid);
 
-		//DebugDraw::Draw2DCircle(scene, Vec2f(pTrans->pos.x, pTrans->pos.y), asteroidRad + 10.0f, Vec3f(1.0f, 0.0f, 0.0f));
+		// CTransform* pTrans = scene.Get<CTransform>(asteroid);
+		// DebugDraw::Draw2DCircle(scene, Vec2f(pTrans->pos.x, pTrans->pos.y), asteroidRad + 10.0f, Vec3f(1.0f, 0.0f, 0.0f));
 
 		for (EntityID bullet : SceneView<CBullet>(scene))
 		{
@@ -397,7 +395,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 	}
 }
 
-void MenuInterationSystem(Scene& scene, float deltaTime)
+void MenuInterationSystem(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 
