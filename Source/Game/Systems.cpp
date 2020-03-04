@@ -434,3 +434,10 @@ void MenuInterationSystem(Scene& scene, float /* deltaTime */)
 		}
 	}
 }
+
+void OnPlayerControlRemoved(Scene& scene, EntityID entity)
+{
+	CPlayerControl* pPlayerControl = scene.Get<CPlayerControl>(entity);
+
+	AudioDevice::StopSound(pPlayerControl->enginePlayingSound);
+}

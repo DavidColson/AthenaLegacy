@@ -213,12 +213,16 @@ void AudioDevice::UnPauseSound(SoundID sound)
     SDL_UnlockAudioDevice(device);
 }
 
-void AudioDevice::StopAllSounds()
+void AudioDevice::StopSound(SoundID sound)
 {
+     if (sound == SoundID(-1))
+        return;
+
     SDL_LockAudioDevice(device);
-    for (int i = 0; i < AUDIO_MAX_SOUNDS; i++)
+    uint32_t index = sound >> 32;
+    if (callbackData.currentSounds[index].id == sound)
     {
-        callbackData.currentSounds[i] = PlayingSound();
+        callbackData.currentSounds[index] = PlayingSound();
     }
     SDL_UnlockAudioDevice(device);
     currentNumSounds = 0;

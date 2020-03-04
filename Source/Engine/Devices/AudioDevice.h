@@ -31,11 +31,11 @@ namespace AudioDevice
 
     SoundID PlaySound(LoadedSoundPtr sound, float volume, bool loop);
 
+    void StopSound(SoundID sound);
+
     void PauseSound(SoundID sound);
 
     void UnPauseSound(SoundID sound);
-
-    void StopAllSounds();
 
     void Destroy();
 }

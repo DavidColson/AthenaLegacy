@@ -182,7 +182,6 @@ void Engine::Run(Scene *pScene)
 
 		if (pPendingSceneLoad)
 		{
-			AudioDevice::StopAllSounds();
 			delete pCurrentScene;
 			pCurrentScene = pPendingSceneLoad;
 			pPendingSceneLoad = nullptr;

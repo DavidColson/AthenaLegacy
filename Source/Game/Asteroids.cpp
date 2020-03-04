@@ -42,6 +42,8 @@ Scene* CreateMainAsteroidsScene()
 	scene.RegisterSystem(SystemPhase::Update, InvincibilitySystemUpdate);
 	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
 
+	scene.RegisterReactiveSystem<CPlayerControl>(Reaction::OnRemove, OnPlayerControlRemoved);
+
 	srand(unsigned int(time(nullptr)));
 	auto randf = []() { return float(rand()) / float(RAND_MAX); };
 
