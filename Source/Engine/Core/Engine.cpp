@@ -24,6 +24,9 @@
 #include "EASTL/vector.h"
 #include "EASTL/fixed_vector.h"
 
+#define STB_RECT_PACK_IMPLEMENTATION
+#include "stb_rect_pack.h"
+
 namespace
 {
 	// Frame stats
@@ -102,11 +105,11 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
+	// scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
+	// scene.RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
+	// scene.RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
+	// scene.RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
+	// scene.RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
 	scene.RegisterSystem(SystemPhase::Render, ImGuiRender);
 
 	scene.NewEntity("Engine Singletons");
@@ -157,10 +160,52 @@ void Engine::Initialize()
 	Input::CreateInputState();
 }
 
+const char* FindRenderedTextEnd(const char* text, const char* text_end)
+{
+    const char* text_display_end = text;
+    if (!text_end)
+        text_end = (const char*)-1;
+
+    while (text_display_end < text_end && *text_display_end != '\0' && (text_display_end[0] != '#' || text_display_end[1] != '#'))
+        text_display_end++;
+    return text_display_end;
+}
+
 void Engine::Run(Scene *pScene)
 {	
 	pCurrentScene = pScene;
 	
+	// Start packing
+	int totalRects = 25;
+    eastl::vector<stbrp_node> nodes;
+    nodes.resize(totalRects);
+    stbrp_context context;
+    stbrp_init_target(&context, 700, 700, nodes.data(), totalRects);
+
+	eastl::vector<stbrp_rect> rects;
+	rects.resize(totalRects);
+	for(int i = 0; i < totalRects; i++)
+	{	
+		stbrp_rect& rect = rects.at(i);
+		rect.w = (uint16_t)float(30 + rand() % 180);
+		rect.h = (uint16_t)float(30 + rand() % 180);
+		rect.id = i + 1;
+		rect.col = IM_COL32(rand() % 256, rand() % 256, rand() % 256,255);
+	}
+
+	// Uint64 start = SDL_GetPerformanceCounter();
+
+	// stbrp_pack_rects(&context, rects.data(), totalRects);
+
+	// double timeTaken = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+	// Log::Print(Log::EMsg, "Time Taken: %.8f", timeTaken * 1000);
+
+	STBRP_SORT(rects.data(), rects.size(), sizeof(rects[0]), rect_height_compare);
+
+	int nPacked = 0;
+
+	float packTimer = 5.0f;
+
 	// Game update loop
 	double frameTime = 0.016f;
 	double targetFrameTime = 0.016f;
@@ -174,11 +219,69 @@ void Engine::Run(Scene *pScene)
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
 		GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
+		// Make sure we sort the rectangles before packing them!
+		if ((Input::GetKeyDown(SDL_SCANCODE_E) || packTimer < 0.0f) && nPacked < totalRects)
+		{
+			stbrp_rect& rect = rects.at(nPacked);
+			stbrp_pack_rects(&context, &rect, 1);
+			nPacked++;
+			packTimer = 0.5f;
+		}
+		//packTimer -= (float)frameTime;
+
+		bool open = true;
+		ImGui::Begin("rect packer", &open);
+
+		ImGui::Text("Packed rects %i", nPacked);
+
+		Vec2f topLeft = Vec2f(ImGui::GetWindowPos()) + Vec2f(10.0f, 50.0f);
+		ImGui::GetWindowDrawList()->AddRect(topLeft, topLeft + Vec2f(700, 700), IM_COL32(255,255,255,255));
+		
+		for	(int i = 0; i < nPacked; i++)
+		{
+			stbrp_rect& rect = rects.at(i);
+			Vec2f rectPos = Vec2f((float)rect.x, (float)rect.y);
+			Vec2f rectSize = Vec2f((float)rect.w, (float)rect.h);
+			ImGui::GetWindowDrawList()->AddRectFilled(topLeft + rectPos, topLeft + rectPos + rectSize, rect.col);
+
+			std::string label = StringFormat("%i", rect.id);
+			const char* text_begin = label.c_str();
+			const char* text_end = FindRenderedTextEnd(label.c_str(), NULL);
+			ImGui::GetWindowDrawList()->AddText(ImGui::GetFont(), 25.0f, topLeft + rectPos, IM_COL32(255,255,255,255), text_begin, text_end);
+		}
+
+		topLeft = Vec2f(ImGui::GetWindowPos()) + Vec2f(10.0f, 780.0f);
+		stbrp_node* currNode = context.active_head;
+		int count = 0;
+		while (currNode != nullptr)
+		{
+			if (currNode->id < 0 || currNode->id > totalRects) 
+			{
+				currNode = currNode->next;
+				continue;
+			}
+			ImU32 col =  currNode->col;
+			ImGui::GetWindowDrawList()->AddRectFilled(topLeft + Vec2f(count * 30.0f, 0.0f), topLeft + Vec2f(count * 30.0f, 0.0f) + Vec2f(30.0f, 30.0f), col);
+
+			std::string label = StringFormat("%i", currNode->id);
+			const char* text_begin = label.c_str();
+			const char* text_end = FindRenderedTextEnd(label.c_str(), NULL);
+			ImGui::GetWindowDrawList()->AddText(ImGui::GetFont(), 15.0f, topLeft + Vec2f(count * 30.0f, 0.0f), IM_COL32(255,255,255,255), text_begin, text_end);
+			count++;
+			currNode = currNode->next;
+		}
+		
+		
+		ImGui::End();
+
 		pCurrentScene->RenderScene((float)frameTime);
 
 		GfxDevice::PresentBackBuffer();
 		GfxDevice::ClearRenderState();
 		GfxDevice::PrintQueuedDebugMessages();
+
+
+
 
 		if (pPendingSceneLoad)
 		{
