@@ -193,12 +193,12 @@ void Engine::Run(Scene *pScene)
 		rect.col = IM_COL32(rand() % 256, rand() % 256, rand() % 256,255);
 	}
 
-	// Uint64 start = SDL_GetPerformanceCounter();
+	Uint64 start = SDL_GetPerformanceCounter();
 
-	// stbrp_pack_rects(&context, rects.data(), totalRects);
+	stbrp_pack_rects(&context, rects.data(), totalRects);
 
-	// double timeTaken = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-	// Log::Print(Log::EMsg, "Time Taken: %.8f", timeTaken * 1000);
+	double timeTaken = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+	Log::Print(Log::EMsg, "Time Taken: %.8f", timeTaken * 1000);
 
 	STBRP_SORT(rects.data(), rects.size(), sizeof(rects[0]), rect_height_compare);
 

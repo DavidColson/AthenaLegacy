@@ -563,6 +563,10 @@ STBRP_DEF int stbrp_pack_rects(stbrp_context *context, stbrp_rect *rects, int nu
    // sort according to heuristic
    STBRP_SORT(rects, num_rects, sizeof(rects[0]), rect_height_compare);
 
+   int maxX = 0;
+   int maxY = 0;
+   int totalArea = 0;
+
    for (i=0; i < num_rects; ++i) {
       if (rects[i].w == 0 || rects[i].h == 0) {
          rects[i].x = rects[i].y = 0;  // empty rect needs no space
@@ -571,6 +575,16 @@ STBRP_DEF int stbrp_pack_rects(stbrp_context *context, stbrp_rect *rects, int nu
          if (fr.prev_link) {
             rects[i].x = (stbrp_coord) fr.x;
             rects[i].y = (stbrp_coord) fr.y;
+
+            int xExtent = rects[i].x + rects[i].w;
+            int yExtent = rects[i].y + rects[i].h;
+            if (xExtent > maxX)
+               maxX = xExtent;
+
+            if (yExtent > maxY)
+               maxY = yExtent;
+
+            totalArea += rects[i].w * rects[i].h;
          } else {
             rects[i].x = rects[i].y = STBRP__MAXVAL;
          }
@@ -587,6 +601,7 @@ STBRP_DEF int stbrp_pack_rects(stbrp_context *context, stbrp_rect *rects, int nu
          all_rects_packed = 0;
    }
 
+   Log::Print(Log::EMsg, "maxY = %i maxX = %i Area Used %i rectsArea %i packing ratio %f", maxY, maxX, maxX * maxY, totalArea, (float)totalArea / float(maxX * maxY));
    // return the all_rects_packed status
    return all_rects_packed;
 }
