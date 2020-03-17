@@ -21,5 +21,7 @@ namespace Log
 
 	void Print(LogType type, const char* text, ...);
 
+	void PrintNoNewLine(const char* text, ...);
+
 	const StringHistoryBuffer&  GetLogHistory();
 }

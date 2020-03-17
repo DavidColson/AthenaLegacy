@@ -20,7 +20,7 @@ add_subdirectory(ThirdParty/FreeType)
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
 if(MSVC)
-  target_compile_options(Engine PRIVATE /W4 /WX)
+  target_compile_options(Engine PRIVATE /W3 /WX)
 else()
   target_compile_options(Engine PRIVATE -Wall -Werror)
 endif()

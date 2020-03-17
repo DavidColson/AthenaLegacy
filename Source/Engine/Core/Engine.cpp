@@ -347,80 +347,113 @@ struct DynamicGrid
 {
 	void Init(int width, int height)
 	{
-		RowType newRow;
-		newRow.push_back( Node{0, 0, width, height, false} );
-		data.insert(data.begin(), newRow);
-		ySize++;
-		xSize++;
+		data.resize(gridSize * gridSize, false);
+
+		rows.reserve(gridSize);
+		rows.push_back({width, 0});
+
+		columns.reserve(gridSize);
+		columns.push_back({height, 0});
 	}
 
 	void InsertRow(int atY, int oldRowHeight)
 	{
-		GridType::iterator rowIterator = data.begin();
-		eastl::advance(rowIterator, atY);
-
-		RowType& row = *rowIterator;
-		RowType rowCopy = *rowIterator;
-
-		// Go through each node in the new row updating the height
-		for (Node& newRowNode : rowCopy)
-			newRowNode.h = newRowNode.h - oldRowHeight;
-
-		// Go through each node in the old row, updating their height and y offset
-		for(Node& oldRowNode : row)
+		// Copy the row atY to the end of data (add a new row)
+		int rowIndex = rows[atY].index;
+		for (int i = 0; i < columns.size(); i++)
 		{
-			oldRowNode.y = oldRowNode.y + (oldRowNode.h - oldRowHeight);
-			oldRowNode.h = oldRowHeight;
+			data[GetDataLocation(i, (int)rows.size())] = data[GetDataLocation(i, rowIndex)];
 		}
+		
+		Dimension old = rows[atY];
 
-		data.insert(rowIterator, rowCopy);
-		ySize++;
+		// Insert a new element into "rows"
+		// the index of the new element to the end of the data array
+		rows.insert(rows.begin() + atY, Dimension{old.size - oldRowHeight, (int)rows.size()});
+
+		// Set the size of the old and new rows to the appropriate heights
+		rows[atY+1].size = oldRowHeight;
+		
 	}
 
 	void InsertColumn(int atX, int oldRowWidth)
 	{
-		for(RowType& row : data)
+		// Copy the column atX to the end of data (add a new column)
+		int columnIndex = columns[atX].index;
+		for (int i = 0; i < rows.size(); i++)
 		{
-			RowType::iterator targetNodeIt = row.begin();
-			eastl::advance(targetNodeIt, atX);
-			
-			// Update the width of the new and old versions
-			// Copy the node at "rowIt"
-			Node nodeCopy = *targetNodeIt;
-			nodeCopy.w = nodeCopy.w - oldRowWidth;
-			
-			Node& originalNode = *targetNodeIt;
-			originalNode.x = originalNode.x + (originalNode.w - oldRowWidth);
-			originalNode.w = oldRowWidth;
-			
-			// Insert the new node at "rowIt"
-			row.insert(targetNodeIt, nodeCopy);
+			data[GetDataLocation((int)columns.size(), i)] = data[GetDataLocation(columnIndex, i)];
 		}
-		xSize++;
+
+		Dimension old = columns[atX];
+
+		// Insert a new element into "columns"
+		// the index of the new element to the end of the data array
+		columns.insert(columns.begin() + atX, Dimension{old.size - oldRowWidth, (int)columns.size()});
+
+		// Set the size of the old and new columns to the appropriate heights
+		columns[atX+1].size = oldRowWidth;
+		
 	}
 
-	Node& Get(int x, int y)
+	bool Get(int x, int y)
 	{
-		GridType::iterator rowIterator = data.begin();
-		eastl::advance(rowIterator, y);
-
-		RowType::iterator columnIterator = (*rowIterator).begin();
-		eastl::advance(columnIterator, x);
-
-		return *columnIterator;
+		int rowIndex = rows[y].index;
+		int columnIndex = columns[x].index;
+		return data[GetDataLocation(columnIndex, rowIndex)];
 	}
 
-	GridType data;
-	int xSize{ 0 };
-	int ySize{ 0 };
+	void Set(int x, int y, bool val)
+	{
+		int rowIndex = rows[y].index;
+		int columnIndex = columns[x].index;
+		data[GetDataLocation(columnIndex, rowIndex)] = val;
+	}
+
+	inline int GetDataLocation(int x, int y)
+	{
+		return gridSize * y + x;
+	}
+
+	inline int GetRowHeight(int y)
+	{
+		return rows[y].size;
+	}
+
+	inline int GetColumnWidth(int x)
+	{
+		return columns[x].size;
+	}
+
+	void PrintGrid()
+	{
+		Log::PrintNoNewLine("Current Grid State\n");
+		for (int y = 0; y < rows.size(); y++)
+		{
+			Log::PrintNoNewLine("{ ");
+			for (int x = 0; x < columns.size(); x++)
+			{
+				Log::PrintNoNewLine("%i ", int(Get(x, y)));
+			}
+			Log::PrintNoNewLine("}\n");
+		}
+	}
+
+	eastl::vector<bool> data;
+	int gridSize = 400;
+
+	struct Dimension
+	{
+		int size;
+		int index;
+	};
+	eastl::vector<Dimension> rows;
+	eastl::vector<Dimension> columns;
 };
 
 // xBegin and yBegin will be modified to give the iterators you need to split
 bool CanBePlaced(DynamicGrid& grid, Vec2i desiredNode, Vec2i desiredRectSize, Vec2i& outRequiredNodes, Vec2i& outRemainingSize)
 {
-	outRequiredNodes = Vec2i(0);
-	outRemainingSize = Vec2i(0);
-
 	int foundWidth = 0;
 	int foundHeight = 0;
 
@@ -433,26 +466,23 @@ bool CanBePlaced(DynamicGrid& grid, Vec2i desiredNode, Vec2i desiredRectSize, Ve
 		trialX = desiredNode.x;
 		foundWidth = 0;
 
-		int rowHeight = 0;
 		while (foundWidth < desiredRectSize.x)
 		{
-			if (trialX >= grid.xSize || trialY >= grid.ySize)
+			if (trialX >= grid.columns.size() || trialY >= grid.rows.size())
 			{
 				return false; // ran out of space
 			}
-
-			Node& node = grid.Get(trialX, trialY);
-			if (node.filled)
+			
+			if (grid.Get(trialX, trialY))
 			{
 				return false;
 			}
 
-			foundWidth += node.w;
-			rowHeight = node.h;
+			foundWidth += grid.GetColumnWidth(trialX);
 			trialX++;
 		}
 
-		foundHeight += rowHeight;
+		foundHeight += grid.GetRowHeight(trialY);
 		trialY++;
 	}
 
@@ -467,7 +497,7 @@ bool CanBePlaced(DynamicGrid& grid, Vec2i desiredNode, Vec2i desiredRectSize, Ve
 DynamicGrid PackRectsGridSplitter(eastl::vector<stbrp_rect>& rects)
 {
 	// Sort by a heuristic
-	eastl::sort(rects.begin(), rects.end(), SortByPermimeter());
+	eastl::sort(rects.begin(), rects.end(), SortByHeight());
 
 	for(int i = 0; i < rects.size(); i++)
 	{	
@@ -486,19 +516,19 @@ DynamicGrid PackRectsGridSplitter(eastl::vector<stbrp_rect>& rects)
 	{
 		// Search through nodes looking for space
 		bool done = false;
-		for (int y = 0; y < grid.ySize && !done; y++)
+		int yPos = 0;
+		for (int y = 0; y < grid.rows.size() && !done; y++)
 		{
-			for (int x = 0; x < grid.xSize && !done; x++)
+			int xPos = 0;
+			for (int x = 0; x < grid.columns.size() && !done; x++)
 			{
-				Node& node = grid.Get(x, y);
-
 				Vec2i leftOverSize;
 				Vec2i requiredNodes;
 				if (CanBePlaced(grid, Vec2i(x, y), Vec2i(rect.w, rect.h), requiredNodes, leftOverSize))
 				{
 					done = true;
-					rect.x = (USHORT)node.x;
-					rect.y = (USHORT)node.y;
+					rect.x = (USHORT)xPos;
+					rect.y = (USHORT)yPos;
 
 					int xFarRightColumn = x + requiredNodes.x - 1;
 					grid.InsertColumn(xFarRightColumn, leftOverSize.x);
@@ -510,12 +540,13 @@ DynamicGrid PackRectsGridSplitter(eastl::vector<stbrp_rect>& rects)
 					{
 						for (int j = y + requiredNodes.y - 1; j >= y; j--)
 						{
-							Node& toBeFilledNode = grid.Get(i, j);
-							toBeFilledNode.filled = true;
+							grid.Set(i, j, true);
 						}
 					}
 				}
+				xPos += grid.GetColumnWidth(x);
 			}
+			yPos += grid.GetRowHeight(y);
 		}
 
 		if (!done) // failed
@@ -531,9 +562,12 @@ DynamicGrid PackRectsGridSplitter(eastl::vector<stbrp_rect>& rects)
 		if (yExtent > maxY)
 			maxY = yExtent;
 	}
+
+
 	Log::Print(Log::EMsg, "maxY = %i maxX = %i Area Used %i rectsArea %i packing ratio %f", maxY, maxX, maxX * maxY, totalArea, (float)totalArea / float(maxX * maxY));
 	return grid;
 }
+
 
 void Engine::Run(Scene *pScene)
 {	
@@ -563,6 +597,7 @@ void Engine::Run(Scene *pScene)
 	//PackRectsNaiveRows(rects);
 	//PackRectsBLPixels(rects);
 	DynamicGrid grid = PackRectsGridSplitter(rects);
+	//grid.PrintGrid();
 
 	double timeTaken = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 	Log::Print(Log::EMsg, "Time Taken: %.8f", timeTaken * 1000);
@@ -612,34 +647,37 @@ void Engine::Run(Scene *pScene)
 
 		
 		// Search through nodes looking for space
-		for (GridType::iterator it = grid.data.begin(); it != grid.data.end() && false; ++it)
-		{
-			RowType& row = *it;
-			
-			Node& rowBeginNode = *(row.begin());
-			Node& rowEndNode = *(--row.end());
+		// int xPos = 0;
+		// for (int x = 0; x < grid.columns.size(); x++)
+		// {
+		// 	xPos += grid.columns[x].size;
+		// 	ImGui::GetWindowDrawList()->AddLine(
+		// 		topLeft + Vec2f(float(xPos),0),
+		// 		topLeft + Vec2f(float(xPos), float(700)),
+		// 		IM_COL32(255,255,255,255));
+		// }
+		// int yPos = 0;
+		// for (int y = 0; y < grid.rows.size(); y++)
+		// {
 
-			ImGui::GetWindowDrawList()->AddLine(
-				topLeft + Vec2f(float(rowBeginNode.x), float(rowBeginNode.y + rowBeginNode.h)),
-				topLeft + Vec2f(float(rowEndNode.x + rowEndNode.w), float(rowEndNode.y + rowEndNode.h)),
-				IM_COL32(255,255,255,255));
-			for (RowType::iterator rowIt = row.begin(); rowIt != row.end(); ++rowIt)
-			{
-				Node& node = *rowIt;
+		// 	int xPos = 0;
+		// 	for (int x = 0; x < grid.columns.size(); x++)
+		// 	{
+		// 		if (grid.Get(x, y))
+		// 		{
+		// 			Vec2f rectPos = Vec2f((float)xPos, (float)yPos);
+		//  			Vec2f rectSize = Vec2f((float)grid.columns[x].size, (float)grid.rows[y].size);
+		//  			ImGui::GetWindowDrawList()->AddRectFilled(topLeft + rectPos, topLeft + rectPos + rectSize, IM_COL32(0,0,0,200));
+		// 		}
+		// 		xPos += grid.columns[x].size;
+		// 	}
+		// 	yPos += grid.rows[y].size;
+		// 	ImGui::GetWindowDrawList()->AddLine(
+		// 		topLeft + Vec2f(0, float(yPos)),
+		// 		topLeft + Vec2f(float(700), float(yPos)),
+		// 		IM_COL32(255,255,255,255));
+		// }
 
-				ImGui::GetWindowDrawList()->AddLine(
-					topLeft + Vec2f(float(node.x + node.w), float(node.y)),
-					topLeft + Vec2f(float(node.x + node.w), float(node.y + node.h)),
-					IM_COL32(255,255,255,255));
-				
-				if (node.filled)
-				{
-					Vec2f rectPos = Vec2f((float)node.x, (float)node.y);
-					Vec2f rectSize = Vec2f((float)node.w, (float)node.h);
-					ImGui::GetWindowDrawList()->AddRectFilled(topLeft + rectPos, topLeft + rectPos + rectSize, IM_COL32(0,0,0,200));
-				}
-			}
-		}
 
 		topLeft = Vec2f(ImGui::GetWindowPos()) + Vec2f(10.0f, 780.0f);
 		stbrp_node* currNode = context.active_head;

@@ -44,6 +44,26 @@ void Log::Print(LogType type, const char* text, ...)
 		OutputDebugString(message.c_str());
 }
 
+void Log::PrintNoNewLine(const char* text, ...)
+{
+	const int n = 1024;
+	char buf[n];
+	va_list args;
+	va_start(args, text);
+	vsnprintf(buf, n, text, args);
+	buf[n - 1] = 0;
+	va_end(args);
+
+	if (pFile == nullptr)
+		fopen_s(&pFile, "engine.log", "w");
+
+	eastl::string message;
+	message += buf;
+
+	fprintf(pFile, message.c_str());
+	OutputDebugString(message.c_str());
+}
+
 const StringHistoryBuffer& Log::GetLogHistory()
 {
 	return logHistory;
