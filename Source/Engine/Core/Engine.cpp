@@ -20,6 +20,7 @@
 #include "Log.h"
 #include "Profiler.h"
 #include "Memory.h"
+#include "Maths.h"
 
 #include "EASTL/vector.h"
 #include "EASTL/fixed_vector.h"
@@ -456,9 +457,13 @@ bool CanBePlaced(DynamicGrid& grid, Vec2i desiredNode, Vec2i desiredRectSize, Ve
 		trialX = desiredNode.x;
 		foundWidth = 0;
 
+		if ( trialY >= grid.rows.size())
+			return false;
+		foundHeight += grid.GetRowHeight(trialY);
+
 		while (foundWidth < desiredRectSize.x)
 		{
-			if (trialX >= grid.columns.size() || trialY >= grid.rows.size())
+			if (trialX >= grid.columns.size())
 			{
 				return false; // ran out of space
 			}
@@ -471,13 +476,14 @@ bool CanBePlaced(DynamicGrid& grid, Vec2i desiredNode, Vec2i desiredRectSize, Ve
 			foundWidth += grid.GetColumnWidth(trialX);
 			trialX++;
 		}
-
-		foundHeight += grid.GetRowHeight(trialY);
 		trialY++;
 	}
 
 	// Visited all cells that we'll need to place the rectangle,
 	// and none were occupied. So the space is available here.
+	if ((trialX - desiredNode.x) <= 0 || (trialY - desiredNode.y) <= 0)
+		return false;
+	
 	outRequiredNodes = Vec2i(trialX - desiredNode.x, trialY - desiredNode.y);
 	outRemainingSize = Vec2i(foundWidth - desiredRectSize.x, foundHeight - desiredRectSize.y);
 
@@ -665,7 +671,7 @@ void Engine::Run(Scene *pScene)
 	pCurrentScene = pScene;
 	
 	// Start packing
-	int totalRects = 25;
+	int totalRects = 250;
     eastl::vector<stbrp_node> nodes;
     nodes.resize(totalRects);
     stbrp_context context;
@@ -676,19 +682,19 @@ void Engine::Run(Scene *pScene)
 	for(int i = 0; i < totalRects; i++)
 	{	
 		stbrp_rect& rect = rects.at(i);
-		rect.w = (uint16_t)float(30 + rand() % 180);
-		rect.h = (uint16_t)float(30 + rand() % 180);
+		rect.w = (uint16_t)clamp(float(generateGaussian(40.0, 40.0)), 0.0f, FLT_MAX);
+		rect.h = (uint16_t)clamp(float(generateGaussian(40.0, 40.0)), 0.0f, FLT_MAX);
 		rect.id = i + 1;
-		rect.col = IM_COL32(rand() % 256, rand() % 256, rand() % 256,255);
+		rect.col = IM_COL32(10 + rand() % 246, 10 + rand() % 246, 10 + rand() % 246,255);
 	}
 
 	Uint64 start = SDL_GetPerformanceCounter();
 
-	//stbrp_pack_rects(&context, rects.data(), totalRects);
+	stbrp_pack_rects(&context, rects.data(), totalRects);
 	//PackRectsNaiveRows(rects);
 	//PackRectsBLPixels(rects);
 	//DynamicGrid grid = PackRectsGridSplitter(rects);
-	eastl::vector<Node> leaves = PackRectsBinaryTree(rects);
+	//eastl::vector<Node> leaves = PackRectsBinaryTree(rects);
 
 	double timeTaken = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 	Log::Print(Log::EMsg, "Time Taken: %.8f", timeTaken * 1000);
@@ -738,27 +744,22 @@ void Engine::Run(Scene *pScene)
 
 		// Debug code for seeing binary tree splits
 
-		for (int i = (int)leaves.size() - 1; i >= 0; --i)
-		{
-			Node& node = leaves[i];
+		// for (int i = (int)leaves.size() - 1; i >= 0; --i)
+		// {
+		// 	Node& node = leaves[i];
 
-			// horizontal line
-			ImGui::GetWindowDrawList()->AddLine(
-				topLeft + Vec2f(float(node.x), float(node.y)),
-				topLeft + Vec2f(float(node.x + node.w), float(node.y)),
-				IM_COL32(255,255,255,255));
+		// 	// horizontal line
+		// 	ImGui::GetWindowDrawList()->AddLine(
+		// 		topLeft + Vec2f(float(node.x), float(node.y)),
+		// 		topLeft + Vec2f(float(node.x + node.w), float(node.y)),
+		// 		IM_COL32(255,255,255,255));
 
-			// vertical line
-			ImGui::GetWindowDrawList()->AddLine(
-				topLeft + Vec2f(float(node.x), float(node.y)),
-				topLeft + Vec2f(float(node.x), float(node.y + node.h)),
-				IM_COL32(255,255,255,255));
-
-			// std::string label = StringFormat("%i", i);
-			// const char* text_begin = label.c_str();
-			// const char* text_end = FindRenderedTextEnd(label.c_str(), NULL);
-			// ImGui::GetWindowDrawList()->AddText(ImGui::GetFont(), 15.0f, topLeft + Vec2f(float(node.x), float(node.y)), IM_COL32(255,255,255,255), text_begin, text_end);
-		}
+		// 	// vertical line
+		// 	ImGui::GetWindowDrawList()->AddLine(
+		// 		topLeft + Vec2f(float(node.x), float(node.y)),
+		// 		topLeft + Vec2f(float(node.x), float(node.y + node.h)),
+		// 		IM_COL32(255,255,255,255));
+		// }
 
 
 		// Debug code for seeing grids
