@@ -209,7 +209,7 @@ struct SortByPermimeter
 void PackRectsNaiveRows(eastl::vector<stbrp_rect>& rects)
 {
 	// Sort by a heuristic
-	eastl::sort(rects.begin(), rects.end(), SortByArea());
+	eastl::sort(rects.begin(), rects.end(), SortByHeight());
 
 	USHORT xPos = 0;
 	USHORT yPos = 0;
@@ -332,16 +332,6 @@ void PackRectsBLPixels(eastl::vector<stbrp_rect>& rects)
 	}
 	Log::Print(Log::EMsg, "maxY = %i maxX = %i Area Used %i rectsArea %i packing ratio %f", maxY, maxX, maxX * maxY, totalArea, (float)totalArea / float(maxX * maxY));
 }
-
-struct Node
-{
-	int x, y = 0;
-	int w, h = 0;
-	bool filled = false;
-};
-constexpr int gridDim = 110;
-typedef eastl::fixed_list<Node, gridDim> RowType;
-typedef eastl::fixed_list<RowType, gridDim> GridType;
 
 struct DynamicGrid
 {
@@ -568,13 +558,114 @@ DynamicGrid PackRectsGridSplitter(eastl::vector<stbrp_rect>& rects)
 	return grid;
 }
 
+struct Node
+{
+	int x, y;
+	int w, h;
+};
+
+eastl::vector<Node> PackRectsBinaryTree(eastl::vector<stbrp_rect>& rects)
+{
+	// Sort by a heuristic
+	eastl::sort(rects.begin(), rects.end(), SortByArea());
+
+	for(int i = 0; i < rects.size(); i++)
+	{	
+		stbrp_rect& rect = rects.at(i);
+		rect.id = i;
+	}
+
+	int maxX = 0;
+   	int maxY = 0;
+   	int totalArea = 0;
+	
+	eastl::vector<Node> leaves;
+
+	leaves.push_back({0, 0, 700, 700});
+
+	for (stbrp_rect& rect : rects)
+	{
+		// BINARY TREES
+		bool done = false;
+		for (int i = (int)leaves.size() - 1; i >= 0 && !done; --i)
+		{
+			Node& node = leaves[i];
+
+			if (node.w > rect.w && node.h > rect.h)
+			{
+				// Found a suitable node
+				rect.x = node.x;
+				rect.y = node.y;
+
+				// Split it
+				int remainingWidth = node.w - rect.w;
+				int remainingHeight = node.h - rect.h;
+
+				// The lesser split here will be the top right
+				Node newSmallerNode;
+				Node newLargerNode;
+				if (remainingHeight > remainingWidth)
+				{
+					newSmallerNode.x = node.x + rect.w;
+					newSmallerNode.y = node.y;
+					newSmallerNode.w = remainingWidth;
+					newSmallerNode.h = rect.h;
+
+					newLargerNode.x = node.x;
+					newLargerNode.y = node.y + rect.h;
+					newLargerNode.w = node.w;
+					newLargerNode.h = remainingHeight;
+				}
+				// The lesser split here will be the bottom left
+				else
+				{
+					newSmallerNode.x = node.x;
+					newSmallerNode.y = node.y + rect.h;
+					newSmallerNode.w = rect.w;
+					newSmallerNode.h = remainingHeight;
+
+					newLargerNode.x = node.x + rect.w;
+					newLargerNode.y = node.y;
+					newLargerNode.w = remainingWidth;
+					newLargerNode.h = node.h;
+				}
+
+				// Removing the node we're using up
+				leaves[i] = leaves.back();
+				leaves.pop_back();
+
+				leaves.push_back(newLargerNode);
+				leaves.push_back(newSmallerNode);
+				
+				done = true;
+			}
+		}
+
+		if (!done)
+			continue;
+
+		rect.was_packed = true;
+
+        totalArea += rect.w * rect.h;
+		int xExtent = rect.x + rect.w;
+		int yExtent = rect.y + rect.h;
+		if (xExtent > maxX)
+			maxX = xExtent;
+		if (yExtent > maxY)
+			maxY = yExtent;
+	}
+
+
+	Log::Print(Log::EMsg, "maxY = %i maxX = %i Area Used %i rectsArea %i packing ratio %f", maxY, maxX, maxX * maxY, totalArea, (float)totalArea / float(maxX * maxY));
+	return leaves;
+}
 
 void Engine::Run(Scene *pScene)
 {	
 	pCurrentScene = pScene;
 	
 	// Start packing
-	int totalRects = 250;
+	int totalRects = 25;
     eastl::vector<stbrp_node> nodes;
     nodes.resize(totalRects);
     stbrp_context context;
@@ -585,8 +676,8 @@ void Engine::Run(Scene *pScene)
 	for(int i = 0; i < totalRects; i++)
 	{	
 		stbrp_rect& rect = rects.at(i);
-		rect.w = (uint16_t)float(7 + rand() % 70);
-		rect.h = (uint16_t)float(7 + rand() % 70);
+		rect.w = (uint16_t)float(30 + rand() % 180);
+		rect.h = (uint16_t)float(30 + rand() % 180);
 		rect.id = i + 1;
 		rect.col = IM_COL32(rand() % 256, rand() % 256, rand() % 256,255);
 	}
@@ -596,8 +687,8 @@ void Engine::Run(Scene *pScene)
 	//stbrp_pack_rects(&context, rects.data(), totalRects);
 	//PackRectsNaiveRows(rects);
 	//PackRectsBLPixels(rects);
-	DynamicGrid grid = PackRectsGridSplitter(rects);
-	//grid.PrintGrid();
+	//DynamicGrid grid = PackRectsGridSplitter(rects);
+	eastl::vector<Node> leaves = PackRectsBinaryTree(rects);
 
 	double timeTaken = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 	Log::Print(Log::EMsg, "Time Taken: %.8f", timeTaken * 1000);
@@ -645,7 +736,33 @@ void Engine::Run(Scene *pScene)
 
 		ImGui::Text("Packed rects %i", nPacked);
 
-		
+		// Debug code for seeing binary tree splits
+
+		for (int i = (int)leaves.size() - 1; i >= 0; --i)
+		{
+			Node& node = leaves[i];
+
+			// horizontal line
+			ImGui::GetWindowDrawList()->AddLine(
+				topLeft + Vec2f(float(node.x), float(node.y)),
+				topLeft + Vec2f(float(node.x + node.w), float(node.y)),
+				IM_COL32(255,255,255,255));
+
+			// vertical line
+			ImGui::GetWindowDrawList()->AddLine(
+				topLeft + Vec2f(float(node.x), float(node.y)),
+				topLeft + Vec2f(float(node.x), float(node.y + node.h)),
+				IM_COL32(255,255,255,255));
+
+			// std::string label = StringFormat("%i", i);
+			// const char* text_begin = label.c_str();
+			// const char* text_end = FindRenderedTextEnd(label.c_str(), NULL);
+			// ImGui::GetWindowDrawList()->AddText(ImGui::GetFont(), 15.0f, topLeft + Vec2f(float(node.x), float(node.y)), IM_COL32(255,255,255,255), text_begin, text_end);
+		}
+
+
+		// Debug code for seeing grids
+
 		// Search through nodes looking for space
 		// int xPos = 0;
 		// for (int x = 0; x < grid.columns.size(); x++)
