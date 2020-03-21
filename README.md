@@ -1,6 +1,6 @@
-# Athena Engine
+# Athena Toolset
 
-Athena is a small, personal game development library built as simply as possible to serve little game experiments I feel like making. The idea is that I make little games and experiments and this drives me to develop various different engine features. I'm making games here, not unecessary game engine features. The first game is an asteroids remake, which looks like this:
+Athena is a small, personal game development toolset built as simply as possible to serve little game experiments I feel like making. The idea is that I make little games and experiments and this drives me to develop various different features that get added to the toolset. I'm making games here, not unecessary game engine features. The first game is an asteroids remake, which looks like this:
 
 ![gameplay](GitHubImages/AsteroidsImage1.png)
 
