@@ -601,7 +601,7 @@ STBRP_DEF int stbrp_pack_rects(stbrp_context *context, stbrp_rect *rects, int nu
          all_rects_packed = 0;
    }
 
-   Log::Print(Log::EMsg, "maxY = %i maxX = %i Area Used %i rectsArea %i packing ratio %f", maxY, maxX, maxX * maxY, totalArea, (float)totalArea / float(maxX * maxY));
+	Log::Print(Log::EMsg, "maxY = %i maxX = %i Area Used %i rectsArea %i packing ratio %f area used %f", maxY, maxX, maxX * maxY, totalArea, (float)totalArea / float(maxX * maxY), float(maxX * maxY) / float(700 * 700));
    // return the all_rects_packed status
    return all_rects_packed;
 }
