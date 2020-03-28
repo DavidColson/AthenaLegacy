@@ -10,4 +10,6 @@ target_sources(Engine
         "ShapesSystem.cpp"
         "FontSystem.h"
         "FontSystem.cpp"
+        "RectPacking.h"
+        "RectPacking.cpp"
 )
