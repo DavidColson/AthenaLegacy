@@ -255,6 +255,91 @@ void PackRectsNaiveRows(eastl::vector<stbrp_rect>& rects)
 	Log::Print(Log::EMsg, "maxY = %i maxX = %i Area Used %i rectsArea %i packing ratio %f area used %f", maxY, maxX, maxX * maxY, totalArea, (float)totalArea / float(maxX * maxY), float(maxX * maxY) / float(700 * 700));
 }
 
+void PackRectsBLPixels_enhanced(eastl::vector<stbrp_rect>& rects)
+{
+	// Sort by a heuristic
+	eastl::sort(rects.begin(), rects.end(), SortByHeight());
+
+	int maxX = 0;
+	int maxY = 0;
+	int totalArea = 0;
+
+	// Maintain a grid of bools, telling us whether each pixel has got a rect on it
+	eastl::vector<eastl::vector<stbrp_rect*>> image;
+	image.resize(700);
+	for (int i=0; i< 700; i++)
+	{
+		image[i].resize(700, NULL);
+	}
+
+	for (stbrp_rect& rect : rects)
+	{
+		// Loop over X and Y pixels
+		bool done = false;
+		for( int y = 0; y < 700 && !done; y++)
+		{
+			for( int x = 0; x < 700 && !done; x++)
+			{
+				// Make sure this rectangle doesn't go over the edge of the boundary
+				if ((y + rect.h) >= 700 || (x + rect.w) >= 700)
+					continue;
+
+				// For every coordinate, check top left and bottom right
+				if (!image[y][x] && !image[y + rect.h][x + rect.w])
+				{
+					// Corners of image are free
+					// If valid, check all pixels inside that rect
+					bool valid = true;
+
+					//boolean to check if the inner loops should keep running
+					bool inner = true;
+					for (int ix = x; ix < x + rect.w && inner; ix += 5)
+					{
+						for (int iy = y; iy < y + rect.h && inner; iy += 5)
+						{
+							if (image[iy][ix] != NULL)
+							{
+								valid = false;
+								int new_x_coord = image[iy][ix]->x + image[iy][ix]->w - 1;
+								x = new_x_coord;
+								inner = false;
+							}
+						}
+					}
+
+					// If all good, we've found a location
+					if (valid)
+					{
+						rect.x = x;
+						rect.y = y;
+						done = true;
+
+						// Set the used pixels to true so we don't overlap them
+						for (int ix = x; ix < x + rect.w; ix++)
+						{
+							for (int iy = y; iy < y + rect.h; iy++)
+							{
+								image[iy][ix] = &rect;
+							}
+						}
+
+						rect.was_packed = true;
+
+						rect.was_packed = true;
+						totalArea += rect.w * rect.h;
+						int xExtent = rect.x + rect.w;
+						int yExtent = rect.y + rect.h;
+						if (xExtent > maxX)
+							maxX = xExtent;
+						if (yExtent > maxY)
+							maxY = yExtent;
+					}
+				}
+			}
+		}
+	}
+}
+
 void PackRectsBLPixels(eastl::vector<stbrp_rect>& rects)
 {
 	// Sort by a heuristic
@@ -867,7 +952,7 @@ void Engine::Run(Scene *pScene)
 	pCurrentScene = pScene;
 	
 	// Start packing
-	int totalRects = 25;
+	int totalRects = 250;
     eastl::vector<stbrp_node> nodes;
     nodes.resize(totalRects);
     stbrp_context context;
@@ -894,10 +979,10 @@ void Engine::Run(Scene *pScene)
 		// rect.w = (uint16_t)clamp(float(generateGaussian(110.0, 20.0)), 8.0f, FLT_MAX);
 		// rect.h = (uint16_t)clamp(float(generateGaussian(110.0, 20.0)), 8.0f, FLT_MAX);
 
-		// rect.w = (uint16_t)float(7 + rand() % 68);
-		// rect.h = (uint16_t)float(7 + rand() % 68);
-		rect.w = (uint16_t)float(30 + rand() % 170);
-		rect.h = (uint16_t)float(30 + rand() % 170);
+		rect.w = (uint16_t)float(7 + rand() % 68);
+		rect.h = (uint16_t)float(7 + rand() % 68);
+		// rect.w = (uint16_t)float(30 + rand() % 170);
+		// rect.h = (uint16_t)float(30 + rand() % 170);
 		rect.id = i + 1;
 		rect.col = IM_COL32(10 + rand() % 246, 10 + rand() % 246, 10 + rand() % 246,255);
 	}
@@ -908,9 +993,9 @@ void Engine::Run(Scene *pScene)
 	
 	//PackRectsSkyline(rects);
 	//PackRectsNaiveRows(rects);
-	//PackRectsBLPixels(rects);
+	PackRectsBLPixels_enhanced(rects);
 	//DynamicGrid grid = PackRectsGridSplitter(rects);
-	eastl::vector<Node> leaves = PackRectsBinaryTree(rects);
+	//eastl::vector<Node> leaves = PackRectsBinaryTree(rects);
 
 	double timeTaken = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
 	Log::Print(Log::EMsg, "Time Taken: %.8f", timeTaken * 1000);
