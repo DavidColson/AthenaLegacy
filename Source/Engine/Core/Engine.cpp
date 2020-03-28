@@ -100,11 +100,11 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
-	// scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
-	// scene.RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
-	// scene.RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
-	// scene.RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
-	// scene.RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
+	scene.RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
 	scene.RegisterSystem(SystemPhase::Render, ImGuiRender);
 
 	scene.NewEntity("Engine Singletons");
