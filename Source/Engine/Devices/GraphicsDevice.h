@@ -21,6 +21,7 @@ struct Context;
 struct Vertex
 {
 	Vertex(Vec3f _pos) : pos(_pos) {}
+	Vertex(Vec3f _pos, Vec3f _col, Vec2f _texCoords) : pos(_pos), col(_col), texCoords(_texCoords) {}
 
 	Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
 	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
@@ -308,6 +309,9 @@ namespace GfxDevice
 	void BindTexture(TextureHandle handle, ShaderType shader, int slot);
 
 	void FreeTexture(TextureHandle handle);
+
+	// TODO: Remove this once we have a custom imgui renderer
+	void* GetImGuiTextureID(TextureHandle handle);
 
 	// Shader Constants
 

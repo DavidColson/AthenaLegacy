@@ -6,15 +6,16 @@
 #include "Scene.h"
 
 #include <string>
-#include <vector>
+#include <EASTL/vector.h>
 
 struct Scene;
 
 struct Character
 {
-	TextureHandle charTexture;
 	Vec2i size{ Vec2i(0, 0) };
 	Vec2i bearing{ Vec2i(0, 0) };
+	Vec2f UV0{ Vec2f(0.f, 0.f) };
+	Vec2f UV1{ Vec2f(1.f, 1.f) };
 	int advance;
 };
 
@@ -31,17 +32,19 @@ struct CText
 
 struct CFontSystemState
 {
-	VertexBufferHandle quadBuffer;
-	SamplerHandle charTextureSampler;
 	ProgramHandle fontShaderProgram;
 	ConstBufferHandle wvpBuffer;
 	BlendStateHandle blendState;
+	VertexBufferHandle vertexBuffer;
+	IndexBufferHandle indexBuffer;
+	TextureHandle fontTexture;
+	SamplerHandle charTextureSampler;
 
 	struct TransformData
 	{
-		Matrixf wvp;
+		Matrixf projection;
 	};
-	std::vector<Character> characters;
+	eastl::vector<Character> characters;
 };
 
 namespace FontSystem

@@ -12,8 +12,21 @@ namespace Packing
         }
     };
 
-    void Packing::RowPackRects(eastl::vector<Rect>& rects)
+    struct SortToOriginalOrder
     {
+        bool operator()(const Rect& a, const Rect& b)
+        {
+            return a.ordering < b.ordering;
+        }
+    };
+
+    void Packing::RowPackRects(eastl::vector<Rect>& rects, int width, int height)
+    {
+        for (int i = 0; i < rects.size(); i++)
+        {
+            rects[i].ordering = i;
+        }
+
         eastl::sort(rects.begin(), rects.end(), SortByHeight());
 
         int xPos = 0;
@@ -28,14 +41,14 @@ namespace Packing
 
         for (Rect& rect : rects)
         {
-            if ((xPos + rect.w) > 700)
+            if ((xPos + rect.w) > width)
             {
                 yPos += largestHThisRow;
                 xPos = 0;
                 largestHThisRow = 0;
             }
 
-            if ((yPos + rect.h) > 700)
+            if ((yPos + rect.h) > height)
                 break;
 
             rect.x = xPos;
@@ -48,6 +61,8 @@ namespace Packing
 
             rect.wasPacked = true;
         }
+
+        eastl::sort(rects.begin(), rects.end(), SortToOriginalOrder());
     }
 
     struct SkylineNode
@@ -55,13 +70,13 @@ namespace Packing
         int x, y, width;
     };
 
-    int CanRectFit(eastl::vector<SkylineNode>& nodes, int atNode, int rectWidth, int rectHeight)
+    int CanRectFit(eastl::vector<SkylineNode>& nodes, int atNode, int rectWidth, int rectHeight, int width, int height)
     {
         // See if there's space for this rect at node "atNode"
 
         int x = nodes[atNode].x;
         int y = nodes[atNode].y;
-        if (x + rectWidth > 700) // Check we're not going off the end of the image
+        if (x + rectWidth > width) // Check we're not going off the end of the image
             return -1;
 
         
@@ -78,15 +93,20 @@ namespace Packing
             if (node.y > y)
                 y = node.y;
 
-            if (y + rectHeight > 700) return -1; // of the edge of the image
+            if (y + rectHeight > height) return -1; // of the edge of the image
             remainingSpace -= node.width;
             i++;
         }
         return y;
     }
 
-    void Packing::SkylinePackRects(eastl::vector<Rect>& rects)
+    void Packing::SkylinePackRects(eastl::vector<Rect>& rects, int width, int height)
     {
+        for (int i = 0; i < rects.size(); i++)
+        {
+            rects[i].ordering = i;
+        }
+
         // Sort by a heuristic
         eastl::sort(rects.begin(), rects.end(), SortByHeight());
 
@@ -96,19 +116,19 @@ namespace Packing
         
         eastl::vector<SkylineNode> nodes;
 
-        nodes.push_back({0, 0, 700});
+        nodes.push_back({0, 0, width});
 
         for (Rect& rect : rects)
         {
-            int bestHeight = 700;
-            int bestWidth = 700;
+            int bestHeight = height;
+            int bestWidth = width;
             int bestNode = -1;
             int bestX, bestY;
             // We're going to search for the best location for this rect along the skyline
             for(int i = 0; i < nodes.size(); i++)
             {
                 SkylineNode& node = nodes[i];
-                int highestY = CanRectFit(nodes, i, rect.w, rect.h);
+                int highestY = CanRectFit(nodes, i, rect.w, rect.h, width, height);
                 if (highestY != -1)
                 {
                     // Settling a tie here on best height by checking lowest width we can use up
@@ -181,5 +201,7 @@ namespace Packing
 
             rect.wasPacked = true;
         }
+        eastl::sort(rects.begin(), rects.end(), SortToOriginalOrder());
     }
+
 }

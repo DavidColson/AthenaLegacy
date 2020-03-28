@@ -680,6 +680,18 @@ void GfxDevice::FreeTexture(TextureHandle handle)
 
 // ***********************************************************************
 
+void* GfxDevice::GetImGuiTextureID(TextureHandle handle)
+{
+	if (!IsValid(handle))
+		return nullptr;
+
+	Texture &texture = pCtx->poolTexture[handle.id];
+
+	return texture.pShaderResourceView;
+}
+
+// ***********************************************************************
+
 RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const std::string &debugName)
 {
 	RenderTarget renderTarget;

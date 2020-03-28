@@ -13,8 +13,10 @@ namespace Packing
         int h{ 0 };
 
         bool wasPacked{ false };
+
+        int ordering{ -1 };
     };
 
-    void RowPackRects(eastl::vector<Rect>& rects);
-    void SkylinePackRects(eastl::vector<Rect>& rects);
+    void RowPackRects(eastl::vector<Rect>& rects, int width, int height);
+    void SkylinePackRects(eastl::vector<Rect>& rects, int width, int height);
 }

@@ -6,9 +6,13 @@
 
 #include "Matrix.h"
 #include "Vec3.h"
+#include "Vec2.h"
 #include "Log.h"
 #include "Scene.h"
 #include "Profiler.h"
+#include "RectPacking.h"
+
+#include "Imgui/imgui.h"
 
 REFLECT_BEGIN(CText)
 REFLECT_MEMBER(text)
@@ -16,11 +20,12 @@ REFLECT_END()
 
 namespace 
 {
-	// Cant' wait to replace this with stb_truetype
 	FT_Library freetype;
 	FT_Face face;
 	bool startedFreeType = false;
 }
+
+#define CHARS_PER_DRAW_CALL 500
 
 void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 {
@@ -41,7 +46,7 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 	std::string fontShaderSrc = "\
 	cbuffer cbTransform\
 	{\
-		float4x4 WVP;\
+		float4x4 projection;\
 	};\
 	struct VS_OUTPUT\
 	{\
@@ -52,7 +57,7 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 	VS_OUTPUT VSMain(float4 inPos : POSITION, float4 inCol : COLOR, float2 inTex : TEXCOORD0)\
 	{\
 		VS_OUTPUT output;\
-		output.Pos = mul(inPos, WVP);\
+		output.Pos = mul(inPos, projection);\
 		output.Col = inCol;\
 		output.Tex = inTex;\
 		return output;\
@@ -82,22 +87,10 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 	blender.destination = Blend::InverseSrcAlpha;
 	state.blendState = GfxDevice::CreateBlendState(blender);
 
-	std::vector<Vertex> quadVertices = {
-		Vertex(Vec3f(0.0f, 0.0f, 0.5f)),
-		Vertex(Vec3f(0.f, 10.f, 0.5f)),
-		Vertex(Vec3f(10.f, 0.f, 0.5f)),
-		Vertex(Vec3f(10.f, 10.f, 0.5f))
-	};
-
-	quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
-	quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
-	quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
-	quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-
 	// Create vertex buffer
 	// ********************
-
-	state.quadBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Font Quad");
+	state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vertex), "Font Render Vert Buffer");
+	state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, "Font Render Index Buffer");
 
 	// Create a constant buffer for the WVP
 	// **********************************************
@@ -105,31 +98,59 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 	state.wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(CFontSystemState::TransformData), "Font transforms");
 	state.charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
 
+	// Rasterize the entire font to a texture atlas
+	// **********************************************
+
+	// Texture data
+	int texHeight = 512;
+	int texWidth = 512;
+	uint8_t* pTextureDataAsR8{ nullptr };
+	pTextureDataAsR8 = new uint8_t[texHeight * texWidth];
+	memset(pTextureDataAsR8, 0, texHeight * texWidth);
+
+	eastl::vector<Packing::Rect> rects;
+	rects.get_allocator().set_name("Font Packing Rects");
+	state.characters.get_allocator().set_name("Font character data");
+
+	FT_Set_Pixel_Sizes(face, 0, 50);
+
+	// Prepare rects for packing
 	for (int i = 0; i < 128; i++)
 	{
-		FT_Set_Pixel_Sizes(face, 0, 50);
+		FT_Load_Char(face, i, FT_LOAD_DEFAULT);
+		Packing::Rect newRect;
+		newRect.w = face->glyph->bitmap.width + 1;
+		newRect.h = face->glyph->bitmap.rows + 1;
+		rects.push_back(newRect);
+	}
+	Packing::SkylinePackRects(rects, texWidth, texHeight);
 
+	for (int i = 0; i < 128; i++)
+	{
+		Packing::Rect& rect = rects[i];
 		FT_Load_Char(face, i, FT_LOAD_RENDER);
 
+		// Create the character with all it's appropriate data
 		Character character;
-		if (face->glyph->bitmap.width > 0 && face->glyph->bitmap.rows > 0)
-		{
-			std::string debugName = "Character ";
-			debugName.push_back(char(i));
-			character.charTexture = GfxDevice::CreateTexture(
-				face->glyph->bitmap.width,
-				face->glyph->bitmap.rows,
-				TextureFormat::R8,
-				face->glyph->bitmap.buffer,
-				debugName
-			);
-		}
 		character.size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
 		character.bearing = Vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
 		character.advance = (face->glyph->advance.x) >> 6;
-
+		character.UV0 = Vec2f((float)rect.x / (float)texWidth, (float)rect.y / (float)texHeight);
+		character.UV1 = Vec2f((float)(rect.x + character.size.x) / (float)texWidth, (float)(rect.y + character.size.y) / (float)texHeight);
 		state.characters.push_back(character);
+
+		// Blit the glyph's image into our texture atlas
+		uint8_t* pSourceData = face->glyph->bitmap.buffer;
+		uint8_t* pDestination = pTextureDataAsR8 + rect.y * texWidth + rect.x;
+		int sourceDataPitch = face->glyph->bitmap.pitch;
+		for (uint32_t y = 0; y < face->glyph->bitmap.rows; y++, pSourceData += sourceDataPitch, pDestination += texWidth)
+		{
+			memcpy(pDestination, pSourceData, face->glyph->bitmap.width);
+		}
 	}
+
+	state.fontTexture = GfxDevice::CreateTexture(texWidth, texHeight, TextureFormat::R8, pTextureDataAsR8, "Font Atlas");
+	delete[] pTextureDataAsR8;
 }
 
 void FontSystem::OnRemoveFontSystemState(Scene& scene, EntityID entity)
@@ -137,16 +158,12 @@ void FontSystem::OnRemoveFontSystemState(Scene& scene, EntityID entity)
 	CFontSystemState& state = *(scene.Get<CFontSystemState>(entity));
 
 	GfxDevice::FreeProgram(state.fontShaderProgram);
-	GfxDevice::FreeVertexBuffer(state.quadBuffer);
+	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
+	GfxDevice::FreeIndexBuffer(state.indexBuffer);
 	GfxDevice::FreeSampler(state.charTextureSampler);
 	GfxDevice::FreeConstBuffer(state.wvpBuffer);
 	GfxDevice::FreeBlendState(state.blendState);
-
-	for(Character& chara : state.characters)
-	{
-		if (GfxDevice::IsValid(chara.charTexture))
-			GfxDevice::FreeTexture(chara.charTexture);
-	}
+	GfxDevice::FreeTexture(state.fontTexture);
 }
 
 void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
@@ -157,18 +174,10 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 	
 	CFontSystemState& state = *(scene.Get<CFontSystemState>(ENGINE_SINGLETON));
 
-	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
-
-	// Set vertex buffer as active
-	GfxDevice::BindVertexBuffers(1, &state.quadBuffer);
-
-	// Set Shaders to active
+	// Set graphics state correctly
+	GfxDevice::SetTopologyType(TopologyType::TriangleList);
 	GfxDevice::BindProgram(state.fontShaderProgram);
-
 	GfxDevice::SetBlending(state.blendState);
-
-	Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
-	
 	GfxDevice::BindSampler(state.charTextureSampler, ShaderType::Pixel, 0);
 
 	for (EntityID ent : SceneView<CText, CTransform>(scene))
@@ -182,7 +191,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 
 		CText* pText = scene.Get<CText>(ent);
 		CTransform* pTransform = scene.Get<CTransform>(ent);
-		
+
 		float textWidth = 0.0f;
 		float x = pTransform->pos.x;
 		float y = pTransform->pos.y;
@@ -193,28 +202,51 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 			textWidth += ch.advance * pTransform->sca.x;
 		}
 
+		eastl::fixed_vector<Vertex, CHARS_PER_DRAW_CALL * 4> vertexList;
+		eastl::fixed_vector<int, CHARS_PER_DRAW_CALL * 6> indexList;
+		int currentIndex = 0;
+
 		for (char const& c : pText->text) {
-			// Draw a font character
 			Character ch = state.characters[c];
 
-			if (GfxDevice::IsValid(state.characters[c].charTexture))
-			{
-				Matrixf posmat = Matrixf::Translate(Vec3f(float(x + ch.bearing.x - textWidth * 0.5f), float(y - (ch.size.y - ch.bearing.y)), 0.0f));
-				Matrixf scalemat = Matrixf::Scale(Vec3f(pTransform->sca.x * ch.size.x / 10.0f, pTransform->sca.y * ch.size.y / 10.0f, 1.0f));
+			float xpos = (x + ch.bearing.x * pTransform->sca.x) - textWidth * 0.5f;
+			float ypos = y - (ch.size.y - ch.bearing.y) * pTransform->sca.y;
+			float w = (float)ch.size.x * pTransform->sca.x;
+			float h = (float)ch.size.y * pTransform->sca.y;
+	
+			vertexList.push_back( Vertex{ Vec3f( xpos, ypos, 1.0f), 		Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV0.x, ch.UV1.y) });
+			vertexList.push_back( Vertex{ Vec3f( xpos, ypos + h, 1.0f), 	Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV0.x, ch.UV0.y) });
+			vertexList.push_back( Vertex{ Vec3f( xpos + w, ypos + h, 1.0f), Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV1.x, ch.UV0.y) });
+			vertexList.push_back( Vertex{ Vec3f( xpos + w, ypos, 1.0f), 	Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV1.x, ch.UV1.y) });
+			
+			// First triangle
+			indexList.push_back(currentIndex);
+			indexList.push_back(currentIndex + 2);
+			indexList.push_back(currentIndex + 3);
 
-				Matrixf world = posmat * scalemat; // transform into world space
-				Matrixf wvp = projection * world;
-
-				CFontSystemState::TransformData transformData{ wvp };
-				GfxDevice::BindConstantBuffer(state.wvpBuffer, &transformData, ShaderType::Vertex, 0);
-				GfxDevice::BindTexture(state.characters[c].charTexture, ShaderType::Pixel, 0);
-
-				// do 3D rendering on the back buffer here
-				// Todo::Instance render the entire string
-				GfxDevice::Draw(4, 0);
-			}
+			// Second triangle
+			indexList.push_back(currentIndex);
+			indexList.push_back(currentIndex + 1);
+			indexList.push_back(currentIndex + 2);
+			currentIndex += 4; // move along by 4 vertices for the next character
 
 			x += ch.advance * pTransform->sca.x;
 		}
+	
+		// Update buffers
+		GfxDevice::UpdateDynamicVertexBuffer(state.vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vertex));
+		GfxDevice::UpdateDynamicIndexBuffer(state.indexBuffer, indexList.data(), indexList.size() * sizeof(int));
+
+		GfxDevice::BindVertexBuffers(1, &state.vertexBuffer);
+		GfxDevice::BindIndexBuffer(state.indexBuffer);
+		
+		GfxDevice::BindTexture(state.fontTexture, ShaderType::Pixel, 0);
+
+		Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
+		CFontSystemState::TransformData transformData{ projection };
+		GfxDevice::BindConstantBuffer(state.wvpBuffer, &transformData, ShaderType::Vertex, 0);
+		
+		// Do draw call for this text
+		GfxDevice::DrawIndexed((int)indexList.size(), 0, 0);
 	}
 }
