@@ -1,8 +1,0 @@
-macro(GroupSources dir)
-    file(GLOB_RECURSE sources RELATIVE ${dir} *.h *.hpp *.c *.cpp *.cc)
-    foreach(source ${sources})
-        get_filename_component(source_path "${source}" PATH)
-        string(REPLACE "/" "\\" source_path_msvc "${source_path}")
-        source_group("${source_path_msvc}" FILES "${source}")
-    endforeach()
-endmacro()
