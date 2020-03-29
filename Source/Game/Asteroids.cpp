@@ -204,6 +204,7 @@ int main(int argc, char *argv[])
 	(void)argc;
 	(void)argv;
 
+
 	Engine::Initialize();
 
 	// Type system testing
@@ -215,10 +216,10 @@ int main(int argc, char *argv[])
 
 		myInMember.Set(&testComponent, 1337);
 
-		Log::Print(Log::EMsg, "Iterator printing Members of type: %s", typeData.name);
+		Log::Debug("Iterator printing Members of type: %s", typeData.name);
 		for (Member& member : typeData)
 		{			
-			Log::Print(Log::EMsg, "Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.Get<int>(&testComponent));
+			Log::Debug("Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.Get<int>(&testComponent));
 		}
 	}
 

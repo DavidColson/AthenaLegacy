@@ -42,7 +42,7 @@ char* readFile(const char* filename)
 	SDL_RWops* rw = SDL_RWFromFile(filename, "r+");
 	if (rw == nullptr)
 	{
-		Log::Print(Log::EErr, "%s failed to load", filename);
+		Log::Warn("%s failed to load", filename);
 		return nullptr;
 	}
 
@@ -135,12 +135,14 @@ void Engine::Initialize()
 		0
 	);
 
-	Log::Print(Log::EMsg, "Engine starting up");
-	Log::Print(Log::EMsg, "Window size W: %.1f H: %.1f", width, height);
+	Log::SetLogLevel(Log::EDebug);
+
+	Log::Info("Engine starting up");
+	Log::Info("Window size W: %.1f H: %.1f", width, height);
 
 	GfxDevice::Initialize(g_pWindow, width, height);
 	AudioDevice::Initialize();
-	Input::CreateInputState();
+	Input::CreateInputState();	
 }
 
 void Engine::Run(Scene *pScene)

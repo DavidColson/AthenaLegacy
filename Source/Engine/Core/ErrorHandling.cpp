@@ -26,7 +26,7 @@ int ShowAssertDialog(const char * errorMsg, const char * file, int line)
 
 	std::string message = string_format("Assertion Failed\n\n%s\n\nFile: %s\nLine %i", errorMsg, file, line);
 
-	Log::Print(Log::EErr, "%s", message.c_str());
+	Log::Crit("%s", message.c_str());
 
 	const SDL_MessageBoxData messageboxdata = {
 		SDL_MESSAGEBOX_ERROR,

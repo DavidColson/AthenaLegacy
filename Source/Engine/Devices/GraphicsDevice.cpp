@@ -327,7 +327,7 @@ void GfxDevice::PrintQueuedDebugMessages()
 		D3D11_MESSAGE *message = (D3D11_MESSAGE *)malloc(message_size);
 		pCtx->pDebugInfoQueue->GetMessage(i, message, &message_size);
 
-		Log::Print(Log::EGraphics, "%s", message->pDescription);
+		Log::Info("%s", message->pDescription);
 
 		free(message);
 	}
@@ -524,7 +524,7 @@ bool ShaderCompileFromFile(const wchar_t *fileName, const char *entry, const cha
 		if (pErrorBlob)
 		{
 			OutputDebugStringA((char *)pErrorBlob->GetBufferPointer());
-			Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char *)pErrorBlob->GetBufferPointer());
+			Log::Warn("Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char *)pErrorBlob->GetBufferPointer());
 			pErrorBlob->Release();
 			return false;
 		}
@@ -544,7 +544,7 @@ bool ShaderCompile(std::string &fileContents, const char *entry, const char *tar
 		if (pErrorBlob)
 		{
 			OutputDebugStringA((char *)pErrorBlob->GetBufferPointer());
-			Log::Print(Log::EErr, "Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char *)pErrorBlob->GetBufferPointer());
+			Log::Warn("Shader Compile Error at entry %s (%s) \n\n%s", entry, target, (char *)pErrorBlob->GetBufferPointer());
 			pErrorBlob->Release();
 			return false;
 		}
@@ -903,7 +903,7 @@ void GfxDevice::UpdateDynamicIndexBuffer(IndexBufferHandle handle, void *data, s
 
 	if (!indexBuffer.isDynamic)
 	{
-		Log::Print(Log::EErr, "Attempting to update non dynamic index buffer");
+		Log::Warn("Attempting to update non dynamic index buffer");
 		return;
 	}
 
@@ -1380,7 +1380,7 @@ void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void *data,
 	VertexBuffer &buffer = pCtx->poolVertexBuffer[handle.id];
 	if (!buffer.isDynamic)
 	{
-		Log::Print(Log::EErr, "Attempting to update non dynamic vertex buffer");
+		Log::Warn("Attempting to update non dynamic vertex buffer");
 		return;
 	}
 

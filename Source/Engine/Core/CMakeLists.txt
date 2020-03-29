@@ -25,4 +25,5 @@ target_sources(Engine
         "Profiler.h"
         "Profiler.cpp"
         "Memory.h"
+        "Vsnprintf.cpp"
 )

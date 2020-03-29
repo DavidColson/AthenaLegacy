@@ -109,10 +109,10 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
 
 void AudioDevice::Initialize()
 {
-    Log::Print(Log::EAudio, "Audio Initialization, listing available %i devices", SDL_GetNumAudioDevices(0));
+    Log::Info("Audio Initialization, listing available %i devices", SDL_GetNumAudioDevices(0));
     for (int i = 0; i < SDL_GetNumAudioDevices(0); i++)
     {
-        Log::Print(Log::EAudio, "   - Device %i - %s", i,  SDL_GetAudioDeviceName(i, 0));
+        Log::Info("   - Device %i - %s", i,  SDL_GetAudioDeviceName(i, 0));
     }
 
     SDL_AudioSpec desiredWaveSpec, gotWaveSpec;
@@ -125,11 +125,11 @@ void AudioDevice::Initialize()
     device = SDL_OpenAudioDevice(SDL_GetAudioDeviceName(0, 0), 0, &desiredWaveSpec, &gotWaveSpec, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
     if (device != 0)
     {
-        Log::Print(Log::EAudio, "Successfully opened audio device - %s",  SDL_GetAudioDeviceName(0, 0));
+        Log::Info("Successfully opened audio device - %s",  SDL_GetAudioDeviceName(0, 0));
     }
     else
     {
-        Log::Print(Log::EAudio, "Failed to open audio device - %s",  SDL_GetAudioDeviceName(0, 0));        
+        Log::Info("Failed to open audio device - %s",  SDL_GetAudioDeviceName(0, 0));        
     }
 
     SDL_PauseAudioDevice(device, 0);
@@ -141,7 +141,7 @@ LoadedSoundPtr AudioDevice::LoadSound(const char* fileName)
 
     if (SDL_LoadWAV(fileName, &(newSound->spec), &(newSound->buffer), &(newSound->length)) == nullptr)
     {
-        Log::Print(Log::EErr, "%s", SDL_GetError());
+        Log::Warn("%s", SDL_GetError());
     }
 
     if (newSound->spec.channels == 1) // doubling our actual buffer length since we reuse the samples for stereo

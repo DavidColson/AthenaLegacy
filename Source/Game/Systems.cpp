@@ -46,7 +46,7 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 
 void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 {
-	Log::Print(Log::EMsg, "Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), scene.GetEntityName(bullet).c_str(), GetEntityIndex(asteroid), scene.GetEntityName(asteroid).c_str());
+	Log::Info("Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), scene.GetEntityName(bullet).c_str(), GetEntityIndex(asteroid), scene.GetEntityName(asteroid).c_str());
 
 	// Do scoring for the player
 	EntityID scoreEnt = scene.Get<CPlayerUI>(PLAYER_ID)->currentScoreEntity;
@@ -113,7 +113,7 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	scene.DestroyEntity(pPlayerControl->lifeEntities[pPlayerControl->lives]);
 	AudioDevice::PauseSound(pPlayerControl->enginePlayingSound);
 
-	Log::Print(Log::EMsg, "Player died");
+	Log::Info("Player died");
 	
 	if (pPlayerControl->lives <= 0)
 	{
@@ -241,7 +241,7 @@ void AsteroidSpawning(Scene& scene, float deltaTime)
 
 		if (scene.Get<CVisibility>(PLAYER_ID)->visible == false)
 			continue;
-			
+
 		spawner.timer -= deltaTime;
 
 		if (spawner.timer <= 0.0f)

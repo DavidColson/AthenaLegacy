@@ -5,23 +5,31 @@
 #include <EASTL/fixed_string.h>
 #include <string>
 
-typedef eastl::fixed_string<char, 1024, false> Fixed1024String;
-typedef eastl::ring_buffer<Fixed1024String, eastl::vector<Fixed1024String>> StringHistoryBuffer;
-
 namespace Log
 {
-	enum LogType
+	typedef eastl::fixed_string<char, 1024> LogStringStorage;
+	
+	enum LogLevel
 	{
-		EMsg,
+		ECrit,
 		EWarn,
-		EErr,
-    	EGraphics,
-    	EAudio,
+		EInfo,
+		EDebug
 	};
 
-	void Print(LogType type, const char* text, ...);
+	struct LogEntry
+	{
+		LogLevel level;
+		LogStringStorage message;
+	};
 
-	void PrintNoNewLine(const char* text, ...);
+	typedef eastl::ring_buffer<LogEntry, eastl::vector<LogEntry>> StringHistoryBuffer;
+
+	void SetLogLevel(LogLevel level);
+	void Crit(const char* text, ...);
+	void Warn(const char* text, ...);
+	void Info(const char* text, ...);
+	void Debug(const char* text, ...);
 
 	const StringHistoryBuffer&  GetLogHistory();
 }

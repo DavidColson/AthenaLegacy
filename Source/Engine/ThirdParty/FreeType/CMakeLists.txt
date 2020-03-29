@@ -52,7 +52,6 @@ set(BASE_SRCS
 )
 
 
-# Hello
 add_library(freetype
   ${PUBLIC_HEADERS}
   ${PUBLIC_CONFIG_HEADERS}

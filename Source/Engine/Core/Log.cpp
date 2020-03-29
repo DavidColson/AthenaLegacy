@@ -5,66 +5,88 @@
 #include <stdio.h>
 
 FILE* pFile{ nullptr };
-StringHistoryBuffer logHistory(100, eastl::allocator("Log History"));
+Log::StringHistoryBuffer logHistory(100, eastl::allocator("Log History"));
+Log::LogLevel globalLevel{ Log::EDebug };
 
-void Log::Print(LogType type, const char* text, ...)
+namespace Log
 {
-	if (!logHistory.validate())
-		return;
-
-	logHistory.push_back();
-
-	const int n = 1024;
-	char buf[n];
-	va_list args;
-	va_start(args, text);
-	vsnprintf(buf, n, text, args);
-	buf[n - 1] = 0;
-	va_end(args);
-
-	if (pFile == nullptr)
-		fopen_s(&pFile, "engine.log", "w");
-
-	Fixed1024String& message = logHistory.back();
-	switch (type)
+	void PushLogMessage(LogLevel level, LogStringStorage& message)
 	{
-	case EMsg: message = "[MSG] "; break;
-	case EWarn: message = "[WARN] "; break;
-	case EErr: message = "[ERR] "; break;
-	case EGraphics: message = "[GFXDEVICE] "; break;
-	case EAudio: message = "[AUDIO] "; break;
-	default: break;
-	}
+		if (level > globalLevel)
+			return;
 
-	message += buf;
+		if (pFile == nullptr)
+			fopen_s(&pFile, "engine.log", "w");
+		fprintf(pFile, message.c_str());
+		fflush(pFile);
+
+		OutputDebugString(message.c_str());
+
+		if (!logHistory.validate())
+			return;
+
+		logHistory.push_back();
+		LogEntry& entry = logHistory.back();
+
+		entry.level = level;
+		entry.message = message;
+	}
+}
+
+void Log::SetLogLevel(LogLevel level)
+{
+	globalLevel = level;
+}
+
+void Log::Crit(const char* text, ...)
+{
+	LogStringStorage message = "[CRITICAL] ";
+	va_list arguments;
+	va_start(arguments, text);
+	message.append_sprintf_va_list(text, arguments);
+	va_end(arguments);
 	message += "\n";
 
-	fprintf(pFile, message.c_str());
-	if (type != LogType::EGraphics)
-		OutputDebugString(message.c_str());
+	PushLogMessage(LogLevel::ECrit, message);
 }
 
-void Log::PrintNoNewLine(const char* text, ...)
+void Log::Warn(const char* text, ...)
 {
-	const int n = 1024;
-	char buf[n];
-	va_list args;
-	va_start(args, text);
-	vsnprintf(buf, n, text, args);
-	buf[n - 1] = 0;
-	va_end(args);
+	LogStringStorage message = "[WARN] ";
+	va_list arguments;
+	va_start(arguments, text);
+	message.append_sprintf_va_list(text, arguments);
+	va_end(arguments);
+	message += "\n";
 
-	if (pFile == nullptr)
-		fopen_s(&pFile, "engine.log", "w");
-
-	eastl::string message;
-	message += buf;
-
-	fprintf(pFile, message.c_str());
-	OutputDebugString(message.c_str());
+	PushLogMessage(LogLevel::EWarn, message);
 }
 
-const StringHistoryBuffer& Log::GetLogHistory()
+void Log::Info(const char* text, ...)
+{
+	LogStringStorage message = "[INFO] ";
+	va_list arguments;
+	va_start(arguments, text);
+	message.append_sprintf_va_list(text, arguments);
+	va_end(arguments);
+	message += "\n";
+
+	PushLogMessage(LogLevel::EInfo, message);
+}
+
+void Log::Debug(const char* text, ...)
+{
+	LogStringStorage message = "[DEBUG] ";
+	va_list arguments;
+	va_start(arguments, text);
+	message.append_sprintf_va_list(text, arguments);
+	va_end(arguments);
+	message += "\n";
+
+	PushLogMessage(LogLevel::EDebug, message);
+}
+
+const Log::StringHistoryBuffer& Log::GetLogHistory()
 {
 	return logHistory;
 }

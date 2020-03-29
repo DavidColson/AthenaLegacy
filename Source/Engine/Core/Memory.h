@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "Log.h"
 
 // EASTL expects us to define these, see allocator.h line 194

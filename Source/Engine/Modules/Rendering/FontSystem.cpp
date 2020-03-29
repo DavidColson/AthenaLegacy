@@ -38,7 +38,7 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 		FT_Error err = FT_New_Face(freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &face);
 		if (err)
 		{
-			Log::Print(Log::EMsg, "FreeType Error: %s", FT_Error_String(err));
+			Log::Warn("FreeType Error: %s", FT_Error_String(err));
 		}
 		startedFreeType = true;
 	}
