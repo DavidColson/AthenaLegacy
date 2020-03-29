@@ -36,6 +36,8 @@ Explore the code and read the comments. Hopefully if you want to work on this li
  - When designing systems, it must be considered how they're used before writing them
  - Be explicit. Hiding things is asking for unseen complexity.
  - Design with performance in mind (DOD etc), but allow for fast iterations
+ 
+ We essentially use the same practices and design principles as Godot. It has an excellent document on how to program using these ideas which you [can read here](https://docs.godotengine.org/en/stable/community/contributing/best_practices_for_engine_contributors.html)
 
  # Compiling
 
