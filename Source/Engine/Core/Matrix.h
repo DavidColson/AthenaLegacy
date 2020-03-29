@@ -205,9 +205,9 @@ struct Matrix
 		return vec;
 	}
 
-	inline std::string ToString() const 
+	inline eastl::string ToString() const 
 	{
-		return StringFormat("{ %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f }", 
+		return eastl::string().sprintf("{ %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f }", 
 			m[0][0], m[0][1], m[0][2], m[0][3],
 			m[1][0], m[1][1], m[1][2], m[1][3],
 			m[2][0], m[2][1], m[2][2], m[2][3],
@@ -232,19 +232,19 @@ struct Matrix
 
 		Matrix rx;
 		rx.m[0][0] = 1.0f; rx.m[0][1] = 0.0f;	rx.m[0][2] = 0.0f;		rx.m[0][3] = 0.0f;
-		rx.m[1][0] = 0.0f; rx.m[1][1] = cos(x); rx.m[1][2] = -sin(x);	rx.m[1][3] = 0.0f;
-		rx.m[2][0] = 0.0f; rx.m[2][1] = sin(x); rx.m[2][2] = cos(x);	rx.m[2][3] = 0.0f;
+		rx.m[1][0] = 0.0f; rx.m[1][1] = cosf(x); rx.m[1][2] = -sinf(x);	rx.m[1][3] = 0.0f;
+		rx.m[2][0] = 0.0f; rx.m[2][1] = sinf(x); rx.m[2][2] = cosf(x);	rx.m[2][3] = 0.0f;
 		rx.m[3][0] = 0.0f; rx.m[3][1] = 0.0f;	rx.m[3][2] = 0.0f;		rx.m[3][3] = 1.0f;
 
 		Matrix ry;
-		ry.m[0][0] = cos(y);	ry.m[0][1] = 0.0f; ry.m[0][2] = -sin(y);	ry.m[0][3] = 0.0f;
+		ry.m[0][0] = cosf(y);	ry.m[0][1] = 0.0f; ry.m[0][2] = -sinf(y);	ry.m[0][3] = 0.0f;
 		ry.m[1][0] = 0.0f;		ry.m[1][1] = 1.0f; ry.m[1][2] = 0.0f;		ry.m[1][3] = 0.0f;
-		ry.m[2][0] = sin(y);	ry.m[2][1] = 0.0f; ry.m[2][2] = cos(y);		ry.m[2][3] = 0.0f;
+		ry.m[2][0] = sinf(y);	ry.m[2][1] = 0.0f; ry.m[2][2] = cosf(y);		ry.m[2][3] = 0.0f;
 		ry.m[3][0] = 0.0f;		ry.m[3][1] = 0.0f; ry.m[3][2] = 0.0f;		ry.m[3][3] = 1.0f;
 
 		Matrix rz;
-		rz.m[0][0] = cos(z);	rz.m[0][1] = -sin(z);	rz.m[0][2] = 0.0f; rz.m[0][3] = 0.0f;
-		rz.m[1][0] = sin(z);	rz.m[1][1] = cos(z);	rz.m[1][2] = 0.0f; rz.m[1][3] = 0.0f;
+		rz.m[0][0] = cosf(z);	rz.m[0][1] = -sinf(z);	rz.m[0][2] = 0.0f; rz.m[0][3] = 0.0f;
+		rz.m[1][0] = sinf(z);	rz.m[1][1] = cosf(z);	rz.m[1][2] = 0.0f; rz.m[1][3] = 0.0f;
 		rz.m[2][0] = 0.0f;		rz.m[2][1] = 0.0f;		rz.m[2][2] = 1.0f; rz.m[2][3] = 0.0f;
 		rz.m[3][0] = 0.0f;		rz.m[3][1] = 0.0f;		rz.m[3][2] = 0.0f; rz.m[3][3] = 1.0f;
 

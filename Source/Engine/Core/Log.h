@@ -3,7 +3,6 @@
 #include <EASTL/vector.h>
 #include <EASTL/bonus/ring_buffer.h>
 #include <EASTL/fixed_string.h>
-#include <string>
 
 namespace Log
 {

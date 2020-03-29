@@ -1,8 +1,5 @@
 #pragma once
 
-#include <SDL.h>
-#include <vector>
-
 #include "Log.h"
 
 namespace Profiler
@@ -27,18 +24,8 @@ namespace Profiler
 
 struct AutoProfile
 {
-  AutoProfile(const char* _name)
-  {
-    name = _name;
-    start = SDL_GetPerformanceCounter();
-  }
-
-  ~AutoProfile()
-  {
-    double duration = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-    Profiler::PushProfile(name, duration);
-  }
-
+  AutoProfile(const char* _name);
+  ~AutoProfile();
   const char *name;
-  Uint64 start;
+  uint64_t start;
 };

@@ -35,9 +35,9 @@ namespace DebugDraw
 
 struct CDebugDrawingState
 {
-	std::vector<DebugDraw::DrawCall> drawQueue;
-	std::vector<DebugDraw::DebugVertex> vertexList;
-	std::vector<int> indexList;
+	eastl::vector<DebugDraw::DrawCall> drawQueue;
+	eastl::vector<DebugDraw::DebugVertex> vertexList;
+	eastl::vector<int> indexList;
 
 	ProgramHandle debugShaderProgram;
 	VertexBufferHandle vertexBuffer;

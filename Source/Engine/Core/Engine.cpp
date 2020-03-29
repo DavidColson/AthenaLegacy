@@ -1,9 +1,6 @@
 #include "Engine.h"
 
 #include <SDL.h>
-#include <SDL_syswm.h>
-#include <comdef.h>
-#include <vector>
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
 #include <Imgui/examples/imgui_impl_dx11.h>

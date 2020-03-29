@@ -16,8 +16,7 @@
 #include <TypeSystem.h>
 #include <AudioDevice.h>
 
-#include <functional>
-#include <time.h>
+#include <SDL.h>
 
 struct Component
 {

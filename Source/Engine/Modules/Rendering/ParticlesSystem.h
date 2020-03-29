@@ -5,6 +5,7 @@
 #include "GraphicsDevice.h"
 #include "Log.h"
 #include "Scene.h"
+#include <EASTL/unique_ptr.h>
 
 #define MAX_PARTICLES_PER_EMITTER 1000
 
@@ -50,7 +51,7 @@ struct ParticlePool
 	}
 
 	Particle pPool[MAX_PARTICLES_PER_EMITTER];
-	std::vector<Particle*> deadParticles;
+	eastl::vector<Particle*> deadParticles;
 	size_t currentMaxParticleIndex{ 0 };
 };
 
@@ -73,7 +74,7 @@ struct CParticleEmitter
   	VertexBufferHandle instanceBuffer;
 	size_t instanceBufferSize{ 0 };
 
-	std::unique_ptr<ParticlePool> particlePool;
+	eastl::unique_ptr<ParticlePool> particlePool;
 
 	REFLECT()
 };

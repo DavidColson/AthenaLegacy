@@ -1,17 +1,15 @@
 #pragma once
 
-#include <bitset>
-
-#include <SDL.h> // remove this and replace with custom keycodes
+#include <EASTL/bitset.h>
 
 struct Scene;
 
 struct InputState
 {
 #define NKEYS 512
-	std::bitset<NKEYS> keyDowns;
-	std::bitset<NKEYS> keyUps;
-	std::bitset<NKEYS> keyStates;
+	eastl::bitset<NKEYS> keyDowns;
+	eastl::bitset<NKEYS> keyUps;
+	eastl::bitset<NKEYS> keyStates;
 };
 
 namespace Input

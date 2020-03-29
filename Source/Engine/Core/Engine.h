@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SDL.h"
-
 struct Scene;
 
 #define ENGINE_SINGLETON 0

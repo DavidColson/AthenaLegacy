@@ -8,10 +8,10 @@
 #include "Profiler.h"
 #include "Engine.h"
 
-#include <vector>
-#include <string>
 #include <Imgui/imgui.h>
 #include <Imgui/misc/cpp/imgui_stdlib.h>
+
+#include <SDL_scancode.h>
 
 namespace {
 	bool showEditor = true;
@@ -101,7 +101,7 @@ void ShowEntityInspector(Scene& scene)
 	for (int i = 0; i < MAX_COMPONENTS; i++)
 	{
 		// For each component ID, check the bitmask, if no, continue, if yes, save the ID and proceed to access that components data
-		std::bitset<MAX_COMPONENTS> mask;
+		eastl::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
 		if (mask == (scene.entities[GetEntityIndex(selectedEntity)].mask & mask))
@@ -147,9 +147,10 @@ void ShowEntityInspector(Scene& scene)
 						bool* boolean = member.Get<bool>(pComponentData);
 						ImGui::Checkbox(member.name, boolean);
 					}
-					else if (member.IsType<std::string>())
+					else if (member.IsType<eastl::string>())
 					{
-						ImGui::InputText(member.name, member.Get<std::string>(pComponentData));
+						eastl::string str = *(member.Get<eastl::string>(pComponentData));
+						ImGui::InputText(member.name, str.data(), str.size());
 					}
 					else if (member.IsType<EntityID>())
 					{
@@ -217,7 +218,9 @@ void ShowFrameStats()
 		// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
 		// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
 		double inMs = pFrameData[i].time * 1000.0;
-		ImGui::Text(StringFormat("%s - %fms/frame", pFrameData[i].name, inMs).c_str());
+		eastl::string str;
+		str.sprintf("%s - %fms/frame", pFrameData[i].name, inMs);
+		ImGui::Text(str.c_str());
 	}
 
 	ImGui::End();

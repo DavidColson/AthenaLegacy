@@ -1,5 +1,6 @@
-
 #include "Profiler.h"
+
+#include <SDL_timer.h>
 
 namespace {
   Profiler::ScopeData singleFrameData[100]; // cleared at the end of every frame
@@ -22,4 +23,16 @@ void Profiler::GetFrameData(Profiler::ScopeData** pOutData, int& outNumElements)
 {
   *pOutData = singleFrameData;
   outNumElements = inUseSlots;
+}
+
+AutoProfile::AutoProfile(const char* _name)
+{
+  name = _name;
+  start = SDL_GetPerformanceCounter();
+}
+
+AutoProfile::~AutoProfile()
+{
+  double duration = double(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+  Profiler::PushProfile(name, duration);
 }

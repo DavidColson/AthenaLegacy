@@ -1,19 +1,25 @@
 #include "ErrorHandling.h"
 
-#include <string>
-#include <memory>
-#include <cstdlib>
-#include <SDL.h>
+#include <SDL_messagebox.h>
+#include <EASTL/string.h>
 
 #include "Log.h"
 
-template<typename ... Args>
-std::string string_format(const std::string& format, Args ... args)
+void Assertion(const char* errorMsg, const char* file, int line)
 {
-	size_t size = snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
-	std::unique_ptr<char[]> buf(new char[size]);
-	snprintf(buf.get(), size, format.c_str(), args ...);
-	return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
+	switch (ShowAssertDialog(errorMsg, file, line))
+	{
+	case 0:
+		_set_abort_behavior(0, _WRITE_ABORT_MSG);
+		abort();
+		break;
+	case 1:
+		__debugbreak();
+		break;
+	default:
+		break;
+	}
+	return;
 }
 
 int ShowAssertDialog(const char * errorMsg, const char * file, int line)
@@ -24,7 +30,8 @@ int ShowAssertDialog(const char * errorMsg, const char * file, int line)
 	{ 0, 2, "Continue" },
 	};
 
-	std::string message = string_format("Assertion Failed\n\n%s\n\nFile: %s\nLine %i", errorMsg, file, line);
+	eastl::string message;
+	message.sprintf("Assertion Failed\n\n%s\n\nFile: %s\nLine %i", errorMsg, file, line);
 
 	Log::Crit("%s", message.c_str());
 

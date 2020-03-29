@@ -1,8 +1,7 @@
 #pragma once
 
-#include <vector>
-#include <unordered_map>
-#include <map>
+#include <EASTL/string.h>
+#include <EASTL/map.h>
 
 // Actual Type data
 
@@ -42,20 +41,20 @@ struct TypeData
 {
 	const char* name;
 	size_t size;
-	std::map<std::string, Member> members;
+	eastl::map<eastl::string, Member> members;
 
 	TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 }
 	{
 		initFunc(this);
 	}
 	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
-	TypeData(const char* _name, size_t _size, const std::initializer_list<std::pair<const std::string, Member>>& init) : name(_name), size(_size), members( init ) {}
+	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<eastl::string, Member>::value_type>& init) : name(_name), size(_size), members( init ) {}
 
 	Member& GetMember(const char* _name);
 
 	struct MemberIterator
 	{
-		MemberIterator(std::map<std::string, Member>::iterator _it) : it(_it) {}
+		MemberIterator(eastl::map<eastl::string, Member>::iterator _it) : it(_it) {}
 
 		Member& operator*() const 
 		{ 
@@ -77,7 +76,7 @@ struct TypeData
 			return *this;
 		}
 
-		std::map<std::string, Member>::iterator it;
+		eastl::map<eastl::string, Member>::iterator it;
 	};
 
 	const MemberIterator begin() 
@@ -106,7 +105,7 @@ TypeData& getPrimitiveTypeData<float>();
 template <>
 TypeData& getPrimitiveTypeData<double>();
 template <>
-TypeData& getPrimitiveTypeData<std::string>();
+TypeData& getPrimitiveTypeData<eastl::string>();
 template <>
 TypeData& getPrimitiveTypeData<bool>();
 
@@ -117,17 +116,17 @@ struct DefaultTypeResolver
 	// If it does contain typeData, this will be instantiated and we're all good.
 	// See here for deep explanation: https://stackoverflow.com/questions/1005476/how-to-detect-whether-there-is-a-specific-member-variable-in-class
 	template<typename T, typename = int>
-	struct IsReflected : std::false_type {};
+	struct IsReflected : eastl::false_type {};
 	template<typename T>
-	struct IsReflected<T, decltype((void) T::typeData, 0)> : std::true_type {};
+	struct IsReflected<T, decltype((void) T::typeData, 0)> : eastl::true_type {};
 
 	// We're switching template versions depending on whether T has been internally reflected (i.e. has an typeData member)
-	template<typename T, typename std::enable_if<IsReflected<T>::value, int>::type = 0>
+	template<typename T, typename eastl::enable_if<IsReflected<T>::value, int>::type = 0>
 	static TypeData& Get()
 	{
 		return T::typeData;
 	}
-	template<typename T, typename std::enable_if<!IsReflected<T>::value, int>::type = 0>
+	template<typename T, typename eastl::enable_if<!IsReflected<T>::value, int>::type = 0>
 	static TypeData& Get()
 	{
 		return getPrimitiveTypeData<T>();
@@ -148,7 +147,7 @@ namespace TypeDatabase
 		}
 		static Data* pInstance;
 
-		std::unordered_map<std::string, TypeData*> typeNames;
+		eastl::map<eastl::string, TypeData*> typeNames;
 	};
 
 	TypeData& GetFromString(const char* name);

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <SDL.h>
 #include <EASTL/shared_ptr.h>
 
 #include "Log.h"
+
+#include <SDL_audio.h>
 
 typedef unsigned long long SoundID;
 typedef unsigned long long LoadedSoundHandle;

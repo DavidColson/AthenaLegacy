@@ -1,8 +1,7 @@
 #pragma once
 
-#include <array>
-#include <vector>
-
+#include <EASTL/vector.h>
+#include <EASTL/array.h>
 #include <EASTL/bitset.h>
 #include <EASTL/fixed_vector.h>
 
@@ -181,7 +180,7 @@ struct BlendingInfo
 	Blend destination{ Blend::Zero };
 	Blend sourceAlpha{ Blend::One };
 	Blend destinationAlpha{ Blend::Zero };
-	std::array<float, 4> blendFactor;
+	eastl::array<float, 4> blendFactor;
 };
 
 namespace GfxDevice
@@ -200,7 +199,7 @@ namespace GfxDevice
 
 	void SetViewport(float x, float y, float width, float height);
 
-	void ClearBackBuffer(std::array<float, 4> color);
+	void ClearBackBuffer(eastl::array<float, 4> color);
 
 	void SetTopologyType(TopologyType type);
 
@@ -228,9 +227,9 @@ namespace GfxDevice
 
 	// Vertex Buffers
 
-	VertexBufferHandle CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data, const std::string& debugName = "");
+	VertexBufferHandle CreateVertexBuffer(size_t numElements, size_t _elementSize, void* data, const eastl::string& debugName = "");
 
-	VertexBufferHandle CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const std::string& debugName = "");
+	VertexBufferHandle CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const eastl::string& debugName = "");
 
 	void UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize);
 
@@ -240,9 +239,9 @@ namespace GfxDevice
 
 	// Index Buffers
 
-	IndexBufferHandle CreateIndexBuffer(size_t numElements, void* data, const std::string& debugName = "");
+	IndexBufferHandle CreateIndexBuffer(size_t numElements, void* data, const eastl::string& debugName = "");
 
-	IndexBufferHandle CreateDynamicIndexBuffer(size_t numElements, const std::string& debugName = "");
+	IndexBufferHandle CreateDynamicIndexBuffer(size_t numElements, const eastl::string& debugName = "");
 
 	void UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize);
 
@@ -254,21 +253,21 @@ namespace GfxDevice
 
 	// Shaders And Programs
 
-	VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName = "");
+	VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const eastl::vector<VertexInputElement>& inputLayout, const eastl::string& debugName = "");
 
-	VertexShaderHandle CreateVertexShader(std::string& fileContents, const char* entry, const std::vector<VertexInputElement>& inputLayout, const std::string& debugName = "");
+	VertexShaderHandle CreateVertexShader(eastl::string& fileContents, const char* entry, const eastl::vector<VertexInputElement>& inputLayout, const eastl::string& debugName = "");
 
 	void FreeVertexShader(VertexShaderHandle handle);
 
-	PixelShaderHandle CreatePixelShader(const wchar_t* fileName, const char* entry, const std::string& debugName = "");
+	PixelShaderHandle CreatePixelShader(const wchar_t* fileName, const char* entry, const eastl::string& debugName = "");
 
-	PixelShaderHandle CreatePixelShader(std::string& fileContents, const char* entry, const std::string& debugName = "");
+	PixelShaderHandle CreatePixelShader(eastl::string& fileContents, const char* entry, const eastl::string& debugName = "");
 
 	void FreePixelShader(PixelShaderHandle handle);
 
-	GeometryShaderHandle CreateGeometryShader(const wchar_t* fileName, const char* entry, const std::string& debugName = "");
+	GeometryShaderHandle CreateGeometryShader(const wchar_t* fileName, const char* entry, const eastl::string& debugName = "");
 
-	GeometryShaderHandle CreateGeometryShader(std::string& fileContents, const char* entry, const std::string& debugName = "");
+	GeometryShaderHandle CreateGeometryShader(eastl::string& fileContents, const char* entry, const eastl::string& debugName = "");
 
 	void FreeGeometryShader(GeometryShaderHandle handle);
 
@@ -282,13 +281,13 @@ namespace GfxDevice
 
 	// Render Targets
 
-	RenderTargetHandle CreateRenderTarget(float width, float height, const std::string& debugName = "");
+	RenderTargetHandle CreateRenderTarget(float width, float height, const eastl::string& debugName = "");
 
 	void BindRenderTarget(RenderTargetHandle handle);
 
 	void UnbindRenderTarget(RenderTargetHandle handle);
 
-	void ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4> color, bool clearDepth, bool clearStencil);
+	void ClearRenderTarget(RenderTargetHandle handle, eastl::array<float, 4> color, bool clearDepth, bool clearStencil);
 
 	TextureHandle GetTexture(RenderTargetHandle handle);
 
@@ -296,7 +295,7 @@ namespace GfxDevice
 
 	// Samplers
 
-	SamplerHandle CreateSampler(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap, const std::string& debugName = "");
+	SamplerHandle CreateSampler(Filter filter = Filter::Linear, WrapMode wrapMode = WrapMode::Wrap, const eastl::string& debugName = "");
 
 	void BindSampler(SamplerHandle handle, ShaderType shader, int slot);
 
@@ -304,7 +303,7 @@ namespace GfxDevice
 
 	// Textures
 
-	TextureHandle CreateTexture(int width, int height, TextureFormat format, void* data, const std::string& debugName = "");
+	TextureHandle CreateTexture(int width, int height, TextureFormat format, void* data, const eastl::string& debugName = "");
 
 	void BindTexture(TextureHandle handle, ShaderType shader, int slot);
 
@@ -315,7 +314,7 @@ namespace GfxDevice
 
 	// Shader Constants
 
-	ConstBufferHandle CreateConstantBuffer(uint32_t bufferSize, const std::string& debugName = "");
+	ConstBufferHandle CreateConstantBuffer(uint32_t bufferSize, const eastl::string& debugName = "");
 
 	void BindConstantBuffer(ConstBufferHandle handle, const void* bufferData, ShaderType shader, int slot);
 
@@ -325,11 +324,11 @@ namespace GfxDevice
 
 	struct AutoEvent
 	{
-		AutoEvent(std::string label);
+		AutoEvent(eastl::string label);
 		~AutoEvent();
 	};
 
-	void SetDebugMarker(std::string label);
+	void SetDebugMarker(eastl::string label);
 }
 
 #define GFX_SCOPED_EVENT(label) GfxDevice::AutoEvent e(label)

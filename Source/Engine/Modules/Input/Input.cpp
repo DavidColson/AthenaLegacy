@@ -2,9 +2,12 @@
 #include "Input.h"
 #include "Engine.h"
 
-#include <windows.h>
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
+
+#include <SDL_events.h>
+#include <SDL_keyboard.h>
+#include <SDL_scancode.h>
 
 InputState *pInput;
 
@@ -32,7 +35,7 @@ void Input::OnFrame(Scene& /* scene */, float /* deltaTime */)
 {
 	// TODO: This should be storing input state in a singleton component
 
-	std::bitset<NKEYS> prevKeyStates = pInput->keyStates;
+	eastl::bitset<NKEYS> prevKeyStates = pInput->keyStates;
 
 	// Copy the SDL keystate into our own bitset
 	const Uint8 *pSdlKeyState = SDL_GetKeyboardState(nullptr);
@@ -42,7 +45,7 @@ void Input::OnFrame(Scene& /* scene */, float /* deltaTime */)
 	}
 
 	// exclusive or, if state changed, then keychanges bit will be 1
-	std::bitset<NKEYS> keyChanges = pInput->keyStates ^ prevKeyStates;
+	eastl::bitset<NKEYS> keyChanges = pInput->keyStates ^ prevKeyStates;
 
 	// and, if key is down and it changed this frame, key went down
 	pInput->keyDowns = keyChanges & pInput->keyStates;

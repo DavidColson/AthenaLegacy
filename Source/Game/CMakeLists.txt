@@ -21,8 +21,13 @@ target_sources(AsteroidsGame
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
+target_precompile_headers(Engine PRIVATE "../Engine/Core/PreCompiledHeader.h")
+
 if(MSVC)
   target_compile_options(AsteroidsGame PRIVATE /W4 /WX)
 else()
   target_compile_options(AsteroidsGame PRIVATE -Wall -Werror)
 endif()
+
+# target_link_options(AsteroidsGame PRIVATE /time+)
+# target_compile_options(AsteroidsGame PRIVATE /Bt+ /d2cgsummary)

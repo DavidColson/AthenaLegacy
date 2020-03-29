@@ -1,7 +1,7 @@
-#include <string>
-
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
+
+#include <EASTL/string.h>
 
 Member& TypeData::GetMember(const char* _name)
 {
@@ -66,13 +66,13 @@ TypeData& getPrimitiveTypeData<double>()
 
 struct TypeData_String : TypeData
 {
-  TypeData_String() : TypeData{"std::string", sizeof(std::string)} 
+  TypeData_String() : TypeData{"eastl::string", sizeof(eastl::string)} 
   {
-    TypeDatabase::Data::Get().typeNames.emplace("std::string", this);
+    TypeDatabase::Data::Get().typeNames.emplace("eastl::string", this);
   }
 };
 template <>
-TypeData& getPrimitiveTypeData<std::string>()
+TypeData& getPrimitiveTypeData<eastl::string>()
 {
   static TypeData_String typeData;
   return typeData;

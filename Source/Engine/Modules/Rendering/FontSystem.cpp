@@ -43,7 +43,7 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 		startedFreeType = true;
 	}
 
-	std::string fontShaderSrc = "\
+	eastl::string fontShaderSrc = "\
 	cbuffer cbTransform\
 	{\
 		float4x4 projection;\
@@ -71,7 +71,7 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 		return textureColor;\
 	}";
 
-	std::vector<VertexInputElement> layout;
+	eastl::vector<VertexInputElement> layout;
 	layout.push_back({"POSITION", AttributeType::Float3});
 	layout.push_back({"COLOR", AttributeType::Float3});
 	layout.push_back({"TEXCOORD", AttributeType::Float2});

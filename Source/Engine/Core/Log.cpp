@@ -1,8 +1,6 @@
 #include "Log.h"
 
 #include <Windows.h>
-#include <string>
-#include <stdio.h>
 
 FILE* pFile{ nullptr };
 Log::StringHistoryBuffer logHistory(100, eastl::allocator("Log History"));
@@ -15,6 +13,7 @@ namespace Log
 		if (level > globalLevel)
 			return;
 
+		// TODO: Use SDL File IO here
 		if (pFile == nullptr)
 			fopen_s(&pFile, "engine.log", "w");
 		fprintf(pFile, message.c_str());

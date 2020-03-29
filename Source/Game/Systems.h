@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include <Scene.h>
 #include <Vec2.h>
 #include <EASTL/fixed_vector.h>

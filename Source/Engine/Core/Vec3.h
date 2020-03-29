@@ -1,18 +1,14 @@
 #pragma once
 
-#include "Utility.h"
+#include <EASTL/string.h>
 #include "ErrorHandling.h"
 #include "TypeSystem.h"
-//#include "Vec2.h"
-//#include "Vec4.h"
 
 template<typename T>
 struct Vec4;
 
 template<typename T>
 struct Vec2;
-
-#include <string>
 
 template<typename T>
 struct Vec3
@@ -268,7 +264,7 @@ struct Vec3
 	**/
 	inline T GetLength() const
 	{
-		return sqrt(x * x + y * y + z * z);
+		return sqrtf(x * x + y * y + z * z);
 	}
 
 	/**
@@ -310,9 +306,10 @@ struct Vec3
 	*
 	* @return The string
 	**/
-	inline std::string ToString() const
+	inline eastl::string ToString() const
 	{
-		return StringFormat("{ %.5f, %.5f, %.5f }", x, y, z);
+		eastl::string str;
+		return str.sprintf("{ %.5f, %.5f, %.5f }", x, y, z);
 	}
 
 	/**

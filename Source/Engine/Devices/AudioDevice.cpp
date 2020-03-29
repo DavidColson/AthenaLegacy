@@ -1,7 +1,6 @@
 #include "AudioDevice.h"
 
-#include <SDL.h>
-#include <vector>
+#include <SDL_audio.h>
 
 #include "Log.h"
 

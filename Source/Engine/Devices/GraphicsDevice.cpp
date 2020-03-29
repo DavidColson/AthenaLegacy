@@ -1,13 +1,10 @@
 #include "GraphicsDevice.h"
 
-#include <vector>
-#include <SDL.h>
+#include <SDL_video.h>
 #include <SDL_syswm.h>
 #include <D3DCompiler.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
-#include <d3d10.h>
-#include <stdio.h>
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
 #include <Imgui/examples/imgui_impl_dx11.h>
@@ -173,7 +170,7 @@ static const D3D11_BLEND blendLookup[12] =
 		D3D11_BLEND_BLEND_FACTOR,
 		D3D11_BLEND_INV_BLEND_FACTOR};
 
-void SetDebugName(ID3D11DeviceChild *child, const std::string &name)
+void SetDebugName(ID3D11DeviceChild *child, const eastl::string &name)
 {
 	if (child != nullptr && !name.empty())
 		child->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
@@ -373,7 +370,7 @@ void GfxDevice::SetViewport(float x, float y, float width, float height)
 
 // ***********************************************************************
 
-void GfxDevice::ClearBackBuffer(std::array<float, 4> color)
+void GfxDevice::ClearBackBuffer(eastl::array<float, 4> color)
 {
 	RenderTarget &renderTarget = pCtx->poolRenderTarget[pCtx->backBuffer.id];
 
@@ -534,7 +531,7 @@ bool ShaderCompileFromFile(const wchar_t *fileName, const char *entry, const cha
 
 // ***********************************************************************
 
-bool ShaderCompile(std::string &fileContents, const char *entry, const char *target, ID3DBlob **pOutBlob)
+bool ShaderCompile(eastl::string &fileContents, const char *entry, const char *target, ID3DBlob **pOutBlob)
 {
 	HRESULT hr;
 	ID3DBlob *pErrorBlob = nullptr;
@@ -592,7 +589,7 @@ void GfxDevice::SetTopologyType(TopologyType type)
 
 // ***********************************************************************
 
-TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void *data, const std::string &debugName)
+TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat format, void *data, const eastl::string &debugName)
 {
 	Texture texture;
 
@@ -692,7 +689,7 @@ void* GfxDevice::GetImGuiTextureID(TextureHandle handle)
 
 // ***********************************************************************
 
-RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const std::string &debugName)
+RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const eastl::string &debugName)
 {
 	RenderTarget renderTarget;
 
@@ -792,7 +789,7 @@ void GfxDevice::UnbindRenderTarget(RenderTargetHandle handle)
 
 // ***********************************************************************
 
-void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, std::array<float, 4> color, bool clearDepth, bool clearStencil)
+void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, eastl::array<float, 4> color, bool clearDepth, bool clearStencil)
 {
 	if (!IsValid(handle))
 		return;
@@ -838,7 +835,7 @@ void GfxDevice::FreeRenderTarget(RenderTargetHandle handle)
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void *data, const std::string &debugName)
+IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void *data, const eastl::string &debugName)
 {
 	IndexBuffer indexBuffer;
 
@@ -868,7 +865,7 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void *data, c
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const std::string &debugName)
+IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const eastl::string &debugName)
 {
 	IndexBuffer indexBuffer;
 
@@ -950,9 +947,9 @@ void GfxDevice::FreeIndexBuffer(IndexBufferHandle handle)
 
 // ***********************************************************************
 
-std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<VertexInputElement> &layout)
+eastl::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const eastl::vector<VertexInputElement> &layout)
 {
-	std::vector<D3D11_INPUT_ELEMENT_DESC> d3d11Layout;
+	eastl::vector<D3D11_INPUT_ELEMENT_DESC> d3d11Layout;
 
 	for (const VertexInputElement &elem : layout)
 	{
@@ -980,11 +977,11 @@ std::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const std::vector<V
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const char *entry, const std::vector<VertexInputElement> &inputLayout, const std::string &debugName)
+VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const char *entry, const eastl::vector<VertexInputElement> &inputLayout, const eastl::string &debugName)
 {
 	VertexShader shader;
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
+	eastl::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
@@ -1004,11 +1001,11 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const 
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(std::string &fileContents, const char *entry, const std::vector<VertexInputElement> &inputLayout, const std::string &debugName)
+VertexShaderHandle GfxDevice::CreateVertexShader(eastl::string &fileContents, const char *entry, const eastl::vector<VertexInputElement> &inputLayout, const eastl::string &debugName)
 {
 	VertexShader shader;
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
+	eastl::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
@@ -1043,7 +1040,7 @@ void GfxDevice::FreeVertexShader(VertexShaderHandle handle)
 
 // ***********************************************************************
 
-PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t *fileName, const char *entry, const std::string &debugName)
+PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t *fileName, const char *entry, const eastl::string &debugName)
 {
 	PixelShader shader;
 
@@ -1063,7 +1060,7 @@ PixelShaderHandle GfxDevice::CreatePixelShader(const wchar_t *fileName, const ch
 
 // ***********************************************************************
 
-PixelShaderHandle GfxDevice::CreatePixelShader(std::string &fileContents, const char *entry, const std::string &debugName)
+PixelShaderHandle GfxDevice::CreatePixelShader(eastl::string &fileContents, const char *entry, const eastl::string &debugName)
 {
 	PixelShader shader;
 
@@ -1097,7 +1094,7 @@ void GfxDevice::FreePixelShader(PixelShaderHandle handle)
 
 // ***********************************************************************
 
-GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t *fileName, const char *entry, const std::string &debugName)
+GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t *fileName, const char *entry, const eastl::string &debugName)
 {
 	GeometryShader shader;
 
@@ -1117,7 +1114,7 @@ GeometryShaderHandle GfxDevice::CreateGeometryShader(const wchar_t *fileName, co
 
 // ***********************************************************************
 
-GeometryShaderHandle GfxDevice::CreateGeometryShader(std::string &fileContents, const char *entry, const std::string &debugName)
+GeometryShaderHandle GfxDevice::CreateGeometryShader(eastl::string &fileContents, const char *entry, const eastl::string &debugName)
 {
 	GeometryShader shader;
 
@@ -1224,7 +1221,7 @@ void GfxDevice::FreeProgram(ProgramHandle handle, bool freeBoundShaders)
 
 // ***********************************************************************
 
-SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const std::string &debugName)
+SamplerHandle GfxDevice::CreateSampler(Filter filter, WrapMode wrapMode, const eastl::string &debugName)
 {
 	Sampler sampler;
 
@@ -1315,7 +1312,7 @@ void GfxDevice::FreeSampler(SamplerHandle handle)
 
 // ***********************************************************************
 
-VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void *data, const std::string &debugName)
+VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _elementSize, void *data, const eastl::string &debugName)
 {
 	VertexBuffer vBufferData;
 
@@ -1345,7 +1342,7 @@ VertexBufferHandle GfxDevice::CreateVertexBuffer(size_t numElements, size_t _ele
 
 // ***********************************************************************
 
-VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const std::string &debugName)
+VertexBufferHandle GfxDevice::CreateDynamicVertexBuffer(size_t numElements, size_t _elementSize, const eastl::string &debugName)
 {
 	VertexBuffer vBufferData;
 
@@ -1396,11 +1393,11 @@ void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void *data,
 void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle *handles)
 {
 	// Improvement: good opportunity for single frame allocator, or stack allocation here
-	std::vector<ID3D11Buffer *> pBuffers;
+	eastl::vector<ID3D11Buffer *> pBuffers;
 	pBuffers.reserve(nBuffers);
-	std::vector<UINT> offsets;
+	eastl::vector<UINT> offsets;
 	offsets.reserve(nBuffers);
-	std::vector<UINT> strides;
+	eastl::vector<UINT> strides;
 	strides.reserve(nBuffers);
 
 	for (int i = 0; i < nBuffers; i++)
@@ -1432,7 +1429,7 @@ void GfxDevice::FreeVertexBuffer(VertexBufferHandle handle)
 
 // ***********************************************************************
 
-ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize, const std::string &debugName)
+ConstBufferHandle GfxDevice::CreateConstantBuffer(uint32_t bufferSize, const eastl::string &debugName)
 {
 	ConstantBuffer buffer;
 
@@ -1491,10 +1488,9 @@ void GfxDevice::FreeConstBuffer(ConstBufferHandle handle)
 
 // ***********************************************************************
 
-GfxDevice::AutoEvent::AutoEvent(std::string label)
+GfxDevice::AutoEvent::AutoEvent(eastl::string label)
 {
-	std::wstring wide(label.begin(), label.end());
-	pCtx->pUserDefinedAnnotation->BeginEvent(wide.c_str());
+	pCtx->pUserDefinedAnnotation->BeginEvent((wchar_t*)label.c_str());
 }
 
 // ***********************************************************************
@@ -1506,8 +1502,7 @@ GfxDevice::AutoEvent::~AutoEvent()
 
 // ***********************************************************************
 
-void GfxDevice::SetDebugMarker(std::string label)
+void GfxDevice::SetDebugMarker(eastl::string label)
 {
-	std::wstring wide(label.begin(), label.end());
-	pCtx->pUserDefinedAnnotation->SetMarker(wide.c_str());
+	pCtx->pUserDefinedAnnotation->SetMarker((wchar_t*)label.c_str());
 }

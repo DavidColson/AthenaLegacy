@@ -1,6 +1,7 @@
 #include "Rendering/PostProcessingSystem.h"
 
 #include "Profiler.h"
+#include <SDL_timer.h>
 
 REFLECT_BEGIN(CPostProcessing)
 REFLECT_END()
@@ -10,7 +11,7 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
     CPostProcessing& pp = *(scene.Get<CPostProcessing>(entity));
 	for (int i = 0; i < 2; ++i)
 	{
-		pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f, StringFormat("Blurred frame %i", i));
+		pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f, eastl::string().sprintf("Blurred frame %i", i));
 	}
 
 	// Create constant data buffers
@@ -18,7 +19,7 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 	pp.bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData), "Bloom shader data");
 
 	// Compile and create post processing shaders
-	std::vector<VertexInputElement> layout;
+	eastl::vector<VertexInputElement> layout;
 	layout.push_back({"POSITION", AttributeType::Float3});
 	layout.push_back({"COLOR", AttributeType::Float3});
 	layout.push_back({"TEXCOORD", AttributeType::Float2});
@@ -34,7 +35,7 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 	pp.bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
 
     // Vertex Buffer for fullscreen quad
-    std::vector<Vertex> quadVertices = {
+    eastl::vector<Vertex> quadVertices = {
         Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
         Vertex(Vec3f(-1.f, 1.f, 0.5f)),
         Vertex(Vec3f(1.f, -1.f, 0.5f)),

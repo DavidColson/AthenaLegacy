@@ -60,7 +60,7 @@ void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
 	state.drawQueue.reserve(256);
 	state.indexList.reserve(4096);
 
-    std::string shaderSrc = "\
+    eastl::string shaderSrc = "\
 	cbuffer cbTransform\
 	{\
 		float4x4 WVP;\
@@ -82,7 +82,7 @@ void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
 		return input.Col;\
 	}";
 
-	std::vector<VertexInputElement> layout;
+	eastl::vector<VertexInputElement> layout;
 	layout.push_back({"POSITION",AttributeType::Float2});
 	layout.push_back({"COLOR", AttributeType::Float3});
 

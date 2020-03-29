@@ -50,8 +50,8 @@ scene.Assign<Shape>(circle);
 #include "Vec3.h"
 #include "Engine.h"
 
-#include <bitset>
-#include <vector>
+#include <EASTL/bitset.h>
+#include <EASTL/vector.h>
 
 struct Scene;
 
@@ -60,7 +60,7 @@ typedef unsigned int EntityVersion;
 typedef unsigned long long EntityID;
 const int MAX_COMPONENTS = 25;
 const int MAX_ENTITIES = 128;
-typedef std::bitset<MAX_COMPONENTS> ComponentMask;
+typedef eastl::bitset<MAX_COMPONENTS> ComponentMask;
 typedef void (*ReactiveSystemFunc)(Scene&, EntityID);
 typedef void (*SystemFunc)(Scene&, float);
 
@@ -103,7 +103,7 @@ inline bool IsEntityValid(EntityID id)
 
 struct CName
 {
-	std::string name;
+	eastl::string name;
 
 	REFLECT()
 };
@@ -149,16 +149,9 @@ int GetId() // Move this whole function to the detail namespace
 // #TODO: Move this inside the scene struct, no one should need to touch this
 struct BaseComponentPool
 {
-	BaseComponentPool(size_t elementsize)
-	{
-		elementSize = elementsize;
-		pData = new char[elementSize * MAX_ENTITIES];
-	}
+	BaseComponentPool(size_t elementsize);
 
-	~BaseComponentPool()
-	{
-		delete[] pData;
-	}
+	~BaseComponentPool();
 
 	inline void* get(size_t index)
 	{
@@ -173,8 +166,8 @@ struct BaseComponentPool
 	TypeData* pTypeData{ nullptr };
 
 	// Systems that have requested to know when this component has been added or removed from an entity
-	std::vector<ReactiveSystemFunc> onAddedCallbacks;
-	std::vector<ReactiveSystemFunc> onRemovedCallbacks;
+	eastl::vector<ReactiveSystemFunc> onAddedCallbacks;
+	eastl::vector<ReactiveSystemFunc> onRemovedCallbacks;
 };
 
 template <typename T>
@@ -204,64 +197,14 @@ struct Scene
 		ComponentMask mask;
 	};
 
-	Scene()
-	{
-		Engine::NewSceneCreated(*this);
-	}
+	Scene();
 
-	~Scene()
-	{
-		for (EntityDesc& desc : entities)
-		{
-			DestroyEntity(desc.id);
-		}
-		for (BaseComponentPool* pPool : componentPools)
-		{
-			delete pPool;
-		}
-	}
+	~Scene();
 
 	// Creates an entity, simply makes a new id and mask
-	EntityID NewEntity(const char* name)// #TODO: Move implementation to cpp
-	{
-		nActiveEntities++;
- 		if (!freeEntities.empty())
-		{
-			EntityIndex newIndex = freeEntities.back();
-			freeEntities.pop_back();
-			entities[newIndex].id = CreateEntityId(newIndex, GetEntityVersion(entities[newIndex].id));
-			Assign<CName>(entities[newIndex].id)->name = name;
-			return entities[newIndex].id;
-		}
-		entities.push_back({ CreateEntityId(EntityIndex(entities.size()), 0), ComponentMask() });
-		Assign<CName>(entities.back().id)->name = name;
-		return entities.back().id;
-	}
+	EntityID NewEntity(const char* name);
 
-	void DestroyEntity(EntityID id)
-	{
-		if (!IsEntityValid(id))
-			return;
-
-		for (int i = 0; i < MAX_COMPONENTS; i++)
-		{
-			// For each component ID, check the bitmask, if no, continue, if yes, destroy the component
-			std::bitset<MAX_COMPONENTS> mask;
-			mask.set(i, true);
-			if (mask == (entities[GetEntityIndex(id)].mask & mask))
-			{
-				for (ReactiveSystemFunc func : componentPools[i]->onRemovedCallbacks)
-				{
-					func(*this, id);
-				}
-				componentPools[i]->destroy(GetEntityIndex(id));
-			}
-		}
-		entities[GetEntityIndex(id)].id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
-		entities[GetEntityIndex(id)].mask.reset(); // clear components
-		freeEntities.push_back(GetEntityIndex(id));
-		nActiveEntities--;
-	}
+	void DestroyEntity(EntityID id);
 
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
 	// Will not make components on entities that already have that component
@@ -320,7 +263,6 @@ struct Scene
 		componentPools[componentId]->destroy(GetEntityIndex(id));
 	}
 
-
 	// Retrieves a component for a given entity
 	// Simply checks the existence using the mask, and then queries the component from the correct pool
 	template<typename T>
@@ -346,10 +288,7 @@ struct Scene
 		return entities[GetEntityIndex(id)].mask.test(componentId);
 	}
 
-	std::string GetEntityName(EntityID entity)
-	{
-		return Get<CName>(entity)->name;
-	}
+	eastl::string GetEntityName(EntityID entity);
 
 	template<typename T>
 	void RegisterReactiveSystem(Reaction reaction, ReactiveSystemFunc func)
@@ -377,65 +316,33 @@ struct Scene
 		}
 	}
 
-	void RegisterSystem(SystemPhase phase, SystemFunc func)
-	{
-		switch (phase)
-		{
-		case SystemPhase::PreUpdate:
-			preUpdateSystems.push_back(func);
-			break;			
-		case SystemPhase::Update:
-			updateSystems.push_back(func);
-			break;
-		case SystemPhase::Render:
-			renderSystems.push_back(func);
-			break;
-		default:
-			break;
-		}
-	}
+	void RegisterSystem(SystemPhase phase, SystemFunc func);
 
-	void SimulateScene(float deltaTime)
-	{
-		for (SystemFunc func : preUpdateSystems)
-		{
-			func(*this, deltaTime);
-		}
-		for (SystemFunc func : updateSystems)
-		{
-			func(*this, deltaTime);
-		}
-	}
+	void SimulateScene(float deltaTime);
 
-	void RenderScene(float deltaTime)
-	{
-		for (SystemFunc func : renderSystems)
-		{
-			func(*this, deltaTime);
-		}
-	}
+	void RenderScene(float deltaTime);
 
-	std::vector<BaseComponentPool*> componentPools;
+	eastl::vector<BaseComponentPool*> componentPools;
 
 	int nActiveEntities{0};
-	std::vector<EntityDesc> entities;
-	std::vector<EntityIndex> freeEntities;
+	eastl::vector<EntityDesc> entities;
+	eastl::vector<EntityIndex> freeEntities;
 
-	std::vector<SystemFunc> preUpdateSystems;
-	std::vector<SystemFunc> updateSystems;
-	std::vector<SystemFunc> renderSystems;
+	eastl::vector<SystemFunc> preUpdateSystems;
+	eastl::vector<SystemFunc> updateSystems;
+	eastl::vector<SystemFunc> renderSystems;
 };
 
 // View into the Scene for a given set of components
 template<typename... ComponentTypes>
 struct SceneView
 {
-	template <std::size_t comps = sizeof...(ComponentTypes), std::enable_if_t<comps == 0, int> = 0>
+	template <size_t comps = sizeof...(ComponentTypes), eastl::enable_if_t<comps == 0, int> = 0>
 	SceneView(Scene& scene) : pScene(&scene) {
 		all = true;
 	}
 
-	template <std::size_t comps = sizeof...(ComponentTypes), std::enable_if_t<comps != 0, int> = 0>
+	template <size_t comps = sizeof...(ComponentTypes), eastl::enable_if_t<comps != 0, int> = 0>
 	SceneView(Scene& scene) : pScene(&scene) {
 		int componentIds[] = { 0, GetId<ComponentTypes>() ... };
 		for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)

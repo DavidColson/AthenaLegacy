@@ -9,9 +9,10 @@
 #include <Rendering/ParticlesSystem.h>
 #include <Rendering/ShapesSystem.h>
 #include <Input/Input.h>
-#include <Utility.h>
 #include <Profiler.h>
 #include <Vec4.h>
+
+#include <SDL_scancode.h>
 
 
 // **********
@@ -25,7 +26,7 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 
 	CTransform* pBulletTrans = scene.Assign<CTransform>(bullet);
 	pBulletTrans->pos = pAtTransform->pos;
-	Vec3f travelDir = Vec3f(-cos(pAtTransform->rot), -sin(pAtTransform->rot), 0.0f);
+	Vec3f travelDir = Vec3f(-cosf(pAtTransform->rot), -sinf(pAtTransform->rot), 0.0f);
 	pBulletTrans->vel = pAtTransform->vel + travelDir * pBullet->speed;
 	pBulletTrans->rot = pAtTransform->rot;
 	pBulletTrans->sca = Vec3f(7.0f);
@@ -62,7 +63,7 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 
 	AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->explosionSound, 1.0f, false);
 		
-	scene.Get<CText>(scoreEnt)->text = StringFormat("%i", pPlayerScore->score);
+	scene.Get<CText>(scoreEnt)->text.sprintf("%i", pPlayerScore->score);
 
 	// Spawn death particles
 	EntityID particles = scene.NewEntity("Asteroid Particles");
@@ -434,8 +435,8 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_UP))
 		{
-			accel.x = cos(pTransform->rot);
-			accel.y = sin(pTransform->rot);
+			accel.x = cosf(pTransform->rot);
+			accel.y = sinf(pTransform->rot);
 			accel = accel * -pControl->thrust;
 		}
 

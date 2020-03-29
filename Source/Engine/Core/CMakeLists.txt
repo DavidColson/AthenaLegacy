@@ -2,8 +2,6 @@ target_sources(Engine
     PRIVATE
         "Log.h"
         "Log.cpp"
-        "Utility.h"
-        "Utility.cpp"
         "TypeSystem.h"
         "TypeSystem.cpp"
         "ErrorHandling.h"

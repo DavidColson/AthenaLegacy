@@ -5,8 +5,8 @@
 #include "GraphicsDevice.h"
 #include "Scene.h"
 
-#include <string>
 #include <EASTL/vector.h>
+#include <EASTL/string.h>
 
 struct Scene;
 
@@ -25,7 +25,7 @@ struct Character
 
 struct CText
 {
-	std::string text;
+	eastl::string text;
 
 	REFLECT()
 };

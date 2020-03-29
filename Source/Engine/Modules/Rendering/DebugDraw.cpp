@@ -10,7 +10,7 @@ void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)
 	for (int i = 0; i < 20; i++)
 	{
 		float x = div * (float)i;
-		Vec3f point = Vec3f(radius*cos(x), radius*sin(x), 0.0f) + Vec3f(pos.x, pos.y, 0.5f);
+		Vec3f point = Vec3f(radius*cosf(x), radius*sinf(x), 0.0f) + Vec3f(pos.x, pos.y, 0.5f);
 		state.vertexList.emplace_back(DebugVertex{ point, color });
 		state.indexList.push_back(i);
 	}
@@ -34,7 +34,7 @@ void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
 {
 	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(entity));
 
-	std::string shaderSrc = "\
+	eastl::string shaderSrc = "\
 	cbuffer cbTransform\
 	{\
 		float4x4 WVP;\
@@ -56,7 +56,7 @@ void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
 		return input.Col;\
 	}";
 
-	std::vector<VertexInputElement> layout;
+	eastl::vector<VertexInputElement> layout;
 	layout.push_back({"POSITION",AttributeType::Float3});
 	layout.push_back({"COLOR", AttributeType::Float3});
 

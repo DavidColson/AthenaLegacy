@@ -1,8 +1,5 @@
 #include "Maths.h"
 
-#include <stdlib.h>
-#include <math.h>
-
 double generateGaussian(double mean, double stdDev)
 {
     // Implementation of Marsaglia polar method. Generates two normally distributed random variables in the range of 0-1
