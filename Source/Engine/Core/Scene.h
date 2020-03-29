@@ -58,8 +58,8 @@ struct Scene;
 typedef unsigned int EntityIndex;
 typedef unsigned int EntityVersion;
 typedef unsigned long long EntityID;
-const int MAX_COMPONENTS = 20;
-const int MAX_ENTITIES = 64;
+const int MAX_COMPONENTS = 25;
+const int MAX_ENTITIES = 128;
 typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 typedef void (*ReactiveSystemFunc)(Scene&, EntityID);
 typedef void (*SystemFunc)(Scene&, float);
@@ -224,6 +224,7 @@ struct Scene
 	// Creates an entity, simply makes a new id and mask
 	EntityID NewEntity(const char* name)// #TODO: Move implementation to cpp
 	{
+		nActiveEntities++;
  		if (!freeEntities.empty())
 		{
 			EntityIndex newIndex = freeEntities.back();
@@ -259,6 +260,7 @@ struct Scene
 		entities[GetEntityIndex(id)].id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
 		entities[GetEntityIndex(id)].mask.reset(); // clear components
 		freeEntities.push_back(GetEntityIndex(id));
+		nActiveEntities--;
 	}
 
 	// Assigns a component to an entity, optionally making a new memory pool for a new component
@@ -415,6 +417,7 @@ struct Scene
 
 	std::vector<BaseComponentPool*> componentPools;
 
+	int nActiveEntities{0};
 	std::vector<EntityDesc> entities;
 	std::vector<EntityIndex> freeEntities;
 

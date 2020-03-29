@@ -13,6 +13,8 @@ eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh();
 
 void CollisionSystemUpdate(Scene& scene, float deltaTime);
 
+void AsteroidSpawning(Scene& scene, float deltaTime);
+
 void InvincibilitySystemUpdate(Scene& scene, float deltaTime);
 
 void DrawPolyShapes(Scene& scene, float deltaTime);

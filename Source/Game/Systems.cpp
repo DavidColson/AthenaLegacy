@@ -231,6 +231,71 @@ void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 	}	
 }
 
+void AsteroidSpawning(Scene& scene, float deltaTime)
+{
+	PROFILE();
+
+	for (EntityID spawnerEnt : SceneView<CAsteroidSpawner>(scene))
+	{
+		CAsteroidSpawner& spawner = *(scene.Get<CAsteroidSpawner>(spawnerEnt));
+
+		if (scene.Get<CVisibility>(PLAYER_ID)->visible == false)
+			continue;
+			
+		spawner.timer -= deltaTime;
+
+		if (spawner.timer <= 0.0f)
+		{
+			spawner.timer = spawner.timeBetweenSpawns;
+
+			if (spawner.timeBetweenSpawns > 1.0f)
+				spawner.timeBetweenSpawns *= spawner.decay;
+			else
+				spawner.timeBetweenSpawns = 1.0f;
+			
+
+			// Actually create an asteroid
+			if (scene.nActiveEntities >= MAX_ENTITIES)
+				continue;
+
+			auto randf = []() { return float(rand()) / float(RAND_MAX); };
+
+			// You need to spawn on a window edge
+			Vec3f randomLocation;
+			Vec3f randomVelocity;
+			switch (rand() % 4)
+			{
+				case 0:
+					randomLocation = Vec3f(0.0f, float(rand() % int(GfxDevice::GetWindowHeight())), 0.0f);
+					randomVelocity = Vec3f(randf(), randf() * 2.0f - 1.0f, 0.0f); break;
+				case 1:
+					randomLocation = Vec3f(GfxDevice::GetWindowWidth(), float(rand() % int(GfxDevice::GetWindowHeight())), 0.0f);
+					randomVelocity = Vec3f(-randf(), randf() * 2.0f - 1.0f, 0.0f); break;
+				case 2:
+					randomLocation = Vec3f(float(rand() % int(GfxDevice::GetWindowWidth())), 0.0f, 0.0f);
+					randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf(), 0.0f); break;
+				case 3:
+					randomLocation = Vec3f(float(rand() % int(GfxDevice::GetWindowWidth())), GfxDevice::GetWindowHeight(), 0.0f);
+					randomVelocity = Vec3f(randf() * 2.0f - 1.0f, -randf(), 0.0f); break;
+				default:
+					break;
+			}
+
+			EntityID asteroid = scene.NewEntity("Asteroid");
+			scene.Assign<CCollidable>(asteroid);
+			CTransform* pTranform = scene.Assign<CTransform>(asteroid);
+			pTranform->pos = randomLocation;
+			pTranform->sca = Vec3f(90.0f, 90.0f, 1.0f);
+			pTranform->vel = randomVelocity * 60.0f;
+			pTranform->rot = randf() * 6.282f;
+
+			scene.Assign<CVisibility>(asteroid);
+			scene.Assign<CAsteroid>(asteroid);
+			scene.Assign<CPolyShape>(asteroid)->points = GetRandomAsteroidMesh();
+		}
+	}
+}
+
 void CollisionSystemUpdate(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
@@ -350,7 +415,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 			LoadMenu();
 		}
 
-		// If player doesn't have a drawable component we consider them dead
+		// If player isn't visible we consider them dead
 		if (scene.Get<CVisibility>(id)->visible == false && !scene.Has<CInvincibility>(id))
 		{
 			if (pControl->respawnTimer > 0.0f)

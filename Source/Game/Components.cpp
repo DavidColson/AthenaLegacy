@@ -5,6 +5,12 @@ REFLECT_MEMBER(thickness)
 REFLECT_MEMBER(connected)
 REFLECT_END()
 
+REFLECT_BEGIN(CAsteroidSpawner)
+REFLECT_MEMBER(timer)
+REFLECT_MEMBER(timeBetweenSpawns)
+REFLECT_MEMBER(decay)
+REFLECT_END()
+
 REFLECT_BEGIN(CPlayerControl)
 REFLECT_MEMBER(thrust)
 REFLECT_MEMBER(rotateSpeed)

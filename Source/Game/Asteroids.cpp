@@ -39,6 +39,7 @@ Scene* CreateMainAsteroidsScene()
 	scene.RegisterSystem(SystemPhase::Update, ShipControlSystemUpdate);
 	scene.RegisterSystem(SystemPhase::Update, MovementSystemUpdate);
 	scene.RegisterSystem(SystemPhase::Update, CollisionSystemUpdate);
+	scene.RegisterSystem(SystemPhase::Update, AsteroidSpawning);
 	scene.RegisterSystem(SystemPhase::Update, InvincibilitySystemUpdate);
 	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
 
@@ -82,7 +83,7 @@ Scene* CreateMainAsteroidsScene()
 	AudioDevice::PauseSound(pPlayer->enginePlayingSound);
 
 	// Create some asteroids
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		Vec3f randomLocation = Vec3f(float(rand() % 1800), float(rand() % 1000), 0.0f);
 		Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
@@ -99,6 +100,8 @@ Scene* CreateMainAsteroidsScene()
 		scene.Assign<CAsteroid>(asteroid);
 		scene.Assign<CPolyShape>(asteroid)->points = GetRandomAsteroidMesh();
 	}
+
+	scene.Assign<CAsteroidSpawner>(ship);
 
 	// Create the lives
 	float offset = 0.0f;

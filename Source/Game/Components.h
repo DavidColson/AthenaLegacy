@@ -27,6 +27,15 @@ struct CPolyShape
 	REFLECT();
 };
 
+struct CAsteroidSpawner
+{
+	float timer{ 30.0f };
+	float timeBetweenSpawns{ 3.0f };
+	float decay{ 0.98f };
+
+	REFLECT();
+};
+
 struct CPlayerControl
 {
 	float thrust{ 160.f };
