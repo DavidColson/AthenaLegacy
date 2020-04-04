@@ -2,37 +2,71 @@
 
 #include "Profiler.h"
 
+struct DrawCall
+{
+	int vertexCount{ 0 };
+	int indexCount{ 0 };
+};
+
+struct DebugVertex
+{
+	Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
+	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
+};
+
+struct TransformData
+{
+	Matrixf wvp;
+};
+
+
+struct CDebugDrawingState
+{
+	eastl::vector<DrawCall> drawQueue;
+	eastl::vector<DebugVertex> vertexList;
+	eastl::vector<int> indexList;
+
+	ProgramHandle debugShaderProgram;
+	VertexBufferHandle vertexBuffer;
+	int vertBufferSize = 0;
+	IndexBufferHandle indexBuffer;
+	int indexBufferSize = 0;
+
+	ConstBufferHandle transformDataBuffer;
+};
+
+namespace
+{
+	CDebugDrawingState* pState = nullptr;
+}
+
 void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)
 {
-	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
-
 	float div = 6.282f / 20.f;
 	for (int i = 0; i < 20; i++)
 	{
 		float x = div * (float)i;
 		Vec3f point = Vec3f(radius*cosf(x), radius*sinf(x), 0.0f) + Vec3f(pos.x, pos.y, 0.5f);
-		state.vertexList.emplace_back(DebugVertex{ point, color });
-		state.indexList.push_back(i);
+		pState->vertexList.emplace_back(DebugVertex{ point, color });
+		pState->indexList.push_back(i);
 	}
-	state.indexList.push_back(0);
-	state.drawQueue.emplace_back(DrawCall{20, 21});
+	pState->indexList.push_back(0);
+	pState->drawQueue.emplace_back(DrawCall{20, 21});
 }
 
 void DebugDraw::Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color)
 {
-	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
+	pState->vertexList.emplace_back(DebugVertex{ Vec3f(start.x, start.y, 0.5f), color });
+	pState->vertexList.emplace_back(DebugVertex{ Vec3f(end.x, end.y, 0.5f), color });
+	pState->indexList.push_back(0);
+	pState->indexList.push_back(1);
 
-	state.vertexList.emplace_back(DebugVertex{ Vec3f(start.x, start.y, 0.5f), color });
-	state.vertexList.emplace_back(DebugVertex{ Vec3f(end.x, end.y, 0.5f), color });
-	state.indexList.push_back(0);
-	state.indexList.push_back(1);
-
-	state.drawQueue.emplace_back(DrawCall{ 2, 2 });
+	pState->drawQueue.emplace_back(DrawCall{ 2, 2 });
 }
 
-void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
+void DebugDraw::InitializeDebugDrawer()
 {
-	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(entity));
+	pState = new CDebugDrawingState();
 
 	eastl::string shaderSrc = "\
 	cbuffer cbTransform\
@@ -63,20 +97,18 @@ void DebugDraw::OnDebugDrawStateAdded(Scene& scene, EntityID entity)
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Debug Draw");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Debug Draw");
 
-	state.debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+	pState->debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	// Create constant buffer for WVP
-	state.transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
+	pState->transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
 }
 
-void DebugDraw::OnDebugDrawStateRemoved(Scene& scene, EntityID entity)
+void DebugDraw::DestroyDebugDrawer()
 {
-	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(entity));
-
-	GfxDevice::FreeProgram(state.debugShaderProgram);
-	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
-	GfxDevice::FreeIndexBuffer(state.indexBuffer);
-	GfxDevice::FreeConstBuffer(state.transformDataBuffer);
+	GfxDevice::FreeProgram(pState->debugShaderProgram);
+	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);
+	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
+	GfxDevice::FreeConstBuffer(pState->transformDataBuffer);
 }
 
 void DebugDraw::OnFrame(Scene& scene, float /* deltaTime */)
@@ -84,52 +116,50 @@ void DebugDraw::OnFrame(Scene& scene, float /* deltaTime */)
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing debug");
 
-	CDebugDrawingState& state = *(scene.Get<CDebugDrawingState>(ENGINE_SINGLETON));
-
-	if (state.drawQueue.empty())
+	if (pState->drawQueue.empty())
 		return;
 
 	// TODO: MEMORY LEAK HERE Release the old buffer when you create new one
-	if (!GfxDevice::IsValid(state.vertexBuffer) || state.vertBufferSize < state.vertexList.size())
+	if (!GfxDevice::IsValid(pState->vertexBuffer) || pState->vertBufferSize < pState->vertexList.size())
 	{
-		if (GfxDevice::IsValid(state.vertexBuffer)) { GfxDevice::FreeVertexBuffer(state.vertexBuffer); }
-		state.vertBufferSize = (int)state.vertexList.size() + 1000;
-		state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(state.vertBufferSize, sizeof(DebugVertex), "Debug Drawer");
+		if (GfxDevice::IsValid(pState->vertexBuffer)) { GfxDevice::FreeVertexBuffer(pState->vertexBuffer); }
+		pState->vertBufferSize = (int)pState->vertexList.size() + 1000;
+		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(DebugVertex), "Debug Drawer");
 	}
 
-	if (!GfxDevice::IsValid(state.indexBuffer) || state.indexBufferSize < state.indexList.size())
+	if (!GfxDevice::IsValid(pState->indexBuffer) || pState->indexBufferSize < pState->indexList.size())
 	{
-		if (GfxDevice::IsValid(state.indexBuffer)) { GfxDevice::FreeIndexBuffer(state.indexBuffer); }
-		state.indexBufferSize = (int)state.indexList.size() + 1000;
-		state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(state.indexBufferSize, "Debug Drawer");
+		if (GfxDevice::IsValid(pState->indexBuffer)) { GfxDevice::FreeIndexBuffer(pState->indexBuffer); }
+		pState->indexBufferSize = (int)pState->indexList.size() + 1000;
+		pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(pState->indexBufferSize, "Debug Drawer");
 	}
 
 	// Update vert and index buffer data
-	GfxDevice::UpdateDynamicVertexBuffer(state.vertexBuffer, state.vertexList.data(), state.vertexList.size() * sizeof(DebugVertex));
-	GfxDevice::UpdateDynamicIndexBuffer(state.indexBuffer, state.indexList.data(), state.indexList.size() * sizeof(int));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(DebugVertex));
+	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(int));
 
 	// Update constant buffer data
 	TransformData trans{ Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f) };
-	GfxDevice::BindConstantBuffer(state.transformDataBuffer, &trans, ShaderType::Vertex, 0);
+	GfxDevice::BindConstantBuffer(pState->transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders
-	GfxDevice::BindProgram(state.debugShaderProgram);
+	GfxDevice::BindProgram(pState->debugShaderProgram);
 
 	GfxDevice::SetTopologyType(TopologyType::LineStrip);
 
-	GfxDevice::BindVertexBuffers(1, &state.vertexBuffer);
-	GfxDevice::BindIndexBuffer(state.indexBuffer);
+	GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
+	GfxDevice::BindIndexBuffer(pState->indexBuffer);
 
 	int vertOffset = 0;
 	int indexOffset = 0;
-	for (DrawCall& draw : state.drawQueue)
+	for (DrawCall& draw : pState->drawQueue)
 	{
 		GfxDevice::DrawIndexed(draw.indexCount, indexOffset, vertOffset);
 		vertOffset += draw.vertexCount;
 		indexOffset += draw.indexCount;
 	}
 
-	state.drawQueue.clear();
-	state.vertexList.clear();
-	state.indexList.clear();
+	pState->drawQueue.clear();
+	pState->vertexList.clear();
+	pState->indexList.clear();
 }
