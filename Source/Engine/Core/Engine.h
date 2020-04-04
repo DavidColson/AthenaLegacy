@@ -2,8 +2,6 @@
 
 struct Scene;
 
-#define ENGINE_SINGLETON 0
-
 namespace Engine
 {
 	void Initialize();

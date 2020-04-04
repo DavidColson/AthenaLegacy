@@ -85,12 +85,6 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnAddPostProcessing);
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnRemove, PostProcessingSystem::OnRemovePostProcessing);
 
-	scene.RegisterReactiveSystem<CShapesSystemState>(Reaction::OnAdd, Shapes::OnShapesSystemStateAdded);
-	scene.RegisterReactiveSystem<CShapesSystemState>(Reaction::OnRemove, Shapes::OnShapesSystemStateRemoved);
-
-	scene.RegisterReactiveSystem<CFontSystemState>(Reaction::OnAdd, FontSystem::OnAddFontSystemState);
-	scene.RegisterReactiveSystem<CFontSystemState>(Reaction::OnRemove, FontSystem::OnRemoveFontSystemState);
-
 	scene.RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
@@ -100,10 +94,6 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
 	scene.RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
 	scene.RegisterSystem(SystemPhase::Render, ImGuiRender);
-
-	scene.NewEntity("Engine Singletons");
-	scene.Assign<CShapesSystemState>(ENGINE_SINGLETON);
-	scene.Assign<CFontSystemState>(ENGINE_SINGLETON);
 }
 
 void Engine::SetActiveScene(Scene* pScene)
@@ -134,7 +124,9 @@ void Engine::Initialize()
 	Log::Info("Window size W: %.1f H: %.1f", width, height);
 
 	GfxDevice::Initialize(g_pWindow, width, height);
-	DebugDraw::InitializeDebugDrawer();
+	Shapes::Initialize();
+	DebugDraw::Initialize();
+	FontSystem::Initialize();
 
 	AudioDevice::Initialize();
 	Input::CreateInputState();	
@@ -189,7 +181,9 @@ void Engine::Run(Scene *pScene)
 	delete pCurrentScene;
 
 	// Shutdown everything
-	DebugDraw::DestroyDebugDrawer();
+	DebugDraw::Destroy();
+	Shapes::Destroy();
+	FontSystem::Destroy();
 	AudioDevice::Destroy();
 	GfxDevice::Destroy();
 

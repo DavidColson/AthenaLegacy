@@ -18,29 +18,52 @@ REFLECT_BEGIN(CText)
 REFLECT_MEMBER(text)
 REFLECT_END()
 
-namespace 
+struct Character
 {
+	Vec2i size{ Vec2i(0, 0) };
+	Vec2i bearing{ Vec2i(0, 0) };
+	Vec2f UV0{ Vec2f(0.f, 0.f) };
+	Vec2f UV1{ Vec2f(1.f, 1.f) };
+	int advance;
+};
+
+struct CFontSystemState
+{
+	ProgramHandle fontShaderProgram;
+	ConstBufferHandle wvpBuffer;
+	BlendStateHandle blendState;
+	VertexBufferHandle vertexBuffer;
+	IndexBufferHandle indexBuffer;
+	TextureHandle fontTexture;
+	SamplerHandle charTextureSampler;
+
+	struct TransformData
+	{
+		Matrixf projection;
+	};
+	eastl::vector<Character> characters;
+
 	FT_Library freetype;
 	FT_Face face;
-	bool startedFreeType = false;
+};
+
+namespace 
+{
+	CFontSystemState* pState = nullptr;
 }
 
 #define CHARS_PER_DRAW_CALL 500
 
-void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
+void FontSystem::Initialize()
 {
-	CFontSystemState& state = *(scene.Get<CFontSystemState>(entity));
+	pState = new CFontSystemState();
 
-	if (startedFreeType == false)
+	FT_Init_FreeType(&(pState->freetype));
+
+	FT_Error err = FT_New_Face(pState->freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &pState->face);
+	if (err)
 	{
-		FT_Init_FreeType(&freetype);
-
-		FT_Error err = FT_New_Face(freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &face);
-		if (err)
-		{
-			Log::Warn("FreeType Error: %s", FT_Error_String(err));
-		}
-		startedFreeType = true;
+		Log::Warn("FreeType Error: %s", FT_Error_String(err));
 	}
 
 	eastl::string fontShaderSrc = "\
@@ -79,24 +102,24 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout, "Fonts");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
 
-	state.fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+	pState->fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	BlendingInfo blender;
 	blender.enabled = true;
 	blender.source = Blend::SrcAlpha;
 	blender.destination = Blend::InverseSrcAlpha;
-	state.blendState = GfxDevice::CreateBlendState(blender);
+	pState->blendState = GfxDevice::CreateBlendState(blender);
 
 	// Create vertex buffer
 	// ********************
-	state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vertex), "Font Render Vert Buffer");
-	state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, "Font Render Index Buffer");
+	pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vertex), "Font Render Vert Buffer");
+	pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, "Font Render Index Buffer");
 
 	// Create a constant buffer for the WVP
 	// **********************************************
 
-	state.wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(CFontSystemState::TransformData), "Font transforms");
-	state.charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
+	pState->wvpBuffer = GfxDevice::CreateConstantBuffer(sizeof(CFontSystemState::TransformData), "Font transforms");
+	pState->charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
 
 	// Rasterize the entire font to a texture atlas
 	// **********************************************
@@ -110,7 +133,9 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 
 	eastl::vector<Packing::Rect> rects;
 	rects.get_allocator().set_name("Font Packing Rects");
-	state.characters.get_allocator().set_name("Font character data");
+	pState->characters.get_allocator().set_name("Font character data");
+
+	FT_Face& face = pState->face;
 
 	FT_Set_Pixel_Sizes(face, 0, 50);
 
@@ -137,7 +162,7 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 		character.advance = (face->glyph->advance.x) >> 6;
 		character.UV0 = Vec2f((float)rect.x / (float)texWidth, (float)rect.y / (float)texHeight);
 		character.UV1 = Vec2f((float)(rect.x + character.size.x) / (float)texWidth, (float)(rect.y + character.size.y) / (float)texHeight);
-		state.characters.push_back(character);
+		pState->characters.push_back(character);
 
 		// Blit the glyph's image into our texture atlas
 		uint8_t* pSourceData = face->glyph->bitmap.buffer;
@@ -149,21 +174,19 @@ void FontSystem::OnAddFontSystemState(Scene& scene, EntityID entity)
 		}
 	}
 
-	state.fontTexture = GfxDevice::CreateTexture(texWidth, texHeight, TextureFormat::R8, pTextureDataAsR8, "Font Atlas");
+	pState->fontTexture = GfxDevice::CreateTexture(texWidth, texHeight, TextureFormat::R8, pTextureDataAsR8, "Font Atlas");
 	delete[] pTextureDataAsR8;
 }
 
-void FontSystem::OnRemoveFontSystemState(Scene& scene, EntityID entity)
+void FontSystem::Destroy()
 {
-	CFontSystemState& state = *(scene.Get<CFontSystemState>(entity));
-
-	GfxDevice::FreeProgram(state.fontShaderProgram);
-	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
-	GfxDevice::FreeIndexBuffer(state.indexBuffer);
-	GfxDevice::FreeSampler(state.charTextureSampler);
-	GfxDevice::FreeConstBuffer(state.wvpBuffer);
-	GfxDevice::FreeBlendState(state.blendState);
-	GfxDevice::FreeTexture(state.fontTexture);
+	GfxDevice::FreeProgram(pState->fontShaderProgram);
+	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);
+	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
+	GfxDevice::FreeSampler(pState->charTextureSampler);
+	GfxDevice::FreeConstBuffer(pState->wvpBuffer);
+	GfxDevice::FreeBlendState(pState->blendState);
+	GfxDevice::FreeTexture(pState->fontTexture);
 }
 
 void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
@@ -171,14 +194,12 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 	PROFILE();
 	
 	GFX_SCOPED_EVENT("Drawing text");
-	
-	CFontSystemState& state = *(scene.Get<CFontSystemState>(ENGINE_SINGLETON));
 
 	// Set graphics state correctly
 	GfxDevice::SetTopologyType(TopologyType::TriangleList);
-	GfxDevice::BindProgram(state.fontShaderProgram);
-	GfxDevice::SetBlending(state.blendState);
-	GfxDevice::BindSampler(state.charTextureSampler, ShaderType::Pixel, 0);
+	GfxDevice::BindProgram(pState->fontShaderProgram);
+	GfxDevice::SetBlending(pState->blendState);
+	GfxDevice::BindSampler(pState->charTextureSampler, ShaderType::Pixel, 0);
 
 	for (EntityID ent : SceneView<CText, CTransform>(scene))
 	{
@@ -198,7 +219,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 
 		for (char const& c : pText->text)
 		{
-			Character ch = state.characters[c];
+			Character ch = pState->characters[c];
 			textWidth += ch.advance * pTransform->sca.x;
 		}
 
@@ -207,7 +228,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		int currentIndex = 0;
 
 		for (char const& c : pText->text) {
-			Character ch = state.characters[c];
+			Character ch = pState->characters[c];
 
 			float xpos = (x + ch.bearing.x * pTransform->sca.x) - textWidth * 0.5f;
 			float ypos = y - (ch.size.y - ch.bearing.y) * pTransform->sca.y;
@@ -234,17 +255,17 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		}
 	
 		// Update buffers
-		GfxDevice::UpdateDynamicVertexBuffer(state.vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vertex));
-		GfxDevice::UpdateDynamicIndexBuffer(state.indexBuffer, indexList.data(), indexList.size() * sizeof(int));
+		GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vertex));
+		GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, indexList.data(), indexList.size() * sizeof(int));
 
-		GfxDevice::BindVertexBuffers(1, &state.vertexBuffer);
-		GfxDevice::BindIndexBuffer(state.indexBuffer);
+		GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
+		GfxDevice::BindIndexBuffer(pState->indexBuffer);
 		
-		GfxDevice::BindTexture(state.fontTexture, ShaderType::Pixel, 0);
+		GfxDevice::BindTexture(pState->fontTexture, ShaderType::Pixel, 0);
 
 		Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
 		CFontSystemState::TransformData transformData{ projection };
-		GfxDevice::BindConstantBuffer(state.wvpBuffer, &transformData, ShaderType::Vertex, 0);
+		GfxDevice::BindConstantBuffer(pState->wvpBuffer, &transformData, ShaderType::Vertex, 0);
 		
 		// Do draw call for this text
 		GfxDevice::DrawIndexed((int)indexList.size(), 0, 0);

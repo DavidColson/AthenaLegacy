@@ -64,7 +64,7 @@ void DebugDraw::Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color)
 	pState->drawQueue.emplace_back(DrawCall{ 2, 2 });
 }
 
-void DebugDraw::InitializeDebugDrawer()
+void DebugDraw::Initialize()
 {
 	pState = new CDebugDrawingState();
 
@@ -103,7 +103,7 @@ void DebugDraw::InitializeDebugDrawer()
 	pState->transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
 }
 
-void DebugDraw::DestroyDebugDrawer()
+void DebugDraw::Destroy()
 {
 	GfxDevice::FreeProgram(pState->debugShaderProgram);
 	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);

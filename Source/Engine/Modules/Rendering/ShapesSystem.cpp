@@ -4,10 +4,49 @@
 #include "Vec4.h"
 #include "Maths.h"
 
-void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thickness, Vec3f color, bool connected)
+struct DrawCall
 {
-	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
-    
+	int vertexCount{ 0 };
+	int indexCount{ 0 };
+};
+
+struct ShapeVertex
+{
+	Vec2f pos{ Vec2f(0.0f, 0.0f) };
+	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
+};
+
+struct TransformData
+{
+	Matrixf wvp;
+	float lineThickness{ 5.0f };
+	float pad1{ 0.0f };
+	float pad2{ 0.0f };
+	float pad3{ 0.0f };
+};
+
+struct CShapesSystemState
+{
+	eastl::vector<DrawCall> drawQueue;
+	eastl::vector<ShapeVertex> vertexList;
+	eastl::vector<int> indexList;
+
+	ProgramHandle shaderProgram;
+	VertexBufferHandle vertexBuffer;
+	int vertBufferSize = 0;
+	IndexBufferHandle indexBuffer;
+	int indexBufferSize = 0;
+
+	ConstBufferHandle transformDataBuffer;
+};
+
+namespace
+{
+	CShapesSystemState* pState = nullptr;
+}
+
+void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thickness, Vec3f color, bool connected)
+{  
 	// Vector manipulation here is slow, can do better
 	// I recommend using a single frame allocator, or some other with a custom container
 	
@@ -38,27 +77,27 @@ void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thicknes
 
         // New vertices
         float offset = thickness * 0.2f;
-        state.vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] + cornerBisector * offset, color });
-        state.vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] - cornerBisector * offset, color });
+        pState->vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] + cornerBisector * offset, color });
+        pState->vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] - cornerBisector * offset, color });
         
         // Indices
-        state.indexList.push_back(vertCount + 0);
-        state.indexList.push_back(vertCount + 1);
+        pState->indexList.push_back(vertCount + 0);
+        pState->indexList.push_back(vertCount + 1);
         vertCount += 2;
     }
-    state.drawQueue.emplace_back(DrawCall { vertCount, vertCount });
+    pState->drawQueue.emplace_back(DrawCall { vertCount, vertCount });
 }
 
-void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
+void Shapes::Initialize()
 {
-	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(entity));
+	pState = new CShapesSystemState();
 
-	state.vertexList.get_allocator().set_name("CShapeSystemState/vertexList");
-	state.drawQueue.get_allocator().set_name("CShapeSystemState/drawQueue");
-	state.indexList.get_allocator().set_name("CShapeSystemState/indexList");
-	state.vertexList.reserve(20480);
-	state.drawQueue.reserve(256);
-	state.indexList.reserve(4096);
+	pState->vertexList.get_allocator().set_name("CShapeSystemState/vertexList");
+	pState->drawQueue.get_allocator().set_name("CShapeSystemState/drawQueue");
+	pState->indexList.get_allocator().set_name("CShapeSystemState/indexList");
+	pState->vertexList.reserve(20480);
+	pState->drawQueue.reserve(256);
+	pState->indexList.reserve(4096);
 
     eastl::string shaderSrc = "\
 	cbuffer cbTransform\
@@ -89,70 +128,66 @@ void Shapes::OnShapesSystemStateAdded(Scene& scene, EntityID entity)
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Shapes");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Shapes");
 
-	state.shaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
-	state.transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Shapes transforms");
+	pState->shaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+	pState->transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Shapes transforms");
 }
 
-void Shapes::OnShapesSystemStateRemoved(Scene& scene, EntityID entity)
+void Shapes::Destroy()
 {
-	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(entity));
-
-	GfxDevice::FreeProgram(state.shaderProgram);
-	GfxDevice::FreeVertexBuffer(state.vertexBuffer);
-	GfxDevice::FreeIndexBuffer(state.indexBuffer);
-	GfxDevice::FreeConstBuffer(state.transformDataBuffer);
+	GfxDevice::FreeProgram(pState->shaderProgram);
+	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);
+	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
+	GfxDevice::FreeConstBuffer(pState->transformDataBuffer);
 }
 
 void Shapes::OnFrame(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing Shapes");
-
-	CShapesSystemState& state = *(scene.Get<CShapesSystemState>(ENGINE_SINGLETON));
-
-	if (state.drawQueue.empty())
+	
+	if (pState->drawQueue.empty())
 		return;
 
-	if (!GfxDevice::IsValid(state.vertexBuffer) || state.vertBufferSize < state.vertexList.size())
+	if (!GfxDevice::IsValid(pState->vertexBuffer) || pState->vertBufferSize < pState->vertexList.size())
 	{
-		if (GfxDevice::IsValid(state.vertexBuffer)) { GfxDevice::FreeVertexBuffer(state.vertexBuffer); }
-		state.vertBufferSize = (int)state.vertexList.size() + 1000;
-		state.vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(state.vertBufferSize, sizeof(ShapeVertex), "Shapes System");
+		if (GfxDevice::IsValid(pState->vertexBuffer)) { GfxDevice::FreeVertexBuffer(pState->vertexBuffer); }
+		pState->vertBufferSize = (int)pState->vertexList.size() + 1000;
+		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(ShapeVertex), "Shapes System");
 	}
 
-	if (!GfxDevice::IsValid(state.indexBuffer) || state.indexBufferSize < state.indexList.size())
+	if (!GfxDevice::IsValid(pState->indexBuffer) || pState->indexBufferSize < pState->indexList.size())
 	{
-		if (GfxDevice::IsValid(state.indexBuffer)) { GfxDevice::FreeIndexBuffer(state.indexBuffer); }
-		state.indexBufferSize = (int)state.indexList.size() + 1000;
-		state.indexBuffer = GfxDevice::CreateDynamicIndexBuffer(state.indexBufferSize, "Shapes System");
+		if (GfxDevice::IsValid(pState->indexBuffer)) { GfxDevice::FreeIndexBuffer(pState->indexBuffer); }
+		pState->indexBufferSize = (int)pState->indexList.size() + 1000;
+		pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(pState->indexBufferSize, "Shapes System");
 	}
 
 	// Update vert and index buffer data
-	GfxDevice::UpdateDynamicVertexBuffer(state.vertexBuffer, state.vertexList.data(), state.vertexList.size() * sizeof(ShapeVertex));
-	GfxDevice::UpdateDynamicIndexBuffer(state.indexBuffer, state.indexList.data(), state.indexList.size() * sizeof(int));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(ShapeVertex));
+	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(int));
 
 	// Update constant buffer data
 	TransformData trans{ Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f), 5.0f };
-	GfxDevice::BindConstantBuffer(state.transformDataBuffer, &trans, ShaderType::Vertex, 0);
+	GfxDevice::BindConstantBuffer(pState->transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders
-	GfxDevice::BindProgram(state.shaderProgram);
+	GfxDevice::BindProgram(pState->shaderProgram);
 
 	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
-	GfxDevice::BindVertexBuffers(1, &state.vertexBuffer);
-	GfxDevice::BindIndexBuffer(state.indexBuffer);
+	GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
+	GfxDevice::BindIndexBuffer(pState->indexBuffer);
 
 	int vertOffset = 0;
 	int indexOffset = 0;
-	for (DrawCall& draw : state.drawQueue)
+	for (DrawCall& draw : pState->drawQueue)
 	{
 		GfxDevice::DrawIndexed(draw.indexCount, indexOffset, vertOffset);
 		vertOffset += draw.vertexCount;
 		indexOffset += draw.indexCount;
 	}
 
-	state.drawQueue.clear();
-	state.vertexList.clear();
-	state.indexList.clear();
+	pState->drawQueue.clear();
+	pState->vertexList.clear();
+	pState->indexList.clear();
 }

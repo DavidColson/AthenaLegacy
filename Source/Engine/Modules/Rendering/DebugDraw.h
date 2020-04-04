@@ -11,7 +11,7 @@ namespace DebugDraw
 	void Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color);
 	void Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color);
 
-	void InitializeDebugDrawer();
-	void DestroyDebugDrawer();
+	void Initialize();
+	void Destroy();
 	void OnFrame(Scene& scene, float deltaTime);
 }
