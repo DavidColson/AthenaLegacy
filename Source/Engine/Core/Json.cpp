@@ -2,9 +2,6 @@
 
 #include "Log.h"
 
-eastl::vector<JsonValue> ParseArray(eastl::string& file, int& current);
-eastl::map<eastl::string, JsonValue> ParseObject(eastl::string& file, int& current);
-
 // JsonValue implementation
 ///////////////////////////
 
@@ -52,15 +49,27 @@ JsonValue::JsonValue(bool boolean)
 // Scanning Utilities
 /////////////////////
 
-char Advance(eastl::string& file, int& current)
+struct ScanningState
 {
-	current++;
-	return file[current - 1];
+	eastl::string file;
+	int current{ 0 };
+	int line{ 1 };
+};
+
+char Advance(ScanningState& scan)
+{
+	scan.current++;
+	return scan.file[scan.current - 1];
 }
 
-char Peek(eastl::string& file, const int& current)
+char Peek(ScanningState& scan)
 {
-	return file[current];
+	return scan.file[scan.current];
+}
+
+char PeekNext(ScanningState& scan)
+{
+	return scan.file[scan.current + 1];
 }
 
 bool IsWhitespace(char c)
@@ -70,19 +79,21 @@ bool IsWhitespace(char c)
 	return false;
 }
 
-void AdvanceOverWhitespace(eastl::string &file, int& current)
+void AdvanceOverWhitespace(ScanningState& scan)
 {
-	char c = file[current];
+	char c = scan.file[scan.current];
 	while (IsWhitespace(c))
 	{
-		Advance(file, current);
-		c = file[current];
+		Advance(scan);
+		c = Peek(scan);
+		if (c == '\n')
+			scan.line++;
 	}
 }
 
-bool IsAtEnd(eastl::string& file, const int& current)
+bool IsAtEnd(ScanningState& scan)
 {
-	return current >= file.size();
+	return scan.current >= scan.file.size();
 }
 
 bool IsPartOfNumber(char c)
@@ -90,61 +101,103 @@ bool IsPartOfNumber(char c)
 	return (c >= '0' && c <= '9') || c == '-';
 }
 
+// Error reporting
+//////////////////
+
+eastl::string ExtractErrorPointer(ScanningState& scan, int errorAt, const char* message)
+{
+	int lineStart = errorAt;
+	while (lineStart >= 0)
+	{
+		if (scan.file[lineStart] == '\n')
+		{
+			lineStart += 1;
+			break;
+		}
+		lineStart--;
+	}
+	int lineEnd = errorAt;
+	while (lineEnd < scan.file.size())
+	{
+		if (scan.file[lineEnd] == '\n')
+		{
+			break;
+		}
+		lineEnd++;
+	}
+	eastl::string error;
+	
+	error.append_sprintf("%i |", scan.line);
+	int startChars = (int)error.size();
+
+	error.append(scan.file.substr(lineStart, (lineEnd - lineStart)-1));
+	error += "\n";
+
+	for(int i = 0; i < (errorAt - lineStart) + startChars; i++)
+		error += ' ';
+
+	error.append_sprintf("^----- %s", message);
+	return error;
+}
+
 // Value Parsing
 ////////////////
 
-double ParseNumber(eastl::string& file, int& current)
-{	
-	int start = current;
+eastl::vector<JsonValue> ParseArray(ScanningState& scan);
+eastl::map<eastl::string, JsonValue> ParseObject(ScanningState& scan);
 
-	while (IsPartOfNumber(Peek(file, current)))
+double ParseNumber(ScanningState& scan)
+{	
+	int start = scan.current;
+
+	while (IsPartOfNumber(Peek(scan)))
 	{
-		Advance(file, current);
+		Advance(scan);
 	}
 
-	if (Peek(file, current) == '.' && IsPartOfNumber(Peek(file, current + 1)))
+	if (Peek(scan) == '.' && IsPartOfNumber(PeekNext(scan)))
 	{
-		Advance(file, current);
-		while (IsPartOfNumber(Peek(file, current)))
+		Advance(scan);
+		while (IsPartOfNumber(Peek(scan)))
 		{
-			Advance(file, current);
+			Advance(scan);
 		}
 	}
-	return strtod(file.substr(start, (current - start)).c_str(), nullptr);
+	return strtod(scan.file.substr(start, (scan.current - start)).c_str(), nullptr);
 }
 
-eastl::string ParseString(eastl::string& file, int& current)
+eastl::string ParseString(ScanningState& scan)
 {
-	int start = current;
-	Advance(file, current); // advance over initial '"'
-	while (Peek(file, current) != '"' && !IsAtEnd(file, current))
+	int start = scan.current;
+	Advance(scan); // advance over initial '"'
+	while (Peek(scan) != '"' && !IsAtEnd(scan))
 	{
-		Advance(file, current);
+		Advance(scan);
 	}
-	Advance(file, current);
-	return file.substr(start + 1, (current - start) - 2);
+	Advance(scan);
+	return scan.file.substr(start + 1, (scan.current - start) - 2);
 }
 
-bool ParseNull(eastl::string& file, int& current)
+bool ParseNull(ScanningState& scan)
 {
-	int start = current;
+	int start = scan.current;
 	for (int i = 0; i < 4; i++)
-		Advance(file, current);
+		Advance(scan);
 
-	if (file.substr(start, 4) == "null")
+	if (scan.file.substr(start, 4) == "null")
 	{
 		return true;
 	}
 	return false;
 }
 
-bool ParseTrue(eastl::string& file, int& current)
+bool ParseTrue(ScanningState& scan)
 {
-	int start = current;
+	int start = scan.current;
 	for (int i = 0; i < 4; i++)
-		Advance(file, current);
+		Advance(scan);
 
-	if (file.substr(start, 4) == "true")
+	if (scan.file.substr(start, 4) == "true")
 	{
 		return true;
 	}
@@ -152,126 +205,123 @@ bool ParseTrue(eastl::string& file, int& current)
 	return false;
 }
 
-bool ParseFalse(eastl::string& file, int& current)
+bool ParseFalse(ScanningState& scan)
 {
-	int start = current;
+	int start = scan.current;
 	for (int i = 0; i < 5; i++)
-		Advance(file, current);
+		Advance(scan);
 
-	if (file.substr(start, 5) == "false")
+	if (scan.file.substr(start, 5) == "false")
 	{
 		return true;
 	}
 	return false;
 }
 
-JsonValue ParseValue(eastl::string& file, int& current)
+JsonValue ParseValue(ScanningState& scan)
 {
-	switch (file[current])
+	switch (Peek(scan))
 	{
 	case '{':
-		return ParseObject(file, current);
+		return ParseObject(scan);
 		break;
 	case '[':
-		return ParseArray(file, current);
+		return ParseArray(scan);
 		break;
 	case '"':
-		return ParseString(file, current);
+		return ParseString(scan);
 		break;
 	case 'n':
-		if (ParseNull(file, current))
+		if (ParseNull(scan))
 			return JsonValue();
 		break;
 	case 't':
-		if (ParseTrue(file, current))
+		if (ParseTrue(scan))
 			return JsonValue(true);
 		break;
 	case 'f':
-		if (ParseFalse(file, current))
+		if (ParseFalse(scan))
 			return JsonValue(false);
 		break;
 	default:
-		if (IsPartOfNumber(file[current]))
-			return ParseNumber(file, current);
+		if (IsPartOfNumber(Peek(scan)))
+			return ParseNumber(scan);
 		break;
 	}
 	return JsonValue();
 }
 
-eastl::vector<JsonValue> ParseArray(eastl::string& file, int& current)
+eastl::vector<JsonValue> ParseArray(ScanningState& scan)
 {
 	eastl::vector<JsonValue> array;
-	Advance(file, current); // advance past opening '['
+	Advance(scan); // advance past opening '['
 
-	while (!IsAtEnd(file, current) && Peek(file, current) != ']')
+	while (!IsAtEnd(scan) && Peek(scan) != ']')
 	{
-		AdvanceOverWhitespace(file, current);
-		array.push_back(ParseValue(file, current));	
-		AdvanceOverWhitespace(file, current);
+		AdvanceOverWhitespace(scan);
+		array.push_back(ParseValue(scan));	
+		AdvanceOverWhitespace(scan);
 
-		if (Peek(file, current) != ',' && Peek(file, current) != ']')
-		{
-			Log::Crit("Missing array element separator");
-			return array;
-		}
-
-		char nextC = Peek(file, current);
+		char nextC = Peek(scan);
 		if (nextC == ',')
-			Advance(file, current);
+			Advance(scan);
 		else if (nextC == ']')
 			continue;
 		else
 		{
-			Log::Crit("Missing array element separator");
+			Log::Crit("Missing array element separator (%i): \n%s\n", scan.line, ExtractErrorPointer(scan, scan.current, "Expected ',' or ']'").c_str());
 			return array;
 		}
 	}
-	AdvanceOverWhitespace(file, current);
-	Advance(file, current); // Advance over closing ']'
+	AdvanceOverWhitespace(scan);
+	Advance(scan); // Advance over closing ']'
 	return array;
 }
 
-eastl::map<eastl::string, JsonValue> ParseObject(eastl::string& file, int& current)
+eastl::map<eastl::string, JsonValue> ParseObject(ScanningState& scan)
 {
 	eastl::map<eastl::string, JsonValue> map;
-	Advance(file, current); // advance past opening '{'
+	Advance(scan); // advance past opening '{'
 
-	while (!IsAtEnd(file, current) && Peek(file, current) != '}')
+	while (!IsAtEnd(scan) && Peek(scan) != '}')
 	{
-		AdvanceOverWhitespace(file, current);
+		AdvanceOverWhitespace(scan);
 		// @Incomplete check for opening '"' and error otherwise
-		eastl::string key = ParseString(file, current);
+		eastl::string key = ParseString(scan);
 
-		AdvanceOverWhitespace(file, current);
-		if (Advance(file, current) != ':')
+		AdvanceOverWhitespace(scan);
+		if (Advance(scan) != ':')
 		{
-			Log::Crit("Missing key value separator");
+			Log::Crit("Missing Key-Value separator (%i): \n%s", scan.line, ExtractErrorPointer(scan, scan.current - 1, "Expected ':'").c_str());
 			return map;
 		}
-		AdvanceOverWhitespace(file, current);
+		AdvanceOverWhitespace(scan);
 
-		map[key] = ParseValue(file, current);
-		AdvanceOverWhitespace(file, current);
+		map[key] = ParseValue(scan);
+		AdvanceOverWhitespace(scan);
 
-		char nextC = Peek(file, current);
+		char nextC = Peek(scan);
 		if (nextC == ',')
-			Advance(file, current);
+			Advance(scan);
 		else if (nextC == '}')
 			continue;
 		else
 		{
-			Log::Crit("Missing object element separator");
+			Log::Crit("Missing object element separator or object end (%i): \n%s\n", scan.line, ExtractErrorPointer(scan, scan.current, "Expected ',' or '}'").c_str());
 			return map;
 		}
 	}
-	AdvanceOverWhitespace(file, current);
-	Advance(file, current); // Advance over closing '}'
+	AdvanceOverWhitespace(scan);
+	Advance(scan); // Advance over closing '}'
 	return map;
 }
 
 JsonValue ParseJsonFile(eastl::string& file)
 {
-    int current = 0;
-	AdvanceOverWhitespace(file, current);
-    return ParseValue(file, current);
+    ScanningState scan;
+	scan.file = file;
+	scan.current = 0;
+	scan.line = 1;
+	AdvanceOverWhitespace(scan);
+    return ParseValue(scan);
 }
