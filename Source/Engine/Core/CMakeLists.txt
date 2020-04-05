@@ -24,4 +24,6 @@ target_sources(Engine
         "Profiler.cpp"
         "Memory.h"
         "Vsnprintf.cpp"
+        "Json.h"
+        "Json.cpp"
 )
