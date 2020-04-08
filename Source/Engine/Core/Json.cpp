@@ -348,12 +348,12 @@ eastl::map<eastl::string, JsonValue> ParseObject(ScanningState& scan);
 JsonValue ParseNumber(ScanningState& scan)
 {	
 	int start = scan.current;
-	// @Incomplete: support exponential number parsing
 	while (IsPartOfNumber(Peek(scan)))
 	{
 		Advance(scan);
 	}
 
+	bool hasFraction = false;
 	if (Peek(scan) == '.' && IsPartOfNumber(PeekNext(scan)))
 	{
 		Advance(scan);
@@ -361,16 +361,35 @@ JsonValue ParseNumber(ScanningState& scan)
 		{
 			Advance(scan);
 		}
-		return strtod(scan.file.substr(start, (scan.current - start)).c_str(), nullptr);
+		hasFraction = true;
 	}
-	return strtol(scan.file.substr(start, (scan.current - start)).c_str(), nullptr, 10);
+
+	long exponent = 0;
+	if (Peek(scan) == 'e' || Peek(scan) == 'E')
+	{
+		Advance(scan); // advance past e or E
+		if (!(IsPartOfNumber(Peek(scan)) || Peek(scan) == '+'))
+			HandleError(scan, "Expected digits for the exponent, none provided", scan.current);
+
+		int exponentStart = scan.current;
+		while (IsPartOfNumber(Peek(scan)) || Peek(scan) == '+')
+		{
+			Advance(scan);
+		}
+		exponent = strtol(scan.file.substr(exponentStart, (scan.current - exponentStart)).c_str(), nullptr, 10);
+	}
+
+	if (hasFraction)
+		return strtod(scan.file.substr(start, (scan.current - start)).c_str(), nullptr);
+	
+	return strtol(scan.file.substr(start, (scan.current - start)).c_str(), nullptr, 10) * (long)pow(10, exponent);
 }
 
 eastl::string ParseString(ScanningState& scan)
 {	
 	// @Incomplete disallow unsupported escape characters
 	// @Incomplete control characters such as line breaks are not allowed here, but we currently read them
-	// @Incomplete interpret "\n" as a control character along with other control characters
+	// @Incomplete interpret "\n" as a control character along with other control characters and convert to actual chars
 	int start = scan.current;
 	Advance(scan); // advance over initial '"'
 	while (Peek(scan) != '"' && !IsAtEnd(scan))
