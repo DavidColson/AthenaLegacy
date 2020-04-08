@@ -10,7 +10,8 @@ struct JsonValue
 	{
 		Object,
 		Array,
-		Number,
+		Floating,
+		Integer,
 		Boolean,
 		String,
 		Null
@@ -27,17 +28,43 @@ struct JsonValue
 		bool boolean;
 	} internalData;
 
-	// @Incomplete Destructors for all types
-    // @Incomplete access API
-    
 	JsonValue();
+
+	JsonValue(const JsonValue& copy);
+	JsonValue(JsonValue&& copy);
+	JsonValue& operator=(const JsonValue& copy);
+	JsonValue& operator=(JsonValue&& copy);
+
 	JsonValue(eastl::vector<JsonValue>& array);
-	JsonValue(eastl::map<eastl::string, JsonValue> object);
+	JsonValue(eastl::map<eastl::string, JsonValue>& object);
 	JsonValue(eastl::string string);
+	JsonValue(const char* string);
 	JsonValue(double number);
+	JsonValue(long number);
 	JsonValue(bool boolean);
 
+	static JsonValue NewObject();
+	static JsonValue NewArray();
 
+	bool IsNull();
+	bool HasKey(eastl::string identifier);
+
+	eastl::string ToString();
+	double ToFloat();
+	long ToInt();
+	bool ToBool();
+
+	JsonValue& operator[](eastl::string identifier);
+	JsonValue& operator[](size_t index);
+
+	template <typename T>
+	void Append(T newVal)
+	{
+		ASSERT(type == Type::Array, "Attempting to treat this value as an array when it is not.");
+		internalData.pArray->push_back(newVal);
+	}
+
+	~JsonValue();
 };
 
 JsonValue ParseJsonFile(eastl::string& file);
