@@ -387,17 +387,51 @@ JsonValue ParseNumber(ScanningState& scan)
 
 eastl::string ParseString(ScanningState& scan)
 {	
-	// @Incomplete disallow unsupported escape characters
-	// @Incomplete control characters such as line breaks are not allowed here, but we currently read them
-	// @Incomplete interpret "\n" as a control character along with other control characters and convert to actual chars
 	int start = scan.current;
 	Advance(scan); // advance over initial '"'
+	eastl::string result;
 	while (Peek(scan) != '"' && !IsAtEnd(scan))
 	{
-		Advance(scan);
+		char c = Advance(scan);
+		
+		switch (c)
+		{
+		case '\0':
+		case '\t':
+		case '\b':
+		case '\\':
+			HandleError(scan, "Invalid character in string", scan.current-1); break;
+		case '\r':
+		case '\n':
+			HandleError(scan, "Unexpected end of line, please keep whole strings on one line", scan.current-1); break;
+		default:
+			break;
+		}
+
+		if (c == '\\')
+		{
+			char next = Advance(scan);
+			switch (next)
+			{
+			case '"': result += '"'; break;
+			case '\\':result += '\\'; break;
+			case '/': result += '/'; break;
+			case 'b': result += '\b'; break;
+			case 'f': result += '\f'; break;
+			case 'n': result += '\n'; break;
+			case 'r': result += '\r'; break;
+			case 't': result += '\t'; break;
+			case 'u':
+				HandleError(scan, "This parser does not yet support unicode escape codes", scan.current - 1); break;
+			default:
+				HandleError(scan, "Disallowed escape character or none provided", scan.current - 1); break;
+			}
+		}
+		else
+			result += c;
 	}
 	Advance(scan);
-	return scan.file.substr(start + 1, (scan.current - start) - 2);
+	return result;
 }
 
 bool ParseNull(ScanningState& scan)
