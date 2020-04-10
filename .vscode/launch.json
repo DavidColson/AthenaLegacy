@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Windows) Debug Launch",
+            "name": "(Windows) Debug Launch Asteroids",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/Game/Debug/AsteroidsGame.exe",
+            "program": "${workspaceFolder}/Build/Source/Asteroids/Debug/AsteroidsGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -17,10 +17,34 @@
             "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
         },
         {
-            "name": "(Windows) Release Launch",
+            "name": "(Windows) Release Launch Asteroids",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/Game/Release/AsteroidsGame.exe",
+            "program": "${workspaceFolder}/Build/Source/Asteroids/Release/AsteroidsGame.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+        },
+        {
+            "name": "(Windows) Debug Launch RacerGame",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Build/Source/RacerGame/Debug/RacerGame.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+        },
+        {
+            "name": "(Windows) Release Launch RacerGame",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Build/Source/RacerGame/Release/RacerGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

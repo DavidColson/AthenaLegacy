@@ -8,3 +8,4 @@ build/*
 freetype.tlog/
 *.pdb
 freetype.dll
+engine.log
