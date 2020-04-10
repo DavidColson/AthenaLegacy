@@ -2,6 +2,7 @@
 
 #include "Vec2.h"
 #include "Vec3.h"
+#include "Maths.h"
 
 /**
  * A 4x4 matrix
@@ -263,26 +264,27 @@ struct Matrix
 
 	inline static Matrix Perspective(float screenWidth, float screenHeight, float nearPlane, float farPlane, float fov)
 	{
-		float aspectRatio = screenWidth / screenHeight;
-		float viewHeight = 1.0f / tanf(ToRadian(fov/2.0f));
-		float viewWidth = viewHeight * aspectRatio;
+		// @Improvement: Disallow nearplane 0
+		float ar = screenWidth / screenHeight;
+		float zRange = nearPlane - farPlane;
+		float tanHalfFOV = tanf(ToRadian(fov * 0.5f));
 
-		Matrix proj;
-		proj[0] = vec4(viewWidth,										0.f,										0.f,																						0.f);
-		proj[1] = vec4(0.f,													viewHeight,							0.f,																						0.f);
-		proj[2] = vec4(0.f,													0.f,										farPlane / (farPlane - nearPlane), 							1.f);
-		proj[3] = vec4(0.f,													0.f,										-nearPlane * farPlane / (farPlane - nearPlane),	0.f);
+		Matrix mat;
+		mat.m[0][0] = (1.0f/(tanHalfFOV * ar));	mat.m[0][1] = 0.0f;					mat.m[0][2] = 0.0f;								mat.m[0][3] = 0.0f;
+		mat.m[1][0] = 0.0f;						mat.m[1][1] = (1.0f/tanHalfFOV);	mat.m[1][2] = 0.0f;								mat.m[1][3] = 0.0f;
+		mat.m[2][0] = 0.0f;						mat.m[2][1] = 0.0f;					mat.m[2][2] = (-nearPlane - farPlane) / zRange;	mat.m[2][3] = (2 * farPlane * nearPlane)/zRange;
+		mat.m[3][0] = 0.0f;						mat.m[3][1] = 0.0f;					mat.m[3][2] = 1.0f;								mat.m[3][3] = 0.0f;
 
-		return proj;
+		return mat;
 	}
 
 	inline static Matrix Orthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
 	{
 		Matrix mat;
-		mat.m[0][0] = 2.0f / (right - left);	mat.m[0][1] = 0.0f;										mat.m[0][2] = 0.0f;														mat.m[0][3] = (-right - left) / (right - left);
-		mat.m[1][0] = 0.0f;										mat.m[1][1] = 2.0f / (top - bottom);	mat.m[1][2] = 0.0f;														mat.m[1][3] = (-top - bottom) / (top - bottom);
-		mat.m[2][0] = 0.0f;										mat.m[2][1] = 0.0f;										mat.m[2][2] = 1.0f / (farPlane - nearPlane);	mat.m[2][3] = (-nearPlane) / (farPlane - nearPlane);
-		mat.m[3][0] = 0.0f;										mat.m[3][1] = 0.0f;										mat.m[3][2] = 0.0f;														mat.m[3][3] = 1.0f;
+		mat.m[0][0] = 2.0f / (right - left);	mat.m[0][1] = 0.0f;						mat.m[0][2] = 0.0f;								mat.m[0][3] = (-right - left) / (right - left);
+		mat.m[1][0] = 0.0f;						mat.m[1][1] = 2.0f / (top - bottom);	mat.m[1][2] = 0.0f;								mat.m[1][3] = (-top - bottom) / (top - bottom);
+		mat.m[2][0] = 0.0f;						mat.m[2][1] = 0.0f;						mat.m[2][2] = 1.0f / (farPlane - nearPlane);	mat.m[2][3] = (-nearPlane) / (farPlane - nearPlane);
+		mat.m[3][0] = 0.0f;						mat.m[3][1] = 0.0f;						mat.m[3][2] = 0.0f;								mat.m[3][3] = 1.0f;
 		return mat;
 	}
 };

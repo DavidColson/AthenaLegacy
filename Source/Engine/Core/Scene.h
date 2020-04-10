@@ -118,7 +118,7 @@ struct CVisibility
 struct CTransform
 {
 	Vec3f pos;
-	float rot;
+	Vec3f rot{ Vec3f(0.0f, 0.0f, 0.0f) };
 	Vec3f sca{ Vec3f(1.f, 1.f, 1.f) };
 	Vec3f vel{ Vec3f(0.0f, 0.0f, 0.0f) };
 	Vec3f accel{ Vec3f(0.0f, 0.0f, 0.0f) };

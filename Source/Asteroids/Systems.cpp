@@ -26,7 +26,7 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
 
 	CTransform* pBulletTrans = scene.Assign<CTransform>(bullet);
 	pBulletTrans->pos = pAtTransform->pos;
-	Vec3f travelDir = Vec3f(-cosf(pAtTransform->rot), -sinf(pAtTransform->rot), 0.0f);
+	Vec3f travelDir = Vec3f(-cosf(pAtTransform->rot.z), -sinf(pAtTransform->rot.z), 0.0f);
 	pBulletTrans->vel = pAtTransform->vel + travelDir * pBullet->speed;
 	pBulletTrans->rot = pAtTransform->rot;
 	pBulletTrans->sca = Vec3f(7.0f);
@@ -219,7 +219,7 @@ void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 
 		CTransform* pTrans = scene.Get<CTransform>(shape);
 		Matrixf posMat = Matrixf::Translate(pTrans->pos);
-		Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, pTrans->rot));
+		Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, pTrans->rot.z));
 		Matrixf scaMat = Matrixf::Scale(pTrans->sca);
 		Matrixf pivotAdjust = Matrixf::Translate(Vec3f(-0.5f, -0.5f, 0.0f));
 		Matrixf world = posMat * rotMat * scaMat * pivotAdjust;
@@ -435,8 +435,8 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_UP))
 		{
-			accel.x = cosf(pTransform->rot);
-			accel.y = sinf(pTransform->rot);
+			accel.x = cosf(pTransform->rot.z);
+			accel.y = sinf(pTransform->rot.z);
 			accel = accel * -pControl->thrust;
 		}
 

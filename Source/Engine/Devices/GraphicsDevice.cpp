@@ -1554,7 +1554,9 @@ void GfxDevice::FreeConstBuffer(ConstBufferHandle handle)
 
 GfxDevice::AutoEvent::AutoEvent(eastl::string label)
 {
-	pCtx->pUserDefinedAnnotation->BeginEvent((wchar_t*)label.c_str());
+	eastl::wstring wlabel(label.length(), L' ');
+    eastl::copy(label.begin(), label.end(), wlabel.begin());
+	pCtx->pUserDefinedAnnotation->BeginEvent(wlabel.c_str());
 }
 
 // ***********************************************************************
@@ -1568,5 +1570,7 @@ GfxDevice::AutoEvent::~AutoEvent()
 
 void GfxDevice::SetDebugMarker(eastl::string label)
 {
-	pCtx->pUserDefinedAnnotation->SetMarker((wchar_t*)label.c_str());
+    eastl::wstring wlabel(label.length(), L' ');
+    eastl::copy(label.begin(), label.end(), wlabel.begin());
+	pCtx->pUserDefinedAnnotation->SetMarker(wlabel.c_str());
 }
