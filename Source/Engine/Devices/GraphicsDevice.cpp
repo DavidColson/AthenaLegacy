@@ -353,6 +353,70 @@ float GfxDevice::GetWindowHeight()
 	return pCtx->windowHeight;
 }
 
+void GfxDevice::ResizeWindow(float width, float height)
+{
+	pCtx->windowHeight = height;
+	pCtx->windowWidth = width;
+
+	FreeRenderTarget(pCtx->backBuffer);
+	pCtx->pDeviceContext->ClearState();
+	pCtx->pSwapChain->ResizeBuffers(1, (UINT)width, (UINT)height, DXGI_FORMAT_UNKNOWN, 0);
+
+	// Make a new back buffer render target
+	{
+		RenderTarget renderTarget;
+
+		// First create render target texture and shader resource view
+		Texture texture;
+		{
+			pCtx->pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *)&(texture.pTexture));
+			SetDebugName(texture.pTexture, "[TEXTURE_2D] Back Buffer");
+
+			D3D11_TEXTURE2D_DESC textureDesc;
+			texture.pTexture->GetDesc(&textureDesc);
+
+			renderTarget.texture = pCtx->allocTextureHandle.NewHandle();
+			pCtx->poolTexture[renderTarget.texture.id] = texture;
+		}
+
+		// Then create the render target view
+		pCtx->pDevice->CreateRenderTargetView(texture.pTexture, nullptr, &renderTarget.pView);
+		SetDebugName(renderTarget.pView, "[RENDER_TGT] Back Buffer");
+
+		// Need to create a depth stencil texture now
+		Texture depthStencilTexture;
+		{
+			D3D11_TEXTURE2D_DESC textureDesc;
+			ZeroMemory(&textureDesc, sizeof(textureDesc));
+			textureDesc.Width = UINT(width);
+			textureDesc.Height = UINT(height);
+			textureDesc.MipLevels = textureDesc.ArraySize = 1;
+			textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			textureDesc.SampleDesc.Count = 4;
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			textureDesc.CPUAccessFlags = 0;
+			textureDesc.MiscFlags = 0;
+			pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &depthStencilTexture.pTexture);
+			SetDebugName(depthStencilTexture.pTexture, "[DEPTH_STCL] Back Buffer");
+
+			renderTarget.depthStencilTexture = pCtx->allocTextureHandle.NewHandle();
+			pCtx->poolTexture[renderTarget.depthStencilTexture.id] = depthStencilTexture;
+		}
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+		ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+		depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+		depthStencilViewDesc.Texture2D.MipSlice = 0;
+		pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
+		SetDebugName(renderTarget.pDepthStencilView, "[DEPTH_STCL_VIEW] Back Buffer");
+
+		pCtx->backBuffer = pCtx->allocRenderTargetHandle.NewHandle();
+		pCtx->poolRenderTarget[pCtx->backBuffer.id] = renderTarget;
+	}
+}
+
 // ***********************************************************************
 
 void GfxDevice::SetViewport(float x, float y, float width, float height)

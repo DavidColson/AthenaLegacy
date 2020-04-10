@@ -197,6 +197,8 @@ namespace GfxDevice
 
 	float GetWindowHeight();
 
+	void ResizeWindow(float width, float height);
+
 	void SetViewport(float x, float y, float width, float height);
 
 	void ClearBackBuffer(eastl::array<float, 4> color);

@@ -143,18 +143,45 @@ void Engine::Run(Scene *pScene)
 	{
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
+		// Deal with events
+		SDL_Event event;
+		if (SDL_PollEvent(&event))
+		{
+			ImGui_ImplSDL2_ProcessEvent(&event);
+			switch (event.type)
+			{
+			case SDL_WINDOWEVENT:
+				switch (event.window.event)
+				{
+				case SDL_WINDOWEVENT_SIZE_CHANGED:
+					GfxDevice::ResizeWindow((float)event.window.data1, (float)event.window.data2);
+					PostProcessingSystem::OnWindowResize(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
+					break;
+				default:
+					break;
+				}
+				break;
+			case SDL_QUIT:
+				Engine::StartShutdown();
+				break;
+			}
+		}
+
+		// Simulate current game scene
 		pCurrentScene->SimulateScene((float)frameTime);
 
 		GfxDevice::SetBackBufferActive();
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
 		GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
+		// Render current game scene
 		pCurrentScene->RenderScene((float)frameTime);
 
 		GfxDevice::PresentBackBuffer();
 		GfxDevice::ClearRenderState();
 		GfxDevice::PrintQueuedDebugMessages();
 
+		// Deal with scene loading
 		if (pPendingSceneLoad)
 		{
 			delete pCurrentScene;

@@ -64,7 +64,7 @@ void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
 	GfxDevice::FreeRenderTarget(pp.blurredFrame[1]);
 }
 
-void PostProcessingSystem::OnFrame(Scene& scene, float /* deltaTime */)
+void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
 {
     PROFILE();
     GFX_SCOPED_EVENT("Doing post processing");	
@@ -137,4 +137,17 @@ void PostProcessingSystem::OnFrame(Scene& scene, float /* deltaTime */)
 
     }
     GfxDevice::FreeTexture(preProcessedFrame);
+}
+
+void PostProcessingSystem::OnWindowResize(Scene& scene, float newWidth, float newHeight)
+{
+    for (EntityID ent : SceneView<CPostProcessing>(scene))
+    {
+        CPostProcessing& pp = *(scene.Get<CPostProcessing>(ent));
+        for (int i = 0; i < 2; ++i)
+        {
+            GfxDevice::FreeRenderTarget(pp.blurredFrame[i]);
+            pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth() / 2.0f, GfxDevice::GetWindowHeight() / 2.0f, eastl::string().sprintf("Blurred frame %i", i));
+        }
+    }
 }

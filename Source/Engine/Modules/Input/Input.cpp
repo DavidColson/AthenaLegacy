@@ -1,6 +1,7 @@
 
 #include "Input.h"
 #include "Engine.h"
+#include "GraphicsDevice.h"
 
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
@@ -31,10 +32,8 @@ bool Input::GetKeyHeld(int keyCode)
 	return pInput->keyStates[keyCode];
 }
 
-void Input::OnFrame(Scene& /* scene */, float /* deltaTime */)
+void Input::OnFrame(Scene& scene, float deltaTime)
 {
-	// TODO: This should be storing input state in a singleton component
-
 	eastl::bitset<NKEYS> prevKeyStates = pInput->keyStates;
 
 	// Copy the SDL keystate into our own bitset
@@ -52,17 +51,4 @@ void Input::OnFrame(Scene& /* scene */, float /* deltaTime */)
 
 	// and not, if key is not down and it changed this frame, key went up
 	pInput->keyUps = keyChanges & ~pInput->keyStates;
-
-	SDL_Event event;
-	if (SDL_PollEvent(&event))
-	{
-		/* an event was found */
-		ImGui_ImplSDL2_ProcessEvent(&event);
-		switch (event.type)
-		{
-		case SDL_QUIT:
-			Engine::StartShutdown();
-			break;
-		}
-	}
 }

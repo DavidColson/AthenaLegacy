@@ -37,4 +37,5 @@ namespace PostProcessingSystem
 	void OnRemovePostProcessing(Scene& scene, EntityID entity);
 
 	void OnFrame(Scene& scene, float deltaTime);
+	void OnWindowResize(Scene& scene, float newWidth, float newHeight);
 }
