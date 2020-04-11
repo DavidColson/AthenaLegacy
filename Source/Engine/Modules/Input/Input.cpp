@@ -15,6 +15,7 @@ InputState *pInput;
 void Input::CreateInputState()
 {
 	pInput = new InputState();
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 bool Input::GetKeyDown(int keyCode)
@@ -30,6 +31,19 @@ bool Input::GetKeyUp(int keyCode)
 bool Input::GetKeyHeld(int keyCode)
 {
 	return pInput->keyStates[keyCode];
+}
+
+Vec2f Input::GetMouseDelta()
+{
+	return Vec2f(pInput->mouseXDelta, pInput->mouseYDelta);
+}
+
+bool Input::GetMouseInRelativeMode()
+{
+	if (SDL_GetRelativeMouseMode() == SDL_TRUE)
+		return true;
+	else
+		return false;
 }
 
 void Input::OnFrame(Scene& scene, float deltaTime)
@@ -51,4 +65,23 @@ void Input::OnFrame(Scene& scene, float deltaTime)
 
 	// and not, if key is not down and it changed this frame, key went up
 	pInput->keyUps = keyChanges & ~pInput->keyStates;
+
+	// Purely an engine editor feature for locking and unlocking the mouse. Should be removed from release builds
+	if (GetKeyHeld(SDL_SCANCODE_LSHIFT) && GetKeyDown(SDL_SCANCODE_TAB))
+	{
+		if (GetMouseInRelativeMode())
+			SDL_SetRelativeMouseMode(SDL_FALSE);
+		else
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+	}
+
+	int x = 0;
+	int y = 0;
+	uint32_t mouseButtonState = SDL_GetMouseState(&x, &y);
+	pInput->mouseXPos = (float)x;
+	pInput->mouseYPos = (float)y;
+	
+	SDL_GetRelativeMouseState(&x, &y);
+	pInput->mouseXDelta = (float)x;
+	pInput->mouseYDelta = (float)y;
 }

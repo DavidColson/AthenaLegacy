@@ -191,18 +191,18 @@ struct Matrix
 	inline Vec3<T> GetUpVector() const
 	{
 		Vec3<T> vec;
-		vec.x = m[0][2]; 
-		vec.x = m[1][2]; 
-		vec.x = m[2][2];
+		vec.x = m[0][1]; 
+		vec.y = m[1][1]; 
+		vec.z = m[2][1];
 		return vec; 
 	}
 
 	inline Vec3<T> GetForwardVector() const
 	{
 		Vec3<T> vec;
-		vec.x = m[0][1]; 
-		vec.x = m[1][1]; 
-		vec.x = m[2][1];
+		vec.x = m[0][2]; 
+		vec.y = m[1][2]; 
+		vec.z = m[2][2];
 		return vec;
 	}
 
@@ -287,7 +287,36 @@ struct Matrix
 		mat.m[3][0] = 0.0f;						mat.m[3][1] = 0.0f;						mat.m[3][2] = 0.0f;								mat.m[3][3] = 1.0f;
 		return mat;
 	}
+
+	inline static Matrix MakeLookAt(Vec3<T> Forward, Vec3<T> Up)
+    {
+        Vec3f N = Forward.GetNormalized();
+        Vec3f U = Up.GetNormalized();
+        U = Vec3f::Cross(U, N);
+        Vec3f V = Vec3f::Cross(N, U);
+    
+		Matrix mat;
+		mat.m[0][0] = U.x;	mat.m[0][1] = U.y;	mat.m[0][2] = U.z;	mat.m[0][3] = 0.0f;
+		mat.m[1][0] = V.x;	mat.m[1][1] = V.y;	mat.m[1][2] = V.z;	mat.m[1][3] = 0.0f;
+		mat.m[2][0] = N.x;	mat.m[2][1] = N.y;	mat.m[2][2] = N.z;	mat.m[2][3] = 0.0f;
+		mat.m[3][0] = 0.0f;	mat.m[3][1] = 0.0f;	mat.m[3][2] = 0.0f;	mat.m[3][3] = 1.0f;
+        
+        return mat;
+    }
 };
 
 typedef Matrix<float> Matrixf;
 typedef Matrix<double> Matrixd;
+
+inline void GetAxesFromRotation(Matrixf rotation, Vec3f& forward, Vec3f& right, Vec3f& up)
+{
+    forward =   Vec3f(rotation.m[0][2], rotation.m[1][2], rotation.m[2][2]);
+    right =     Vec3f(rotation.m[0][0], rotation.m[1][0], rotation.m[2][0]);
+    up =        Vec3f(rotation.m[0][1], rotation.m[1][1], rotation.m[2][1]);
+}
+
+inline void GetAxesFromRotation(Vec3f rotation, Vec3f& forward, Vec3f& right, Vec3f& up)
+{
+    Matrixf rot = Matrixf::Rotate(rotation);
+    GetAxesFromRotation(rot, forward, right, up);
+}

@@ -88,6 +88,8 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
+
+	// Need more manual control over render passes. This won't do
 	scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
 	scene.RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
 	scene.RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
@@ -169,6 +171,8 @@ void Engine::Run(Scene *pScene)
 
 		// Simulate current game scene
 		pCurrentScene->SimulateScene((float)frameTime);
+		Profiler::ClearFrameData();
+
 
 		GfxDevice::SetBackBufferActive();
 		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });

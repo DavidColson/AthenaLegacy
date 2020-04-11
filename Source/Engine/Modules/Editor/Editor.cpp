@@ -15,9 +15,9 @@
 
 namespace {
 	bool showEditor = true;
-	bool showLog = false;
-	bool showEntityInspector = false;
-	bool showEntityList = false;
+	bool showLog = true;
+	bool showEntityInspector = true;
+	bool showEntityList = true;
 	bool showFrameStats = false;
 	bool showImGuiDemo = false;
 	EntityID selectedEntity = INVALID_ENTITY;
@@ -260,6 +260,4 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 	ShowFrameStats();
 	if (showImGuiDemo)
 		ImGui::ShowDemoWindow();
-
-	Profiler::ClearFrameData();
 }
