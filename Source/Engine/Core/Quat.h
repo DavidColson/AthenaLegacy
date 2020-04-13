@@ -15,7 +15,7 @@ struct Quat
     T z;
     T w;
 
-    Quat() : x(T()), y(T()), z(T()), w(T()) {}
+    Quat() : x(T()), y(T()), z(T()), w(T(1.0)) {}
     Quat(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
 
     // @Incomplete: Angle axis
@@ -40,6 +40,7 @@ struct Quat
 
     inline static Quat MakeFromEuler(T x, T y, T z)
     {
+        // This is a body 3-2-1 (z, then y, then x) rotation
         const float cx = cosf(x * 0.5f);
 		const float sx = sinf(x * 0.5f);
 		const float cy = cosf(y * 0.5f);
@@ -101,7 +102,7 @@ struct Quat
         );
     }
 
-    inline Vec3<T> operator*(Vec3<T> v)
+    inline Vec3<T> operator*(const Vec3<T> v) const
     {
         // Note this actually implements q*v'*q^1 with v' = (v, 0)
 
@@ -147,6 +148,17 @@ struct Quat
     {
         return 2 * acosf(w);
     }
+
+    inline Vec3<T> GetEulerAngles()
+    {
+        Vec3<T> res;
+        res.x = atan2(T(2.0) * (w*x + y*z), T(1.0) - T(2.0) * (x*x + y*y));
+        res.y = asin(T(2.0) * (w*y - z*x));
+        res.z = atan2(T(2.0) * (w*z + x*y), T(1.0) - T(2.0) * (y*y + z*z));
+        return res;
+    }
+
+    // TO STRING
 };
 
 typedef Quat<float> Quatf;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #define PI 3.14159f
 
 #define ToRadian(x) ((x) * 3.14159f /180.0f)
