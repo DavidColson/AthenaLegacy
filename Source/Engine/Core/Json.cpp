@@ -216,6 +216,8 @@ JsonValue JsonValue::NewArray()
 // Scanning Utilities
 /////////////////////
 
+// @Improvement, use string_view for more performance and less memory thrashing
+
 struct ScanningState
 {
 	eastl::string file;

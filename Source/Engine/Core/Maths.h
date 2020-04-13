@@ -1,5 +1,7 @@
 #pragma once
 
+#define PI 3.14159f
+
 #define ToRadian(x) ((x) * 3.14159f /180.0f)
 #define ToDegree(x) ((x) * 180.0f / 3.14159f)
 

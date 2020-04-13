@@ -3,6 +3,9 @@
 #include "Vec2.h"
 #include "Vec3.h"
 #include "Maths.h"
+#include "Quat.h"
+
+// @Improvement: properly comment/document the rest of this
 
 /**
  * A 4x4 matrix
@@ -10,8 +13,7 @@
 template<typename T>
 struct Matrix
 {
-	// Wishlist
-	T m[4][4]; // row, column
+	T m[4][4]; // row, column (row major)
 
 	Matrix() {}
 
@@ -179,6 +181,7 @@ struct Matrix
  		return vec;
 	}
 
+	// @Improvement: Change these to be get column, and we'll use these names with quats
 	inline Vec3<T> GetRightVector() const
 	{
 		Vec3<T> vec;
@@ -206,6 +209,14 @@ struct Matrix
 		return vec;
 	}
 
+	inline bool IsRotationOrthonormal() const 
+	{
+		bool a = Vec3<T>::IsEquivalent( GetRightVector(), 	Vec3<T>::Cross(GetUpVector(), GetForwardVector()) );
+		bool b = Vec3<T>::IsEquivalent( GetUpVector(), 		Vec3<T>::Cross(GetForwardVector(), GetRightVector()) );
+		bool c = Vec3<T>::IsEquivalent( GetForwardVector(), Vec3<T>::Cross(GetRightVector(), GetUpVector()) );
+		return a && b && c;
+	}
+
 	inline eastl::string ToString() const 
 	{
 		return eastl::string().sprintf("{ %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f } \n { %.5f, %.5f, %.5f, %.5f }", 
@@ -214,6 +225,49 @@ struct Matrix
 			m[2][0], m[2][1], m[2][2], m[2][3],
 			m[3][0], m[3][1], m[3][2], m[3][3]);
 	}
+
+	inline Quat<T> ToQuat() const
+    {
+        // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+
+        ASSERT(IsRotationOrthonormal(), "Cannot convert a non-orthonormal matrix to a quat");
+
+        Quat<T> q;
+        float trace = m[0][0] + m[1][1] + m[2][2];
+        if (trace > 0)
+        {
+            float s = 0.5f / sqrtf(trace + 1.0f); // 4 * q.w
+            q.w = 0.25f / s;
+            q.x = (m[2][1] - m[1][2]) * s;
+            q.y = (m[0][2] - m[2][0]) * s;
+            q.z = (m[1][0] - m[0][1]) * s;
+        }
+        else if (m[0][0] > m[1][1] && m[0][0] > m[2][2])
+        {
+            float s = 2.0f * sqrtf( 1.0f + m[0][0] - m[1][1] - m[2][2]);
+            q.w = (m[2][1] - m[1][2] ) / s;
+            q.x = 0.25f * s;
+            q.y = (m[0][1] + m[1][0] ) / s;
+            q.z = (m[0][2] + m[2][0] ) / s;
+        }
+        else if (m[1][1] > m[2][2])
+        {
+            float s = 2.0f * sqrtf( 1.0f + m[1][1] - m[0][0] - m[2][2]);
+            q.w = (m[0][2] - m[2][0] ) / s;
+            q.x = (m[0][1] + m[1][0] ) / s;
+            q.y = 0.25f * s;
+            q.z = (m[1][2] + m[2][1] ) / s;
+        }
+        else
+        {
+            float s = 2.0f * sqrtf( 1.0f + m[2][2] - m[0][0] - m[1][1] );
+            q.w = (m[1][0] - m[0][1] ) / s;
+            q.x = (m[0][2] + m[1][0] ) / s;
+            q.y = (m[1][2] + m[2][1] ) / s;
+            q.z = 0.25f * s;
+        }
+        return q;
+    }
 
 	inline static Matrix Translate(Vec3<T> translate)
 	{
@@ -227,29 +281,21 @@ struct Matrix
 
 	inline static Matrix Rotate(Vec3<T> rotation)
 	{
-		float x = rotation.x;
-		float y = rotation.y;
-		float z = rotation.z;
+		// This is a body 3-2-1 (z, then y, then x) rotation
+		const float cx = cosf(rotation.x);
+		const float sx = sinf(rotation.x);
+		const float cy = cosf(rotation.y);
+		const float sy = sinf(rotation.y);
+		const float cz = cosf(rotation.z);
+		const float sz = sinf(rotation.z);
 
-		Matrix rx;
-		rx.m[0][0] = 1.0f; rx.m[0][1] = 0.0f;	rx.m[0][2] = 0.0f;		rx.m[0][3] = 0.0f;
-		rx.m[1][0] = 0.0f; rx.m[1][1] = cosf(x); rx.m[1][2] = -sinf(x);	rx.m[1][3] = 0.0f;
-		rx.m[2][0] = 0.0f; rx.m[2][1] = sinf(x); rx.m[2][2] = cosf(x);	rx.m[2][3] = 0.0f;
-		rx.m[3][0] = 0.0f; rx.m[3][1] = 0.0f;	rx.m[3][2] = 0.0f;		rx.m[3][3] = 1.0f;
+		Matrix res;
+		res.m[0][0] = cy*cz;	res.m[0][1] = -cx*sz + sx*sy*cz;	res.m[0][2] =  sx*sz + cx*sy*cz;	res.m[0][3] = 0.0f;
+		res.m[1][0] = cy*sz;	res.m[1][1] =  cx*cz + sx*sy*sz;	res.m[1][2] = -sx*cz + cx*sy*sz; 	res.m[1][3] = 0.0f;
+		res.m[2][0] = -sy;		res.m[2][1] = sx*cy;				res.m[2][2] = cx*cy; 				res.m[2][3] = 0.0f;
+		res.m[3][0] = 0.0f;		res.m[3][1] = 0.0f;					res.m[3][2] = 0.0f; 				res.m[3][3] = 1.0f;
 
-		Matrix ry;
-		ry.m[0][0] = cosf(y);	ry.m[0][1] = 0.0f; ry.m[0][2] = -sinf(y);	ry.m[0][3] = 0.0f;
-		ry.m[1][0] = 0.0f;		ry.m[1][1] = 1.0f; ry.m[1][2] = 0.0f;		ry.m[1][3] = 0.0f;
-		ry.m[2][0] = sinf(y);	ry.m[2][1] = 0.0f; ry.m[2][2] = cosf(y);		ry.m[2][3] = 0.0f;
-		ry.m[3][0] = 0.0f;		ry.m[3][1] = 0.0f; ry.m[3][2] = 0.0f;		ry.m[3][3] = 1.0f;
-
-		Matrix rz;
-		rz.m[0][0] = cosf(z);	rz.m[0][1] = -sinf(z);	rz.m[0][2] = 0.0f; rz.m[0][3] = 0.0f;
-		rz.m[1][0] = sinf(z);	rz.m[1][1] = cosf(z);	rz.m[1][2] = 0.0f; rz.m[1][3] = 0.0f;
-		rz.m[2][0] = 0.0f;		rz.m[2][1] = 0.0f;		rz.m[2][2] = 1.0f; rz.m[2][3] = 0.0f;
-		rz.m[3][0] = 0.0f;		rz.m[3][1] = 0.0f;		rz.m[3][2] = 0.0f; rz.m[3][3] = 1.0f;
-
-		return rz * ry * rx;
+		return res;
 	}
 
 	inline static Matrix Scale(Vec3<T> scale)
@@ -308,15 +354,10 @@ struct Matrix
 typedef Matrix<float> Matrixf;
 typedef Matrix<double> Matrixd;
 
-inline void GetAxesFromRotation(Matrixf rotation, Vec3f& forward, Vec3f& right, Vec3f& up)
-{
-    forward =   Vec3f(rotation.m[0][2], rotation.m[1][2], rotation.m[2][2]);
-    right =     Vec3f(rotation.m[0][0], rotation.m[1][0], rotation.m[2][0]);
-    up =        Vec3f(rotation.m[0][1], rotation.m[1][1], rotation.m[2][1]);
-}
-
 inline void GetAxesFromRotation(Vec3f rotation, Vec3f& forward, Vec3f& right, Vec3f& up)
 {
     Matrixf rot = Matrixf::Rotate(rotation);
-    GetAxesFromRotation(rot, forward, right, up);
+    forward =   Vec3f(rot.m[0][2], rot.m[1][2], rot.m[2][2]);
+    right =     Vec3f(rot.m[0][0], rot.m[1][0], rot.m[2][0]);
+    up =        Vec3f(rot.m[0][1], rot.m[1][1], rot.m[2][1]);
 }

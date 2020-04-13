@@ -152,6 +152,18 @@ struct Vec3
 	}
 
 	/**
+	* Determine if two vectors are almost the same
+	*
+	* @param  lhs The left vector
+	* @param  rhs The right vector
+	* @return true or false, are they equivalent
+	**/
+	inline static bool IsEquivalent(const Vec3& lhs, const Vec3& rhs)
+	{
+		return (lhs - rhs).GetLengthSquared() < 0.003f;
+	}
+
+	/**
 	* Compare two vectors for exact equality
 	*
 	* @param  rhs The other vector to compare against
@@ -265,6 +277,16 @@ struct Vec3
 	inline T GetLength() const
 	{
 		return sqrtf(x * x + y * y + z * z);
+	}
+
+	/**
+	* Get the length of this vector squared
+	*
+	* @return The length squared
+	**/
+	inline T GetLengthSquared() const
+	{
+		return x * x + y * y + z * z;
 	}
 
 	/**
