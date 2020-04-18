@@ -96,7 +96,7 @@ inline bool IsEntityValid(EntityID id)
 	return (id >> 32) != EntityIndex(-1);
 }
 
-#define INVALID_ENTITY CreateEntityId(EntityIndex(-1), 0)
+#define INVALID_ENTITY 18446744069414584320 // = CreateEntityId(EntityIndex(-1), 0)
 
 
 // Built-in Components
@@ -129,7 +129,20 @@ struct CTransform
 
 struct CParent
 {
-	EntityID parent;
+	int nChildren{ 0 };
+	EntityID firstChild{ INVALID_ENTITY };
+
+	REFLECT()
+};
+
+struct CChild
+{
+	EntityID parent{ INVALID_ENTITY };
+	
+	// doubly linked list of children, 
+	// this method is used because it requires no dynamic allocation
+	EntityID prev{ INVALID_ENTITY };
+	EntityID next{ INVALID_ENTITY };
 
 	REFLECT();
 };
@@ -328,6 +341,10 @@ struct Scene
 			break;
 		}
 	}
+
+	void SetParent(EntityID child, EntityID parent);
+
+	void UnsetParent(EntityID child, EntityID parent);
 
 	void RegisterSystem(SystemPhase phase, SystemFunc func);
 

@@ -15,10 +15,10 @@
 
 namespace {
 	bool showEditor = true;
-	bool showLog = true;
+	bool showLog = false;
 	bool showEntityInspector = true;
 	bool showEntityList = true;
-	bool showFrameStats = false;
+	bool showFrameStats = true;
 	bool showImGuiDemo = false;
 	EntityID selectedEntity = INVALID_ENTITY;
 
@@ -165,6 +165,33 @@ void ShowEntityInspector(Scene& scene)
 	ImGui::End();
 }
 
+void RecurseDrawEntityTree(Scene& scene, EntityID parent)
+{
+	CParent* pParent = scene.Get<CParent>(parent);
+			
+	EntityID currChild = pParent->firstChild;
+	for(int i = 0; i < pParent->nChildren; i++)
+	{
+		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+		
+		if (!scene.Has<CParent>(currChild))
+			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)currChild, nodeFlags, "%i - %s", GetEntityIndex(currChild), scene.GetEntityName(currChild).c_str());
+		if (ImGui::IsItemClicked())
+			selectedEntity = currChild;
+		
+		if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
+		{
+			if (scene.Has<CParent>(currChild))
+				RecurseDrawEntityTree(scene, currChild);
+
+			ImGui::TreePop();
+		}
+		currChild = scene.Get<CChild>(currChild)->next;
+	}
+}
+
 void ShowEntityList(Scene& scene)
 {
 	if (!showEntityList)
@@ -174,14 +201,28 @@ void ShowEntityList(Scene& scene)
 
 	for (EntityID entity : SceneView<>(scene))
 	{
-		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 
 		if (selectedEntity == entity)
-			node_flags |= ImGuiTreeNodeFlags_Selected;
+			nodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-		ImGui::TreeNodeEx((void*)(uintptr_t)entity, node_flags, "%i - %s", GetEntityIndex(entity), scene.GetEntityName(entity).c_str());
+		if (!scene.Has<CParent>(entity))
+			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+		if (scene.Has<CChild>(entity))
+			continue;
+
+		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)entity, nodeFlags, "%i - %s", GetEntityIndex(entity), scene.GetEntityName(entity).c_str());
 		if (ImGui::IsItemClicked())
 			selectedEntity = entity;
+		
+		if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
+		{
+			if (scene.Has<CParent>(entity))
+				RecurseDrawEntityTree(scene, entity);
+
+			ImGui::TreePop();
+		}
 	}
 
 	ImGui::End();

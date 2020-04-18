@@ -145,11 +145,33 @@ void SetupScene(Scene& scene)
 
 	EntityID cube2 = scene.NewEntity("Cube2");
 	CCube* pCube2 = scene.Assign<CCube>(cube2);
-	scene.Assign<CParent>(cube2)->parent = cube;
+	scene.SetParent(cube2, cube);
 	CTransform* pTrans2 = scene.Assign<CTransform>(cube2);
 	pTrans2->localPos = Vec3f(1.0f, 0.0f, 5.0f);
 	pTrans2->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 	*pCube2 = *pCube;
+
+	EntityID cube3 = scene.NewEntity("Cube3");
+	CCube* pCube3 = scene.Assign<CCube>(cube3);
+	scene.SetParent(cube3, cube2);
+	CTransform* pTrans3 = scene.Assign<CTransform>(cube3);
+	pTrans3->localPos = Vec3f(1.0f, 0.0f, 5.0f);
+	pTrans3->localSca = Vec3f(1.0f, 1.0f, 1.0f);
+	*pCube3 = *pCube;
+
+	for(int i = 0; i < 4; i++)
+	{
+		EntityID newEnt = scene.NewEntity("ChildEnt");
+		scene.SetParent(newEnt, cube);
+	}
+
+	for(int i = 0; i < 2; i++)
+	{
+		EntityID newEnt = scene.NewEntity("ChildEnt");
+		scene.SetParent(newEnt, cube2);
+	}
+
+	//scene.UnsetParent(cube2, cube);
 }
 
 int main(int argc, char *argv[])

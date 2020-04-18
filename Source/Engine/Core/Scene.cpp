@@ -1,8 +1,6 @@
 #include "Scene.h"
 int s_componentCounter = 0;
 
-#include "Transform.h"
-
 REFLECT_BEGIN(CName)
 REFLECT_MEMBER(name)
 REFLECT_END()
@@ -18,50 +16,60 @@ REFLECT_MEMBER(localSca)
 REFLECT_END()
 
 REFLECT_BEGIN(CParent)
-REFLECT_MEMBER(parent)
+REFLECT_MEMBER(nChildren)
+REFLECT_MEMBER(firstChild)
 REFLECT_END()
 
-eastl::map<EntityID, eastl::vector<EntityID>> BuildTransformGraphs(Scene& scene)
-{
-    eastl::map<EntityID, eastl::vector<EntityID>> map;
-    for (EntityID ent : SceneView<CParent, CTransform>(scene))
-    {
-        CParent* pParent = scene.Get<CParent>(ent);
+REFLECT_BEGIN(CChild)
+REFLECT_MEMBER(parent)
+REFLECT_MEMBER(prev)
+REFLECT_MEMBER(next)
+REFLECT_END()
 
-        // Build a map that maps all the parents to their children
-        map[pParent->parent].push_back(ent);
+void RecursiveTransformTree(Scene& scene, EntityID root)
+{
+    CTransform* pParentTrans = scene.Get<CTransform>(root);
+    CParent* pParent = scene.Get<CParent>(root);
+			
+	EntityID currChild = pParent->firstChild;
+	for(int i = 0; i < pParent->nChildren; i++)
+	{
+        if (!scene.Has<CTransform>(currChild))
+            continue;
+
+        CTransform* pChildTrans = scene.Get<CTransform>(currChild);
+
+        Matrixf childMat = Matrixf::MakeTRS(pChildTrans->localPos, pChildTrans->localRot, pChildTrans->localSca);
+        pChildTrans->globalTransform = pParentTrans->globalTransform * childMat;
+
+        if (scene.Has<CParent>(currChild))
+            RecursiveTransformTree(scene, currChild);
+
+		currChild = scene.Get<CChild>(currChild)->next;
     }
-    return map;
 }
 
 void TransformHeirarchy(Scene& scene, float deltaTime)
 {
     // Phase 1 would be transforming all the parent transforms. We'll take their transform components and build a renderMatrix
     // Not doing this as we don't store the render matrix
-    for (EntityID ent : SceneView<CTransform>(scene))
-    {
-        if (!scene.Has<CParent>(ent))
+    eastl::vector<EntityID> roots;
+
+    for (EntityID ent : SceneView<CTransform, CParent>(scene))
+    {   
+        // We only want root entities here, so ignoring children, they'll come later
+        if (!scene.Has<CChild>(ent))
         {
             CTransform* pTrans = scene.Get<CTransform>(ent);
             pTrans->globalTransform = Matrixf::MakeTRS(pTrans->localPos, pTrans->localRot, pTrans->localSca);
+            roots.push_back(ent);
         }
     }
 
-    // Phase 2, build this graph from each node
-    eastl::map<EntityID, eastl::vector<EntityID>> trees = BuildTransformGraphs(scene);
-
-    // Phase 2, run through graph
-    for (const eastl::pair<EntityID, eastl::vector<EntityID>>& tree : trees)
+    // Phase 2, run through each roots graph updating all their children
+    for (EntityID root : roots)
     {
-        CTransform* pParentTrans = scene.Get<CTransform>(tree.first);
-        
-        for (const EntityID& child : tree.second)
-        {
-            CTransform* pChildTrans = scene.Get<CTransform>(child);
-            Matrixf childMat = Matrixf::MakeTRS(pChildTrans->localPos, pChildTrans->localRot, pChildTrans->localSca);
-
-            pChildTrans->globalTransform = pParentTrans->globalTransform * childMat;         
-        }
+        RecursiveTransformTree(scene, root);
     }
 }
 
@@ -137,6 +145,66 @@ void Scene::DestroyEntity(EntityID id)
 eastl::string Scene::GetEntityName(EntityID entity)
 {
     return Get<CName>(entity)->name;
+}
+
+void Scene::SetParent(EntityID child, EntityID parent)
+{
+    // Ensure they have relationship components
+    if (!Has<CParent>(parent))
+        Assign<CParent>(parent);
+
+    if (!Has<CChild>(child))
+        Assign<CChild>(child);
+
+    
+    CParent* pParent = Get<CParent>(parent);
+    // First case, this is the first child being attached to this parent
+    if (pParent->firstChild == INVALID_ENTITY)
+    {
+        pParent->firstChild = child;
+
+        CChild* pNewChild = Get<CChild>(child);
+        pNewChild->parent = parent;
+    }
+    else
+    {
+        EntityID current = pParent->firstChild;
+        for (int i = 0; i < pParent->nChildren - 1; i++)
+            current = Get<CChild>(current)->next;
+
+        CChild* pNewChild = Get<CChild>(child);
+        pNewChild->prev = current;
+        pNewChild->parent = parent;
+        
+        Get<CChild>(current)->next = child;
+    }
+    pParent->nChildren += 1;
+}
+
+void Scene::UnsetParent(EntityID child, EntityID parent)
+{
+    CChild* pChild = Get<CChild>(child);
+    CParent* pParent = Get<CParent>(parent);
+
+    // This is the only child of this parent
+    if (pChild->prev == INVALID_ENTITY && pChild->next == INVALID_ENTITY)
+    {
+        pParent->firstChild = INVALID_ENTITY;
+        Get<CParent>(parent)->firstChild = pChild->next;
+    }
+    // This case means this is the first child, but not the only one
+    else if (pChild->prev == INVALID_ENTITY && pChild->next != INVALID_ENTITY)
+    {
+        pParent->firstChild = pChild->next;
+    }
+    // This is a normal case of a child among many
+    else
+    {
+        Get<CChild>(pChild->prev)->next = pChild->next;
+    }
+    
+    Remove<CChild>(child);
+    pParent->nChildren -= 1;
 }
 
 void Scene::RegisterSystem(SystemPhase phase, SystemFunc func)
