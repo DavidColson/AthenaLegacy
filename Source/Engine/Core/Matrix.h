@@ -291,6 +291,48 @@ struct Matrix
         return q;
     }
 
+	inline void ToTQS(Vec3<T>& outTranslation, Quat<T> outOrientation, Vec3<T> outScale)
+	{
+        Matrix<T> m = *this;
+        // Extract scaling first from each row
+        outScale = m.ExtractScaling();
+
+        // Special case for negative scaling
+		if (affineTransform.GetDeterminant() < 0.f)
+		{
+            // choice of axis to flip makes no difference
+			outScale.x *= -1.f;
+            m.m[0][0] = -m.m[0][0]; m.m[0][1] = -m.m[0][1]; m.m[0][2] = -m.m[0][2];
+		}
+        outOrientation = m.ToQuat();
+
+        // Translation is easy, we just take the 4th column
+        outTranslation.x = m.m[0][3];
+        outTranslation.y = m.m[1][3];
+        outTranslation.z = m.m[2][3];
+	}
+
+	inline void ToTRS(Vec3<T>& outTranslation, Vec3<T> outEulerAngles, Vec3<T> outScale)
+	{
+        Matrix<T> m = *this;
+        // Extract scaling first from each row
+        outScale = m.ExtractScaling();
+
+        // Special case for negative scaling
+		if (affineTransform.GetDeterminant() < 0.f)
+		{
+            // choice of axis to flip makes no difference
+			outScale.x *= -1.f;
+            m.m[0][0] = -m.m[0][0]; m.m[0][1] = -m.m[0][1]; m.m[0][2] = -m.m[0][2];
+		}
+        outEulerAngles = m.ToQuat().GetEulerAngles();
+
+        // Translation is easy, we just take the 4th column
+        outTranslation.x = m.m[0][3];
+        outTranslation.y = m.m[1][3];
+        outTranslation.z = m.m[2][3];
+	}
+
 	inline eastl::string ToString() const 
 	{
 		return eastl::string().sprintf("{ %.5f, %.5f, %.5f, %.5f } \n{ %.5f, %.5f, %.5f, %.5f } \n{ %.5f, %.5f, %.5f, %.5f } \n{ %.5f, %.5f, %.5f, %.5f }", 
@@ -300,7 +342,50 @@ struct Matrix
 			m[3][0], m[3][1], m[3][2], m[3][3]);
 	}
 
-	inline static Matrix Translate(Vec3<T> translate)
+	inline static Matrix MakeTRS(Vec3<T> translation, Vec3<T> eulerAngles, Vec3<T> scale)
+	{
+		// This is a body 3-2-1 (z, then y, then x) rotation
+		const T cx = cos(eulerAngles.x);
+		const T sx = sin(eulerAngles.x);
+		const T cy = cos(eulerAngles.y);
+		const T sy = sin(eulerAngles.y);
+		const T cz = cos(eulerAngles.z);
+		const T sz = sin(eulerAngles.z);
+
+		Matrix res;
+		res.m[0][0] = cy*cz * scale.x;	res.m[0][1] = (-cx*sz + sx*sy*cz) * scale.y;	res.m[0][2] =  (sx*sz + cx*sy*cz) * scale.z;	res.m[0][3] = translation.x;
+		res.m[1][0] = cy*sz * scale.x;	res.m[1][1] =  (cx*cz + sx*sy*sz) * scale.y;	res.m[1][2] = (-sx*cz + cx*sy*sz) * scale.z; 	res.m[1][3] = translation.y;
+		res.m[2][0] = -sy * scale.x;	res.m[2][1] = sx*cy * scale.y;					res.m[2][2] = cx*cy * scale.z; 					res.m[2][3] = translation.z;
+		res.m[3][0] = T(0.0);			res.m[3][1] = T(0.0);							res.m[3][2] = T(0.0); 							res.m[3][3] = T(1.0);
+		return res;
+	}
+
+	inline static Matrix MakeTQS(Vec3<T> translation, Quat<T> orientation, Vec3<T> scale)
+	{
+		Matrix res;
+		mat.m[0][0] = (1.0f - 2.0f*rot.y*rot.y - 2.0f*rot.z*rot.z) * scale.x;
+		mat.m[1][0] = (2.0f*rot.x*rot.y + 2.0f*rot.z*rot.w) * scale.x;
+		mat.m[2][0] = (2.0f*rot.x*rot.z - 2.0f*rot.y*rot.w) * scale.x;
+        mat.m[3][0] = 0.0f;
+		
+        mat.m[0][1] = (2.0f*rot.x*rot.y - 2.0f*rot.z*rot.w) * scale.y;
+        mat.m[1][1] = (1.0f - 2.0f*rot.x*rot.x - 2.0f*rot.z*rot.z) * scale.y;
+        mat.m[2][1] = (2.0f*rot.y*rot.z + 2.0f*rot.x*rot.w) * scale.y;
+        mat.m[3][1] = 0.0f;
+
+        mat.m[0][2] = (2.0f*rot.x*rot.z + 2.0f*rot.y*rot.w) * scale.z;
+        mat.m[1][2] = (2.0f*rot.y*rot.z - 2.0f*rot.x*rot.w) * scale.z;
+        mat.m[2][2] = (1.0f - 2.0f*rot.x*rot.x - 2.0f*rot.y*rot.y) * scale.z;
+        mat.m[3][2] = 0.0f;
+
+        mat.m[0][3] = translation.x;
+        mat.m[1][3] = translation.y;
+        mat.m[2][3] = translation.z;
+        mat.m[3][3] = 1.0f;		                
+		return res;
+	}
+
+	inline static Matrix MakeTranslation(Vec3<T> translate)
 	{
 		Matrix mat;
 		mat.m[0][0] = T(1.0); mat.m[0][1] = T(0.0); mat.m[0][2] = T(0.0); mat.m[0][3] = translate.x;
@@ -310,7 +395,7 @@ struct Matrix
 		return mat;
 	}
 
-	inline static Matrix Rotate(Vec3<T> rotation)
+	inline static Matrix MakeRotation(Vec3<T> rotation)
 	{
 		// This is a body 3-2-1 (z, then y, then x) rotation
 		const T cx = cos(rotation.x);
@@ -325,11 +410,10 @@ struct Matrix
 		res.m[1][0] = cy*sz;	res.m[1][1] =  cx*cz + sx*sy*sz;	res.m[1][2] = -sx*cz + cx*sy*sz; 	res.m[1][3] = T(0.0);
 		res.m[2][0] = -sy;		res.m[2][1] = sx*cy;				res.m[2][2] = cx*cy; 				res.m[2][3] = T(0.0);
 		res.m[3][0] = T(0.0);	res.m[3][1] = T(0.0);				res.m[3][2] = T(0.0); 				res.m[3][3] = T(1.0);
-
 		return res;
 	}
 
-	inline static Matrix Scale(Vec3<T> scale)
+	inline static Matrix MakeScale(Vec3<T> scale)
 	{
 		Matrix mat;
 		mat.m[0][0] = scale.x; 	mat.m[0][1] = T(0.0); 	mat.m[0][2] = T(0.0); 	mat.m[0][3] = T(0.0);

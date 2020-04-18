@@ -56,7 +56,7 @@ struct Quat
         return res;    
     }
 
-    inline Matrix<T> ToMatrix()
+    inline Matrix<T> ToMatrix() const
     {
         // https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
 
@@ -68,7 +68,7 @@ struct Quat
 		return mat;
     }
 
-    inline Quat GetInverse()
+    inline Quat GetInverse() const
     {
         // Note this is actually the conjugate, but since we always have it be unit length the conjugate is equal to the inverse
         return Quat(-x, -y, -z, w);

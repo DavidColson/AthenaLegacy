@@ -20,8 +20,6 @@ target_sources(Engine
         "Matrix.cpp"
         "Quat.h"
         "Quat.cpp"
-        "Transform.h"
-        "Transform.cpp"
         "Engine.h"
         "Engine.cpp"
         "Profiler.h"

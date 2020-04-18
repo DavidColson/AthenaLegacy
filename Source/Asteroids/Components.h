@@ -8,6 +8,14 @@
 #include <AudioDevice.h>
 #include <EASTL/fixed_vector.h>
 
+struct CDynamics
+{
+	Vec3f vel;
+	Vec3f accel;
+
+	REFLECT()
+};
+
 struct CMenuInteraction
 {
 	enum State

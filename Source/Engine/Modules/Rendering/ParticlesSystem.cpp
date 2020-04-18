@@ -32,7 +32,7 @@ void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
 
-		pNewParticle->position = Vec2f::Project3D(emitterTransform.pos);
+		pNewParticle->position = Vec2f::Project3D(emitterTransform.localPos);
 		pNewParticle->rotation = LinearMap(randf(), 0.0f, 1.0f, emitter.initialRotationMin, emitter.initialRotationMax);
 		pNewParticle->scale = Vec2f(5.0f, 5.0f);
 
@@ -125,9 +125,9 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 
 			pParticle->position += pParticle->velocity * deltaTime;
 
-			Matrixf posMat = Matrixf::Translate(Vec3f::Embed2D(pParticle->position));
-			Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, pParticle->rotation));
-			Matrixf scaMat = Matrixf::Scale(Vec3f::Embed2D(pParticle->scale));
+			Matrixf posMat = Matrixf::MakeTranslation(Vec3f::Embed2D(pParticle->position));
+			Matrixf rotMat = Matrixf::MakeRotation(Vec3f(0.0f, 0.0f, pParticle->rotation));
+			Matrixf scaMat = Matrixf::MakeScale(Vec3f::Embed2D(pParticle->scale));
 			Matrixf world = posMat * rotMat * scaMat;
 			particleTransforms.push_back(world);
 		}
@@ -165,7 +165,7 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		buffers[1] = pEmitter->instanceBuffer;
 		GfxDevice::BindVertexBuffers(2, buffers);
 
-		Matrixf view = Matrixf::Translate(Vec3f(0.0f, 0.0f, 0.0f));
+		Matrixf view = Matrixf::MakeTranslation(Vec3f(0.0f, 0.0f, 0.0f));
 		Matrixf projection = Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f);
 		Matrixf vp = projection * view;
 		ParticlesTransform trans{ vp };

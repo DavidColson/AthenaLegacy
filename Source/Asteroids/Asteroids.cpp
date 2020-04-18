@@ -62,8 +62,9 @@ Scene* CreateMainAsteroidsScene()
 
 	const float w = GfxDevice::GetWindowWidth();
 	const float h = GfxDevice::GetWindowHeight();
-	pShipTransform->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
-	pShipTransform->sca = Vec3f(30.f, 35.f, 1.0f);
+	pShipTransform->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+	pShipTransform->localSca = Vec3f(30.f, 35.f, 1.0f);
+	scene.Assign<CDynamics>(ship);
 
 	CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
 	scene.Assign<CCollidable>(ship)->radius = 17.f;
@@ -90,10 +91,11 @@ Scene* CreateMainAsteroidsScene()
 		EntityID asteroid = scene.NewEntity("Asteroid");
 		scene.Assign<CCollidable>(asteroid);
 		CTransform* pTranform = scene.Assign<CTransform>(asteroid);
-		pTranform->pos = randomLocation;
-		pTranform->sca = Vec3f(90.0f, 90.0f, 1.0f);
-		pTranform->vel = randomVelocity;
-		pTranform->rot = randomRotation;
+		pTranform->localPos = randomLocation;
+		pTranform->localSca = Vec3f(90.0f, 90.0f, 1.0f);
+		pTranform->localRot = randomRotation;
+
+		scene.Assign<CDynamics>(asteroid)->vel = randomVelocity;
 
 		scene.Assign<CVisibility>(asteroid);
 		scene.Assign<CAsteroid>(asteroid);
@@ -109,9 +111,9 @@ Scene* CreateMainAsteroidsScene()
 		EntityID life = scene.NewEntity("Life");
 		
 		CTransform* pTransform = scene.Assign<CTransform>(life);
-		pTransform->pos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
-		pTransform->sca = Vec3f(30.f, 35.f, 1.0f);
-		pTransform->rot = -3.14159f / 2.0f;
+		pTransform->localPos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
+		pTransform->localSca = Vec3f(30.f, 35.f, 1.0f);
+		pTransform->localRot = -3.14159f / 2.0f;
 		offset += 30.0f;
 		
 		scene.Assign<CPolyShape>(life)->points.assign(verts, verts + 5);
@@ -125,19 +127,19 @@ Scene* CreateMainAsteroidsScene()
 		EntityID currentScoreEnt =scene.NewEntity("Current Score");
 		pPlayerUI->currentScoreEntity = currentScoreEnt;
 		scene.Assign<CText>(currentScoreEnt)->text = "0";
-		scene.Assign<CTransform>(currentScoreEnt)->pos = Vec3f(150.0f, h - 53.0f, 0.0f);
+		scene.Assign<CTransform>(currentScoreEnt)->localPos = Vec3f(150.0f, h - 53.0f, 0.0f);
 		scene.Assign<CPlayerScore>(currentScoreEnt);
 
 		EntityID highScoreEnt = scene.NewEntity("High Score");
 		scene.Assign<CText>(highScoreEnt)->text = "0";
-		scene.Assign<CTransform>(highScoreEnt)->pos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
+		scene.Assign<CTransform>(highScoreEnt)->localPos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
 	}
 
 	// Create game over text
 	{
 		EntityID gameOver = scene.NewEntity("Game Over");
 		pPlayerUI->gameOverEntity = gameOver;
-		scene.Assign<CTransform>(gameOver)->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+		scene.Assign<CTransform>(gameOver)->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 		scene.Assign<CGameOver>(gameOver);
 		scene.Assign<CVisibility>(gameOver)->visible = false;
 		CText* pText = scene.Assign<CText>(gameOver);
@@ -158,17 +160,17 @@ Scene* CreateMainMenuScene()
 	EntityID titleText =scene.NewEntity("Main Menu Title");
 	scene.Assign<CText>(titleText)->text = "Asteroids!";
 	CTransform* pTrans = scene.Assign<CTransform>(titleText);
-	pTrans->pos = Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f);
-	pTrans->sca = Vec3f(2.0f, 2.0f, 2.0f);
+	pTrans->localPos = Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f);
+	pTrans->localSca = Vec3f(2.0f, 2.0f, 2.0f);
 	scene.Assign<CPostProcessing>(titleText);
 
 	EntityID startOption =scene.NewEntity("Start Option");
 	scene.Assign<CText>(startOption)->text = "Start";
-	scene.Assign<CTransform>(startOption)->pos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+	scene.Assign<CTransform>(startOption)->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 
 	EntityID quitOption =scene.NewEntity("Quit Option");
 	scene.Assign<CText>(quitOption)->text = "Quit";
-	scene.Assign<CTransform>(quitOption)->pos = Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f);
+	scene.Assign<CTransform>(quitOption)->localPos = Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f);
 
 	EntityID buttonSelector =scene.NewEntity("Button Selector");
 	scene.Assign<CVisibility>(buttonSelector);
@@ -181,8 +183,8 @@ Scene* CreateMainMenuScene()
 	};
 	scene.Assign<CPolyShape>(buttonSelector)->points.assign(verts, verts + 3);
 	CTransform* pTransform = scene.Assign<CTransform>(buttonSelector);
-	pTransform->pos = Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f);
-	pTransform->sca = Vec3f(30.f, 30.0f, 1.0f);
+	pTransform->localPos = Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f);
+	pTransform->localSca = Vec3f(30.f, 30.0f, 1.0f);
 
 	return &scene;
 }

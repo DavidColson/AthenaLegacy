@@ -19,17 +19,19 @@
 // Events/Functions
 // **********
 
-void SpawnBullet(Scene& scene, const CTransform* pAtTransform)
+void SpawnBullet(Scene& scene, const CTransform* pAtTransform, const Vec3f atVelocity)
 {
 	EntityID bullet = scene.NewEntity("Bullet");
 	CBullet* pBullet = scene.Assign<CBullet>(bullet);
 
 	CTransform* pBulletTrans = scene.Assign<CTransform>(bullet);
-	pBulletTrans->pos = pAtTransform->pos;
-	Vec3f travelDir = Vec3f(-cosf(pAtTransform->rot.z), -sinf(pAtTransform->rot.z), 0.0f);
-	pBulletTrans->vel = pAtTransform->vel + travelDir * pBullet->speed;
-	pBulletTrans->rot = pAtTransform->rot;
-	pBulletTrans->sca = Vec3f(7.0f);
+	pBulletTrans->localPos = pAtTransform->localPos;
+	Vec3f travelDir = Vec3f(-cosf(pAtTransform->localRot.z), -sinf(pAtTransform->localRot.z), 0.0f);
+	pBulletTrans->localRot = pAtTransform->localRot;
+	pBulletTrans->localSca = Vec3f(7.0f);
+
+	CDynamics* pDynamics = scene.Assign<CDynamics>(bullet);
+	pDynamics->vel = atVelocity + travelDir * pBullet->speed;
 
 	scene.Assign<CVisibility>(bullet);
 	scene.Assign<CCollidable>(bullet)->radius = 4.0f;
@@ -67,7 +69,7 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 
 	// Spawn death particles
 	EntityID particles = scene.NewEntity("Asteroid Particles");
-	scene.Assign<CTransform>(particles)->pos = scene.Get<CTransform>(asteroid)->pos;
+	scene.Assign<CTransform>(particles)->localPos = scene.Get<CTransform>(asteroid)->localPos;
 	scene.Assign<CParticleEmitter>(particles);
 
 	// Asteroid vs bullet collision
@@ -78,21 +80,23 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 	}
 
 	CTransform* pTransform = scene.Get<CTransform>(asteroid);
+	CDynamics* pDynamics = scene.Get<CDynamics>(asteroid);
 	CCollidable* pCollidable = scene.Get<CCollidable>(asteroid);
 	for (int i = 0; i < 2; i++)
 	{
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
 		float randomRotation = randf() * 6.282f;
 
-		Vec3f randomVelocity = pTransform->vel + Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f) * 80.0f;
+		Vec3f randomVelocity = pDynamics->vel + Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f) * 80.0f;
 
 		EntityID newAsteroid = scene.NewEntity("Asteroid");
 		scene.Assign<CCollidable>(newAsteroid)->radius = pCollidable->radius * 0.5f;
 		CTransform* pNewTransform = scene.Assign<CTransform>(newAsteroid);
-		pNewTransform->pos = pTransform->pos;
-		pNewTransform->sca = pTransform->sca * 0.5f;
-		pNewTransform->vel = randomVelocity;
-		pNewTransform->rot = randomRotation;
+		pNewTransform->localPos = pTransform->localPos;
+		pNewTransform->localSca = pTransform->localSca * 0.5f;
+		pNewTransform->localRot = randomRotation;
+
+		scene.Assign<CDynamics>(newAsteroid)->vel = randomVelocity;
 
 		scene.Assign<CVisibility>(newAsteroid);
 		scene.Assign<CAsteroid>(newAsteroid)->hitCount = scene.Get<CAsteroid>(asteroid)->hitCount + 1;
@@ -129,10 +133,11 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	float w = GfxDevice::GetWindowWidth();
 	float h = GfxDevice::GetWindowHeight();
 	CTransform* pTransform = scene.Get<CTransform>(player);
-	pTransform->pos = Vec3f(w/2.0f, h/2.0f, 0.0f);
-	pTransform->rot = 0.0f;
-	pTransform->vel = Vec3f(0.0f, 0.0f, 0.0f);
-	pTransform->accel = Vec3f(0.0f, 0.0f, 0.0f);
+	pTransform->localPos = Vec3f(w/2.0f, h/2.0f, 0.0f);
+	pTransform->localRot = 0.0f;
+	CDynamics* pDynamics = scene.Get<CDynamics>(player);
+	pDynamics->vel = Vec3f(0.0f, 0.0f, 0.0f);
+	pDynamics->accel = Vec3f(0.0f, 0.0f, 0.0f);
 }
 
 eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh()
@@ -218,10 +223,10 @@ void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 			continue;
 
 		CTransform* pTrans = scene.Get<CTransform>(shape);
-		Matrixf posMat = Matrixf::Translate(pTrans->pos);
-		Matrixf rotMat = Matrixf::Rotate(Vec3f(0.0f, 0.0f, pTrans->rot.z));
-		Matrixf scaMat = Matrixf::Scale(pTrans->sca);
-		Matrixf pivotAdjust = Matrixf::Translate(Vec3f(-0.5f, -0.5f, 0.0f));
+		Matrixf posMat = Matrixf::MakeTranslation(pTrans->localPos);
+		Matrixf rotMat = Matrixf::MakeRotation(Vec3f(0.0f, 0.0f, pTrans->localRot.z));
+		Matrixf scaMat = Matrixf::MakeScale(pTrans->localSca);
+		Matrixf pivotAdjust = Matrixf::MakeTranslation(Vec3f(-0.5f, -0.5f, 0.0f));
 		Matrixf world = posMat * rotMat * scaMat * pivotAdjust;
 
 		VertsVector transformedVerts;
@@ -285,10 +290,11 @@ void AsteroidSpawning(Scene& scene, float deltaTime)
 			EntityID asteroid = scene.NewEntity("Asteroid");
 			scene.Assign<CCollidable>(asteroid);
 			CTransform* pTranform = scene.Assign<CTransform>(asteroid);
-			pTranform->pos = randomLocation;
-			pTranform->sca = Vec3f(90.0f, 90.0f, 1.0f);
-			pTranform->vel = randomVelocity * 60.0f;
-			pTranform->rot = randf() * 6.282f;
+			pTranform->localPos = randomLocation;
+			pTranform->localSca = Vec3f(90.0f, 90.0f, 1.0f);
+			pTranform->localRot = randf() * 6.282f;
+			
+			scene.Assign<CDynamics>(asteroid)->vel = randomVelocity * 60.0f;
 
 			scene.Assign<CVisibility>(asteroid);
 			scene.Assign<CAsteroid>(asteroid);
@@ -307,13 +313,13 @@ void CollisionSystemUpdate(Scene& scene, float /* deltaTime */)
 		float asteroidRad = scene.Get<CCollidable>(asteroid)->radius;
 
 		// CTransform* pTrans = scene.Get<CTransform>(asteroid);
-		// DebugDraw::Draw2DCircle(scene, Vec2f(pTrans->pos.x, pTrans->pos.y), asteroidRad + 10.0f, Vec3f(1.0f, 0.0f, 0.0f));
+		// DebugDraw::Draw2DCircle(scene, Vec2f(pTrans->localPos.x, pTrans->localPos.y), asteroidRad + 10.0f, Vec3f(1.0f, 0.0f, 0.0f));
 
 		for (EntityID bullet : SceneView<CBullet>(scene))
 		{
 			float bulletRad = scene.Get<CCollidable>(bullet)->radius;
 
-			float distance = (scene.Get<CTransform>(asteroid)->pos - scene.Get<CTransform>(bullet)->pos).GetLength();
+			float distance = (scene.Get<CTransform>(asteroid)->localPos - scene.Get<CTransform>(bullet)->localPos).GetLength();
 			float collisionDistance = asteroidRad + bulletRad;
 			
 			if (distance < collisionDistance)
@@ -328,7 +334,7 @@ void CollisionSystemUpdate(Scene& scene, float /* deltaTime */)
 		if (!scene.Has<CInvincibility>(PLAYER_ID))
 		{
 			float playerRad = scene.Get<CCollidable>(PLAYER_ID)->radius;
-			float distance = (scene.Get<CTransform>(asteroid)->pos - scene.Get<CTransform>(PLAYER_ID)->pos).GetLength();
+			float distance = (scene.Get<CTransform>(asteroid)->localPos - scene.Get<CTransform>(PLAYER_ID)->localPos).GetLength();
 			float collisionDistance = asteroidRad + playerRad;
 			
 			if (distance < collisionDistance)
@@ -371,32 +377,33 @@ void MovementSystemUpdate(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	for (EntityID id : SceneView<CTransform>(scene))
+	for (EntityID id : SceneView<CTransform, CDynamics>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
+		CDynamics* pDynamics = scene.Get<CDynamics>(id);
 
-		pTransform->vel = pTransform->vel + pTransform->accel * deltaTime;
-		pTransform->pos = pTransform->pos + pTransform->vel * deltaTime;
+		pDynamics->vel = pDynamics->vel + pDynamics->accel * deltaTime;
+		pTransform->localPos = pTransform->localPos + pDynamics->vel * deltaTime;
 
-		if (pTransform->pos.x < 0.0f)
+		if (pTransform->localPos.x < 0.0f)
 		{
-			pTransform->pos.x = GfxDevice::GetWindowWidth();
+			pTransform->localPos.x = GfxDevice::GetWindowWidth();
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
-		else if (pTransform->pos.x > GfxDevice::GetWindowWidth())
+		else if (pTransform->localPos.x > GfxDevice::GetWindowWidth())
 		{
-			pTransform->pos.x = 0.0f;
+			pTransform->localPos.x = 0.0f;
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
 
-		if (pTransform->pos.y < 0.0f)
+		if (pTransform->localPos.y < 0.0f)
 		{
-			pTransform->pos.y = GfxDevice::GetWindowHeight();
+			pTransform->localPos.y = GfxDevice::GetWindowHeight();
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
-		else if (pTransform->pos.y > GfxDevice::GetWindowHeight())
+		else if (pTransform->localPos.y > GfxDevice::GetWindowHeight())
 		{
-			pTransform->pos.y = 0.0f;
+			pTransform->localPos.y = 0.0f;
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
 	}
@@ -406,9 +413,10 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	for (EntityID id : SceneView<CTransform, CPlayerControl>(scene))
+	for (EntityID id : SceneView<CTransform, CPlayerControl, CDynamics>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
+		CDynamics* pDynamics = scene.Get<CDynamics>(id);
 		CPlayerControl* pControl = scene.Get<CPlayerControl>(id);
 
 		if (Input::GetKeyDown(SDL_SCANCODE_ESCAPE))
@@ -435,8 +443,8 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_UP))
 		{
-			accel.x = cosf(pTransform->rot.z);
-			accel.y = sinf(pTransform->rot.z);
+			accel.x = cosf(pTransform->localRot.z);
+			accel.y = sinf(pTransform->localRot.z);
 			accel = accel * -pControl->thrust;
 		}
 
@@ -445,17 +453,17 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		else if (Input::GetKeyUp(SDL_SCANCODE_UP))
 			AudioDevice::PauseSound(pControl->enginePlayingSound);
 
-		pTransform->accel = accel - pTransform->vel * pControl->dampening;
+		pDynamics->accel = accel - pDynamics->vel * pControl->dampening;
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_LEFT))
-			pTransform->rot += pControl->rotateSpeed;
+			pTransform->localRot += pControl->rotateSpeed;
 		if (Input::GetKeyHeld(SDL_SCANCODE_RIGHT))
-			pTransform->rot -= pControl->rotateSpeed;
+			pTransform->localRot -= pControl->rotateSpeed;
 
 		// Shoot a bullet
 		if (Input::GetKeyDown(SDL_SCANCODE_SPACE))
 		{
-			SpawnBullet(scene, pTransform);
+			SpawnBullet(scene, pTransform, pDynamics->vel);
 			AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->shootSound, 1.0f, false);
 		}
 	}
@@ -482,7 +490,7 @@ void MenuInterationSystem(Scene& scene, float /* deltaTime */)
 		{
 			pInteraction->currentState = CMenuInteraction::Quit;
 		}
-		pTransform->pos.y = validPositions[pInteraction->currentState];
+		pTransform->localPos.y = validPositions[pInteraction->currentState];
 
 		if (Input::GetKeyDown(SDL_SCANCODE_RETURN))
 		{

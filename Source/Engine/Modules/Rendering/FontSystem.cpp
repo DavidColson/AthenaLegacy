@@ -214,13 +214,13 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		CTransform* pTransform = scene.Get<CTransform>(ent);
 
 		float textWidth = 0.0f;
-		float x = pTransform->pos.x;
-		float y = pTransform->pos.y;
+		float x = pTransform->localPos.x;
+		float y = pTransform->localPos.y;
 
 		for (char const& c : pText->text)
 		{
 			Character ch = pState->characters[c];
-			textWidth += ch.advance * pTransform->sca.x;
+			textWidth += ch.advance * pTransform->localSca.x;
 		}
 
 		eastl::fixed_vector<Vertex, CHARS_PER_DRAW_CALL * 4> vertexList;
@@ -230,10 +230,10 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		for (char const& c : pText->text) {
 			Character ch = pState->characters[c];
 
-			float xpos = (x + ch.bearing.x * pTransform->sca.x) - textWidth * 0.5f;
-			float ypos = y - (ch.size.y - ch.bearing.y) * pTransform->sca.y;
-			float w = (float)ch.size.x * pTransform->sca.x;
-			float h = (float)ch.size.y * pTransform->sca.y;
+			float xpos = (x + ch.bearing.x * pTransform->localSca.x) - textWidth * 0.5f;
+			float ypos = y - (ch.size.y - ch.bearing.y) * pTransform->localSca.y;
+			float w = (float)ch.size.x * pTransform->localSca.x;
+			float h = (float)ch.size.y * pTransform->localSca.y;
 	
 			vertexList.push_back( Vertex{ Vec3f( xpos, ypos, 1.0f), 		Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV0.x, ch.UV1.y) });
 			vertexList.push_back( Vertex{ Vec3f( xpos, ypos + h, 1.0f), 	Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV0.x, ch.UV0.y) });
@@ -251,7 +251,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 			indexList.push_back(currentIndex + 2);
 			currentIndex += 4; // move along by 4 vertices for the next character
 
-			x += ch.advance * pTransform->sca.x;
+			x += ch.advance * pTransform->localSca.x;
 		}
 	
 		// Update buffers

@@ -1,6 +1,8 @@
 #include "Scene.h"
 int s_componentCounter = 0;
 
+#include "Transform.h"
+
 REFLECT_BEGIN(CName)
 REFLECT_MEMBER(name)
 REFLECT_END()
@@ -10,11 +12,58 @@ REFLECT_MEMBER(visible)
 REFLECT_END()
 
 REFLECT_BEGIN(CTransform)
-REFLECT_MEMBER(pos)
-REFLECT_MEMBER(rot)
-REFLECT_MEMBER(sca)
-REFLECT_MEMBER(vel)
+REFLECT_MEMBER(localPos)
+REFLECT_MEMBER(localRot)
+REFLECT_MEMBER(localSca)
 REFLECT_END()
+
+REFLECT_BEGIN(CParent)
+REFLECT_MEMBER(parent)
+REFLECT_END()
+
+eastl::map<EntityID, eastl::vector<EntityID>> BuildTransformGraphs(Scene& scene)
+{
+    eastl::map<EntityID, eastl::vector<EntityID>> map;
+    for (EntityID ent : SceneView<CParent, CTransform>(scene))
+    {
+        CParent* pParent = scene.Get<CParent>(ent);
+
+        // Build a map that maps all the parents to their children
+        map[pParent->parent].push_back(ent);
+    }
+    return map;
+}
+
+void TransformHeirarchy(Scene& scene, float deltaTime)
+{
+    // Phase 1 would be transforming all the parent transforms. We'll take their transform components and build a renderMatrix
+    // Not doing this as we don't store the render matrix
+    for (EntityID ent : SceneView<CTransform>(scene))
+    {
+        if (!scene.Has<CParent>(ent))
+        {
+            CTransform* pTrans = scene.Get<CTransform>(ent);
+            pTrans->globalTransform = Matrixf::MakeTRS(pTrans->localPos, pTrans->localRot, pTrans->localSca);
+        }
+    }
+
+    // Phase 2, build this graph from each node
+    eastl::map<EntityID, eastl::vector<EntityID>> trees = BuildTransformGraphs(scene);
+
+    // Phase 2, run through graph
+    for (const eastl::pair<EntityID, eastl::vector<EntityID>>& tree : trees)
+    {
+        CTransform* pParentTrans = scene.Get<CTransform>(tree.first);
+        
+        for (const EntityID& child : tree.second)
+        {
+            CTransform* pChildTrans = scene.Get<CTransform>(child);
+            Matrixf childMat = Matrixf::MakeTRS(pChildTrans->localPos, pChildTrans->localRot, pChildTrans->localSca);
+
+            pChildTrans->globalTransform = pParentTrans->globalTransform * childMat;         
+        }
+    }
+}
 
 BaseComponentPool::BaseComponentPool(size_t elementsize)
 {

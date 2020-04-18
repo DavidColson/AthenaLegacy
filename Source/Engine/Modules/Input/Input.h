@@ -12,10 +12,10 @@ struct InputState
 	eastl::bitset<NKEYS> keyUps;
 	eastl::bitset<NKEYS> keyStates;
 
-	float mouseXPos;
-	float mouseYPos;
-	float mouseXDelta;
-	float mouseYDelta;
+	float mouseXPos{ 0.0f };
+	float mouseYPos{ 0.0f };
+	float mouseXDelta{ 0.0f };
+	float mouseYDelta{ 0.0f };
 };
 
 namespace Input
@@ -25,7 +25,7 @@ namespace Input
 	bool GetKeyDown(int keyCode);
 	bool GetKeyUp(int keyCode);
 	bool GetKeyHeld(int keyCode);
-	
+
 	Vec2f GetMouseDelta();
 	bool GetMouseInRelativeMode();
 

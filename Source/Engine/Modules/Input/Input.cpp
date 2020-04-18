@@ -15,7 +15,6 @@ InputState *pInput;
 void Input::CreateInputState()
 {
 	pInput = new InputState();
-	SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 bool Input::GetKeyDown(int keyCode)

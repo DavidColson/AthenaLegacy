@@ -48,6 +48,7 @@ scene.Assign<Shape>(circle);
 #include "ErrorHandling.h"
 #include "Log.h"
 #include "Vec3.h"
+#include "Matrix.h"
 #include "Engine.h"
 
 #include <EASTL/bitset.h>
@@ -117,14 +118,26 @@ struct CVisibility
 
 struct CTransform
 {
-	Vec3f pos;
-	Vec3f rot{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec3f sca{ Vec3f(1.f, 1.f, 1.f) };
-	Vec3f vel{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec3f accel{ Vec3f(0.0f, 0.0f, 0.0f) };
+	Vec3f localPos{ Vec3f(0.0f) };
+	Vec3f localSca{ Vec3f(1.0f) };
+	Vec3f localRot{ Vec3f(0.0f) };
+
+	Matrixf globalTransform;
 
 	REFLECT()
 };
+
+struct CParent
+{
+	EntityID parent;
+
+	REFLECT();
+};
+
+// Built In Systems
+// ****************
+
+void TransformHeirarchy(Scene& scene, float deltaTime);
 
 // Gives you the id within this world for a given component type
 extern int s_componentCounter; // #TODO: Move this to a detail namespace

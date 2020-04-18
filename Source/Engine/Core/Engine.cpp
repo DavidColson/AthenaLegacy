@@ -18,6 +18,9 @@
 #include "Profiler.h"
 #include "Memory.h"
 #include "Maths.h"
+#include "Matrix.h"
+#include "Quat.h"
+#include "Transform.h"
 
 namespace
 {
@@ -88,6 +91,7 @@ void Engine::NewSceneCreated(Scene& scene)
 	scene.RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
+	scene.RegisterSystem(SystemPhase::Update, TransformHeirarchy);
 
 	// Need more manual control over render passes. This won't do
 	scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);

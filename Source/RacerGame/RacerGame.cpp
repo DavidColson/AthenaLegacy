@@ -2,6 +2,7 @@
 #include "Systems.h"
 #include "Components.h"
 
+#include <Profiler.h>
 #include <Matrix.h>
 #include <SDL.h>
 #include <Input/Input.h>
@@ -13,22 +14,20 @@ struct cbTransformBuf
 
 void CubeRenderSystem(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	Matrixf view = Matrixf::Identity();
-	Matrixf proj = Matrixf::Perspective(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), 0.1f, 100.0f, 60.0f);;
+	Matrixf proj = Matrixf::Perspective(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), 0.1f, 100.0f, 60.0f);
 	for (EntityID cams : SceneView<CCamera, CTransform>(scene))
 	{
 		CCamera* pCam = scene.Get<CCamera>(cams);
 		CTransform* pTrans = scene.Get<CTransform>(cams);
 
-		Matrixf translate = Matrixf::Translate(-pTrans->pos);
+		Matrixf translate = Matrixf::MakeTranslation(-pTrans->localPos);
+		Quatf rotation = Quatf::MakeFromEuler(pTrans->localRot);
+		view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
 
-		Vec3f forward;
-		Vec3f right;
-		Vec3f up;
-		GetAxesFromRotation(pTrans->rot, forward, right, up);
-		view = Matrixf::MakeLookAt(forward, up) * translate;
-
-		Matrixf proj = Matrixf::Perspective(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), 0.1f, 100.0f, pCam->fov);
+		proj = Matrixf::Perspective(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), 0.1f, 100.0f, pCam->fov);
 	}
 
 	for (EntityID ent : SceneView<CCube, CTransform>(scene))
@@ -36,13 +35,7 @@ void CubeRenderSystem(Scene& scene, float deltaTime)
 		CCube* pCube = scene.Get<CCube>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);
 
-		pTrans->rot.z += deltaTime;
-		Matrixf translate = Matrixf::Translate(pTrans->pos);
-		Matrixf scale = Matrixf::Scale(pTrans->sca);
-		Matrixf rotate = Matrixf::Rotate(pTrans->rot);
-
-		Matrixf wvp = proj * view * translate * rotate * scale;
-
+		Matrixf wvp = proj * view * pTrans->globalTransform;
 		cbTransformBuf trans{ wvp };
 		GfxDevice::BindConstantBuffer(pCube->constBuffer, &trans, ShaderType::Vertex, 0);
 
@@ -58,6 +51,8 @@ void CubeRenderSystem(Scene& scene, float deltaTime)
 
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
+	PROFILE();
+
 	for (EntityID cams : SceneView<CCamera, CTransform>(scene))
 	{
 		CCamera* pCam = scene.Get<CCamera>(cams);
@@ -65,31 +60,31 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 		const float camSpeed = 5.0f;
 
-		Matrixf toCameraSpace = Matrixf::Rotate(pTrans->rot);
+		Matrixf toCameraSpace = Quatf::MakeFromEuler(pTrans->localRot).ToMatrix();
 		Vec3f right = toCameraSpace.GetRightVector().GetNormalized();
 		if (Input::GetKeyHeld(SDL_SCANCODE_A))
-			pTrans->pos -= right * camSpeed * deltaTime;
+			pTrans->localPos -= right * camSpeed * deltaTime;
 		if (Input::GetKeyHeld(SDL_SCANCODE_D))
-			pTrans->pos += right * camSpeed * deltaTime;
+			pTrans->localPos += right * camSpeed * deltaTime;
 			
 		Vec3f forward = toCameraSpace.GetForwardVector().GetNormalized();
 		if (Input::GetKeyHeld(SDL_SCANCODE_W))
-			pTrans->pos += forward * camSpeed * deltaTime;
+			pTrans->localPos += forward * camSpeed * deltaTime;
 		if (Input::GetKeyHeld(SDL_SCANCODE_S))
-			pTrans->pos -= forward * camSpeed * deltaTime;
+			pTrans->localPos -= forward * camSpeed * deltaTime;
 
 		Vec3f up = toCameraSpace.GetUpVector().GetNormalized();
 		if (Input::GetKeyHeld(SDL_SCANCODE_SPACE))
-			pTrans->pos += up * camSpeed * deltaTime;
+			pTrans->localPos += up * camSpeed * deltaTime;
 		if (Input::GetKeyHeld(SDL_SCANCODE_LCTRL))
-			pTrans->pos -= up * camSpeed * deltaTime;
+			pTrans->localPos -= up * camSpeed * deltaTime;
 
 		if (Input::GetMouseInRelativeMode())
 		{
-			pCam->horizontalAngle -= 0.1f * deltaTime * Input::GetMouseDelta().x;
+			pCam->horizontalAngle += 0.1f * deltaTime * Input::GetMouseDelta().x;
 			pCam->verticalAngle += 0.1f * deltaTime * Input::GetMouseDelta().y;
 		}
-		pTrans->rot = Vec3f(pCam->verticalAngle, pCam->horizontalAngle, 0.0f);
+		pTrans->localRot = Vec3f(pCam->verticalAngle, pCam->horizontalAngle, 0.0f);
 	}
 }
 
@@ -105,8 +100,8 @@ void SetupScene(Scene& scene)
 	EntityID cube = scene.NewEntity("Cube");
 	CCube* pCube = scene.Assign<CCube>(cube);
 	CTransform* pTrans = scene.Assign<CTransform>(cube);
-	pTrans->pos = Vec3f(0.0f, 0.0f, 3.0f);
-	pTrans->sca = Vec3f(0.5f, 0.5f, 0.5f);
+	pTrans->localPos = Vec3f(0.0f, 0.0f, 3.0f);
+	pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
 	
 	eastl::vector<VertexInputElement> layout;
 	layout.push_back({"SV_POSITION",AttributeType::Float3});
@@ -150,9 +145,10 @@ void SetupScene(Scene& scene)
 
 	EntityID cube2 = scene.NewEntity("Cube2");
 	CCube* pCube2 = scene.Assign<CCube>(cube2);
+	scene.Assign<CParent>(cube2)->parent = cube;
 	CTransform* pTrans2 = scene.Assign<CTransform>(cube2);
-	pTrans2->pos = Vec3f(1.0f, 0.0f, 5.0f);
-	pTrans2->sca = Vec3f(0.5f, 0.5f, 0.5f);
+	pTrans2->localPos = Vec3f(1.0f, 0.0f, 5.0f);
+	pTrans2->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 	*pCube2 = *pCube;
 }
 

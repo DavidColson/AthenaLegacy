@@ -1,5 +1,10 @@
 #include "Components.h"
 
+REFLECT_BEGIN(CDynamics)
+REFLECT_MEMBER(vel)
+REFLECT_MEMBER(accel)
+REFLECT_END()
+
 REFLECT_BEGIN(CPolyShape)
 REFLECT_MEMBER(thickness)
 REFLECT_MEMBER(connected)
