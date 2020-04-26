@@ -29,6 +29,7 @@ struct IndexBuffer
 {
 	int nElements;
 	bool isDynamic{false};
+	DXGI_FORMAT format;
 	ID3D11Buffer *pBuffer{nullptr};
 };
 
@@ -140,35 +141,44 @@ DEFINE_GFX_HANDLE(BlendStateHandle)
 // D3D11 Flag conversions
 // ***********************************
 
+static const DXGI_FORMAT indexFormatLookup[2] = 
+{
+	DXGI_FORMAT_R16_UINT,
+	DXGI_FORMAT_R32_UINT
+};
+
 // Should probably expand this to more formats at some point
 static const DXGI_FORMAT formatLookup[3] =
-	{
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
-		DXGI_FORMAT_R8_UNORM,
-		DXGI_FORMAT_D24_UNORM_S8_UINT};
+{
+	DXGI_FORMAT_R32G32B32A32_FLOAT,
+	DXGI_FORMAT_R8_UNORM,
+	DXGI_FORMAT_D24_UNORM_S8_UINT
+};
 
 static const D3D11_BLEND_OP blendOpLookup[5] =
-	{
-		D3D11_BLEND_OP_ADD,
-		D3D11_BLEND_OP_SUBTRACT,
-		D3D11_BLEND_OP_REV_SUBTRACT,
-		D3D11_BLEND_OP_MIN,
-		D3D11_BLEND_OP_MAX};
+{
+	D3D11_BLEND_OP_ADD,
+	D3D11_BLEND_OP_SUBTRACT,
+	D3D11_BLEND_OP_REV_SUBTRACT,
+	D3D11_BLEND_OP_MIN,
+	D3D11_BLEND_OP_MAX
+};
 
 static const D3D11_BLEND blendLookup[12] =
-	{
-		D3D11_BLEND_ZERO,
-		D3D11_BLEND_ONE,
-		D3D11_BLEND_SRC_COLOR,
-		D3D11_BLEND_INV_SRC_COLOR,
-		D3D11_BLEND_SRC_ALPHA,
-		D3D11_BLEND_INV_SRC_ALPHA,
-		D3D11_BLEND_DEST_ALPHA,
-		D3D11_BLEND_INV_DEST_ALPHA,
-		D3D11_BLEND_DEST_COLOR,
-		D3D11_BLEND_INV_DEST_COLOR,
-		D3D11_BLEND_BLEND_FACTOR,
-		D3D11_BLEND_INV_BLEND_FACTOR};
+{
+	D3D11_BLEND_ZERO,
+	D3D11_BLEND_ONE,
+	D3D11_BLEND_SRC_COLOR,
+	D3D11_BLEND_INV_SRC_COLOR,
+	D3D11_BLEND_SRC_ALPHA,
+	D3D11_BLEND_INV_SRC_ALPHA,
+	D3D11_BLEND_DEST_ALPHA,
+	D3D11_BLEND_INV_DEST_ALPHA,
+	D3D11_BLEND_DEST_COLOR,
+	D3D11_BLEND_INV_DEST_COLOR,
+	D3D11_BLEND_BLEND_FACTOR,
+	D3D11_BLEND_INV_BLEND_FACTOR
+};
 
 void SetDebugName(ID3D11DeviceChild *child, const eastl::string &name)
 {
@@ -899,17 +909,22 @@ void GfxDevice::FreeRenderTarget(RenderTargetHandle handle)
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void *data, const eastl::string &debugName)
+IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, IndexFormat format, void *data, const eastl::string &debugName)
 {
 	IndexBuffer indexBuffer;
 
 	indexBuffer.nElements = (int)numElements;
+	indexBuffer.format = indexFormatLookup[static_cast<int>(format)];
+
+	UINT elementSize = 16;
+	if (format == IndexFormat::UInt)
+		elementSize = 32;
 
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(int) * UINT(numElements);
+	indexBufferDesc.ByteWidth = elementSize * UINT(numElements);
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
@@ -929,18 +944,23 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, void *data, c
 
 // ***********************************************************************
 
-IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, const eastl::string &debugName)
+IndexBufferHandle GfxDevice::CreateDynamicIndexBuffer(size_t numElements, IndexFormat format, const eastl::string &debugName)
 {
 	IndexBuffer indexBuffer;
 
 	indexBuffer.isDynamic = true;
 	indexBuffer.nElements = (int)numElements;
+	indexBuffer.format = indexFormatLookup[static_cast<int>(format)];
+
+	UINT elementSize = 16;
+	if (format == IndexFormat::UInt)
+		elementSize = 32;
 
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
 	indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	indexBufferDesc.ByteWidth = sizeof(int) * UINT(numElements);
+	indexBufferDesc.ByteWidth = elementSize * UINT(numElements);
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	indexBufferDesc.MiscFlags = 0;
@@ -992,7 +1012,8 @@ void GfxDevice::BindIndexBuffer(IndexBufferHandle handle)
 	if (!IsValid(handle))
 		return;
 	IndexBuffer &indexBuffer = pCtx->poolIndexBuffer[handle.id];
-	pCtx->pDeviceContext->IASetIndexBuffer(indexBuffer.pBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	pCtx->pDeviceContext->IASetIndexBuffer(indexBuffer.pBuffer, indexBuffer.format, 0);
 }
 
 // ***********************************************************************

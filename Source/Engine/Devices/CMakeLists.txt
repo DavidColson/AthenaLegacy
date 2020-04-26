@@ -4,4 +4,6 @@ target_sources(Engine
         "GraphicsDevice.cpp"
         "AudioDevice.h"
         "AudioDevice.cpp"
+        "GltfLoader.h"
+        "GltfLoader.cpp"
 )

@@ -2,6 +2,7 @@
 #include "Systems.h"
 #include "Components.h"
 
+#include <GltfLoader.h>
 #include <Profiler.h>
 #include <Matrix.h>
 #include <SDL.h>
@@ -30,9 +31,9 @@ void CubeRenderSystem(Scene& scene, float deltaTime)
 		proj = Matrixf::Perspective(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), 0.1f, 100.0f, pCam->fov);
 	}
 
-	for (EntityID ent : SceneView<CCube, CTransform>(scene))
+	for (EntityID ent : SceneView<CRenderable, CTransform>(scene))
     {
-		CCube* pCube = scene.Get<CCube>(ent);
+		CRenderable* pCube = scene.Get<CRenderable>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);
 
 		Matrixf wvp = proj * view * pTrans->globalTransform;
@@ -40,12 +41,12 @@ void CubeRenderSystem(Scene& scene, float deltaTime)
 		GfxDevice::BindConstantBuffer(pCube->constBuffer, &trans, ShaderType::Vertex, 0);
 
 		GfxDevice::BindProgram(pCube->program);
-		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
+		GfxDevice::SetTopologyType(pCube->type);
 
 		GfxDevice::BindVertexBuffers(1, &pCube->vBuffer);
 		GfxDevice::BindIndexBuffer(pCube->iBuffer);
 
-		GfxDevice::DrawIndexed(14, 0, 0);
+		GfxDevice::DrawIndexed(pCube->indexCount, 0, 0);
 	}
 }
 
@@ -69,9 +70,9 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 			
 		Vec3f forward = toCameraSpace.GetForwardVector().GetNormalized();
 		if (Input::GetKeyHeld(SDL_SCANCODE_W))
-			pTrans->localPos += forward * camSpeed * deltaTime;
-		if (Input::GetKeyHeld(SDL_SCANCODE_S))
 			pTrans->localPos -= forward * camSpeed * deltaTime;
+		if (Input::GetKeyHeld(SDL_SCANCODE_S))
+			pTrans->localPos += forward * camSpeed * deltaTime;
 
 		Vec3f up = toCameraSpace.GetUpVector().GetNormalized();
 		if (Input::GetKeyHeld(SDL_SCANCODE_SPACE))
@@ -81,8 +82,8 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 		if (Input::GetMouseInRelativeMode())
 		{
-			pCam->horizontalAngle += 0.1f * deltaTime * Input::GetMouseDelta().x;
-			pCam->verticalAngle += 0.1f * deltaTime * Input::GetMouseDelta().y;
+			pCam->horizontalAngle -= 0.1f * deltaTime * Input::GetMouseDelta().x;
+			pCam->verticalAngle -= 0.1f * deltaTime * Input::GetMouseDelta().y;
 		}
 		pTrans->localRot = Vec3f(pCam->verticalAngle, pCam->horizontalAngle, 0.0f);
 	}
@@ -98,9 +99,9 @@ void SetupScene(Scene& scene)
 	scene.Assign<CTransform>(camera);
 
 	EntityID cube = scene.NewEntity("Cube");
-	CCube* pCube = scene.Assign<CCube>(cube);
+	CRenderable* pCube = scene.Assign<CRenderable>(cube);
 	CTransform* pTrans = scene.Assign<CTransform>(cube);
-	pTrans->localPos = Vec3f(0.0f, 0.0f, 3.0f);
+	pTrans->localPos = Vec3f(0.0f, 0.0f, -3.0f);
 	pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
 	
 	eastl::vector<VertexInputElement> layout;
@@ -113,15 +114,15 @@ void SetupScene(Scene& scene)
 	pCube->program = GfxDevice::CreateProgram(vShader, pShader);
 
 	eastl::vector<Vertex> cubeVerts = {
-        Vertex(Vec3f(-1.0f, -1.0f,  1.0f)),
-        Vertex(Vec3f(1.0f, -1.0f,  1.0f)),
-        Vertex(Vec3f(-1.0f,  1.0f,  1.0f)),
-        Vertex(Vec3f(1.0f,  1.0f,  1.0f)),
+        Vertex(Vec3f(-1.0f, -1.0f, -1.0f)), // Back bottom left
+        Vertex(Vec3f(-1.0f, -1.0f,  1.0f)), // Front bottom left
+        Vertex(Vec3f(-1.0f,  1.0f, -1.0f)), // Back top left
+        Vertex(Vec3f(-1.0f,  1.0f,  1.0f)), // Front top left
 
-        Vertex(Vec3f(-1.0f, -1.0f, -1.0f)),
-        Vertex(Vec3f(1.0f, -1.0f, -1.0f)),
-        Vertex(Vec3f(-1.0f,  1.0f, -1.0f)),
-        Vertex(Vec3f(1.0f,  1.0f, -1.0f))
+        Vertex(Vec3f( 1.0f, -1.0f, -1.0f)), // Back bottom right
+        Vertex(Vec3f( 1.0f, -1.0f,  1.0f)), // Front bottom right
+        Vertex(Vec3f( 1.0f,  1.0f, -1.0f)), // Back top right
+        Vertex(Vec3f( 1.0f,  1.0f,  1.0f))  // Front top right
     };
 
 	cubeVerts[4].col = Vec3f(1.0f, 0.0f, 0.0f);
@@ -137,25 +138,26 @@ void SetupScene(Scene& scene)
 	pCube->vBuffer = GfxDevice::CreateVertexBuffer(8, sizeof(Vertex), cubeVerts.data(), "CubeVertBuffer");
 
 	eastl::vector<int> cubeIndices = {
-		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
+		3, 7, 1, 5, 4, 7, 6, 3, 2, 1, 0, 4, 2, 6
 	};
-	pCube->iBuffer = GfxDevice::CreateIndexBuffer(14, cubeIndices.data(), "CubeIndexBuffer");
+	pCube->iBuffer = GfxDevice::CreateIndexBuffer(14, IndexFormat::UInt, cubeIndices.data(), "CubeIndexBuffer");
+	pCube->indexCount = (int)cubeIndices.size();
 
 	pCube->constBuffer = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "CubeTransBuffer");
 
 	EntityID cube2 = scene.NewEntity("Cube2");
-	CCube* pCube2 = scene.Assign<CCube>(cube2);
+	CRenderable* pCube2 = scene.Assign<CRenderable>(cube2);
 	scene.SetParent(cube2, cube);
 	CTransform* pTrans2 = scene.Assign<CTransform>(cube2);
-	pTrans2->localPos = Vec3f(1.0f, 0.0f, 5.0f);
+	pTrans2->localPos = Vec3f(1.0f, 0.0f, -5.0f);
 	pTrans2->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 	*pCube2 = *pCube;
 
 	EntityID cube3 = scene.NewEntity("Cube3");
-	CCube* pCube3 = scene.Assign<CCube>(cube3);
+	CRenderable* pCube3 = scene.Assign<CRenderable>(cube3);
 	scene.SetParent(cube3, cube2);
 	CTransform* pTrans3 = scene.Assign<CTransform>(cube3);
-	pTrans3->localPos = Vec3f(1.0f, 0.0f, 5.0f);
+	pTrans3->localPos = Vec3f(1.0f, 0.0f, -5.0f);
 	pTrans3->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 	*pCube3 = *pCube;
 
@@ -172,6 +174,25 @@ void SetupScene(Scene& scene)
 	}
 
 	//scene.UnsetParent(cube2, cube);
+
+	GltfScene loadedScene = LoadGltf("Resources/Models/minimal.gltf");
+
+	EntityID triangle = scene.NewEntity("OurTriangle");
+	CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
+	CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
+	
+	eastl::vector<VertexInputElement> trianglelayout;
+	trianglelayout.push_back({"SV_POSITION",AttributeType::Float3});
+	VertexShaderHandle gvShader = GfxDevice::CreateVertexShader(L"Shaders/BasicGltfShader.hlsl", "VSMain", trianglelayout, "GltfVertShader");
+	PixelShaderHandle gpShader = GfxDevice::CreatePixelShader(L"Shaders/BasicGltfShader.hlsl", "PSMain", "GltfPixelShader");
+	pRenderable->program = GfxDevice::CreateProgram(gvShader, gpShader);
+	pRenderable->constBuffer = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "GltfTransBuffer");
+
+	loadedScene.meshes[0].CreateGfxDeviceBuffers();
+	pRenderable->vBuffer = loadedScene.meshes[0].primitives[0].gfxVertBuffer;
+	pRenderable->iBuffer = loadedScene.meshes[0].primitives[0].gfxIndexBuffer;
+	pRenderable->indexCount = loadedScene.meshes[0].primitives[0].nIndices;
+	pRenderable->type = loadedScene.meshes[0].primitives[0].topologyType;
 }
 
 int main(int argc, char *argv[])

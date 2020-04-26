@@ -48,6 +48,7 @@ struct JsonValue
 
 	bool IsNull();
 	bool HasKey(eastl::string identifier);
+	int Count();
 
 	eastl::string ToString();
 	double ToFloat();

@@ -24,7 +24,7 @@ struct CDebugDrawingState
 {
 	eastl::vector<DrawCall> drawQueue;
 	eastl::vector<DebugVertex> vertexList;
-	eastl::vector<int> indexList;
+	eastl::vector<uint32_t> indexList;
 
 	ProgramHandle debugShaderProgram;
 	VertexBufferHandle vertexBuffer;
@@ -131,12 +131,12 @@ void DebugDraw::OnFrame(Scene& scene, float /* deltaTime */)
 	{
 		if (GfxDevice::IsValid(pState->indexBuffer)) { GfxDevice::FreeIndexBuffer(pState->indexBuffer); }
 		pState->indexBufferSize = (int)pState->indexList.size() + 1000;
-		pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(pState->indexBufferSize, "Debug Drawer");
+		pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(pState->indexBufferSize, IndexFormat::UInt, "Debug Drawer");
 	}
 
 	// Update vert and index buffer data
 	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(DebugVertex));
-	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(int));
+	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
 	TransformData trans{ Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f) };

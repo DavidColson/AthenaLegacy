@@ -168,7 +168,7 @@ Scene* CreateMainMenuScene()
 	scene.Assign<CText>(startOption)->text = "Start";
 	scene.Assign<CTransform>(startOption)->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 
-	EntityID quitOption =scene.NewEntity("Quit Option");
+	EntityID quitOption = scene.NewEntity("Quit Option");
 	scene.Assign<CText>(quitOption)->text = "Quit";
 	scene.Assign<CTransform>(quitOption)->localPos = Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f);
 

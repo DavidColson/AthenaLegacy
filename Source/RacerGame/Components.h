@@ -3,12 +3,14 @@
 #include <TypeSystem.h>
 #include <GraphicsDevice.h>
 
-struct CCube
+struct CRenderable
 {
     VertexBufferHandle vBuffer;
     IndexBufferHandle iBuffer;
     ProgramHandle program;
     ConstBufferHandle constBuffer;
+    int indexCount;
+    TopologyType type{ TopologyType::TriangleStrip };
 };
 
 struct CCamera

@@ -29,7 +29,7 @@ struct CShapesSystemState
 {
 	eastl::vector<DrawCall> drawQueue;
 	eastl::vector<ShapeVertex> vertexList;
-	eastl::vector<int> indexList;
+	eastl::vector<uint32_t> indexList;
 
 	ProgramHandle shaderProgram;
 	VertexBufferHandle vertexBuffer;
@@ -159,12 +159,12 @@ void Shapes::OnFrame(Scene& scene, float /* deltaTime */)
 	{
 		if (GfxDevice::IsValid(pState->indexBuffer)) { GfxDevice::FreeIndexBuffer(pState->indexBuffer); }
 		pState->indexBufferSize = (int)pState->indexList.size() + 1000;
-		pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(pState->indexBufferSize, "Shapes System");
+		pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(pState->indexBufferSize, IndexFormat::UInt, "Shapes System");
 	}
 
 	// Update vert and index buffer data
 	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(ShapeVertex));
-	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(int));
+	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
 	TransformData trans{ Matrixf::Orthographic(0.f, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), -1.0f, 10.0f), 5.0f };

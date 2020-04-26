@@ -14,7 +14,6 @@ JsonValue::~JsonValue()
 		delete internalData.pObject;
 	else if (type == Type::String)
 	{
-		Log::Debug("Deleting a jsonvalue string with value %s", internalData.pString->c_str());
 		delete internalData.pString;
 	}
 }
@@ -188,6 +187,15 @@ bool JsonValue::IsNull()
 bool JsonValue::HasKey(eastl::string identifier)
 {
 	return internalData.pObject->count(identifier) >= 1;
+}
+
+int JsonValue::Count()
+{
+	ASSERT(type == Type::Array || type == Type::Object, "Attempting to treat this value as an array or object when it is not.");
+	if (type == Type::Array)
+		return (int)internalData.pArray->size();
+	else
+		return (int)internalData.pObject->size();
 }
 
 JsonValue& JsonValue::operator[](eastl::string identifier)

@@ -113,7 +113,7 @@ void FontSystem::Initialize()
 	// Create vertex buffer
 	// ********************
 	pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vertex), "Font Render Vert Buffer");
-	pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, "Font Render Index Buffer");
+	pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, IndexFormat::UInt, "Font Render Index Buffer");
 
 	// Create a constant buffer for the WVP
 	// **********************************************
@@ -224,7 +224,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		}
 
 		eastl::fixed_vector<Vertex, CHARS_PER_DRAW_CALL * 4> vertexList;
-		eastl::fixed_vector<int, CHARS_PER_DRAW_CALL * 6> indexList;
+		eastl::fixed_vector<uint32_t, CHARS_PER_DRAW_CALL * 6> indexList;
 		int currentIndex = 0;
 
 		for (char const& c : pText->text) {
@@ -256,7 +256,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 	
 		// Update buffers
 		GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vertex));
-		GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, indexList.data(), indexList.size() * sizeof(int));
+		GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, indexList.data(), indexList.size() * sizeof(uint32_t));
 
 		GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
 		GfxDevice::BindIndexBuffer(pState->indexBuffer);

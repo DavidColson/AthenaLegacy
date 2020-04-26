@@ -139,6 +139,12 @@ enum class TextureFormat
 	D24S8
 };
 
+enum class IndexFormat
+{
+	UShort,
+	UInt
+};
+
 enum class BlendOp
 {
 	Add,
@@ -241,9 +247,9 @@ namespace GfxDevice
 
 	// Index Buffers
 
-	IndexBufferHandle CreateIndexBuffer(size_t numElements, void* data, const eastl::string& debugName = "");
+	IndexBufferHandle CreateIndexBuffer(size_t numElements, IndexFormat format, void* data, const eastl::string& debugName = "");
 
-	IndexBufferHandle CreateDynamicIndexBuffer(size_t numElements, const eastl::string& debugName = "");
+	IndexBufferHandle CreateDynamicIndexBuffer(size_t numElements, IndexFormat format, const eastl::string& debugName = "");
 
 	void UpdateDynamicIndexBuffer(IndexBufferHandle handle, void* data, size_t dataSize);
 

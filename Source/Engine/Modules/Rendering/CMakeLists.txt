@@ -12,4 +12,6 @@ target_sources(Engine
         "FontSystem.cpp"
         "RectPacking.h"
         "RectPacking.cpp"
+        "Mesh.h"
+        "Mesh.cpp"
 )
