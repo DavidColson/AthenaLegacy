@@ -99,6 +99,7 @@ struct Context
 	ID3D11DeviceContext *pDeviceContext{nullptr};
 	ID3D11InfoQueue *pDebugInfoQueue{nullptr};
 	ID3D11Debug *pDebug{nullptr};
+	ID3D11RasterizerState* pRasterizerState{nullptr};
 	ID3DUserDefinedAnnotation *pUserDefinedAnnotation{nullptr};
 	RenderTargetHandle backBuffer;
 
@@ -282,6 +283,16 @@ void GfxDevice::Initialize(SDL_Window *pWindow, float width, float height)
 		pCtx->poolRenderTarget[pCtx->backBuffer.id] = renderTarget;
 	}
 
+	// Create the rasterizer state
+    {
+        D3D11_RASTERIZER_DESC desc;
+        ZeroMemory(&desc, sizeof(desc));
+        desc.FrontCounterClockwise = true;
+		desc.FillMode = D3D11_FILL_SOLID;
+		desc.CullMode = D3D11_CULL_BACK;
+        pCtx->pDevice->CreateRasterizerState(&desc, &pCtx->pRasterizerState);
+    }
+
 	// Setup debug
 	pCtx->pDevice->QueryInterface(__uuidof(ID3D11InfoQueue), (void **)&pCtx->pDebugInfoQueue);
 	pCtx->pDevice->QueryInterface(__uuidof(ID3D11Debug), (void **)&pCtx->pDebug);
@@ -450,6 +461,8 @@ void GfxDevice::ClearBackBuffer(eastl::array<float, 4> color)
 
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
 	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		pCtx->pDeviceContext->RSSetState(pCtx->pRasterizerState);
+
 }
 
 // ***********************************************************************
@@ -933,7 +946,7 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, IndexFormat f
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 	ZeroMemory(&indexBufferData, sizeof(indexBufferData));
 	indexBufferData.pSysMem = data;
-	pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &indexBuffer.pBuffer);
+	HRESULT hr =pCtx->pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &indexBuffer.pBuffer);
 
 	SetDebugName(indexBuffer.pBuffer, "[INDEX_BUFFER] " + debugName);
 

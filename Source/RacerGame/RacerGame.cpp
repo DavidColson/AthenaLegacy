@@ -114,15 +114,15 @@ void SetupScene(Scene& scene)
 	pCube->program = GfxDevice::CreateProgram(vShader, pShader);
 
 	eastl::vector<Vertex> cubeVerts = {
-        Vertex(Vec3f(-1.0f, -1.0f, -1.0f)), // Back bottom left
-        Vertex(Vec3f(-1.0f, -1.0f,  1.0f)), // Front bottom left
-        Vertex(Vec3f(-1.0f,  1.0f, -1.0f)), // Back top left
-        Vertex(Vec3f(-1.0f,  1.0f,  1.0f)), // Front top left
-
-        Vertex(Vec3f( 1.0f, -1.0f, -1.0f)), // Back bottom right
+		Vertex(Vec3f(-1.0f, -1.0f,  1.0f)), // Front bottom left
         Vertex(Vec3f( 1.0f, -1.0f,  1.0f)), // Front bottom right
-        Vertex(Vec3f( 1.0f,  1.0f, -1.0f)), // Back top right
-        Vertex(Vec3f( 1.0f,  1.0f,  1.0f))  // Front top right
+        Vertex(Vec3f(-1.0f,  1.0f,  1.0f)), // Front top left
+        Vertex(Vec3f( 1.0f,  1.0f,  1.0f)), // Front top right
+
+        Vertex(Vec3f(-1.0f, -1.0f, -1.0f)), // Back bottom left
+        Vertex(Vec3f( 1.0f, -1.0f, -1.0f)), // Back bottom right
+        Vertex(Vec3f(-1.0f,  1.0f, -1.0f)), // Back top left
+        Vertex(Vec3f( 1.0f,  1.0f, -1.0f))  // Back top right
     };
 
 	cubeVerts[4].col = Vec3f(1.0f, 0.0f, 0.0f);
@@ -138,7 +138,7 @@ void SetupScene(Scene& scene)
 	pCube->vBuffer = GfxDevice::CreateVertexBuffer(8, sizeof(Vertex), cubeVerts.data(), "CubeVertBuffer");
 
 	eastl::vector<int> cubeIndices = {
-		3, 7, 1, 5, 4, 7, 6, 3, 2, 1, 0, 4, 2, 6
+		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
 	};
 	pCube->iBuffer = GfxDevice::CreateIndexBuffer(14, IndexFormat::UInt, cubeIndices.data(), "CubeIndexBuffer");
 	pCube->indexCount = (int)cubeIndices.size();
@@ -175,7 +175,7 @@ void SetupScene(Scene& scene)
 
 	//scene.UnsetParent(cube2, cube);
 
-	GltfScene loadedScene = LoadGltf("Resources/Models/minimal.gltf");
+	GltfScene loadedScene = LoadGltf("Resources/Models/monkey.gltf");
 
 	EntityID triangle = scene.NewEntity("OurTriangle");
 	CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
