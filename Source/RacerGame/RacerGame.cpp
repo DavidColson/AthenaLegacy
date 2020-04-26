@@ -113,6 +113,8 @@ void SetupScene(Scene& scene)
 
 	pCube->program = GfxDevice::CreateProgram(vShader, pShader);
 
+
+
 	eastl::vector<Vertex> cubeVerts = {
 		Vertex(Vec3f(-1.0f, -1.0f,  1.0f)), // Front bottom left
         Vertex(Vec3f( 1.0f, -1.0f,  1.0f)), // Front bottom right
@@ -124,16 +126,18 @@ void SetupScene(Scene& scene)
         Vertex(Vec3f(-1.0f,  1.0f, -1.0f)), // Back top left
         Vertex(Vec3f( 1.0f,  1.0f, -1.0f))  // Back top right
     };
-
 	cubeVerts[4].col = Vec3f(1.0f, 0.0f, 0.0f);
 	cubeVerts[5].col = Vec3f(0.0f, 1.0f, 0.0f);
 	cubeVerts[6].col = Vec3f(1.0f, 0.0f, 1.0f);
 	cubeVerts[7].col = Vec3f(1.0f, 1.0f, 1.0f);
-
 	cubeVerts[0].col = Vec3f(1.0f, 0.0f, 0.0f);
 	cubeVerts[1].col = Vec3f(0.0f, 1.0f, 0.0f);
 	cubeVerts[2].col = Vec3f(1.0f, 0.0f, 1.0f);
 	cubeVerts[3].col = Vec3f(1.0f, 1.0f, 1.0f);
+	
+	Mesh cubeMesh;
+	cubeMesh.name = "Cube";
+	Primitive cubePrimitive;
 
 	pCube->vBuffer = GfxDevice::CreateVertexBuffer(8, sizeof(Vertex), cubeVerts.data(), "CubeVertBuffer");
 
@@ -177,12 +181,16 @@ void SetupScene(Scene& scene)
 
 	GltfScene loadedScene = LoadGltf("Resources/Models/monkey.gltf");
 
-	EntityID triangle = scene.NewEntity("OurTriangle");
+	EntityID triangle = scene.NewEntity("Monkey");
 	CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
 	CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
 	
 	eastl::vector<VertexInputElement> trianglelayout;
 	trianglelayout.push_back({"SV_POSITION",AttributeType::Float3});
+	trianglelayout.push_back({"NORMAL",AttributeType::Float3});
+	trianglelayout.push_back({"TEXCOORD_",AttributeType::Float2});
+	trianglelayout.push_back({"COLOR_",AttributeType::Float4});
+
 	VertexShaderHandle gvShader = GfxDevice::CreateVertexShader(L"Shaders/BasicGltfShader.hlsl", "VSMain", trianglelayout, "GltfVertShader");
 	PixelShaderHandle gpShader = GfxDevice::CreatePixelShader(L"Shaders/BasicGltfShader.hlsl", "PSMain", "GltfPixelShader");
 	pRenderable->program = GfxDevice::CreateProgram(gvShader, gpShader);
@@ -191,7 +199,7 @@ void SetupScene(Scene& scene)
 	loadedScene.meshes[0].CreateGfxDeviceBuffers();
 	pRenderable->vBuffer = loadedScene.meshes[0].primitives[0].gfxVertBuffer;
 	pRenderable->iBuffer = loadedScene.meshes[0].primitives[0].gfxIndexBuffer;
-	pRenderable->indexCount = loadedScene.meshes[0].primitives[0].nIndices;
+	pRenderable->indexCount = (int)loadedScene.meshes[0].primitives[0].indexBuffer.size();
 	pRenderable->type = loadedScene.meshes[0].primitives[0].topologyType;
 }
 

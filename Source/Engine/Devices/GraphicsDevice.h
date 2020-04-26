@@ -126,6 +126,7 @@ enum class ShaderType
 enum class AttributeType
 {
 	// Need to fill this out
+	Float4,
 	Float3,
 	Float2,
 	InstanceTransform,

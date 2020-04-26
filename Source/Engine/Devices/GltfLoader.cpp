@@ -134,12 +134,31 @@ GltfScene LoadGltf(const char* filename)
                 }
             }
 
-            //@incomplete Do interlacing data here
-            prim.pVertBuffer = (VertPos*)accessors[jsonPrimitive["attributes"]["POSITION"].ToInt()].pBuffer;
-            prim.nVerts = accessors[jsonPrimitive["attributes"]["POSITION"].ToInt()].count;
+            int nVerts = accessors[jsonPrimitive["attributes"]["POSITION"].ToInt()].count;
+            prim.vertBuffer.reserve(nVerts);
 
-            prim.pIndexBuffer = (unsigned short*)accessors[jsonPrimitive["indices"].ToInt()].pBuffer;
-            prim.nIndices = accessors[jsonPrimitive["indices"].ToInt()].count;
+            JsonValue& jsonAttr = jsonPrimitive["attributes"];
+            Vec3f* vertPositionBuffer = (Vec3f*)accessors[jsonAttr["POSITION"].ToInt()].pBuffer;
+            Vec3f* vertNormBuffer = jsonAttr.HasKey("NORMAL") ? (Vec3f*)accessors[jsonAttr["NORMAL"].ToInt()].pBuffer : nullptr;
+            Vec2f* vertTexCoordBuffer = jsonAttr.HasKey("TEXCOORD_0") ? (Vec2f*)accessors[jsonAttr["TEXCOORD_0"].ToInt()].pBuffer : nullptr;
+            Vec4f* vertColBuffer = jsonAttr.HasKey("COLOR_0") ? (Vec4f*)accessors[jsonAttr["COLOR_0"].ToInt()].pBuffer : nullptr;
+
+            for (int i = 0; i < nVerts; i++)
+            {
+                Vert_PosNormTexCol v;
+                v.position = vertPositionBuffer[i];
+                v.norm = vertNormBuffer != nullptr ? vertNormBuffer[i] : Vec3f();
+                v.texCoord = vertTexCoordBuffer != nullptr ? vertTexCoordBuffer[i] : Vec2f();
+                v.color = vertColBuffer != nullptr ? vertColBuffer[i] : Vec4f();
+                prim.vertBuffer.push_back(v);
+            }
+
+            int nIndices = accessors[jsonPrimitive["indices"].ToInt()].count;
+            prim.indexBuffer.reserve(nIndices);
+            uint16_t* indexBuffer = (uint16_t*)accessors[jsonPrimitive["indices"].ToInt()].pBuffer;
+            for (int i = 0; i < nIndices; i++)
+                prim.indexBuffer.push_back(indexBuffer[i]);
+
             mesh.primitives.push_back(prim);
         }
         meshes.push_back(mesh);

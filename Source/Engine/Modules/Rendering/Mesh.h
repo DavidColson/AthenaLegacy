@@ -1,23 +1,24 @@
 #pragma once
 
 #include "Vec3.h"
+#include "Vec4.h"
 #include "GraphicsDevice.h"
 
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 
-struct VertPos
+struct Vert_PosNormTexCol
 {
     Vec3f position;
+    Vec3f norm;
+    Vec2f texCoord;
+    Vec4f color;
 };
 
 struct Primitive
 {
-    VertPos* pVertBuffer{ nullptr };
-    int nVerts{ 0 };
-
-    unsigned short* pIndexBuffer{ nullptr };
-    int nIndices{ 0 };
+    eastl::vector<Vert_PosNormTexCol> vertBuffer{ nullptr };
+    eastl::vector<uint16_t> indexBuffer{ nullptr };
 
     TopologyType topologyType{TopologyType::TriangleList};
     VertexBufferHandle gfxVertBuffer;

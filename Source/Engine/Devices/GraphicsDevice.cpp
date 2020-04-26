@@ -929,9 +929,9 @@ IndexBufferHandle GfxDevice::CreateIndexBuffer(size_t numElements, IndexFormat f
 	indexBuffer.nElements = (int)numElements;
 	indexBuffer.format = indexFormatLookup[static_cast<int>(format)];
 
-	UINT elementSize = 16;
+	UINT elementSize = sizeof(unsigned short);
 	if (format == IndexFormat::UInt)
-		elementSize = 32;
+		elementSize = sizeof(unsigned int);
 
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
@@ -1054,6 +1054,9 @@ eastl::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const eastl::vect
 		// Todo: might want to replace with a lookup
 		switch (elem.type)
 		{
+		case AttributeType::Float4:
+			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			break;
 		case AttributeType::Float3:
 			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
