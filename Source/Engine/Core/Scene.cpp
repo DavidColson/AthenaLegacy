@@ -55,14 +55,16 @@ void TransformHeirarchy(Scene& scene, float deltaTime)
     // Not doing this as we don't store the render matrix
     eastl::vector<EntityID> roots;
 
-    for (EntityID ent : SceneView<CTransform, CParent>(scene))
+    for (EntityID ent : SceneView<CTransform>(scene))
     {   
         // We only want root entities here, so ignoring children, they'll come later
         if (!scene.Has<CChild>(ent))
         {
             CTransform* pTrans = scene.Get<CTransform>(ent);
             pTrans->globalTransform = Matrixf::MakeTRS(pTrans->localPos, pTrans->localRot, pTrans->localSca);
-            roots.push_back(ent);
+
+            if (scene.Has<CParent>(ent)) // If this entity is the top of a tree, we need to recurse it's children
+                roots.push_back(ent);
         }
     }
 
