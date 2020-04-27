@@ -43,6 +43,8 @@ GltfScene LoadGltf(const char* filename)
     }
 
     GltfScene scene;
+    
+    eastl::vector<Buffer> rawDataBuffers;
     for (int i = 0; i < parsed["buffers"].Count(); i++)
     {
         Buffer buf;
@@ -52,7 +54,7 @@ GltfScene LoadGltf(const char* filename)
         eastl::string encodedBuffer = parsed["buffers"][i]["uri"].ToString().substr(37);
         memcpy(buf.pBytes, DecodeBase64(encodedBuffer).data(), buf.byteLength);
 
-        scene.rawDataBuffers.push_back(buf);
+        rawDataBuffers.push_back(buf);
     }
 
     eastl::vector<BufferView> bufferViews;
@@ -61,7 +63,7 @@ GltfScene LoadGltf(const char* filename)
         BufferView view;
 
         int bufIndex = parsed["bufferViews"][i]["buffer"].ToInt();
-        view.pBuffer = scene.rawDataBuffers[bufIndex].pBytes + parsed["bufferViews"][i]["byteOffset"].ToInt(); //@Incomplete, byte offset could not be provided, in which case we assume 0
+        view.pBuffer = rawDataBuffers[bufIndex].pBytes + parsed["bufferViews"][i]["byteOffset"].ToInt(); //@Incomplete, byte offset could not be provided, in which case we assume 0
 
         view.length = parsed["bufferViews"][i]["byteLength"].ToInt();
 
@@ -143,6 +145,7 @@ GltfScene LoadGltf(const char* filename)
             Vec2f* vertTexCoordBuffer = jsonAttr.HasKey("TEXCOORD_0") ? (Vec2f*)accessors[jsonAttr["TEXCOORD_0"].ToInt()].pBuffer : nullptr;
             Vec4f* vertColBuffer = jsonAttr.HasKey("COLOR_0") ? (Vec4f*)accessors[jsonAttr["COLOR_0"].ToInt()].pBuffer : nullptr;
 
+            // We're interleaving the vertex data here, which has pros and cons. Maybe one day consider allowing the option of whether to interleave or not
             for (int i = 0; i < nVerts; i++)
             {
                 Vert_PosNormTexCol v;
@@ -162,6 +165,11 @@ GltfScene LoadGltf(const char* filename)
             mesh.primitives.push_back(prim);
         }
         meshes.push_back(mesh);
+    }
+
+    for (int i = 0; i < rawDataBuffers.size(); i++)
+    {
+        delete rawDataBuffers[i].pBytes;
     }
 
     return scene;

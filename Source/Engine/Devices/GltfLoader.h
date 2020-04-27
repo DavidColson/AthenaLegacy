@@ -56,7 +56,6 @@ struct Accessor
 
 struct GltfScene
 {
-    eastl::vector<Buffer> rawDataBuffers;
     eastl::vector<Mesh> meshes;
 };
 

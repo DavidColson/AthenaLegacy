@@ -13,6 +13,11 @@ struct cbTransformBuf
 	Matrixf wvp;
 };
 
+namespace {
+	Mesh cubeMesh;
+	Mesh monkey;
+}
+
 void CubeRenderSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
@@ -41,12 +46,14 @@ void CubeRenderSystem(Scene& scene, float deltaTime)
 		GfxDevice::BindConstantBuffer(pCube->constBuffer, &trans, ShaderType::Vertex, 0);
 
 		GfxDevice::BindProgram(pCube->program);
-		GfxDevice::SetTopologyType(pCube->type);
 
-		GfxDevice::BindVertexBuffers(1, &pCube->vBuffer);
-		GfxDevice::BindIndexBuffer(pCube->iBuffer);
-
-		GfxDevice::DrawIndexed(pCube->indexCount, 0, 0);
+		for (Primitive& prim : pCube->pMesh->primitives)
+		{
+			GfxDevice::SetTopologyType(prim.topologyType);
+			GfxDevice::BindVertexBuffers(1, &prim.gfxVertBuffer);
+			GfxDevice::BindIndexBuffer(prim.gfxIndexBuffer);
+			GfxDevice::DrawIndexed((int)prim.indexBuffer.size(), 0, 0);
+		}
 	}
 }
 
@@ -94,76 +101,82 @@ void SetupScene(Scene& scene)
 	scene.RegisterSystem(SystemPhase::Update, CameraControlSystem);
 	scene.RegisterSystem(SystemPhase::Render, CubeRenderSystem);
 
+	cubeMesh.name = "Cube";
+	Primitive cubePrimitive;
+	cubePrimitive.vertBuffer = {
+		Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Front bottom left
+        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Front bottom right
+        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Front top left
+        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }, // Front top right
+
+        Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Back bottom left
+        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Back bottom right
+        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Back top left
+        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }  // Back top right
+    };
+	cubePrimitive.indexBuffer = {
+		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
+	};
+	cubePrimitive.topologyType = TopologyType::TriangleStrip;
+	cubeMesh.primitives.push_back(cubePrimitive);
+	cubeMesh.CreateGfxDeviceBuffers();
+
+	// Material stuff!
+	eastl::vector<VertexInputElement> layout;
+	layout.push_back({"SV_POSITION",AttributeType::Float3});
+	layout.push_back({"NORMAL",AttributeType::Float3});
+	layout.push_back({"TEXCOORD_",AttributeType::Float2});
+	layout.push_back({"COLOR_",AttributeType::Float4});
+	VertexShaderHandle vShader = GfxDevice::CreateVertexShader(L"Shaders/VertColor.hlsl", "VSMain", layout, "CubeVertShader");
+	PixelShaderHandle pShader = GfxDevice::CreatePixelShader(L"Shaders/VertColor.hlsl", "PSMain", "CubePixelShader");
+	ProgramHandle program = GfxDevice::CreateProgram(vShader, pShader);
+	ConstBufferHandle transformBuffer = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "CubeTransBuffer");
+
+
+
 	EntityID camera = scene.NewEntity("Camera");
 	scene.Assign<CCamera>(camera);
 	scene.Assign<CTransform>(camera);
 
+	// Make cube
 	EntityID cube = scene.NewEntity("Cube");
-	CRenderable* pCube = scene.Assign<CRenderable>(cube);
-	CTransform* pTrans = scene.Assign<CTransform>(cube);
-	pTrans->localPos = Vec3f(0.0f, 0.0f, -3.0f);
-	pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
-	
-	eastl::vector<VertexInputElement> layout;
-	layout.push_back({"SV_POSITION",AttributeType::Float3});
-	layout.push_back({"COLOR", AttributeType::Float3});
+	{
+		CTransform* pTrans = scene.Assign<CTransform>(cube);
+		pTrans->localPos = Vec3f(0.0f, 0.0f, -3.0f);
+		pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
+		
+		CRenderable* pRenderable = scene.Assign<CRenderable>(cube);
+		pRenderable->pMesh = &cubeMesh;
+		pRenderable->program = program;
+		pRenderable->constBuffer = transformBuffer;
+	}
 
-	VertexShaderHandle vShader = GfxDevice::CreateVertexShader(L"Shaders/CubeShader.hlsl", "VSMain", layout, "CubeVertShader");
-	PixelShaderHandle pShader = GfxDevice::CreatePixelShader(L"Shaders/CubeShader.hlsl", "PSMain", "CubePixelShader");
-
-	pCube->program = GfxDevice::CreateProgram(vShader, pShader);
-
-
-
-	eastl::vector<Vertex> cubeVerts = {
-		Vertex(Vec3f(-1.0f, -1.0f,  1.0f)), // Front bottom left
-        Vertex(Vec3f( 1.0f, -1.0f,  1.0f)), // Front bottom right
-        Vertex(Vec3f(-1.0f,  1.0f,  1.0f)), // Front top left
-        Vertex(Vec3f( 1.0f,  1.0f,  1.0f)), // Front top right
-
-        Vertex(Vec3f(-1.0f, -1.0f, -1.0f)), // Back bottom left
-        Vertex(Vec3f( 1.0f, -1.0f, -1.0f)), // Back bottom right
-        Vertex(Vec3f(-1.0f,  1.0f, -1.0f)), // Back top left
-        Vertex(Vec3f( 1.0f,  1.0f, -1.0f))  // Back top right
-    };
-	cubeVerts[4].col = Vec3f(1.0f, 0.0f, 0.0f);
-	cubeVerts[5].col = Vec3f(0.0f, 1.0f, 0.0f);
-	cubeVerts[6].col = Vec3f(1.0f, 0.0f, 1.0f);
-	cubeVerts[7].col = Vec3f(1.0f, 1.0f, 1.0f);
-	cubeVerts[0].col = Vec3f(1.0f, 0.0f, 0.0f);
-	cubeVerts[1].col = Vec3f(0.0f, 1.0f, 0.0f);
-	cubeVerts[2].col = Vec3f(1.0f, 0.0f, 1.0f);
-	cubeVerts[3].col = Vec3f(1.0f, 1.0f, 1.0f);
-	
-	Mesh cubeMesh;
-	cubeMesh.name = "Cube";
-	Primitive cubePrimitive;
-
-	pCube->vBuffer = GfxDevice::CreateVertexBuffer(8, sizeof(Vertex), cubeVerts.data(), "CubeVertBuffer");
-
-	eastl::vector<int> cubeIndices = {
-		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
-	};
-	pCube->iBuffer = GfxDevice::CreateIndexBuffer(14, IndexFormat::UInt, cubeIndices.data(), "CubeIndexBuffer");
-	pCube->indexCount = (int)cubeIndices.size();
-
-	pCube->constBuffer = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "CubeTransBuffer");
-
+	// Make another cube
 	EntityID cube2 = scene.NewEntity("Cube2");
-	CRenderable* pCube2 = scene.Assign<CRenderable>(cube2);
-	scene.SetParent(cube2, cube);
-	CTransform* pTrans2 = scene.Assign<CTransform>(cube2);
-	pTrans2->localPos = Vec3f(1.0f, 0.0f, -5.0f);
-	pTrans2->localSca = Vec3f(1.0f, 1.0f, 1.0f);
-	*pCube2 = *pCube;
+	{
+		CTransform* pTrans = scene.Assign<CTransform>(cube2);
+		scene.SetParent(cube2, cube);
+		pTrans->localPos = Vec3f(1.0f, 0.0f, -5.0f);
+		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
+		
+		CRenderable* pRenderable = scene.Assign<CRenderable>(cube2);
+		pRenderable->pMesh = &cubeMesh;
+		pRenderable->program = program;
+		pRenderable->constBuffer = transformBuffer;
+	}
 
 	EntityID cube3 = scene.NewEntity("Cube3");
-	CRenderable* pCube3 = scene.Assign<CRenderable>(cube3);
-	scene.SetParent(cube3, cube2);
-	CTransform* pTrans3 = scene.Assign<CTransform>(cube3);
-	pTrans3->localPos = Vec3f(1.0f, 0.0f, -5.0f);
-	pTrans3->localSca = Vec3f(1.0f, 1.0f, 1.0f);
-	*pCube3 = *pCube;
+	{
+		scene.SetParent(cube3, cube2);
+		CTransform* pTrans = scene.Assign<CTransform>(cube3);
+		pTrans->localPos = Vec3f(1.0f, 0.0f, -5.0f);
+		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
+
+		CRenderable* pRenderable = scene.Assign<CRenderable>(cube3);
+		pRenderable->pMesh = &cubeMesh;
+		pRenderable->program = program;
+		pRenderable->constBuffer = transformBuffer;
+	}
 
 	for(int i = 0; i < 4; i++)
 	{
@@ -177,30 +190,20 @@ void SetupScene(Scene& scene)
 		scene.SetParent(newEnt, cube2);
 	}
 
-	//scene.UnsetParent(cube2, cube);
+	{
+		GltfScene loadedScene = LoadGltf("Resources/Models/monkey.gltf");
+		monkey = loadedScene.meshes[0];
+		monkey.CreateGfxDeviceBuffers();
 
-	GltfScene loadedScene = LoadGltf("Resources/Models/monkey.gltf");
 
-	EntityID triangle = scene.NewEntity("Monkey");
-	CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
-	CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
-	
-	eastl::vector<VertexInputElement> trianglelayout;
-	trianglelayout.push_back({"SV_POSITION",AttributeType::Float3});
-	trianglelayout.push_back({"NORMAL",AttributeType::Float3});
-	trianglelayout.push_back({"TEXCOORD_",AttributeType::Float2});
-	trianglelayout.push_back({"COLOR_",AttributeType::Float4});
-
-	VertexShaderHandle gvShader = GfxDevice::CreateVertexShader(L"Shaders/BasicGltfShader.hlsl", "VSMain", trianglelayout, "GltfVertShader");
-	PixelShaderHandle gpShader = GfxDevice::CreatePixelShader(L"Shaders/BasicGltfShader.hlsl", "PSMain", "GltfPixelShader");
-	pRenderable->program = GfxDevice::CreateProgram(gvShader, gpShader);
-	pRenderable->constBuffer = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "GltfTransBuffer");
-
-	loadedScene.meshes[0].CreateGfxDeviceBuffers();
-	pRenderable->vBuffer = loadedScene.meshes[0].primitives[0].gfxVertBuffer;
-	pRenderable->iBuffer = loadedScene.meshes[0].primitives[0].gfxIndexBuffer;
-	pRenderable->indexCount = (int)loadedScene.meshes[0].primitives[0].indexBuffer.size();
-	pRenderable->type = loadedScene.meshes[0].primitives[0].topologyType;
+		EntityID triangle = scene.NewEntity("Monkey");
+		CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
+		
+		CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
+		pRenderable->pMesh = &monkey;
+		pRenderable->program = program;
+		pRenderable->constBuffer = transformBuffer;
+	}
 }
 
 int main(int argc, char *argv[])

@@ -3,14 +3,14 @@
 #include <TypeSystem.h>
 #include <GraphicsDevice.h>
 
+struct Mesh;
+
 struct CRenderable
 {
-    VertexBufferHandle vBuffer;
-    IndexBufferHandle iBuffer;
+    Mesh* pMesh;
+
     ProgramHandle program;
     ConstBufferHandle constBuffer;
-    int indexCount;
-    TopologyType type{ TopologyType::TriangleStrip };
 };
 
 struct CCamera
