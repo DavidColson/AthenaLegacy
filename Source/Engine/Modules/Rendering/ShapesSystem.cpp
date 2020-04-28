@@ -3,17 +3,12 @@
 #include "Profiler.h"
 #include "Vec4.h"
 #include "Maths.h"
+#include "Mesh.h"
 
 struct DrawCall
 {
 	int vertexCount{ 0 };
 	int indexCount{ 0 };
-};
-
-struct ShapeVertex
-{
-	Vec2f pos{ Vec2f(0.0f, 0.0f) };
-	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
 };
 
 struct TransformData
@@ -28,7 +23,7 @@ struct TransformData
 struct CShapesSystemState
 {
 	eastl::vector<DrawCall> drawQueue;
-	eastl::vector<ShapeVertex> vertexList;
+	eastl::vector<Vert_PosCol> vertexList;
 	eastl::vector<uint32_t> indexList;
 
 	ProgramHandle shaderProgram;
@@ -45,7 +40,7 @@ namespace
 	CShapesSystemState* pState = nullptr;
 }
 
-void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thickness, Vec3f color, bool connected)
+void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thickness, Vec4f color, bool connected)
 {  
 	// Vector manipulation here is slow, can do better
 	// I recommend using a single frame allocator, or some other with a custom container
@@ -77,8 +72,8 @@ void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thicknes
 
         // New vertices
         float offset = thickness * 0.2f;
-        pState->vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] - cornerBisector * offset, color });
-        pState->vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] + cornerBisector * offset, color });
+        pState->vertexList.push_back(Vert_PosCol { Vec3f::Embed2D(verts[mod_floor(i, verts.size())] - cornerBisector * offset), color });
+        pState->vertexList.push_back(Vert_PosCol { Vec3f::Embed2D(verts[mod_floor(i, verts.size())] + cornerBisector * offset), color });
         
         // Indices
         pState->indexList.push_back(vertCount + 0);
@@ -122,8 +117,8 @@ void Shapes::Initialize()
 	}";
 
 	eastl::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION",AttributeType::Float2});
-	layout.push_back({"COLOR", AttributeType::Float3});
+	layout.push_back({"POSITION",AttributeType::Float3});
+	layout.push_back({"COLOR", AttributeType::Float4});
 
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Shapes");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Shapes");
@@ -152,7 +147,7 @@ void Shapes::OnFrame(Scene& scene, float /* deltaTime */)
 	{
 		if (GfxDevice::IsValid(pState->vertexBuffer)) { GfxDevice::FreeVertexBuffer(pState->vertexBuffer); }
 		pState->vertBufferSize = (int)pState->vertexList.size() + 1000;
-		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(ShapeVertex), "Shapes System");
+		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(Vert_PosCol), "Shapes System");
 	}
 
 	if (!GfxDevice::IsValid(pState->indexBuffer) || pState->indexBufferSize < pState->indexList.size())
@@ -163,7 +158,7 @@ void Shapes::OnFrame(Scene& scene, float /* deltaTime */)
 	}
 
 	// Update vert and index buffer data
-	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(ShapeVertex));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(Vert_PosCol));
 	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data

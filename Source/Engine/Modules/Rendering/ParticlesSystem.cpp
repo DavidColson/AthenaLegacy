@@ -4,6 +4,8 @@
 #include "Matrix.h"
 #include "Maths.h"
 #include "Profiler.h"
+#include "Mesh.h"
+#include "Vec4.h"
 
 REFLECT_BEGIN(CParticleEmitter)
 REFLECT_MEMBER(looping)
@@ -53,26 +55,22 @@ void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 	// @TODO: debug names should be derivative of the entity name
 	eastl::vector<VertexInputElement> particleLayout;
 	particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
-	particleLayout.push_back({"COLOR", AttributeType::Float3, 0 });
 	particleLayout.push_back({"TEXCOORD", AttributeType::Float2, 0 });
+	particleLayout.push_back({"COLOR", AttributeType::Float4, 0 });
 	particleLayout.push_back({"INSTANCE_TRANSFORM", AttributeType::InstanceTransform, 1 });
 
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Particles.hlsl", "VSMain", particleLayout, "Particles");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Particles.hlsl", "PSMain", "Particles");
 	emitter.shaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
-	eastl::vector<Vertex> quadVertices = {
-		Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
-		Vertex(Vec3f(-1.f, 1.f, 0.5f)),
-		Vertex(Vec3f(1.f, -1.f, 0.5f)),
-		Vertex(Vec3f(1.f, 1.f, 0.5f))
-	};
-	quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
-	quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
-	quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
-	quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
+	eastl::vector<Vert_PosTexCol> quadVertices = {
+        Vert_PosTexCol{ Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) },
+        Vert_PosTexCol{ Vec3f(1.f, -1.f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f)  },
+        Vert_PosTexCol{ Vec3f(-1.f, 1.f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f)  },
+        Vert_PosTexCol{ Vec3f(1.f, 1.f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f)  }
+    };
 	
-	emitter.vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Particles Vert Buffer");
+	emitter.vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTexCol), quadVertices.data(), "Particles Vert Buffer");
 	emitter.transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
 
 	emitter.particlePool = eastl::make_unique<ParticlePool>();

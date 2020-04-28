@@ -15,7 +15,7 @@
 
 namespace {
 	bool showEditor = true;
-	bool showLog = false;
+	bool showLog = true;
 	bool showEntityInspector = true;
 	bool showEntityList = true;
 	bool showFrameStats = true;

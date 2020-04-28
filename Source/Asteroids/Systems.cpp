@@ -233,7 +233,7 @@ void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 		for (const Vec2f& vert : scene.Get<CPolyShape>(shape)->points)
 			transformedVerts.push_back(Vec2f::Project4D(world * Vec4f::Embed2D(vert)));
 
-		Shapes::DrawPolyLine(scene, transformedVerts, scene.Get<CPolyShape>(shape)->thickness, Vec3f(1.0f, 1.0f, 1.0f), scene.Get<CPolyShape>(shape)->connected);
+		Shapes::DrawPolyLine(scene, transformedVerts, scene.Get<CPolyShape>(shape)->thickness, Vec4f(1.0f, 1.0f, 1.0f, 1.0f), scene.Get<CPolyShape>(shape)->connected);
 	}	
 }
 

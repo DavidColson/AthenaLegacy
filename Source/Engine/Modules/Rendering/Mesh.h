@@ -15,6 +15,25 @@ struct Vert_PosNormTexCol
     Vec4f color;
 };
 
+struct Vert_PosTex
+{
+    Vec3f position;
+    Vec2f texCoord;
+};
+
+struct Vert_PosCol
+{
+    Vec3f position;
+    Vec4f color;
+};
+
+struct Vert_PosTexCol
+{
+    Vec3f position;
+    Vec2f texCoord;
+    Vec4f color;
+};
+
 struct Primitive
 {
     eastl::vector<Vert_PosNormTexCol> vertBuffer{ nullptr };

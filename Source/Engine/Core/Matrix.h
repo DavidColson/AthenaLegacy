@@ -443,7 +443,7 @@ struct Matrix
 		Matrix mat;
 		mat.m[0][0] = T(2.0) / (right - left); 		mat.m[0][1] = T(0.0); 					mat.m[0][2] = T(0.0); 								mat.m[0][3] = (-right - left) / (right - left);
 		mat.m[1][0] = T(0.0); 						mat.m[1][1] = T(2.0) / (top - bottom); 	mat.m[1][2] = T(0.0); 								mat.m[1][3] = (-top - bottom) / (top - bottom);
-		mat.m[2][0] = T(0.0); 						mat.m[2][1] = T(0.0); 					mat.m[2][2] = T(1.0) / (farPlane - nearPlane); 		mat.m[2][3] = (-nearPlane) / (farPlane - nearPlane);
+		mat.m[2][0] = T(0.0); 						mat.m[2][1] = T(0.0); 					mat.m[2][2] = T(-1.0) / (farPlane - nearPlane); 	mat.m[2][3] = (-nearPlane) / (farPlane - nearPlane);
 		mat.m[3][0] = T(0.0); 						mat.m[3][1] = T(0.0); 					mat.m[3][2] = T(0.0); 								mat.m[3][3] = T(1.0);
 		return mat;
 	}

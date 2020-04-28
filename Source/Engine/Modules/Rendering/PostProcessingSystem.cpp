@@ -1,6 +1,7 @@
 #include "Rendering/PostProcessingSystem.h"
 
 #include "Profiler.h"
+#include "Mesh.h"
 #include <SDL_timer.h>
 
 REFLECT_BEGIN(CPostProcessing)
@@ -21,7 +22,6 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 	// Compile and create post processing shaders
 	eastl::vector<VertexInputElement> layout;
 	layout.push_back({"POSITION", AttributeType::Float3});
-	layout.push_back({"COLOR", AttributeType::Float3});
 	layout.push_back({"TEXCOORD", AttributeType::Float2});
 
 	VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
@@ -35,17 +35,13 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 	pp.bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
 
     // Vertex Buffer for fullscreen quad
-    eastl::vector<Vertex> quadVertices = {
-        Vertex(Vec3f(-1.0f, -1.0f, 0.0f)),
-        Vertex(Vec3f(1.f, -1.f, 0.0f)),
-        Vertex(Vec3f(-1.f, 1.f, 0.0f)),
-        Vertex(Vec3f(1.f, 1.f, 0.0f))
+    eastl::vector<Vert_PosTex> quadVertices = {
+        Vert_PosTex{Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f)},
+        Vert_PosTex{Vec3f(1.f, -1.f, 0.0f), Vec2f(1.0f, 1.0f)},
+        Vert_PosTex{Vec3f(-1.f, 1.f, 0.0f), Vec2f(0.0f, 0.0f)},
+        Vert_PosTex{Vec3f(1.f, 1.f, 0.0f), Vec2f(1.0f, 0.0f)}
     };
-    quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
-    quadVertices[1].texCoords = Vec2f(1.0f, 1.0f);
-    quadVertices[2].texCoords = Vec2f(0.0f, 0.0f);
-    quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
-    pp.fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Fullscreen quad");
+    pp.fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTex), quadVertices.data(), "Fullscreen quad");
 
     pp.fullScreenTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Fullscreen texture");
 }

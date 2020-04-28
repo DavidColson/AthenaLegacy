@@ -17,16 +17,6 @@ struct SDL_Window;
 class RenderFont;
 struct Context;
 
-struct Vertex
-{
-	Vertex(Vec3f _pos) : pos(_pos) {}
-	Vertex(Vec3f _pos, Vec3f _col, Vec2f _texCoords) : pos(_pos), col(_col), texCoords(_texCoords) {}
-
-	Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec2f texCoords{ Vec2f(0.0f, 0.0f) };
-};
-
 enum class TopologyType
 {
 	TriangleStrip,

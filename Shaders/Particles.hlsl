@@ -6,11 +6,11 @@ cbuffer cbPerObject
 struct VS_OUTPUT
 {
 	float4 Pos : SV_POSITION;
-	float4 Col: COLOR;
-	float2 Tex: TEXCOORD;
+	float2 Tex: TEXCOORD0;
+	float4 Col: COLOR0;
 };
 
-VS_OUTPUT VSMain(float4 inPos : POSITION, float4 inCol : COLOR, float2 inTex : TEXCOORD, uint instanceId : SV_InstanceID, column_major float4x4 instanceTrans : INSTANCE_TRANSFORM)
+VS_OUTPUT VSMain(float4 inPos : POSITION, float2 inTex : TEXCOORD0, float4 inCol : COLOR0, uint instanceId : SV_InstanceID, column_major float4x4 instanceTrans : INSTANCE_TRANSFORM)
 {
 	VS_OUTPUT output;
 
