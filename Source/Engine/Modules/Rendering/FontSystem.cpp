@@ -236,19 +236,19 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 			float h = (float)ch.size.y * pTransform->localSca.y;
 	
 			vertexList.push_back( Vertex{ Vec3f( xpos, ypos, 1.0f), 		Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV0.x, ch.UV1.y) });
-			vertexList.push_back( Vertex{ Vec3f( xpos, ypos + h, 1.0f), 	Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV0.x, ch.UV0.y) });
 			vertexList.push_back( Vertex{ Vec3f( xpos + w, ypos + h, 1.0f), Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV1.x, ch.UV0.y) });
+			vertexList.push_back( Vertex{ Vec3f( xpos, ypos + h, 1.0f), 	Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV0.x, ch.UV0.y) });
 			vertexList.push_back( Vertex{ Vec3f( xpos + w, ypos, 1.0f), 	Vec3f(1.0f, 1.0f, 1.0f), Vec2f(ch.UV1.x, ch.UV1.y) });
 			
 			// First triangle
 			indexList.push_back(currentIndex);
+			indexList.push_back(currentIndex + 1);
 			indexList.push_back(currentIndex + 2);
-			indexList.push_back(currentIndex + 3);
 
 			// Second triangle
 			indexList.push_back(currentIndex);
+			indexList.push_back(currentIndex + 3);
 			indexList.push_back(currentIndex + 1);
-			indexList.push_back(currentIndex + 2);
 			currentIndex += 4; // move along by 4 vertices for the next character
 
 			x += ch.advance * pTransform->localSca.x;

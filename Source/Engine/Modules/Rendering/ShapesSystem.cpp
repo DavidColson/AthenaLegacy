@@ -77,8 +77,8 @@ void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thicknes
 
         // New vertices
         float offset = thickness * 0.2f;
-        pState->vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] + cornerBisector * offset, color });
         pState->vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] - cornerBisector * offset, color });
+        pState->vertexList.push_back(ShapeVertex { verts[mod_floor(i, verts.size())] + cornerBisector * offset, color });
         
         // Indices
         pState->indexList.push_back(vertCount + 0);

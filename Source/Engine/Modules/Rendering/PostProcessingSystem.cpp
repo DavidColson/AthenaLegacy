@@ -36,14 +36,14 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 
     // Vertex Buffer for fullscreen quad
     eastl::vector<Vertex> quadVertices = {
-        Vertex(Vec3f(-1.0f, -1.0f, 0.5f)),
-        Vertex(Vec3f(-1.f, 1.f, 0.5f)),
-        Vertex(Vec3f(1.f, -1.f, 0.5f)),
-        Vertex(Vec3f(1.f, 1.f, 0.5f))
+        Vertex(Vec3f(-1.0f, -1.0f, 0.0f)),
+        Vertex(Vec3f(1.f, -1.f, 0.0f)),
+        Vertex(Vec3f(-1.f, 1.f, 0.0f)),
+        Vertex(Vec3f(1.f, 1.f, 0.0f))
     };
     quadVertices[0].texCoords = Vec2f(0.0f, 1.0f);
-    quadVertices[1].texCoords = Vec2f(0.0f, 0.0f);
-    quadVertices[2].texCoords = Vec2f(1.0f, 1.0f);
+    quadVertices[1].texCoords = Vec2f(1.0f, 1.0f);
+    quadVertices[2].texCoords = Vec2f(0.0f, 0.0f);
     quadVertices[3].texCoords = Vec2f(1.0f, 0.0f);
     pp.fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vertex), quadVertices.data(), "Fullscreen quad");
 
