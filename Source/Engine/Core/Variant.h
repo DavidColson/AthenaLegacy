@@ -1,7 +1,8 @@
 #pragma once
 
-#include "TypeSystem.h"
 #include "ErrorHandling.h"
+
+struct TypeData;
 
 class Variant
 {

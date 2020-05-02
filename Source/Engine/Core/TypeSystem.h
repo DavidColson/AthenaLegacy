@@ -3,7 +3,7 @@
 #include <EASTL/string.h>
 #include <EASTL/map.h>
 
-// Actual Type data
+#include "Variant.h"
 
 struct TypeData;
 
@@ -37,10 +37,27 @@ struct Member
 	}
 };
 
+struct Constructor
+{
+	virtual Variant Invoke() = 0;
+};
+
+template<typename T>
+struct Constructor_Internal : public Constructor
+{
+	virtual Variant Invoke() override
+	{
+		return *(new T());
+	}
+};
+
+
+// Actual Type data
 struct TypeData
 {
 	const char* name;
 	size_t size;
+	Constructor* pConstructor;
 	eastl::map<eastl::string, Member> members;
 
 	TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 }
@@ -49,6 +66,9 @@ struct TypeData
 	}
 	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
 	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<eastl::string, Member>::value_type>& init) : name(_name), size(_size), members( init ) {}
+
+	~TypeData();
+	Variant New();
 
 	// Since type data is globally stored in the type database, equality checks can check the pointer addresses
 	bool operator==(const TypeData& other)
@@ -185,6 +205,7 @@ namespace TypeDatabase
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
+		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
 		selfTypeData->members = {
 
 #define REFLECT_MEMBER(member)\
@@ -204,4 +225,5 @@ namespace TypeDatabase
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
+		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
 		selfTypeData->members = {

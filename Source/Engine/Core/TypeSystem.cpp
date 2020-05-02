@@ -3,11 +3,23 @@
 
 #include <EASTL/string.h>
 
+TypeData::~TypeData()
+{
+  delete pConstructor;
+}
+
+Variant TypeData::New()
+{
+  return pConstructor->Invoke();
+}
+
 Member& TypeData::GetMember(const char* _name)
 {
   ASSERT(members.count(_name) == 1, "The member you're trying to access doesn't exist");
   return members[_name];
 }
+
+
 
 namespace TypeDatabase
 {

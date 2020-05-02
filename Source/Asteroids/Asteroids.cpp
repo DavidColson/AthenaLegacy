@@ -16,6 +16,8 @@
 #include <TypeSystem.h>
 #include <AudioDevice.h>
 
+#include <Variant.h>
+
 #include <SDL.h>
 
 struct Component
@@ -210,17 +212,22 @@ int main(int argc, char *argv[])
 
 	// Type system testing
 	{
-		Component testComponent;
+		// Variant newComponent = TypeDatabase::CreateNew("Component");
+		Variant newComponent = TypeDatabase::GetFromString("Component").New();
+		Component& newComp = newComponent.GetValue<Component>();
+
+		Log::Debug("newComp int %i", newComp.myInt);
 
 		TypeData& typeData = TypeDatabase::Get<Component>();
 		Member& myInMember = typeData.GetMember("myInt");
+		myInMember.Set(&newComp, 1337);
 
-		myInMember.Set(&testComponent, 1337);
+		Log::Debug("newComp int %i", newComp.myInt);
 
 		Log::Debug("Iterator printing Members of type: %s", typeData.name);
 		for (Member& member : typeData)
 		{			
-			Log::Debug("Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.Get<int>(&testComponent));
+			Log::Debug("Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.Get<int>(&newComp));
 		}
 	}
 
