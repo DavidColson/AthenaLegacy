@@ -1,15 +1,11 @@
 #include "Engine.h"
 
 #include <SDL.h>
-#include <Imgui/imgui.h>
+#include <Imgui/imgui.h> 
 #include <Imgui/examples/imgui_impl_sdl.h>
-#include <Imgui/examples/imgui_impl_dx11.h>
 
-#include "Rendering/ParticlesSystem.h"
-#include "Rendering/FontSystem.h"
-#include "Rendering/PostProcessingSystem.h"
-#include "Rendering/DebugDraw.h"
-#include "Rendering/ShapesSystem.h"
+#include "GraphicsDevice.h"
+#include "Rendering/RenderSystem.h"
 #include "AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
@@ -28,8 +24,6 @@ namespace
 	double g_realFrameTime;
 
 	bool g_gameRunning{ true };
-
-	EntityID g_engineSingleton{ INVALID_ENTITY };
 
 	Scene* pCurrentScene{ nullptr };
 	Scene* pPendingSceneLoad{ nullptr };
@@ -54,20 +48,6 @@ char* readFile(const char* filename)
 	return buffer;
 }
 
-void ImGuiPreUpdate(Scene& /* scene */, float /* deltaTime */)
-{
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplSDL2_NewFrame(GfxDevice::GetWindow());
-	ImGui::NewFrame();
-}
-
-void ImGuiRender(Scene& /* scene */, float /* deltaTime */)
-{
-	GFX_SCOPED_EVENT("Drawing imgui");
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-}
-
 void Engine::GetFrameRates(double& outReal, double& outLimited)
 {
 	outReal = g_realFrameTime;
@@ -81,24 +61,13 @@ void Engine::StartShutdown()
 
 void Engine::NewSceneCreated(Scene& scene)
 {
-	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
-	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnRemove, ParticlesSystem::OnRemoveEmitter);
+	RenderSystem::OnSceneCreate(scene);
 
-	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnAddPostProcessing);
-	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnRemove, PostProcessingSystem::OnRemovePostProcessing);
-
-	scene.RegisterSystem(SystemPhase::PreUpdate, ImGuiPreUpdate);
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, TransformHeirarchy);
 
-	// Need more manual control over render passes. This won't do
-	scene.RegisterSystem(SystemPhase::Render, Shapes::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, ParticlesSystem::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, FontSystem::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, DebugDraw::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, PostProcessingSystem::OnFrame);
-	scene.RegisterSystem(SystemPhase::Render, ImGuiRender);
+	// @Improvement consider allowing engine config files to change the update order of systems
 }
 
 void Engine::SetActiveScene(Scene* pScene)
@@ -129,10 +98,7 @@ void Engine::Initialize()
 	Log::Info("Window size W: %.1f H: %.1f", width, height);
 
 	GfxDevice::Initialize(g_pWindow, width, height);
-	Shapes::Initialize();
-	DebugDraw::Initialize();
-	FontSystem::Initialize();
-
+	RenderSystem::Initialize();
 	AudioDevice::Initialize();
 	Input::CreateInputState();	
 }
@@ -148,6 +114,8 @@ void Engine::Run(Scene *pScene)
 	{
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
+		RenderSystem::PreUpdate(*pCurrentScene, (float)frameTime);
+
 		// Deal with events
 		SDL_Event event;
 		if (SDL_PollEvent(&event))
@@ -160,7 +128,7 @@ void Engine::Run(Scene *pScene)
 				{
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
 					GfxDevice::ResizeWindow((float)event.window.data1, (float)event.window.data2);
-					PostProcessingSystem::OnWindowResize(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
+					RenderSystem::OnWindowResize(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
 					break;
 				default:
 					break;
@@ -176,17 +144,8 @@ void Engine::Run(Scene *pScene)
 		pCurrentScene->SimulateScene((float)frameTime);
 		Profiler::ClearFrameData();
 
-
-		GfxDevice::SetBackBufferActive();
-		GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
-		GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
-
-		// Render current game scene
-		pCurrentScene->RenderScene((float)frameTime);
-
-		GfxDevice::PresentBackBuffer();
-		GfxDevice::ClearRenderState();
-		GfxDevice::PrintQueuedDebugMessages();
+		// Render the frame
+		RenderSystem::OnFrame(*pCurrentScene, (float)frameTime);
 
 		// Deal with scene loading
 		if (pPendingSceneLoad)
@@ -215,9 +174,7 @@ void Engine::Run(Scene *pScene)
 	delete pCurrentScene;
 
 	// Shutdown everything
-	DebugDraw::Destroy();
-	Shapes::Destroy();
-	FontSystem::Destroy();
+	RenderSystem::Destroy();
 	AudioDevice::Destroy();
 	GfxDevice::Destroy();
 

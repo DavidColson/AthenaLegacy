@@ -1,5 +1,9 @@
 target_sources(Engine
     PRIVATE
+        "RenderSystem.h"
+        "RenderSystem.cpp"
+        "SceneDrawSystem.h"
+        "SceneDrawSystem.cpp"
         "DebugDraw.h"
         "DebugDraw.cpp"
         "ParticlesSystem.h"
