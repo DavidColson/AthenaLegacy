@@ -25,6 +25,19 @@ struct Member
 		return *pType;
 	}
 
+	Variant Get(Variant& instance);
+
+	template<typename T>
+	T* Get(Variant& instance)
+	{
+		return reinterpret_cast<T*>((char*)instance.pData + offset);
+	}
+	template<typename T>
+	void Set(Variant& instance, T newValue)
+	{
+		*reinterpret_cast<T*>((char*)instance.pData + offset) = newValue;
+	}
+	
 	template<typename T>
 	T* Get(void* instance)
 	{

@@ -32,4 +32,6 @@ target_sources(Engine
         "Json.cpp"
         "Base64.h"
         "Base64.cpp"
+        "Serializer.h"
+        "Serializer.cpp"
 )

@@ -3,6 +3,17 @@
 
 #include <EASTL/string.h>
 
+Variant Member::Get(Variant& instance)
+{
+  Variant var;
+  var.pData = new char[pType->size];
+  char* instancePtr = reinterpret_cast<char*>(instance.pData);
+  memcpy(var.pData, instancePtr + offset, pType->size);
+  var.pTypeData = pType;
+  return var;
+}
+
+
 TypeData::~TypeData()
 {
   delete pConstructor;

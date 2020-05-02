@@ -44,3 +44,8 @@ Variant::~Variant()
         pTypeData = nullptr;
     }
 }
+
+TypeData& Variant::GetType()
+{
+    return *pTypeData;
+}

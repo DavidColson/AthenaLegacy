@@ -4,11 +4,9 @@
 
 struct TypeData;
 
-class Variant
+struct Variant
 {
-    // @Improvement, consider stack allocating a small amount of chars to use instead of always heap allocating, so small sized objects can use the stack
-public:
-    
+    // @Improvement, consider stack allocating a small amount of chars to use instead of always heap allocating, so small sized objects can use the stack 
     // Constructors and destructor
     Variant() {}
 	Variant(const Variant& copy);
@@ -42,7 +40,8 @@ public:
         return *reinterpret_cast<T*>(pData);
     }
 
-private:
+    TypeData& GetType();
+
     void* pData{ nullptr };
     TypeData* pTypeData{nullptr};
 };
