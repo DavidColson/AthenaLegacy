@@ -17,7 +17,7 @@ struct Member
 	bool IsType()
 	{
 		// #TODO: add actual proper equality check not this hack 
-		return pType == &TypeDatabase::Get<T>(); 
+		return *pType == TypeDatabase::Get<T>(); 
 	}
 
 	TypeData& GetType()
@@ -49,6 +49,16 @@ struct TypeData
 	}
 	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
 	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<eastl::string, Member>::value_type>& init) : name(_name), size(_size), members( init ) {}
+
+	// Since type data is globally stored in the type database, equality checks can check the pointer addresses
+	bool operator==(const TypeData& other)
+	{
+		return &other == this;
+	}
+	bool operator!=(const TypeData& other)
+	{
+		return &other != this;
+	}
 
 	Member& GetMember(const char* _name);
 
@@ -94,7 +104,7 @@ struct TypeData
 template<typename T>
 TypeData& getPrimitiveTypeData() 
 {
-	static TypeData unknownType("UnkownType", 0); 
+	static TypeData unknownType("UnknownType", 0); 
 	return unknownType;
 }
 

@@ -4,6 +4,8 @@ target_sources(Engine
         "Log.cpp"
         "TypeSystem.h"
         "TypeSystem.cpp"
+        "Variant.h"
+        "Variant.cpp"
         "ErrorHandling.h"
         "ErrorHandling.cpp"
         "Scene.h"
