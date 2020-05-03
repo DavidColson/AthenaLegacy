@@ -26,8 +26,8 @@ Variant TypeData::New()
 
 Member& TypeData::GetMember(const char* _name)
 {
-  ASSERT(members.count(_name) == 1, "The member you're trying to access doesn't exist");
-  return members[_name];
+  ASSERT(memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
+  return members[memberOffsets[_name]];
 }
 
 

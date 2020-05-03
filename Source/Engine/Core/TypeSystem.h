@@ -71,14 +71,15 @@ struct TypeData
 	const char* name;
 	size_t size;
 	Constructor* pConstructor;
-	eastl::map<eastl::string, Member> members;
+	eastl::map<size_t, Member> members;
+	eastl::map<eastl::string, size_t> memberOffsets;
 
 	TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 }
 	{
 		initFunc(this);
 	}
 	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
-	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<eastl::string, Member>::value_type>& init) : name(_name), size(_size), members( init ) {}
+	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<size_t, Member>::value_type>& init) : name(_name), size(_size), members( init ) {}
 
 	~TypeData();
 	Variant New();
@@ -97,7 +98,7 @@ struct TypeData
 
 	struct MemberIterator
 	{
-		MemberIterator(eastl::map<eastl::string, Member>::iterator _it) : it(_it) {}
+		MemberIterator(eastl::map<size_t, Member>::iterator _it) : it(_it) {}
 
 		Member& operator*() const 
 		{ 
@@ -119,7 +120,7 @@ struct TypeData
 			return *this;
 		}
 
-		eastl::map<eastl::string, Member>::iterator it;
+		eastl::map<size_t, Member>::iterator it;
 	};
 
 	const MemberIterator begin() 
@@ -204,8 +205,6 @@ namespace TypeDatabase
 };
 
 
-
-
 // Reflection macros
 #define REFLECT()                               \
 	static TypeData typeData;                \
@@ -222,10 +221,11 @@ namespace TypeDatabase
 		selfTypeData->members = {
 
 #define REFLECT_MEMBER(member)\
-			{#member, {#member, offsetof(XX, member), &TypeDatabase::Get<decltype(XX::member)>()}},
+			{offsetof(XX, member), {#member, offsetof(XX, member), &TypeDatabase::Get<decltype(XX::member)>()}},
 
 #define REFLECT_END()\
 		};\
+		for (const eastl::pair<size_t, Member>& mem : selfTypeData->members) { selfTypeData->memberOffsets[mem.second.name] = mem.first; }\
 	}
 
 
