@@ -26,27 +26,19 @@ struct Member
 	}
 
 	Variant Get(Variant& instance);
+	void Set(Variant& instance, Variant newValue);
+	void Set(void* instance, Variant newValue);
 
 	template<typename T>
-	T* Get(Variant& instance)
+	T* GetAs(Variant& instance)
 	{
 		return reinterpret_cast<T*>((char*)instance.pData + offset);
 	}
+
 	template<typename T>
-	void Set(Variant& instance, T newValue)
-	{
-		*reinterpret_cast<T*>((char*)instance.pData + offset) = newValue;
-	}
-	
-	template<typename T>
-	T* Get(void* instance)
+	T* GetAs(void* instance)
 	{
 		return reinterpret_cast<T*>((char*)instance + offset);
-	}
-	template<typename T>
-	void Set(void* instance, T newValue)
-	{
-		*reinterpret_cast<T*>((char*)instance + offset) = newValue;
 	}
 };
 
@@ -60,7 +52,7 @@ struct Constructor_Internal : public Constructor
 {
 	virtual Variant Invoke() override
 	{
-		return *(new T());
+		return Variant(T());
 	}
 };
 
@@ -94,6 +86,7 @@ struct TypeData
 		return &other != this;
 	}
 
+	bool MemberExists(const char* _name);
 	Member& GetMember(const char* _name);
 
 	struct MemberIterator
@@ -194,6 +187,7 @@ namespace TypeDatabase
 		eastl::map<eastl::string, TypeData*> typeNames;
 	};
 
+	bool TypeExists(const char* name);
 	TypeData& GetFromString(const char* name);
 
 	// Generic typedata return

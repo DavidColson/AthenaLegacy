@@ -13,6 +13,19 @@ Variant Member::Get(Variant& instance)
   return var;
 }
 
+void Member::Set(void* instance, Variant newValue)
+{
+  char* location = reinterpret_cast<char*>(instance);
+  memcpy(location + offset, newValue.pData, newValue.pTypeData->size);
+}
+
+void Member::Set(Variant& instance, Variant newValue)
+{
+  char* location = reinterpret_cast<char*>(instance.pData);
+  memcpy(location + offset, newValue.pData, newValue.pTypeData->size);
+}
+
+
 
 TypeData::~TypeData()
 {
@@ -22,6 +35,11 @@ TypeData::~TypeData()
 Variant TypeData::New()
 {
   return pConstructor->Invoke();
+}
+
+bool TypeData::MemberExists(const char* _name)
+{
+  return memberOffsets.count(_name) == 1;
 }
 
 Member& TypeData::GetMember(const char* _name)
@@ -35,6 +53,14 @@ Member& TypeData::GetMember(const char* _name)
 namespace TypeDatabase
 {
   Data* TypeDatabase::Data::pInstance{ nullptr };
+
+  bool TypeExists(const char* name)
+  {
+    if (Data::Get().typeNames.count(name) == 1)
+      return true;
+    else
+      return false;
+  }
 
   TypeData& GetFromString(const char* name)
   {

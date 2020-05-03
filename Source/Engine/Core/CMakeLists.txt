@@ -34,4 +34,6 @@ target_sources(Engine
         "Base64.cpp"
         "Serializer.h"
         "Serializer.cpp"
+        "Scanning.h"
+        "Scanning.cpp"
 )

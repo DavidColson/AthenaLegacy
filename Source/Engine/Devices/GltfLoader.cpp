@@ -20,6 +20,7 @@ char* ReadFile(const char* filename)
 
 	size_t fileSize = SDL_RWsize(rw);
 
+    // @Incomplete MEM LEAK HERE
 	char* buffer = new char[fileSize];
 	SDL_RWread(rw, buffer, sizeof(char) * fileSize, 1);
 	SDL_RWclose(rw);
