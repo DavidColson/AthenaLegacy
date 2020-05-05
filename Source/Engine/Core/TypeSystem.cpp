@@ -1,5 +1,6 @@
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
+#include "Scene.h"
 
 #include <EASTL/string.h>
 
@@ -138,5 +139,19 @@ template <>
 TypeData& getPrimitiveTypeData<bool>()
 {
   static TypeData_Bool typeData;
+  return typeData;
+}
+
+struct TypeData_EntityID : TypeData
+{
+  TypeData_EntityID() : TypeData{"EntityID", sizeof(EntityID)} 
+  {
+    TypeDatabase::Data::Get().typeNames.emplace("EntityID", this);
+  }
+};
+template <>
+TypeData& getPrimitiveTypeData<EntityID>()
+{
+  static TypeData_EntityID typeData;
   return typeData;
 }

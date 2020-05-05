@@ -56,9 +56,44 @@ scene.Assign<Shape>(circle);
 
 struct Scene;
 
-typedef unsigned int EntityIndex;
-typedef unsigned int EntityVersion;
-typedef unsigned long long EntityID;
+typedef uint32_t EntityIndex;
+
+struct EntityID
+{
+	inline EntityIndex Index() const
+	{
+		return value >> 32;
+	}
+	inline uint32_t Version() const
+	{
+		return uint32_t(value);
+	}
+	inline bool IsValid() const
+	{
+		return (value >> 32) != EntityIndex(-1);
+	}
+	bool operator==(const EntityID& other) const
+	{
+		return value == other.value;
+	}
+	bool operator!=(const EntityID& other) const
+	{
+		return value != other.value;
+	}
+
+
+	static inline EntityID New(EntityIndex index, uint32_t version)
+	{
+		return EntityID{ ((uint64_t)index << 32) | ((uint64_t)version) };
+	}
+	static inline EntityID InvalidID()
+	{
+		return EntityID{ 18446744069414584320 }; // Corresponds to index -1 and version 0
+	}
+
+	uint64_t value;
+};
+
 const int MAX_COMPONENTS = 25;
 const int MAX_ENTITIES = 128;
 typedef eastl::bitset<MAX_COMPONENTS> ComponentMask;
@@ -77,27 +112,6 @@ enum class SystemPhase
 	Update,
 	Render
 };
-
-// Move into the detail namespace
-inline EntityID CreateEntityId(EntityIndex index, EntityVersion version)
-{
-	return ((EntityID)index << 32) | ((EntityID)version);
-}
-inline EntityIndex GetEntityIndex(EntityID id)
-{
-	return id >> 32;
-}
-inline EntityVersion GetEntityVersion(EntityID id)
-{
-	return (EntityVersion)id;
-}
-inline bool IsEntityValid(EntityID id)
-{
-	return (id >> 32) != EntityIndex(-1);
-}
-
-#define INVALID_ENTITY 18446744069414584320 // = CreateEntityId(EntityIndex(-1), 0)
-
 
 // Built-in Components
 // ******************
@@ -130,19 +144,19 @@ struct CTransform
 struct CParent
 {
 	int nChildren{ 0 };
-	EntityID firstChild{ INVALID_ENTITY };
+	EntityID firstChild{ EntityID::InvalidID() };
 
 	REFLECT()
 };
 
 struct CChild
 {
-	EntityID parent{ INVALID_ENTITY };
+	EntityID parent{ EntityID::InvalidID() };
 	
 	// doubly linked list of children, 
 	// this method is used because it requires no dynamic allocation
-	EntityID prev{ INVALID_ENTITY };
-	EntityID next{ INVALID_ENTITY };
+	EntityID prev{ EntityID::InvalidID() };
+	EntityID next{ EntityID::InvalidID() };
 
 	REFLECT();
 };
@@ -237,7 +251,7 @@ struct Scene
 	template<typename T>
 	T* Assign(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
-		if (entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
+		if (entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
 
 		int componentId = GetId<T>();
@@ -254,10 +268,10 @@ struct Scene
 		ASSERT(Has<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
 		
 		// Looks up the component in the pool, and initializes it with placement new
-		T* pComponent = new (componentPools[componentId]->get(GetEntityIndex(id))) T();
+		T* pComponent = new (componentPools[componentId]->get(id.Index())) T();
 
 		// Set the bit for this component to true
-		entities[GetEntityIndex(id)].mask.set(componentId);
+		entities[id.Index()].mask.set(componentId);
 
 		// Send OnAdd events
 		for (ReactiveSystemFunc func : componentPools[componentId]->onAddedCallbacks)
@@ -271,7 +285,7 @@ struct Scene
 	template<typename T>
 	void Remove(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
-		if (entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
+		if (entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
 			return;
 
 		int componentId = GetId<T>();
@@ -284,9 +298,9 @@ struct Scene
 		}
  		
 		 // Turn off the component bit
-		entities[GetEntityIndex(id)].mask.reset(componentId);
+		entities[id.Index()].mask.reset(componentId);
 		// Destroy the component
-		componentPools[componentId]->destroy(GetEntityIndex(id));
+		componentPools[componentId]->destroy(id.Index());
 	}
 
 	// Retrieves a component for a given entity
@@ -294,12 +308,12 @@ struct Scene
 	template<typename T>
 	T* Get(EntityID id) // #TODO: Move implementation to lower down in the file
 	{
-		if (entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
+		if (entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
 
 		int componentId = GetId<T>();
 		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
-		T* pComponent = static_cast<T*>(componentPools[componentId]->get(GetEntityIndex(id)));
+		T* pComponent = static_cast<T*>(componentPools[componentId]->get(id.Index()));
 		return pComponent;
 	}
 
@@ -307,11 +321,11 @@ struct Scene
 	template<typename T>
 	bool Has(EntityID id)
 	{
-		if (!IsEntityValid(id) || entities[GetEntityIndex(id)].id != id) // ensures you're not accessing an entity that has been deleted
+		if (!id.IsValid() || entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
 			return false;
 
 		int componentId = GetId<T>();
-		return entities[GetEntityIndex(id)].mask.test(componentId);
+		return entities[id.Index()].mask.test(componentId);
 	}
 
 	eastl::string GetEntityName(EntityID entity);
@@ -356,7 +370,7 @@ struct Scene
 
 	int nActiveEntities{0};
 	eastl::vector<EntityDesc> entities;
-	eastl::vector<EntityIndex> freeEntities;
+	eastl::vector<EntityIndex> freeEntities; // We just store the indices here, not a full EntityID
 
 	eastl::vector<SystemFunc> preUpdateSystems;
 	eastl::vector<SystemFunc> updateSystems;
@@ -397,7 +411,7 @@ struct SceneView
 		{
 			return 
 				// It's a valid entity ID
-				IsEntityValid(pScene->entities[index].id) && 
+				pScene->entities[index].id.IsValid() && 
 				// It has the correct component mask
 				(all || mask == (mask & pScene->entities[index].mask));
 		}
@@ -422,7 +436,7 @@ struct SceneView
 		int firstIndex = 0;
 		while (firstIndex < pScene->entities.size() && // Checking we're not overflowing
 			(componentMask != (componentMask & pScene->entities[firstIndex].mask) // Does this index have the right components?
-			|| !IsEntityValid(pScene->entities[firstIndex].id))) // Does this index have a valid entity?
+			|| !pScene->entities[firstIndex].id.IsValid())) // Does this index have a valid entity?
 		{
 			firstIndex++;
 		}

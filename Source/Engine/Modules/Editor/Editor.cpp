@@ -20,7 +20,7 @@ namespace {
 	bool showEntityList = true;
 	bool showFrameStats = true;
 	bool showImGuiDemo = false;
-	EntityID selectedEntity = INVALID_ENTITY;
+	EntityID selectedEntity = EntityID::InvalidID();
 
 	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
 	double oldRealFrameTime;
@@ -92,7 +92,7 @@ void ShowEntityInspector(Scene& scene)
 
 	ImGui::Begin("Entity Inspector", &showEntityInspector);
 
-	if (GetEntityIndex(selectedEntity) > scene.entities.size())
+	if (selectedEntity.Index() > scene.entities.size())
 	{
 		ImGui::End();
 		return;
@@ -104,7 +104,7 @@ void ShowEntityInspector(Scene& scene)
 		eastl::bitset<MAX_COMPONENTS> mask;
 		mask.set(i, true);
 			
-		if (mask == (scene.entities[GetEntityIndex(selectedEntity)].mask & mask))
+		if (mask == (scene.entities[selectedEntity.Index()].mask & mask))
 		{
 			TypeData* pComponentType = scene.componentPools[i]->pTypeData;
 			if (ImGui::CollapsingHeader(pComponentType->name, ImGuiTreeNodeFlags_DefaultOpen))
@@ -113,7 +113,7 @@ void ShowEntityInspector(Scene& scene)
 				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
 
 				// Make a new variant to hide this void*
-				void* pComponentData = scene.componentPools[i]->get(GetEntityIndex(selectedEntity));
+				void* pComponentData = scene.componentPools[i]->get(selectedEntity.Index());
 
 				// Loop through all the members of the component, showing the appropriate UI elements
 				for (Member& member : *pComponentType)
@@ -155,7 +155,7 @@ void ShowEntityInspector(Scene& scene)
 					else if (member.IsType<EntityID>())
 					{
 						EntityID& entity = *member.GetAs<EntityID>(pComponentData);
-						ImGui::Text("{index: %i version: %i}  %s", GetEntityIndex(entity), GetEntityVersion(entity), member.name);
+						ImGui::Text("{index: %i version: %i}  %s", entity.Index(), entity.Version(), member.name);
 					}
 				}
 			}
@@ -177,7 +177,7 @@ void RecurseDrawEntityTree(Scene& scene, EntityID parent)
 		if (!scene.Has<CParent>(currChild))
 			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)currChild, nodeFlags, "%i - %s", GetEntityIndex(currChild), scene.GetEntityName(currChild).c_str());
+		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)currChild.value, nodeFlags, "%i - %s", currChild.Index(), scene.GetEntityName(currChild).c_str());
 		if (ImGui::IsItemClicked())
 			selectedEntity = currChild;
 		
@@ -212,7 +212,7 @@ void ShowEntityList(Scene& scene)
 		if (scene.Has<CChild>(entity))
 			continue;
 
-		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)entity, nodeFlags, "%i - %s", GetEntityIndex(entity), scene.GetEntityName(entity).c_str());
+		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)entity.value, nodeFlags, "%i - %s", entity.Index(), scene.GetEntityName(entity).c_str());
 		if (ImGui::IsItemClicked())
 			selectedEntity = entity;
 		

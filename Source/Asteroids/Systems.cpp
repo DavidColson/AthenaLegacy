@@ -49,7 +49,7 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform, const Vec3f atVel
 
 void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 {
-	Log::Info("Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", GetEntityIndex(bullet), scene.GetEntityName(bullet).c_str(), GetEntityIndex(asteroid), scene.GetEntityName(asteroid).c_str());
+	Log::Info("Bullet touched asteroid between \"%i - %s\" and \"%i - %s\"", bullet.Index(), scene.GetEntityName(bullet).c_str(), asteroid.Index(), scene.GetEntityName(asteroid).c_str());
 
 	// Do scoring for the player
 	EntityID scoreEnt = scene.Get<CPlayerUI>(PLAYER_ID)->currentScoreEntity;

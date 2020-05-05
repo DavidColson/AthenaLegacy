@@ -16,7 +16,7 @@ struct Member
 	template<typename T>
 	bool IsType()
 	{
-		// #TODO: add actual proper equality check not this hack 
+		// This returns true if you ask if the item is an unknown type, which is real bad
 		return *pType == TypeDatabase::Get<T>(); 
 	}
 
@@ -145,6 +145,10 @@ template <>
 TypeData& getPrimitiveTypeData<eastl::string>();
 template <>
 TypeData& getPrimitiveTypeData<bool>();
+
+struct EntityID;
+template <>
+TypeData& getPrimitiveTypeData<EntityID>();
 
 struct DefaultTypeResolver 
 {

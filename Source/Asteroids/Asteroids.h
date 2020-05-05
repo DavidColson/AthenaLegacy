@@ -1,6 +1,6 @@
 #include <Scene.h>
 
-#define PLAYER_ID 0
+#define PLAYER_ID EntityID{ 0 }
 
 void LoadMainScene();
 void LoadMenu();

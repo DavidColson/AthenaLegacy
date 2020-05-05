@@ -110,18 +110,18 @@ EntityID Scene::NewEntity(const char* name)
     {
         EntityIndex newIndex = freeEntities.back();
         freeEntities.pop_back();
-        entities[newIndex].id = CreateEntityId(newIndex, GetEntityVersion(entities[newIndex].id));
+        entities[newIndex].id = EntityID::New(newIndex, entities[newIndex].id.Version());
         Assign<CName>(entities[newIndex].id)->name = name;
         return entities[newIndex].id;
     }
-    entities.push_back({ CreateEntityId(EntityIndex(entities.size()), 0), ComponentMask() });
+    entities.push_back({ EntityID::New(EntityIndex(entities.size()), 0), ComponentMask() });
     Assign<CName>(entities.back().id)->name = name;
     return entities.back().id;
 }
 
 void Scene::DestroyEntity(EntityID id)
 {
-    if (!IsEntityValid(id))
+    if (!id.IsValid())
         return;
 
     for (int i = 0; i < MAX_COMPONENTS; i++)
@@ -129,18 +129,18 @@ void Scene::DestroyEntity(EntityID id)
         // For each component ID, check the bitmask, if no, continue, if yes, destroy the component
         eastl::bitset<MAX_COMPONENTS> mask;
         mask.set(i, true);
-        if (mask == (entities[GetEntityIndex(id)].mask & mask))
+        if (mask == (entities[id.Index()].mask & mask))
         {
             for (ReactiveSystemFunc func : componentPools[i]->onRemovedCallbacks)
             {
                 func(*this, id);
             }
-            componentPools[i]->destroy(GetEntityIndex(id));
+            componentPools[i]->destroy(id.Index());
         }
     }
-    entities[GetEntityIndex(id)].id = CreateEntityId(EntityIndex(-1), GetEntityVersion(id) + 1); // set to invalid
-    entities[GetEntityIndex(id)].mask.reset(); // clear components
-    freeEntities.push_back(GetEntityIndex(id));
+    entities[id.Index()].id = EntityID::New(EntityIndex(-1), id.Version() + 1); // set to invalid
+    entities[id.Index()].mask.reset(); // clear components
+    freeEntities.push_back(id.Index());
     nActiveEntities--;
 }
 
@@ -161,7 +161,7 @@ void Scene::SetParent(EntityID child, EntityID parent)
     
     CParent* pParent = Get<CParent>(parent);
     // First case, this is the first child being attached to this parent
-    if (pParent->firstChild == INVALID_ENTITY)
+    if (pParent->firstChild == EntityID::InvalidID())
     {
         pParent->firstChild = child;
 
@@ -189,13 +189,13 @@ void Scene::UnsetParent(EntityID child, EntityID parent)
     CParent* pParent = Get<CParent>(parent);
 
     // This is the only child of this parent
-    if (pChild->prev == INVALID_ENTITY && pChild->next == INVALID_ENTITY)
+    if (pChild->prev == EntityID::InvalidID() && pChild->next == EntityID::InvalidID())
     {
-        pParent->firstChild = INVALID_ENTITY;
+        pParent->firstChild = EntityID::InvalidID();
         Get<CParent>(parent)->firstChild = pChild->next;
     }
     // This case means this is the first child, but not the only one
-    else if (pChild->prev == INVALID_ENTITY && pChild->next != INVALID_ENTITY)
+    else if (pChild->prev == EntityID::InvalidID() && pChild->next != EntityID::InvalidID())
     {
         pParent->firstChild = pChild->next;
     }
