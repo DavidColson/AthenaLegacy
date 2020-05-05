@@ -36,4 +36,6 @@ target_sources(Engine
         "Serializer.cpp"
         "Scanning.h"
         "Scanning.cpp"
+        "SceneSerializer.h"
+        "SceneSerializer.cpp"
 )

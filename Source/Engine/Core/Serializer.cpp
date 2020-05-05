@@ -3,6 +3,7 @@
 #include "TypeSystem.h"
 #include "Log.h"
 #include "Scanning.h"
+#include "Scene.h"
 
 #include <EASTL/vector.h>
 
@@ -14,30 +15,36 @@ void RecurseSerializeComposites(eastl::string& outString, Variant value, eastl::
         outString.append(localIndent);
         if (member.IsType<bool>())
         {   
-            bool val = *member.GetAs<bool>(value);
+            bool val = member.GetAs<bool>(value);
             outString.append_sprintf("%s: %s\n", member.name, val ? "true" : "false");
         }
         else if (member.IsType<int>())
         {
-            outString.append_sprintf("%s: %i\n", member.name, *member.GetAs<int>(value));
+            outString.append_sprintf("%s: %i\n", member.name, member.GetAs<int>(value));
         }
         else if (member.IsType<float>())
         {
-            outString.append_sprintf("%s: %.9g\n", member.name, *member.GetAs<float>(value));
+            outString.append_sprintf("%s: %.9g\n", member.name, member.GetAs<float>(value));
         }
         else if (member.IsType<double>())
         {
-            outString.append_sprintf("%s: %.17g\n", member.name, *member.GetAs<double>(value));
+            outString.append_sprintf("%s: %.17g\n", member.name, member.GetAs<double>(value));
         }
         else if (member.IsType<eastl::string>())
         {
-            outString.append_sprintf("%s: \"%s\"\n", member.name, member.GetAs<eastl::string>(value)->c_str());
+            outString.append_sprintf("%s: \"%s\"\n", member.name, member.GetAs<eastl::string>(value).c_str());
+        }
+        else if (member.IsType<EntityID>())
+        {
+            outString.append_sprintf("%s: EntityID{ %i }\n", member.name, member.GetAs<EntityID>(value).Index());
         }
         else
         {
             // Composite Type
             outString.append_sprintf("%s:\n", member.name);
-            RecurseSerializeComposites(outString, member.Get(value), indent.append("  "));
+            eastl::string indentation = indent;
+            indentation.append("  ");
+            RecurseSerializeComposites(outString, member.Get(value), indentation);
         }
     }
 }

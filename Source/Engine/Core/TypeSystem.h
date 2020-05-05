@@ -30,9 +30,9 @@ struct Member
 	void Set(void* instance, Variant newValue);
 
 	template<typename T>
-	T* GetAs(Variant& instance)
+	T& GetAs(Variant& instance)
 	{
-		return reinterpret_cast<T*>((char*)instance.pData + offset);
+		return *reinterpret_cast<T*>((char*)instance.pData + offset);
 	}
 
 	template<typename T>
