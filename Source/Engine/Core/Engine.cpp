@@ -30,24 +30,6 @@ namespace
 	SDL_Window* g_pWindow{ nullptr };
 }
 
-char* readFile(const char* filename)
-{
-	SDL_RWops* rw = SDL_RWFromFile(filename, "r+");
-	if (rw == nullptr)
-	{
-		Log::Warn("%s failed to load", filename);
-		return nullptr;
-	}
-
-	size_t fileSize = SDL_RWsize(rw);
-
-	char* buffer = new char[fileSize];
-	SDL_RWread(rw, buffer, sizeof(char) * fileSize, 1);
-	SDL_RWclose(rw);
-	buffer[fileSize] = '\0';
-	return buffer;
-}
-
 void Engine::GetFrameRates(double& outReal, double& outLimited)
 {
 	outReal = g_realFrameTime;

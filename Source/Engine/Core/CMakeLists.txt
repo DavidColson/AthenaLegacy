@@ -38,4 +38,6 @@ target_sources(Engine
         "Scanning.cpp"
         "SceneSerializer.h"
         "SceneSerializer.cpp"
+        "File.h"
+        "File.cpp"
 )
