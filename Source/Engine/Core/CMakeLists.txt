@@ -40,4 +40,6 @@ target_sources(Engine
         "SceneSerializer.cpp"
         "File.h"
         "File.cpp"
+        "AssetDatabase.cpp"
+        "AssetDatabase.cpp"
 )
