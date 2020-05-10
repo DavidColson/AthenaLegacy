@@ -1,5 +1,6 @@
 project(RacerGame)
 
+include_directories("../Engine/AssetDatabase/")
 include_directories("../Engine/Core/")
 include_directories("../Engine/Devices/")
 include_directories("../Engine/Modules/")

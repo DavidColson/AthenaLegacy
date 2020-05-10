@@ -1,37 +1,21 @@
-#include "GltfLoader.h"
+#include "Model.h"
 
 #include "Json.h"
 #include "Log.h"
 #include "Base64.h"
 #include "Vec3.h"
 #include "GraphicsDevice.h"
-#include "Rendering/Mesh.h" 
+#include "Mesh.h" 
+#include "File.h"
+#include "AssetDatabase.h"
 
 #include <SDL.h>
 
-char* ReadFile(const char* filename)
-{
-	SDL_RWops* rw = SDL_RWFromFile(filename, "r+");
-	if (rw == nullptr)
-	{
-		Log::Warn("%s failed to load", filename);
-		return nullptr;
-	}
 
-	size_t fileSize = SDL_RWsize(rw);
-
-    // @Incomplete MEM LEAK HERE
-	char* buffer = new char[fileSize];
-	SDL_RWread(rw, buffer, sizeof(char) * fileSize, 1);
-	SDL_RWclose(rw);
-	buffer[fileSize] = '\0';
-	return buffer;
-}
-
-GltfScene LoadGltf(const char* filename)
+void Model::Load(eastl::string path)
 {
     // Load file
-    eastl::string file = ReadFile(filename);
+    eastl::string file = File::ReadWholeFile(path);
 
     // Parse json
     JsonValue parsed = ParseJsonFile(file);
@@ -40,11 +24,9 @@ GltfScene LoadGltf(const char* filename)
     bool validGltf = parsed["asset"]["version"].ToString() == "2.0";
     if (!validGltf)
     {
-        Log::Crit("Failed to load Gltf file, invalid contents: %s", filename);
+        Log::Crit("Failed to load Gltf file, invalid contents: %s", path);
     }
 
-    GltfScene scene;
-    
     eastl::vector<Buffer> rawDataBuffers;
     for (int i = 0; i < parsed["buffers"].Count(); i++)
     {
@@ -111,7 +93,6 @@ GltfScene LoadGltf(const char* filename)
         accessors.push_back(acc);
     }
     
-    eastl::vector<Mesh>& meshes = scene.meshes;
     for (int i = 0; i < parsed["meshes"].Count(); i++)
     {
         JsonValue& jsonMesh = parsed["meshes"][i];
@@ -132,7 +113,7 @@ GltfScene LoadGltf(const char* filename)
                 case 3: prim.topologyType = TopologyType::LineStrip; break;
                 case 4: prim.topologyType = TopologyType::TriangleList; break;
                 case 5: prim.topologyType = TopologyType::TriangleStrip; break;
-                default: Log::Crit("Unsupported topology type given in file %s", filename);
+                default: Log::Crit("Unsupported topology type given in file %s", path);
                     break;
                 }
             }
@@ -166,12 +147,14 @@ GltfScene LoadGltf(const char* filename)
             mesh.primitives.push_back(prim);
         }
         meshes.push_back(mesh);
+        eastl::string meshAssetIdentifier = path;
+        meshAssetIdentifier.append_sprintf(":%i", i);
+        meshes.back().Load(meshAssetIdentifier);
     }
 
     for (int i = 0; i < rawDataBuffers.size(); i++)
     {
         delete rawDataBuffers[i].pBytes;
     }
-
-    return scene;
+    AssetDB::RegisterAsset(this, path);
 }

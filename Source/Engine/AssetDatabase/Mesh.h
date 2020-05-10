@@ -3,6 +3,7 @@
 #include "Vec3.h"
 #include "Vec4.h"
 #include "GraphicsDevice.h"
+#include "AssetDatabase.h"
 
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
@@ -44,8 +45,10 @@ struct Primitive
     IndexBufferHandle gfxIndexBuffer;
 };
 
-struct Mesh
+struct Mesh : public Asset
 {
+    virtual void Load(eastl::string path) override;
+
     eastl::string name;
     eastl::vector<Primitive> primitives;
 

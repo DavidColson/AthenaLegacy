@@ -1,5 +1,6 @@
 project(Engine)
 
+include_directories("AssetDatabase/")
 include_directories("Core/")
 include_directories("Devices/")
 include_directories("Modules/")
@@ -9,6 +10,7 @@ include_directories("ThirdParty/EABase/include/Common/")
 include_directories("ThirdParty/FreeType/include")
 add_Library(Engine "")
 
+add_subdirectory(AssetDatabase)
 add_subdirectory(Core)
 add_subdirectory(Devices)
 add_subdirectory(Modules)

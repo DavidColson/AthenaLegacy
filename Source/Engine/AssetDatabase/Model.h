@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Rendering/Mesh.h"
+#include "Mesh.h"
 
 // Actually owns the data
 struct Buffer
 {
-    // @Incomplete: delete the bytes when you are finished
     char* pBytes{ nullptr };
     size_t byteLength{ 0 };
 };
@@ -54,9 +53,9 @@ struct Accessor
     Type type;
 };
 
-struct GltfScene
+struct Model : Asset
 {
     eastl::vector<Mesh> meshes;
-};
 
-GltfScene LoadGltf(const char* filename);
+    virtual void Load(eastl::string path) override;
+};

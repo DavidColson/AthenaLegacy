@@ -2,17 +2,13 @@
 #include "Systems.h"
 #include "Components.h"
 
-#include <GltfLoader.h>
+#include <Mesh.h>
 #include <Profiler.h>
 #include <Matrix.h>
 #include <SDL.h>
 #include <Input/Input.h>
 #include <Rendering/SceneDrawSystem.h>
-
-namespace {
-	Mesh cubeMesh;
-	Mesh monkey;
-}
+#include <AssetDatabase.h>
 
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
@@ -57,7 +53,8 @@ void SetupScene(Scene& scene)
 {
 	scene.RegisterSystem(SystemPhase::Update, CameraControlSystem);
 
-	cubeMesh.name = "Cube";
+	Mesh* pCubeMesh = new Mesh();
+	pCubeMesh->name = "Cube";
 	Primitive cubePrimitive;
 	cubePrimitive.vertBuffer = {
 		Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Front bottom left
@@ -74,8 +71,9 @@ void SetupScene(Scene& scene)
 		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
 	};
 	cubePrimitive.topologyType = TopologyType::TriangleStrip;
-	cubeMesh.primitives.push_back(cubePrimitive);
-	cubeMesh.CreateGfxDeviceBuffers();
+	pCubeMesh->primitives.push_back(cubePrimitive);
+	pCubeMesh->CreateGfxDeviceBuffers();
+	AssetDB::RegisterAsset(pCubeMesh, "cube");
 
 	// Material stuff!
 	eastl::vector<VertexInputElement> layout;
@@ -88,7 +86,7 @@ void SetupScene(Scene& scene)
 	ProgramHandle program = GfxDevice::CreateProgram(vShader, pShader);
 
 	EntityID camera = scene.NewEntity("Camera");
-	scene.Assign<CCamera>(camera);
+	scene.Assign<CCamera>(camera)->fov = 102;
 	scene.Assign<CTransform>(camera);
 
 	// Make cube
@@ -99,7 +97,7 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube);
-		pRenderable->pMesh = &cubeMesh;
+		pRenderable->pMesh = pCubeMesh;
 		pRenderable->program = program;
 	}
 
@@ -112,7 +110,7 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube2);
-		pRenderable->pMesh = &cubeMesh;
+		pRenderable->pMesh = pCubeMesh;
 		pRenderable->program = program;
 	}
 
@@ -124,7 +122,7 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube3);
-		pRenderable->pMesh = &cubeMesh;
+		pRenderable->pMesh = pCubeMesh;
 		pRenderable->program = program;
 	}
 
@@ -141,16 +139,14 @@ void SetupScene(Scene& scene)
 	}
 
 	{
-		GltfScene loadedScene = LoadGltf("Resources/Models/monkey.gltf");
-		monkey = loadedScene.meshes[0];
-		monkey.CreateGfxDeviceBuffers();
-
+		AssetHandle monkeyHandle("Resources/Models/monkey.gltf:0");
+		Mesh* pMonkeyMesh = AssetDB::GetAsset<Mesh>(monkeyHandle);
 
 		EntityID triangle = scene.NewEntity("Monkey");
 		CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
-		pRenderable->pMesh = &monkey;
+		pRenderable->pMesh = pMonkeyMesh;
 		pRenderable->program = program;
 	}
 }

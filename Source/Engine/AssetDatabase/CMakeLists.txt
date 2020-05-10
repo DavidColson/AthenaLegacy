@@ -1,0 +1,11 @@
+target_sources(Engine
+    PRIVATE
+        "AssetDatabase.h"
+        "AssetDatabase.cpp"
+        "Model.h"
+        "Model.cpp"
+        "Mesh.h"
+        "Mesh.cpp"
+        "Text.h"
+        "Text.cpp"
+)

@@ -1,5 +1,17 @@
 #include "Mesh.h"
 
+#include "AssetDatabase.h"
+
+void Mesh::Load(eastl::string path)
+{
+    // Doesn't actually load anything from disk since this would be a subasset of a model
+    // If (AssetDB::IsSubasset(handle))
+    // bla bla
+
+    AssetDB::RegisterAsset(this, path);
+    CreateGfxDeviceBuffers();
+}
+
 void Mesh::CreateGfxDeviceBuffers()
 {
     for(Primitive& prim : primitives)
