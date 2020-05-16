@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GraphicsDevice.h"
+#include "AssetDatabase.h"
 
 struct Scene;
 struct Mesh;
@@ -9,6 +10,9 @@ struct CRenderable
 {
     Mesh* pMesh;
     ProgramHandle program;
+    AssetHandle meshHandle;
+
+    REFLECT()
 };
 
 struct CCamera

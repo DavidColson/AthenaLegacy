@@ -15,10 +15,11 @@ eastl::string File::ReadWholeFile(eastl::string filepath, bool binary)
 	}
 
 	size_t fileSize = SDL_RWsize(rw);
-	char* buffer = new char[fileSize];
+	char* buffer = new char[fileSize + 1];
 
-	SDL_RWread(rw, buffer, sizeof(char) * fileSize, 1);
+	SDL_RWread(rw, buffer, 1, fileSize);
 	SDL_RWclose(rw);
+	buffer[fileSize] = '\0';
     
     eastl::string result = buffer;
     delete[] buffer;
@@ -36,7 +37,7 @@ void File::WriteWholeFile(eastl::string filepath, eastl::string contents, bool b
         return;
 	}
 
-    if (SDL_RWwrite(rw, contents.c_str(), 1, contents.size()) != contents.size()) 
+    if (SDL_RWwrite(rw, contents.c_str(), contents.length(), 1) != 1) 
     {
         Log::Warn("Couldn't fully write to file %s", filepath.c_str());
     }

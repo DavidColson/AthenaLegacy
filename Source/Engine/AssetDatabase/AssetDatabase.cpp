@@ -90,6 +90,14 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
     return pAsset;
 }
 
+eastl::string AssetDB::GetAssetIdentifier(AssetHandle handle)
+{
+    if (assetIdentifiers.count(handle.id) == 0)
+        return "";
+
+    return assetIdentifiers[handle.id];
+}
+
 void AssetDB::FreeAsset(AssetHandle handle)
 {
     if (assets.count(handle.id) == 0)

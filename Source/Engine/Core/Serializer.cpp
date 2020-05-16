@@ -4,6 +4,7 @@
 #include "Log.h"
 #include "Scanning.h"
 #include "Scene.h"
+#include "AssetDatabase.h"
 
 #include <EASTL/vector.h>
 
@@ -37,6 +38,11 @@ void RecurseSerializeComposites(eastl::string& outString, Variant value, eastl::
         else if (member.IsType<EntityID>())
         {
             outString.append_sprintf("%s: EntityID{ %i }\n", member.name, member.GetAs<EntityID>(value).Index());
+        }
+        else if (member.IsType<AssetHandle>())
+        {
+            AssetHandle handle = member.GetAs<AssetHandle>(value);
+            outString.append_sprintf("%s: AssetHandle(\"%s\")\n", member.name, AssetDB::GetAssetIdentifier(handle).c_str());
         }
         else
         {
@@ -75,6 +81,10 @@ eastl::string Serializer::Serialize(Variant value)
     else if (type == TypeDatabase::Get<eastl::string>())
     {
         result.append_sprintf("\"%s\"\n", value.GetValue<eastl::string>().c_str());
+    }
+    else if (type == TypeDatabase::Get<AssetHandle>())
+    {
+        result.append_sprintf("AssetHandle(\"%s\")\n", AssetDB::GetAssetIdentifier(value.GetValue<AssetHandle>()).c_str());
     }
     else
     {
@@ -222,6 +232,36 @@ bool ParseBoolean(Scan::ScanningState& scan)
 	return false;
 }
 
+AssetHandle ParseAssetHandle(Scan::ScanningState& scan)
+{
+	int start = scan.current;
+
+    if (Scan::Peek(scan) == 'A')
+    {
+        for (int i = 0; i < 12; i++)
+		    Scan::Advance(scan);
+        
+        if (scan.file.substr(start, 12) != "AssetHandle(")
+        {
+            Scan::HandleError(scan, "Expected \"AssetHandle(\" here", start);
+            return AssetHandle();
+        }
+
+        eastl::string identifier = ParseTypeDBString(scan);
+
+        if (Scan::Advance(scan) != ')')
+        {
+            Scan::HandleError(scan, "Expected end of asset handle \")\"", scan.current);
+        }
+
+        return AssetHandle(identifier);
+    }
+    else
+    {
+        return AssetHandle();
+    }
+}
+
 Variant ParseComposite(Scan::ScanningState& scan, TypeData& type, int indentLevel)
 {
     Variant var = type.New();
@@ -296,6 +336,10 @@ Variant ParseComposite(Scan::ScanningState& scan, TypeData& type, int indentLeve
             {
                 mem.Set(var, ParseTypeDBString(scan));
             }
+            else if (mem.IsType<AssetHandle>())
+            {
+                mem.Set(var, ParseAssetHandle(scan));
+            }
             else
             {
                 Scan::Advance(scan); // Advance over newline
@@ -368,6 +412,10 @@ Variant Serializer::DeSerialize(eastl::string value)
             else if (type == TypeDatabase::Get<eastl::string>())
             {
                 output = ParseTypeDBString(scan);
+            }
+            else if (type == TypeDatabase::Get<AssetHandle>())
+            {
+                output = ParseAssetHandle(scan);
             }
         }
         return output;

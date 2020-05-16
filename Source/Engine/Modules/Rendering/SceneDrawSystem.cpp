@@ -19,6 +19,10 @@ REFLECT_BEGIN(CCamera)
 REFLECT_MEMBER(fov)
 REFLECT_END()
 
+REFLECT_BEGIN(CRenderable)
+REFLECT_MEMBER(meshHandle)
+REFLECT_END()
+
 void SceneDrawSystem::OnSceneCreate(Scene& scene)
 {
 	g_transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "RenderableTransformBuffer");

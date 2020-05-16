@@ -42,6 +42,8 @@ namespace AssetDB
 
     Asset* GetAssetRaw(AssetHandle handle);
 
+    eastl::string GetAssetIdentifier(AssetHandle handle);
+
     void FreeAsset(AssetHandle handle);
     
     bool IsSubasset(AssetHandle handle, eastl::string& outTopLevelIdentifier = eastl::string());

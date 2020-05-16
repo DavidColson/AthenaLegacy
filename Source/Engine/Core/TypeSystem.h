@@ -76,6 +76,8 @@ struct TypeData
 	~TypeData();
 	Variant New();
 
+	eastl::string Serialize() {}
+
 	// Since type data is globally stored in the type database, equality checks can check the pointer addresses
 	bool operator==(const TypeData& other)
 	{
@@ -149,6 +151,9 @@ TypeData& getPrimitiveTypeData<bool>();
 struct EntityID;
 template <>
 TypeData& getPrimitiveTypeData<EntityID>();
+struct AssetHandle;
+template <>
+TypeData& getPrimitiveTypeData<AssetHandle>();
 
 struct DefaultTypeResolver 
 {

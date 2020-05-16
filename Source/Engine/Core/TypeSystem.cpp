@@ -1,6 +1,7 @@
 #include "TypeSystem.h"
 #include "ErrorHandling.h"
 #include "Scene.h"
+#include "AssetDatabase.h"
 
 #include <EASTL/string.h>
 
@@ -71,6 +72,8 @@ namespace TypeDatabase
 
 // Primitive Types
 //////////////////
+
+// @TODO: Set constructors!
 
 struct TypeData_Int : TypeData
 {
@@ -153,5 +156,19 @@ template <>
 TypeData& getPrimitiveTypeData<EntityID>()
 {
   static TypeData_EntityID typeData;
+  return typeData;
+}
+
+struct TypeData_AssetHandle: TypeData
+{
+  TypeData_AssetHandle() : TypeData{"AssetHandle", sizeof(AssetHandle)} 
+  {
+    TypeDatabase::Data::Get().typeNames.emplace("AssetHandle", this);
+  }
+};
+template <>
+TypeData& getPrimitiveTypeData<AssetHandle>()
+{
+  static TypeData_AssetHandle typeData;
   return typeData;
 }
