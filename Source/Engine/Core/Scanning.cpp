@@ -74,6 +74,55 @@ bool Scan::IsPartOfNumber(char c)
 	return (c >= '0' && c <= '9') || c == '-';
 }
 
+eastl::string Scan::ParseToString(ScanningState& scan, char bound)
+{	
+	int start = scan.current;
+	Scan::Advance(scan); // advance over initial bound character
+	eastl::string result;
+	while (Scan::Peek(scan) != bound && !Scan::IsAtEnd(scan))
+	{
+		char c = Advance(scan);
+		
+		switch (c)
+		{
+		case '\0':
+		case '\t':
+		case '\b':
+		case '\\':
+			Scan::HandleError(scan, "Invalid character in string", scan.current-1); break;
+		case '\r':
+		case '\n':
+			Scan::HandleError(scan, "Unexpected end of line, please keep whole strings on one line", scan.current-1); break;
+		default:
+			break;
+		}
+
+		if (c == '\\')
+		{
+			char next = Advance(scan);
+			switch (next)
+			{
+			case '"': result += '"'; break;
+			case '\\':result += '\\'; break;
+			case '/': result += '/'; break;
+			case 'b': result += '\b'; break;
+			case 'f': result += '\f'; break;
+			case 'n': result += '\n'; break;
+			case 'r': result += '\r'; break;
+			case 't': result += '\t'; break;
+			case 'u':
+				Scan::HandleError(scan, "This parser does not yet support unicode escape codes", scan.current - 1); break;
+			default:
+				Scan::HandleError(scan, "Disallowed escape character or none provided", scan.current - 1); break;
+			}
+		}
+		else
+			result += c;
+	}
+	Scan::Advance(scan);
+	return result;
+}
+
 // Error reporting
 //////////////////
 

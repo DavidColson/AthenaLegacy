@@ -268,55 +268,6 @@ JsonValue ParseNumber(Scan::ScanningState& scan)
 	return strtol(scan.file.substr(start, (scan.current - start)).c_str(), nullptr, 10) * (long)pow(10, exponent);
 }
 
-eastl::string ParseString(Scan::ScanningState& scan)
-{	
-	int start = scan.current;
-	Scan::Advance(scan); // advance over initial '"'
-	eastl::string result;
-	while (Scan::Peek(scan) != '"' && !Scan::IsAtEnd(scan))
-	{
-		char c = Advance(scan);
-		
-		switch (c)
-		{
-		case '\0':
-		case '\t':
-		case '\b':
-		case '\\':
-			Scan::HandleError(scan, "Invalid character in string", scan.current-1); break;
-		case '\r':
-		case '\n':
-			Scan::HandleError(scan, "Unexpected end of line, please keep whole strings on one line", scan.current-1); break;
-		default:
-			break;
-		}
-
-		if (c == '\\')
-		{
-			char next = Advance(scan);
-			switch (next)
-			{
-			case '"': result += '"'; break;
-			case '\\':result += '\\'; break;
-			case '/': result += '/'; break;
-			case 'b': result += '\b'; break;
-			case 'f': result += '\f'; break;
-			case 'n': result += '\n'; break;
-			case 'r': result += '\r'; break;
-			case 't': result += '\t'; break;
-			case 'u':
-				Scan::HandleError(scan, "This parser does not yet support unicode escape codes", scan.current - 1); break;
-			default:
-				Scan::HandleError(scan, "Disallowed escape character or none provided", scan.current - 1); break;
-			}
-		}
-		else
-			result += c;
-	}
-	Scan::Advance(scan);
-	return result;
-}
-
 bool ParseNull(Scan::ScanningState& scan)
 {
 	int start = scan.current;
@@ -373,7 +324,7 @@ JsonValue ParseValue(Scan::ScanningState& scan)
 		return ParseArray(scan);
 		break;
 	case '"':
-		return ParseString(scan);
+		return Scan::ParseToString(scan, '"');
 		break;
 	case 'n':
 		if (ParseNull(scan))
@@ -435,7 +386,7 @@ eastl::map<eastl::string, JsonValue> ParseObject(Scan::ScanningState& scan)
 		
 		if (Scan::Peek(scan) != '"')
 			Scan::HandleError(scan, "Expected '\"' to start a new key", scan.current);
-		eastl::string key = ParseString(scan);
+		eastl::string key = Scan::ParseToString(scan, '"');
 
 		Scan::AdvanceOverWhitespace(scan);
 		if (Scan::Advance(scan) != ':')

@@ -32,6 +32,8 @@ namespace Scan
 
     bool IsPartOfNumber(char c);
 
+    eastl::string ParseToString(ScanningState& scan, char bound);
+
     // Error reporting
     //////////////////
 

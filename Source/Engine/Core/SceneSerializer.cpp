@@ -1,7 +1,5 @@
 #include "SceneSerializer.h"
 
-#include "Serializer.h"
-
 eastl::string SceneSerializer::Serialize(Scene& scene)
 {
     eastl::string result;
@@ -29,7 +27,7 @@ eastl::string SceneSerializer::Serialize(Scene& scene)
                 var.pTypeData = pComponentType;
                 memcpy(var.pData, pComponentData, pComponentType->size);
                 
-                result.append(Serializer::Serialize(var));
+                result.append(pComponentType->Serialize(var));
             }
         }
 

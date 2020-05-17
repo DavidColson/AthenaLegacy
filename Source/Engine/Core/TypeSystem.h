@@ -75,8 +75,9 @@ struct TypeData
 
 	~TypeData();
 	Variant New();
-
-	eastl::string Serialize() {}
+	
+	virtual eastl::string Serialize(Variant var);
+	virtual Variant Parse(eastl::string_view);
 
 	// Since type data is globally stored in the type database, equality checks can check the pointer addresses
 	bool operator==(const TypeData& other)
@@ -137,6 +138,7 @@ TypeData& getPrimitiveTypeData()
 	return unknownType;
 }
 
+// @TODO: Move to BaseTypes.h/cpp that will include parsing for base types
 template <>
 TypeData& getPrimitiveTypeData<int>();
 template <>
