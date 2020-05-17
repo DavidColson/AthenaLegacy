@@ -27,6 +27,7 @@ eastl::string SceneSerializer::Serialize(Scene& scene)
                 var.pTypeData = pComponentType;
                 memcpy(var.pData, pComponentData, pComponentType->size);
                 
+                result.append_sprintf("[%s]\n", pComponentType->name);
                 result.append(pComponentType->Serialize(var));
             }
         }
