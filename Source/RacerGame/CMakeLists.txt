@@ -5,6 +5,7 @@ include_directories("../Engine/Core/")
 include_directories("../Engine/Devices/")
 include_directories("../Engine/Modules/")
 include_directories("../Engine/ThirdParty/")
+include_directories("../Engine/ThirdParty/FreeType/include")
 include_directories("/")
 
 add_executable (RacerGame WIN32 "")

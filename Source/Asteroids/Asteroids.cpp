@@ -139,13 +139,17 @@ Scene* CreateMainAsteroidsScene()
 	{
 		EntityID currentScoreEnt =scene.NewEntity("Current Score");
 		pPlayerUI->currentScoreEntity = currentScoreEnt;
-		scene.Assign<CText>(currentScoreEnt)->text = "0";
 		scene.Assign<CTransform>(currentScoreEnt)->localPos = Vec3f(150.0f, h - 53.0f, 0.0f);
 		scene.Assign<CPlayerScore>(currentScoreEnt);
+		CText* pCurrScoreText = scene.Assign<CText>(currentScoreEnt);
+		pCurrScoreText->text = "0";
+		pCurrScoreText->fontAsset = AssetHandle("Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
 
 		EntityID highScoreEnt = scene.NewEntity("High Score");
-		scene.Assign<CText>(highScoreEnt)->text = "0";
 		scene.Assign<CTransform>(highScoreEnt)->localPos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
+		CText* pHiScoreText = scene.Assign<CText>(highScoreEnt);
+		pHiScoreText->text = "0";
+		pHiScoreText->fontAsset = AssetHandle("Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
 	}
 
 	// Create game over text
@@ -157,6 +161,7 @@ Scene* CreateMainAsteroidsScene()
 		scene.Assign<CVisibility>(gameOver)->visible = false;
 		CText* pText = scene.Assign<CText>(gameOver);
 		pText->text = "Game Over";
+		pText->fontAsset = AssetHandle("Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
 	}
 	return &scene;
 }
@@ -171,19 +176,25 @@ Scene* CreateMainMenuScene()
 	const float h = GfxDevice::GetWindowHeight();
 
 	EntityID titleText =scene.NewEntity("Main Menu Title");
-	scene.Assign<CText>(titleText)->text = "Asteroids!";
 	CTransform* pTrans = scene.Assign<CTransform>(titleText);
 	pTrans->localPos = Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f);
 	pTrans->localSca = Vec3f(2.0f, 2.0f, 2.0f);
 	scene.Assign<CPostProcessing>(titleText);
+	CText* pTitleText = scene.Assign<CText>(titleText);
+	pTitleText->text = "Asteroids!";
+	pTitleText->fontAsset = AssetHandle("Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
 
 	EntityID startOption =scene.NewEntity("Start Option");
-	scene.Assign<CText>(startOption)->text = "Start";
 	scene.Assign<CTransform>(startOption)->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
+	CText* pStartText = scene.Assign<CText>(startOption);
+	pStartText->text = "Start";
+	pStartText->fontAsset = AssetHandle("Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
 
 	EntityID quitOption = scene.NewEntity("Quit Option");
-	scene.Assign<CText>(quitOption)->text = "Quit";
 	scene.Assign<CTransform>(quitOption)->localPos = Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f);
+	CText* pQuitText = scene.Assign<CText>(quitOption);
+	pQuitText->text = "Quit";
+	pQuitText->fontAsset = AssetHandle("Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
 
 	EntityID buttonSelector =scene.NewEntity("Button Selector");
 	scene.Assign<CVisibility>(buttonSelector);

@@ -6,6 +6,7 @@
 #include "Text.h"
 #include "Sound.h"
 #include "Shader.h"
+#include "Font.h"
 
 #include <EASTL/map.h>
 #include <EASTL/string.h>
@@ -89,6 +90,10 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
             else if (fileType == "hlsl")
             {
                 pAsset = new Shader();
+            }
+            else if (fileType == "otf" || fileType == "ttf")
+            {
+                pAsset = new Font();
             }
             else
             {

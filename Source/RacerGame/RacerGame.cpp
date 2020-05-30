@@ -89,7 +89,7 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube);
-		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
 		pRenderable->meshHandle = AssetHandle("cube");
 	}
 
@@ -102,7 +102,7 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube2);
-		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
 		pRenderable->meshHandle = AssetHandle("cube");
 	}
 
@@ -114,7 +114,7 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube3);
-		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
 		pRenderable->meshHandle = AssetHandle("cube");
 	}
 
@@ -135,7 +135,7 @@ void SetupScene(Scene& scene)
 		CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
-		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
 		pRenderable->meshHandle = AssetHandle("Resources/Models/monkey.gltf:0");
 	}
 

@@ -1,16 +1,13 @@
 
 #include "FontSystem.h"
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 #include "Matrix.h"
 #include "Vec3.h"
 #include "Vec2.h"
 #include "Log.h"
 #include "Scene.h"
 #include "Profiler.h"
-#include "RectPacking.h"
+#include "Font.h"
 #include "Mesh.h"
 
 #include "Imgui/imgui.h"
@@ -19,23 +16,13 @@ REFLECT_BEGIN(CText)
 REFLECT_MEMBER(text)
 REFLECT_END()
 
-struct Character
-{
-	Vec2i size{ Vec2i(0, 0) };
-	Vec2i bearing{ Vec2i(0, 0) };
-	Vec2f UV0{ Vec2f(0.f, 0.f) };
-	Vec2f UV1{ Vec2f(1.f, 1.f) };
-	int advance;
-};
-
-struct CFontSystemState
+struct FontSystemState
 {
 	ProgramHandle fontShaderProgram;
 	ConstBufferHandle constBuffer;
 	BlendStateHandle blendState;
 	VertexBufferHandle vertexBuffer;
 	IndexBufferHandle indexBuffer;
-	TextureHandle fontTexture;
 	SamplerHandle charTextureSampler;
 
 	struct FontUniforms
@@ -43,30 +30,34 @@ struct CFontSystemState
 		Matrixf projection;
 		Vec4f color;
 	};
-	eastl::vector<Character> characters;
 
 	FT_Library freetype;
-	FT_Face face;
 };
 
 namespace 
 {
-	CFontSystemState* pState = nullptr;
+	FontSystemState* pState = nullptr;
+}
+
+FT_Library FontSystem::GetFreeType()
+{
+	return pState->freetype;
 }
 
 #define CHARS_PER_DRAW_CALL 500
 
 void FontSystem::Initialize()
 {
-	pState = new CFontSystemState();
+	pState = new FontSystemState();
 
 	FT_Init_FreeType(&(pState->freetype));
 
-	FT_Error err = FT_New_Face(pState->freetype, "Resources/Fonts/Hyperspace/Hyperspace Bold.otf", 0, &pState->face);
-	if (err)
-	{
-		Log::Warn("FreeType Error: %s", FT_Error_String(err));
-	}
+	// FONT ASSET
+	// Font asset will call this New_Face function, and store the resultant font face
+	// It should also generate it's font atlas during load time, uploading the result to the GPU and storing a handle
+	// The array of character data can also be generated and store in the asset file
+	// I think it probably best that it create it's rendering data as well, so programs, vert buffers etc etc
+	// Come to think of it, we might not even need to save the face at all
 
 	eastl::string fontShaderSrc = "\
 	cbuffer cbFontUniforms\
@@ -100,7 +91,6 @@ void FontSystem::Initialize()
 
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout, "Fonts");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
-
 	pState->fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	BlendingInfo blender;
@@ -117,64 +107,8 @@ void FontSystem::Initialize()
 	// Create a constant buffer for the WVP
 	// **********************************************
 
-	pState->constBuffer = GfxDevice::CreateConstantBuffer(sizeof(CFontSystemState::FontUniforms), "Font Uniforms");
+	pState->constBuffer = GfxDevice::CreateConstantBuffer(sizeof(FontSystemState::FontUniforms), "Font Uniforms");
 	pState->charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
-
-	// Rasterize the entire font to a texture atlas
-	// **********************************************
-
-	// Texture data
-	int texHeight = 512;
-	int texWidth = 512;
-	uint8_t* pTextureDataAsR8{ nullptr };
-	pTextureDataAsR8 = new uint8_t[texHeight * texWidth];
-	memset(pTextureDataAsR8, 0, texHeight * texWidth);
-
-	eastl::vector<Packing::Rect> rects;
-	rects.get_allocator().set_name("Font Packing Rects");
-	pState->characters.get_allocator().set_name("Font character data");
-
-	FT_Face& face = pState->face;
-
-	FT_Set_Pixel_Sizes(face, 0, 50);
-
-	// Prepare rects for packing
-	for (int i = 0; i < 128; i++)
-	{
-		FT_Load_Char(face, i, FT_LOAD_DEFAULT);
-		Packing::Rect newRect;
-		newRect.w = face->glyph->bitmap.width + 1;
-		newRect.h = face->glyph->bitmap.rows + 1;
-		rects.push_back(newRect);
-	}
-	Packing::SkylinePackRects(rects, texWidth, texHeight);
-
-	for (int i = 0; i < 128; i++)
-	{
-		Packing::Rect& rect = rects[i];
-		FT_Load_Char(face, i, FT_LOAD_RENDER);
-
-		// Create the character with all it's appropriate data
-		Character character;
-		character.size = Vec2i(face->glyph->bitmap.width, face->glyph->bitmap.rows);
-		character.bearing = Vec2i(face->glyph->bitmap_left, face->glyph->bitmap_top);
-		character.advance = (face->glyph->advance.x) >> 6;
-		character.UV0 = Vec2f((float)rect.x / (float)texWidth, (float)rect.y / (float)texHeight);
-		character.UV1 = Vec2f((float)(rect.x + character.size.x) / (float)texWidth, (float)(rect.y + character.size.y) / (float)texHeight);
-		pState->characters.push_back(character);
-
-		// Blit the glyph's image into our texture atlas
-		uint8_t* pSourceData = face->glyph->bitmap.buffer;
-		uint8_t* pDestination = pTextureDataAsR8 + rect.y * texWidth + rect.x;
-		int sourceDataPitch = face->glyph->bitmap.pitch;
-		for (uint32_t y = 0; y < face->glyph->bitmap.rows; y++, pSourceData += sourceDataPitch, pDestination += texWidth)
-		{
-			memcpy(pDestination, pSourceData, face->glyph->bitmap.width);
-		}
-	}
-
-	pState->fontTexture = GfxDevice::CreateTexture(texWidth, texHeight, TextureFormat::R8, pTextureDataAsR8, "Font Atlas");
-	delete[] pTextureDataAsR8;
 }
 
 void FontSystem::Destroy()
@@ -185,7 +119,6 @@ void FontSystem::Destroy()
 	GfxDevice::FreeSampler(pState->charTextureSampler);
 	GfxDevice::FreeConstBuffer(pState->constBuffer);
 	GfxDevice::FreeBlendState(pState->blendState);
-	GfxDevice::FreeTexture(pState->fontTexture);
 }
 
 void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
@@ -211,6 +144,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 
 		CText* pText = scene.Get<CText>(ent);
 		CTransform* pTransform = scene.Get<CTransform>(ent);
+		Font* pFont = AssetDB::GetAsset<Font>(pText->fontAsset);
 
 		float textWidth = 0.0f;
 		float x = pTransform->localPos.x;
@@ -218,7 +152,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 
 		for (char const& c : pText->text)
 		{
-			Character ch = pState->characters[c];
+			Character ch = pFont->characters[c];
 			textWidth += ch.advance * pTransform->localSca.x;
 		}
 
@@ -227,7 +161,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		int currentIndex = 0;
 
 		for (char const& c : pText->text) {
-			Character ch = pState->characters[c];
+			Character ch = pFont->characters[c];
 
 			float xpos = (x + ch.bearing.x * pTransform->localSca.x) - textWidth * 0.5f;
 			float ypos = y - (ch.size.y - ch.bearing.y) * pTransform->localSca.y;
@@ -260,10 +194,10 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
 		GfxDevice::BindIndexBuffer(pState->indexBuffer);
 		
-		GfxDevice::BindTexture(pState->fontTexture, ShaderType::Pixel, 0);
+		GfxDevice::BindTexture(pFont->fontTexture, ShaderType::Pixel, 0);
 
 		Matrixf projection = Matrixf::Orthographic(0, GfxDevice::GetWindowWidth(), 0.0f, GfxDevice::GetWindowHeight(), 0.1f, 10.0f); // transform into screen space
-		CFontSystemState::FontUniforms uniformData{ projection, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
+		FontSystemState::FontUniforms uniformData{ projection, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
 		GfxDevice::BindConstantBuffer(pState->constBuffer, &uniformData, ShaderType::Vertex, 0);
 		GfxDevice::BindConstantBuffer(pState->constBuffer, &uniformData, ShaderType::Pixel, 0);
 		

@@ -24,13 +24,13 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 	layout.push_back({"POSITION", AttributeType::Float3});
 	layout.push_back({"TEXCOORD", AttributeType::Float2});
 
-	VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
-	PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Shaders/PostProcessing.hlsl", "PSMain", "Post processing");
+	VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Resources/Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
+	PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Resources/Shaders/PostProcessing.hlsl", "PSMain", "Post processing");
 
 	pp.postProcessShaderProgram = GfxDevice::CreateProgram(vertPostProcessShader, pixPostProcessShader);
 
-	VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Shaders/Bloom.hlsl", "VSMain", layout, "Bloom");
-	PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Shaders/Bloom.hlsl", "PSMain", "Bloom");
+	VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Resources/Shaders/Bloom.hlsl", "VSMain", layout, "Bloom");
+	PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Resources/Shaders/Bloom.hlsl", "PSMain", "Bloom");
 
 	pp.bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
 

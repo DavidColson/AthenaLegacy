@@ -12,4 +12,6 @@ target_sources(Engine
         "Sound.cpp"
         "Shader.h"
         "Shader.cpp"
+        "Font.h"
+        "Font.cpp"
 )
