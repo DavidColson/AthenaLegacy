@@ -2,6 +2,7 @@
 
 #include "GraphicsDevice.h"
 #include "Scene.h"
+#include "AssetDatabase.h"
 
 struct CPostProcessing
 {
@@ -19,10 +20,11 @@ struct CPostProcessing
 		Vec2f resolution;
 	};
 
+	AssetHandle postProcessShader{ AssetHandle("Resources/Shaders/PostProcessing.hlsl") };
+	AssetHandle bloomShader{ AssetHandle("Resources/Shaders/Bloom.hlsl") };
+
 	// Graphics system resource handles
 	RenderTargetHandle blurredFrame[2];
-	ProgramHandle postProcessShaderProgram;
-	ProgramHandle bloomShaderProgram;
 	ConstBufferHandle postProcessDataBuffer;
 	ConstBufferHandle bloomDataBuffer;
 	VertexBufferHandle fullScreenQuad;

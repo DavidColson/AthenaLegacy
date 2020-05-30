@@ -1,6 +1,8 @@
-cbuffer cbTransform\
+#pragma type scene3D
+
+cbuffer cbTransform
 {
-    float4x4 WVP;\
+    float4x4 WVP;
 };
 struct VS_OUTPUT
 {

@@ -1,3 +1,5 @@
+#pragma type particles3D
+
 cbuffer cbPerObject
 {
 	float4x4 VP;

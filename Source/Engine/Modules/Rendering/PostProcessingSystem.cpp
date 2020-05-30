@@ -2,6 +2,7 @@
 
 #include "Profiler.h"
 #include "Mesh.h"
+#include "Shader.h"
 #include <SDL_timer.h>
 
 REFLECT_BEGIN(CPostProcessing)
@@ -19,21 +20,6 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 	pp.postProcessDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::PostProcessShaderData), "Post process shader data");
 	pp.bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData), "Bloom shader data");
 
-	// Compile and create post processing shaders
-	eastl::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION", AttributeType::Float3});
-	layout.push_back({"TEXCOORD", AttributeType::Float2});
-
-	VertexShaderHandle vertPostProcessShader = GfxDevice::CreateVertexShader(L"Resources/Shaders/PostProcessing.hlsl", "VSMain", layout, "Post processing");
-	PixelShaderHandle pixPostProcessShader = GfxDevice::CreatePixelShader(L"Resources/Shaders/PostProcessing.hlsl", "PSMain", "Post processing");
-
-	pp.postProcessShaderProgram = GfxDevice::CreateProgram(vertPostProcessShader, pixPostProcessShader);
-
-	VertexShaderHandle vertBloomShader = GfxDevice::CreateVertexShader(L"Resources/Shaders/Bloom.hlsl", "VSMain", layout, "Bloom");
-	PixelShaderHandle pixBloomShader = GfxDevice::CreatePixelShader(L"Resources/Shaders/Bloom.hlsl", "PSMain", "Bloom");
-
-	pp.bloomShaderProgram = GfxDevice::CreateProgram(vertBloomShader, pixBloomShader);
-
     // Vertex Buffer for fullscreen quad
     eastl::vector<Vert_PosTex> quadVertices = {
         Vert_PosTex{Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f)},
@@ -50,8 +36,6 @@ void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
 {
     CPostProcessing& pp = *(scene.Get<CPostProcessing>(entity));
 
-	GfxDevice::FreeProgram(pp.bloomShaderProgram);
-	GfxDevice::FreeProgram(pp.postProcessShaderProgram);
 	GfxDevice::FreeConstBuffer(pp.postProcessDataBuffer);
 	GfxDevice::FreeConstBuffer(pp.bloomDataBuffer);
 	GfxDevice::FreeVertexBuffer(pp.fullScreenQuad);
@@ -76,7 +60,8 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
         GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
         // Bind bloom shader data
-        GfxDevice::BindProgram(pp->bloomShaderProgram);
+        Shader* pShader = AssetDB::GetAsset<Shader>(pp->bloomShader);
+        GfxDevice::BindProgram(pShader->program);
         GfxDevice::BindVertexBuffers(1, &pp->fullScreenQuad);
         GfxDevice::BindSampler(pp->fullScreenTextureSampler, ShaderType::Pixel, 0);
 
@@ -114,7 +99,8 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
         GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
         GfxDevice::SetViewport(0, 0, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
 
-        GfxDevice::BindProgram(pp->postProcessShaderProgram);
+        Shader* pPPShader = AssetDB::GetAsset<Shader>(pp->postProcessShader);
+        GfxDevice::BindProgram(pPPShader->program);
         GfxDevice::BindVertexBuffers(1, &pp->fullScreenQuad);
 
         GfxDevice::BindTexture(preProcessedFrame, ShaderType::Pixel, 0);
