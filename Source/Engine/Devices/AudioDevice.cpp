@@ -2,6 +2,7 @@
 
 #include <SDL_audio.h>
 
+#include "Sound.h"
 #include "Log.h"
 
 // Defines the supported audio format (based on wav files)
@@ -21,7 +22,7 @@ struct PlayingSound
 
     float volume{ 1.0f };
     uint32_t remainingLength{ 0 };
-    LoadedSound* loadedSound;
+    Sound* loadedSound;
 };
 
 struct AudioCallbackData
@@ -134,28 +135,12 @@ void AudioDevice::Initialize()
     SDL_PauseAudioDevice(device, 0);
 }
 
-LoadedSoundPtr AudioDevice::LoadSound(const char* fileName)
-{
-    LoadedSoundPtr newSound = eastl::make_shared<LoadedSound>();
-
-    if (SDL_LoadWAV(fileName, &(newSound->spec), &(newSound->buffer), &(newSound->length)) == nullptr)
-    {
-        Log::Warn("%s", SDL_GetError());
-    }
-
-    if (newSound->spec.channels == 1) // doubling our actual buffer length since we reuse the samples for stereo
-        newSound->length *= 2;
-
-    // @TODO Ensure the loaded audio file is of the correct format and give errors otherwise
-    return newSound;
-}
-
-SoundID AudioDevice::PlaySound(LoadedSoundPtr sound, float volume, bool loop)
+SoundID AudioDevice::PlaySound(AssetHandle soundAsset, float volume, bool loop)
 {
     if (currentNumSounds < AUDIO_MAX_SOUNDS)
     {
         PlayingSound tempNewSound;
-        tempNewSound.loadedSound = sound.get();
+        tempNewSound.loadedSound = AssetDB::GetAsset<Sound>(soundAsset);
 
         tempNewSound.currentBufferPosition = tempNewSound.loadedSound->buffer; // Start at the beginning of the buffer
         tempNewSound.remainingLength = tempNewSound.loadedSound->length;

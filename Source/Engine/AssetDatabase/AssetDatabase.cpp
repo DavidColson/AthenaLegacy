@@ -4,6 +4,7 @@
 #include "Log.h"
 #include "Model.h"
 #include "Text.h"
+#include "Sound.h"
 
 #include <EASTL/map.h>
 #include <EASTL/string.h>
@@ -80,6 +81,15 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
             {
                 pAsset = new Text();
             }
+            else if (fileType == "wav")
+            {
+                pAsset = new Sound();
+            }
+            else
+            {
+                Log::Crit("Attempting to load an unsupported asset type. Will crash imminently");
+            }
+            
             pAsset->Load(assetIdentifiers[handle.id]);
         }
     }

@@ -17,6 +17,7 @@
 #include <AudioDevice.h>
 
 #include <Variant.h>
+#include <File.h>
 
 #include <SDL.h>
 
@@ -25,12 +26,23 @@ struct Component
   int myInt{ 5 };
   int mySecondInt{ 3 };
 
+  float myFloat{ 21.412312731f };
+  double myDouble{ 21.4123127311928746123 };
+
+  eastl::string myString{ "Ducks" };
+  bool myBool = false;
+
   REFLECT()
 };
 
 REFLECT_BEGIN(Component)
 REFLECT_MEMBER(myInt)
 REFLECT_MEMBER(mySecondInt)
+REFLECT_MEMBER(myFloat)
+REFLECT_MEMBER(myDouble)
+REFLECT_MEMBER(myString)
+REFLECT_MEMBER(myBool)
+REFLECT_MEMBER(inner)
 REFLECT_END()
 
 Scene* CreateMainAsteroidsScene()
@@ -77,9 +89,9 @@ Scene* CreateMainAsteroidsScene()
 	scene.Assign<CPolyShape>(ship)->points.assign(verts, verts + 5);
 
 	CSounds* pSounds = scene.Assign<CSounds>(ship);
-	pSounds->engineSound = AudioDevice::LoadSound("Resources/Audio/Engine.wav");
-	pSounds->shootSound = AudioDevice::LoadSound("Resources/Audio/Shoot.wav");
-	pSounds->explosionSound = AudioDevice::LoadSound("Resources/Audio/Explosion.wav");
+	pSounds->engineSound = AssetHandle("Resources/Audio/Engine.wav");
+	pSounds->shootSound = AssetHandle("Resources/Audio/Shoot.wav");
+	pSounds->explosionSound = AssetHandle("Resources/Audio/Explosion.wav");
 
 	pPlayer->enginePlayingSound = AudioDevice::PlaySound(pSounds->engineSound, 0.3f, true);
 	AudioDevice::PauseSound(pPlayer->enginePlayingSound);
@@ -227,7 +239,7 @@ int main(int argc, char *argv[])
 		Log::Debug("Iterator printing Members of type: %s", typeData.name);
 		for (Member& member : typeData)
 		{			
-			Log::Debug("Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.Get<int>(&newComp));
+			Log::Debug("Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.GetAs<int>(&newComp));
 		}
 	}
 
