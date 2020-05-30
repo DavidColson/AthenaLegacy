@@ -4,6 +4,7 @@
 #include "TypeSystem.h"
 #include "Profiler.h"
 #include "Mesh.h"
+#include "Shader.h"
 
 struct cbTransformBuf
 {
@@ -20,6 +21,7 @@ REFLECT_MEMBER(fov)
 REFLECT_END()
 
 REFLECT_BEGIN(CRenderable)
+REFLECT_MEMBER(shaderHandle)
 REFLECT_MEMBER(meshHandle)
 REFLECT_END()
 
@@ -49,16 +51,18 @@ void SceneDrawSystem::OnFrame(Scene& scene, float deltaTime)
 
 	for (EntityID ent : SceneView<CRenderable, CTransform>(scene))
     {
-		CRenderable* pCube = scene.Get<CRenderable>(ent);
+		CRenderable* pRenderable = scene.Get<CRenderable>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);
 
 		Matrixf wvp = proj * view * pTrans->globalTransform;
 		cbTransformBuf trans{ wvp };
 		GfxDevice::BindConstantBuffer(g_transformBufferHandle, &trans, ShaderType::Vertex, 0);
 
-		GfxDevice::BindProgram(pCube->program);
+		Shader* pShader = AssetDB::GetAsset<Shader>(pRenderable->shaderHandle);
+		GfxDevice::BindProgram(pShader->program);
 
-		for (Primitive& prim : pCube->pMesh->primitives)
+		Mesh* pMesh = AssetDB::GetAsset<Mesh>(pRenderable->meshHandle);
+		for (Primitive& prim : pMesh->primitives)
 		{
 			GfxDevice::SetTopologyType(prim.topologyType);
 			GfxDevice::BindVertexBuffers(1, &prim.gfxVertBuffer);

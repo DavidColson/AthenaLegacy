@@ -8,6 +8,7 @@
 #include <SDL.h>
 #include <Input/Input.h>
 #include <Rendering/SceneDrawSystem.h>
+#include <SceneSerializer.h>
 #include <AssetDatabase.h>
 
 void CameraControlSystem(Scene& scene, float deltaTime)
@@ -53,6 +54,7 @@ void SetupScene(Scene& scene)
 {
 	scene.RegisterSystem(SystemPhase::Update, CameraControlSystem);
 
+	// Custom mesh asset
 	Mesh* pCubeMesh = new Mesh();
 	pCubeMesh->name = "Cube";
 	Primitive cubePrimitive;
@@ -75,16 +77,6 @@ void SetupScene(Scene& scene)
 	pCubeMesh->CreateGfxDeviceBuffers();
 	AssetDB::RegisterAsset(pCubeMesh, "cube");
 
-	// Material stuff!
-	eastl::vector<VertexInputElement> layout;
-	layout.push_back({"SV_POSITION",AttributeType::Float3});
-	layout.push_back({"NORMAL",AttributeType::Float3});
-	layout.push_back({"TEXCOORD_",AttributeType::Float2});
-	layout.push_back({"COLOR_",AttributeType::Float4});
-	VertexShaderHandle vShader = GfxDevice::CreateVertexShader(L"Shaders/VertColor.hlsl", "VSMain", layout, "CubeVertShader");
-	PixelShaderHandle pShader = GfxDevice::CreatePixelShader(L"Shaders/VertColor.hlsl", "PSMain", "CubePixelShader");
-	ProgramHandle program = GfxDevice::CreateProgram(vShader, pShader);
-
 	EntityID camera = scene.NewEntity("Camera");
 	scene.Assign<CCamera>(camera)->fov = 102;
 	scene.Assign<CTransform>(camera);
@@ -97,8 +89,8 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube);
-		pRenderable->pMesh = pCubeMesh;
-		pRenderable->program = program;
+		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->meshHandle = AssetHandle("cube");
 	}
 
 	// Make another cube
@@ -110,8 +102,8 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube2);
-		pRenderable->pMesh = pCubeMesh;
-		pRenderable->program = program;
+		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->meshHandle = AssetHandle("cube");
 	}
 
 	EntityID cube3 = scene.NewEntity("Cube3");
@@ -122,8 +114,8 @@ void SetupScene(Scene& scene)
 		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
 
 		CRenderable* pRenderable = scene.Assign<CRenderable>(cube3);
-		pRenderable->pMesh = pCubeMesh;
-		pRenderable->program = program;
+		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->meshHandle = AssetHandle("cube");
 	}
 
 	for(int i = 0; i < 4; i++)
@@ -139,16 +131,15 @@ void SetupScene(Scene& scene)
 	}
 
 	{
-		AssetHandle monkeyHandle("Resources/Models/monkey.gltf:0");
-		Mesh* pMonkeyMesh = AssetDB::GetAsset<Mesh>(monkeyHandle);
-
 		EntityID triangle = scene.NewEntity("Monkey");
 		CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
 		
 		CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
-		pRenderable->pMesh = pMonkeyMesh;
-		pRenderable->program = program;
+		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
+		pRenderable->meshHandle = AssetHandle("Resources/Models/monkey.gltf:0");
 	}
+
+	File::WriteWholeFile("SerializeRacerScene.txt", SceneSerializer::Serialize(scene));
 }
 
 int main(int argc, char *argv[])

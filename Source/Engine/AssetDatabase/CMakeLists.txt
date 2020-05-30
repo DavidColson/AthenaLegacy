@@ -8,6 +8,8 @@ target_sources(Engine
         "Mesh.cpp"
         "Text.h"
         "Text.cpp"
+        "Sound.h"
         "Sound.cpp"
-        "Sound.cpp"
+        "Shader.h"
+        "Shader.cpp"
 )

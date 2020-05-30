@@ -12,4 +12,6 @@ struct Sound : Asset
     SDL_AudioSpec spec;
     uint32_t length{ 0 };
     uint8_t* buffer{ nullptr };
+
+    // @TODO: protect this struct from hot reloads
 };

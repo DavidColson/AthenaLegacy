@@ -5,6 +5,7 @@
 #include "Model.h"
 #include "Text.h"
 #include "Sound.h"
+#include "Shader.h"
 
 #include <EASTL/map.h>
 #include <EASTL/string.h>
@@ -84,6 +85,10 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
             else if (fileType == "wav")
             {
                 pAsset = new Sound();
+            }
+            else if (fileType == "hlsl")
+            {
+                pAsset = new Shader();
             }
             else
             {

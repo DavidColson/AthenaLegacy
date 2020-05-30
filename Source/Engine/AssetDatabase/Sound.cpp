@@ -12,6 +12,7 @@ void Sound::Load(eastl::string path)
     if (spec.channels == 1) // doubling our actual buffer length since we reuse the samples for stereo
         length *= 2;
 
+    AssetDB::RegisterAsset(this, path);
     // @TODO Ensure the loaded audio file is of the correct format and give errors otherwise
 }
 

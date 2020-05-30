@@ -8,8 +8,7 @@ struct Mesh;
 
 struct CRenderable
 {
-    Mesh* pMesh;
-    ProgramHandle program;
+    AssetHandle shaderHandle;
     AssetHandle meshHandle;
 
     REFLECT()

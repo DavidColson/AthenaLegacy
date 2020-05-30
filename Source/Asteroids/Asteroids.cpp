@@ -42,7 +42,6 @@ REFLECT_MEMBER(myFloat)
 REFLECT_MEMBER(myDouble)
 REFLECT_MEMBER(myString)
 REFLECT_MEMBER(myBool)
-REFLECT_MEMBER(inner)
 REFLECT_END()
 
 Scene* CreateMainAsteroidsScene()
