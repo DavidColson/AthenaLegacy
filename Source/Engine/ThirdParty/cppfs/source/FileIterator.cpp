@@ -4,7 +4,7 @@
 #include <cppfs/AbstractFileIteratorBackend.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -113,4 +113,4 @@ AbstractFileSystem * FileIterator::fs() const
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

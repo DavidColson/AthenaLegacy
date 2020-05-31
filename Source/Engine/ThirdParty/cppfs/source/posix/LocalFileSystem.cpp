@@ -11,7 +11,7 @@
 #endif
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -49,4 +49,4 @@ eastl::unique_ptr<AbstractFileWatcherBackend> LocalFileSystem::createFileWatcher
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

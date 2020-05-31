@@ -2,7 +2,7 @@
 #pragma once
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -76,4 +76,4 @@ protected:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

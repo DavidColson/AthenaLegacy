@@ -13,7 +13,7 @@
 #include <cppfs/posix/LocalFileIterator.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -487,14 +487,9 @@ bool LocalFileHandle::remove()
     return true;
 }
 
-std::unique_ptr<std::istream> LocalFileHandle::createInputStream(std::ios_base::openmode mode) const
+FileStream LocalFileHandle::createFileStream(unsigned int mode) const
 {
-    return std::unique_ptr<std::istream>(new std::ifstream(m_path, mode));
-}
-
-std::unique_ptr<std::ostream> LocalFileHandle::createOutputStream(std::ios_base::openmode mode)
-{
-    return std::unique_ptr<std::ostream>(new std::ofstream(m_path, mode));
+    return FileStream(m_path, mode);
 }
 
 void LocalFileHandle::readFileInfo() const
@@ -532,4 +527,4 @@ void LocalFileHandle::readLinkInfo() const
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

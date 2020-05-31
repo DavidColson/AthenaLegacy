@@ -14,7 +14,7 @@
 #include <cppfs/posix/LocalFileIterator.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -146,4 +146,4 @@ void LocalFileWatcher::watch(int timeout)
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

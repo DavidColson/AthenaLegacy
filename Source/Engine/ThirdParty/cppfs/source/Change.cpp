@@ -2,7 +2,7 @@
 #include <cppfs/Change.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -79,4 +79,4 @@ const eastl::string & Change::path() const
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

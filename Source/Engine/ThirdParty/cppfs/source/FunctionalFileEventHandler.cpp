@@ -2,7 +2,7 @@
 #include <cppfs/FunctionalFileEventHandler.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -28,4 +28,4 @@ void FunctionalFileEventHandler::onFileEvent(FileHandle & fh, FileEvent event)
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

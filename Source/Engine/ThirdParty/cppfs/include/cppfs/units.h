@@ -2,10 +2,6 @@
 #pragma once
 
 
-namespace cppfs
-{
-
-
 inline unsigned long long size_b(unsigned long long value)
 {
     return value;
@@ -61,6 +57,3 @@ inline unsigned long long operator""_TB(unsigned long long value)
     return value * 1024 * 1024 * 1024 * 1024;
 }
 */
-
-
-} // namespace cppfs

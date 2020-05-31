@@ -8,7 +8,7 @@
 #include <cppfs/Change.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -88,18 +88,16 @@ public:
 
     /**
     *  @brief
-    *    Print changes to stream
+    *    Print changes to string
     *
-    *  @param[in] stream
-    *    The output stream
     */
-    void print(std::ostream & stream);
+    eastl::string toString();
 
     /**
     *  @brief
     *    Print changes to console
     */
-    void print();
+    void logPrint();
 
 
 protected:
@@ -107,4 +105,4 @@ protected:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

@@ -5,7 +5,7 @@
 #include <string>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -50,4 +50,4 @@ std::string configDir(const std::string & application);
 } // namespace system
 
 
-} // namespace cppfs
+} // namespace FileSys

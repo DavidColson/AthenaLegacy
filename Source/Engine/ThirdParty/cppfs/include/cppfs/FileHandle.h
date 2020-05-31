@@ -11,9 +11,9 @@
 
 #include <cppfs/cppfs.h>
 #include <cppfs/AbstractFileHandleBackend.h>
+#include <cppfs/FileStream.h>
 
-
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -497,33 +497,18 @@ public:
 
     /**
     *  @brief
-    *    Create input stream to read from the file
+    *    Create file stream to read and write from the file
     *
     *  @param[in] mode
-    *    Opening mode flags
+    *    Opening mode flags (FileStreamMode)
     *
     *  @return
-    *    Input stream, null on error
+    *    FileStream, could be invalid if encountering an error
     *
     *  @remarks
     *    The created stream object has to be destroyed be the caller.
     */
-    eastl::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode = std::ios_base::in) const;
-
-    /**
-    *  @brief
-    *    Create output stream to write to the file
-    *
-    *  @param[in] mode
-    *    Opening mode flags
-    *
-    *  @return
-    *    Output stream, null on error
-    *
-    *  @remarks
-    *    The created stream object has to be destroyed be the caller.
-    */
-    eastl::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode = std::ios_base::out);
+    FileStream createFileStream(unsigned int mode) const;
 
     /**
     *  @brief
@@ -578,4 +563,4 @@ protected:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

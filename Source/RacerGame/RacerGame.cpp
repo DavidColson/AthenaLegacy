@@ -11,9 +11,7 @@
 #include <SceneSerializer.h>
 #include <AssetDatabase.h>
 
-#include <cppfs/fs.h>
-#include <cppfs/FileHandle.h>
-#include <cppfs/FilePath.h>
+#include <cppfs/FileSys.h>
 
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
@@ -143,23 +141,27 @@ void SetupScene(Scene& scene)
 		pRenderable->meshHandle = AssetHandle("Resources/Models/monkey.gltf:0");
 	}
 
-	File::WriteWholeFile("SerializeRacerScene.txt", SceneSerializer::Serialize(scene));
+	FileSys::FileHandle fHandle = FileSys::open("SerializeRacerScene.txt");
+	fHandle.writeFile(SceneSerializer::Serialize(scene));
 }
 
 int main(int argc, char *argv[])
 {
 	Engine::Initialize();
 
-	using namespace cppfs;
+	using namespace FileSys;
 
-	FileHandle file = fs::open("Resources/Models/monkey.gltf@0");
+	FileHandle file = open("Resources/Models/monkey.gltf@0");
 
 	Log::Debug("File: %s has size %i", file.fileName(), file.size());
 
 	FilePath path = "Resources/Models/monkey.gltf@0";
-
 	eastl::string extension = path.extension();
 	eastl::string innerExtension = path.innerExtension();
+
+
+	FileHandle sceneFile = open("RacerScene.txt");
+	eastl::string contents = sceneFile.readFile();
 
 	Scene* pScene = new Scene();
 	SetupScene(*pScene);

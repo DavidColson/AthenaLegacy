@@ -1,12 +1,14 @@
 #include "Shader.h"
 
-#include "File.h"
 #include "Scanning.h"
 #include "Log.h"
 
+#include <cppfs/FileSys.h>
+
 void Shader::Load(eastl::string path)
 {
-    eastl::string contents = File::ReadWholeFile(path);
+    FileSys::FileHandle fHandle = FileSys::open(path);
+    eastl::string contents = fHandle.readFile();
 
     eastl::string typeString;
 

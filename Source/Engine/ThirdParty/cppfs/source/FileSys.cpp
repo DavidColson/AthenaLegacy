@@ -1,5 +1,5 @@
 
-#include <cppfs/fs.h>
+#include <cppfs/FileSys.h>
 
 #include <sstream>
 #include <iomanip>
@@ -27,11 +27,8 @@
 #endif
 
 
-namespace cppfs
+namespace FileSys
 {
-namespace fs
-{
-
 
 eastl::shared_ptr<AbstractFileSystem> localFS()
 {
@@ -62,6 +59,4 @@ eastl::string hashToString(const unsigned char * hash)
     return stream.str().c_str();
 }
 
-
-} // namespace fs
-} // namespace cppfs
+} // namespace FileSys

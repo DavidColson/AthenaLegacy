@@ -1,10 +1,9 @@
 
 #include <cppfs/Diff.h>
 
-#include <iostream>
+#include <Log.h>
 
-
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -46,18 +45,23 @@ void Diff::add(Change::Operation operation, eastl::string && path)
     m_changes.emplace_back(operation, path);
 }
 
-void Diff::print(std::ostream & stream)
+eastl::string Diff::toString()
+{
+    eastl::string result;
+    for (size_t i = 0; i < m_changes.size(); i++)
+    {
+        result.append(m_changes[i].toString());
+    }
+    return result;
+}
+
+void Diff::logPrint()
 {
     for (size_t i = 0; i < m_changes.size(); i++)
     {
-        stream << std::string(m_changes[i].toString().c_str()) << std::endl;
+        Log::Info("%s", m_changes[i].toString());
     }
 }
 
-void Diff::print()
-{
-    print(std::cout);
-}
 
-
-} // namespace cppfs
+} // namespace FileSys

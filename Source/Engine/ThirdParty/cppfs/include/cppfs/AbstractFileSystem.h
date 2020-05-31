@@ -6,7 +6,7 @@
 #include <EASTL/string.h>
 #include <EASTL/unique_ptr.h>
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -66,4 +66,4 @@ public:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

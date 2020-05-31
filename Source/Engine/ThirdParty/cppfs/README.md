@@ -52,7 +52,7 @@ Opening files and checking for existence and type:
 #include <cppfs/fs.h>
 #include <cppfs/FileHandle.h>
 
-using namespace cppfs;
+using namespace FileSys;
 
 void openFile(const std::string & filename)
 {
@@ -70,7 +70,7 @@ Open a file for reading or writing:
 #include <cppfs/fs.h>
 #include <cppfs/FileHandle.h>
 
-using namespace cppfs;
+using namespace FileSys;
 
 void openFile(const std::string & filename)
 {
@@ -93,7 +93,7 @@ Listing directory entries:
 #include <cppfs/fs.h>
 #include <cppfs/FileHandle.h>
 
-using namespace cppfs;
+using namespace FileSys;
 
 void lstDir(const std::string & path)
 {

@@ -2,7 +2,7 @@
 #include <cppfs/AbstractFileIteratorBackend.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -15,4 +15,4 @@ AbstractFileIteratorBackend::~AbstractFileIteratorBackend()
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

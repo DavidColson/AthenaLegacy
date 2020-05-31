@@ -11,12 +11,16 @@
 #include <EASTL/map.h>
 #include <EASTL/string.h>
 
-#include <filesystem>
-
 namespace
 {
     eastl::map<uint64_t, Asset*> assets;
     eastl::map<uint64_t, eastl::string> assetIdentifiers;
+
+    struct HotReloadAsset
+    {
+        AssetHandle handle;
+    };
+    eastl::vector<HotReloadAsset> hotReloadWatchers;
 }
 
 uint64_t CalculateFNV(const char* str)
@@ -150,4 +154,7 @@ bool AssetDB::IsSubasset(AssetHandle handle, eastl::string& outTopLevelIdentifie
 void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
 {
     assets[AssetHandle(identifier).id] = pAsset;
+
+    HotReloadAsset hotReloader;
+    hotReloader.handle = AssetHandle(identifier);
 }

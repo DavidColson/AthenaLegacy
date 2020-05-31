@@ -7,7 +7,7 @@
 #include <cppfs/posix/LocalFileSystem.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -109,4 +109,4 @@ void LocalFileIterator::readNextEntry()
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

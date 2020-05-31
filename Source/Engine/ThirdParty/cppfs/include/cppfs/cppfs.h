@@ -2,7 +2,7 @@
 #pragma once
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -40,6 +40,18 @@ enum FileEvent
 
 /**
 *  @brief
+*    Flags for controlling file stream behaviour
+*/
+enum FileStreamMode
+{
+    FileAppend   = 0x01,  ///< A file stream that will append rather than write
+    FileRead     = 0x02,  ///< A file stream that can read
+    FileWrite    = 0x04,  ///< A file stream that can write
+    FileBinary   = 0x08,  ///< File stream will be treated as binary
+};
+
+/**
+*  @brief
 *    Recursive mode for operation that can run recursively or non-recursively
 */
 enum RecursiveMode
@@ -49,4 +61,4 @@ enum RecursiveMode
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

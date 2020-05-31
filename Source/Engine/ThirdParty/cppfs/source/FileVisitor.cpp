@@ -4,7 +4,7 @@
 #include <cppfs/FileHandle.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -40,4 +40,4 @@ bool FileVisitor::onDirectory(FileHandle &)
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

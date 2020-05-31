@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <cppfs/FileStream.h>
 
 #include <EASTL/memory.h>
 #include <EASTL/vector.h>
@@ -10,7 +11,7 @@
 #include <iosfwd>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -298,34 +299,19 @@ public:
 
     /**
     *  @brief
-    *    Create input stream to read from the file
+    *    Create file stream to read/write from the file
     *
     *  @param[in] mode
     *    Opening mode flags
     *
     *  @return
-    *    Input stream, null on error
+    *    File stream, invalid on error
     *
     *  @remarks
     *    The created stream object has to be destroyed be the caller.
     */
-    virtual eastl::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode) const = 0;
-
-    /**
-    *  @brief
-    *    Create output stream to write to the file
-    *
-    *  @param[in] mode
-    *    Opening mode flags
-    *
-    *  @return
-    *    Output stream, null on error
-    *
-    *  @remarks
-    *    The created stream object has to be destroyed be the caller.
-    */
-    virtual eastl::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode) = 0;
+    virtual FileStream createFileStream(unsigned int mode) const = 0;
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

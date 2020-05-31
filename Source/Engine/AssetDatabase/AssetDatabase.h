@@ -1,7 +1,5 @@
 #pragma once
 
-#include "File.h"
-
 #include <EASTL/string.h>
 
 enum class AssetType

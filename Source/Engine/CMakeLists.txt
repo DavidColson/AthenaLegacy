@@ -8,6 +8,7 @@ include_directories("ThirdParty/")
 include_directories("ThirdParty/EASTL/include/")
 include_directories("ThirdParty/EABase/include/Common/")
 include_directories("ThirdParty/FreeType/include")
+include_directories("ThirdParty/cppfs/include")
 add_Library(Engine "")
 
 add_subdirectory(AssetDatabase)

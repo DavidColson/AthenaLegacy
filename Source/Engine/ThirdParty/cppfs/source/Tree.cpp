@@ -2,14 +2,14 @@
 #include <cppfs/Tree.h>
 
 #include <EASTL/algorithm.h>
-#include <iostream>
+#include <Log.h>
 
 #include <cppfs/fs.h>
 #include <cppfs/FileHandle.h>
 #include <cppfs/Diff.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -193,13 +193,13 @@ void Tree::add(eastl::unique_ptr<Tree> && tree)
     m_children.push_back(eastl::move(tree));
 }
 
-void Tree::print(const eastl::string & indent) const
+void Tree::logPrint(const eastl::string & indent) const
 {
-    std::cout << indent.c_str() << m_filename.c_str() << std::endl;
+    Log::Info("%s%s", indent.c_str(), m_filename.c_str());
 
     for (auto & tree : m_children)
     {
-        tree->print(indent + "  ");
+        tree->logPrint(indent + "  ");
     }
 }
 
@@ -302,4 +302,4 @@ void Tree::createDiff(const Tree * currentState, const Tree * targetState, Diff 
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

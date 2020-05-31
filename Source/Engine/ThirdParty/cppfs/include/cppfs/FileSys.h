@@ -8,9 +8,10 @@
 
 #include <cppfs/AbstractFileSystem.h>
 #include <cppfs/FilePath.h>
+#include <cppfs/FileHandle.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -22,9 +23,6 @@ class LoginCredentials;
 *  @brief
 *    Global file system functions
 */
-namespace fs
-{
-
 
 /**
 *  @brief
@@ -61,8 +59,4 @@ FileHandle open(const FilePath & path);
 */
 eastl::string hashToString(const unsigned char * hash);
 
-
-} // namespace fs
-
-
-} // namespace cppfs
+} // namespace FileSys

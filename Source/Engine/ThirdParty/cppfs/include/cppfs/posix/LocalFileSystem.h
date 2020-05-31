@@ -9,7 +9,7 @@
 #include <cppfs/AbstractFileSystem.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -39,4 +39,4 @@ public:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

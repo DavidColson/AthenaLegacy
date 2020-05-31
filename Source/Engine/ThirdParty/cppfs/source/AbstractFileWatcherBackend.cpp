@@ -4,7 +4,7 @@
 #include <cppfs/FileWatcher.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -23,4 +23,4 @@ void AbstractFileWatcherBackend::onFileEvent(FileHandle & fh, FileEvent event)
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

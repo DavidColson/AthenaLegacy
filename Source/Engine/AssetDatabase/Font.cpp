@@ -1,6 +1,5 @@
 #include "Font.h"
 
-#include "File.h"
 #include "Rendering/RectPacking.h"
 
 void Font::Load(eastl::string path)

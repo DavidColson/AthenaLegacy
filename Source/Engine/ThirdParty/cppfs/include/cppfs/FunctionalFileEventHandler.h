@@ -7,7 +7,7 @@
 #include <cppfs/FileEventHandler.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -57,4 +57,4 @@ protected:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

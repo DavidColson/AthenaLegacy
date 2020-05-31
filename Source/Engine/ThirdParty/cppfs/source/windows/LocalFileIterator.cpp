@@ -7,7 +7,7 @@
 #include <cppfs/windows/LocalFileSystem.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -127,4 +127,4 @@ void LocalFileIterator::readNextEntry()
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

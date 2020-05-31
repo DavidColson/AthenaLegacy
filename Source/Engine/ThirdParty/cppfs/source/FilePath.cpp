@@ -7,7 +7,7 @@
 #include <EASTL/string.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -462,4 +462,4 @@ void FilePath::analyze() const
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

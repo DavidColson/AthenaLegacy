@@ -7,7 +7,7 @@
 #include <cppfs/AbstractFileHandleBackend.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -77,8 +77,7 @@ public:
     virtual bool createSymbolicLink(AbstractFileHandleBackend & dest) override;
     virtual bool rename(const std::string & filename) override;
     virtual bool remove() override;
-    virtual std::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode) const override;
-    virtual std::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode) override;
+    virtual FileStream createFileStream(unsigned int mode) const override;
 
 
 protected:
@@ -94,4 +93,4 @@ protected:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

@@ -1,19 +1,9 @@
 
 #include <cppfs/FileHandle.h>
 
-#include <iostream>
 #include <sstream>
-#include <iterator>
 
-#if defined(__APPLE__)
-    #define COMMON_DIGEST_FOR_OPENSSL
-    #include <CommonCrypto/CommonDigest.h>
-    #define SHA1 CC_SHA1
-#elif defined(CPPFS_USE_OpenSSL)
-    #include <openssl/sha.h>
-#endif
-
-#include <cppfs/fs.h>
+#include <cppfs/FileSys.h>
 #include <cppfs/FilePath.h>
 #include <cppfs/FileIterator.h>
 #include <cppfs/FileVisitor.h>
@@ -25,7 +15,7 @@
 #include <cppfs/AbstractFileIteratorBackend.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -514,28 +504,16 @@ FileWatcher FileHandle::watch(unsigned int events, RecursiveMode recursive)
 }
 
 // @Improvement: Consider removing stream functions, as we're unlikely to use them
-eastl::unique_ptr<std::istream> FileHandle::createInputStream(std::ios_base::openmode mode) const
+FileStream FileHandle::createFileStream(unsigned int mode) const
 {
     // Check backend
     if (!m_backend)
     {
-        return nullptr;
+        return FileStream();
     }
 
     // Return stream
-    return m_backend->createInputStream(mode);
-}
-
-eastl::unique_ptr<std::ostream> FileHandle::createOutputStream(std::ios_base::openmode mode)
-{
-    // Check backend
-    if (!m_backend)
-    {
-        return nullptr;
-    }
-
-    // Return stream
-    return m_backend->createOutputStream(mode);
+    return m_backend->createFileStream(mode);
 }
 
 eastl::string FileHandle::readFile() const
@@ -544,15 +522,11 @@ eastl::string FileHandle::readFile() const
     if (isFile())
     {
         // Open input stream
-        auto inputStream = createInputStream();
-        if (!inputStream) return "";
-
-        // Read content
-        std::stringstream buffer;
-        buffer << inputStream->rdbuf();
+        FileStream stream = createFileStream(FileRead);
+        if (!stream.isValid()) return "";
 
         // Return string
-        return eastl::string(buffer.str().c_str());
+        return stream.read(stream.size());
     }
 
     // Error, not a valid file
@@ -562,11 +536,11 @@ eastl::string FileHandle::readFile() const
 bool FileHandle::writeFile(const eastl::string & content)
 {
     // Open output stream
-    auto outputStream = createOutputStream();
-    if (!outputStream) return false;
+    FileStream stream = createFileStream(FileWrite);
+    if (!stream.isValid()) return false;
 
     // Write content to file
-    (*outputStream) << content.c_str();
+    stream.write(content.data(), content.size());
 
     // Done
     return true;
@@ -581,18 +555,22 @@ bool FileHandle::genericCopy(FileHandle & dest)
     }
 
     // Open files
-    auto in  = createInputStream(std::ios::binary);
-    auto out = dest.createOutputStream(std::ios::binary | std::ios::trunc);
+    FileStream in  = createFileStream(FileBinary);
+    FileStream out = dest.createFileStream(FileBinary | FileWrite);
 
-    if (!in || !out)
+    if (!in.isValid() || !out.isValid())
     {
         // Error!
         return false;
     }
 
     // Copy file
-    (*out) << in->rdbuf();
-    out->flush();
+
+    size_t srcSize = in.size();
+    char* buffer = new char[srcSize];
+    in.read(buffer, srcSize);
+    out.write(buffer, srcSize);
+    delete[] buffer;
 
     // Reload information on destination file
     dest.updateFileInfo();

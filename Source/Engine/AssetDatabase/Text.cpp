@@ -1,9 +1,10 @@
 #include "Text.h"
 
-#include "File.h"
+#include <cppfs/FileSys.h>
 
 void Text::Load(eastl::string path)
 {
-    contents = File::ReadWholeFile(path);
+    FileSys::FileHandle fHandle = FileSys::open(path);
+    contents = fHandle.readFile();
     AssetDB::RegisterAsset(this, path);
 }

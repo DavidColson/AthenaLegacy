@@ -2,7 +2,7 @@
 #include <cppfs/AbstractFileHandleBackend.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -15,4 +15,4 @@ AbstractFileHandleBackend::~AbstractFileHandleBackend()
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

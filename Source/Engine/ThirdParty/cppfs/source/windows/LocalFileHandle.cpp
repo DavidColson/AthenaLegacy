@@ -11,7 +11,7 @@
 #include <cppfs/windows/LocalFileIterator.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -387,14 +387,9 @@ bool LocalFileHandle::remove()
     return true;
 }
 
-eastl::unique_ptr<std::istream> LocalFileHandle::createInputStream(std::ios_base::openmode mode) const
+FileStream LocalFileHandle::createFileStream(unsigned int mode) const
 {
-    return eastl::unique_ptr<std::istream>(new std::ifstream(m_path.c_str(), mode));
-}
-
-eastl::unique_ptr<std::ostream> LocalFileHandle::createOutputStream(std::ios_base::openmode mode)
-{
-    return eastl::unique_ptr<std::ostream>(new std::ofstream(m_path.c_str(), mode));
+    return FileStream(m_path.c_str(), mode);
 }
 
 void LocalFileHandle::readFileInfo() const
@@ -415,4 +410,4 @@ void LocalFileHandle::readFileInfo() const
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

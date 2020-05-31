@@ -6,7 +6,7 @@
 #include <cppfs/windows/LocalFileWatcher.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -40,4 +40,4 @@ eastl::unique_ptr<AbstractFileWatcherBackend> LocalFileSystem::createFileWatcher
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

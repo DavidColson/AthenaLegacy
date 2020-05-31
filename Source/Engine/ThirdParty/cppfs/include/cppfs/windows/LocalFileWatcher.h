@@ -15,7 +15,7 @@
 #include <cppfs/FileHandle.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -76,4 +76,4 @@ protected:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

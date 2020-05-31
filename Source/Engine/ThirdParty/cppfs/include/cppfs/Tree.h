@@ -7,7 +7,7 @@
 #include <EASTL/string.h>
 #include <EASTL/unique_ptr.h>
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -302,12 +302,12 @@ public:
 
     /**
     *  @brief
-    *    Print tree to stdout
+    *    Print tree to log
     *
     *  @param[in] indent
     *    Indentation
     */
-    void print(const eastl::string & indent = "") const;
+    void logPrint(const eastl::string & indent = "") const;
 
     /**
     *  @brief
@@ -352,4 +352,4 @@ protected:
 };
 
 
-} // namespace cppfs
+} // namespace FileSys

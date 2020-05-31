@@ -4,7 +4,7 @@
 #include <cppfs/FileWatcher.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -17,4 +17,4 @@ AbstractFileSystem::~AbstractFileSystem()
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

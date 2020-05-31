@@ -4,7 +4,7 @@
 #include <cppfs/FileHandle.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
@@ -57,4 +57,4 @@ void FileEventHandler::onFileAttrChanged(FileHandle &)
 }
 
 
-} // namespace cppfs
+} // namespace FileSys

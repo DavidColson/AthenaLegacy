@@ -6,9 +6,9 @@
 #include "Vec3.h"
 #include "GraphicsDevice.h"
 #include "Mesh.h" 
-#include "File.h"
 #include "AssetDatabase.h"
 
+#include <cppfs/FileSys.h>
 #include <SDL.h>
 
 // Actually owns the data
@@ -65,7 +65,8 @@ struct Accessor
 void Model::Load(eastl::string path)
 {
     // Load file
-    eastl::string file = File::ReadWholeFile(path);
+    FileSys::FileHandle fHandle = FileSys::open(path);
+    eastl::string file = fHandle.readFile();
 
     // Parse json
     JsonValue parsed = ParseJsonFile(file);

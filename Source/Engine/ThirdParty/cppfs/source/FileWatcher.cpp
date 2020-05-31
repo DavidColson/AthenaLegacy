@@ -3,18 +3,18 @@
 
 #include <EASTL/algorithm.h>
 
-#include <cppfs/fs.h>
+#include <cppfs/FileSys.h>
 #include <cppfs/FileHandle.h>
 #include <cppfs/FileEventHandler.h>
 #include <cppfs/AbstractFileSystem.h>
 
 
-namespace cppfs
+namespace FileSys
 {
 
 
 FileWatcher::FileWatcher()
-: m_backend(fs::localFS()->createFileWatcher(*this))
+: m_backend(FileSys::localFS()->createFileWatcher(*this))
 {
 }
 

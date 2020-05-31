@@ -20,8 +20,9 @@ endif()
 set(headers
     ${include_path}/cppfs.h
     ${include_path}/system.h
-    ${include_path}/fs.h
+    ${include_path}/FileSys.h
     ${include_path}/FileHandle.h
+    ${include_path}/FileStream.h
     ${include_path}/FileIterator.h
     ${include_path}/FileVisitor.h
     ${include_path}/FunctionalFileVisitor.h
@@ -32,8 +33,6 @@ set(headers
     ${include_path}/AbstractFileHandleBackend.h
     ${include_path}/AbstractFileIteratorBackend.h
     ${include_path}/AbstractFileWatcherBackend.h
-    ${include_path}/InputStream.h
-    ${include_path}/OutputStream.h
     ${include_path}/FilePath.h
     ${include_path}/Tree.h
     ${include_path}/Diff.h
@@ -47,8 +46,9 @@ set(headers
 
 set(sources
     ${source_path}/system.cpp
-    ${source_path}/fs.cpp
+    ${source_path}/FileSys.cpp
     ${source_path}/FileHandle.cpp
+    ${source_path}/FileStream.cpp
     ${source_path}/FileIterator.cpp
     ${source_path}/FileVisitor.cpp
     ${source_path}/FunctionalFileVisitor.cpp
@@ -59,8 +59,6 @@ set(sources
     ${source_path}/AbstractFileHandleBackend.cpp
     ${source_path}/AbstractFileIteratorBackend.cpp
     ${source_path}/AbstractFileWatcherBackend.cpp
-    ${source_path}/InputStream.cpp
-    ${source_path}/OutputStream.cpp
     ${source_path}/FilePath.cpp
     ${source_path}/Tree.cpp
     ${source_path}/Diff.cpp
