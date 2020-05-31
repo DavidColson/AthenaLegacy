@@ -11,9 +11,29 @@ FileStream::FileStream()
 {
 }
 
-FileStream::FileStream(eastl::string path, unsigned int mode)
+FileStream::FileStream(const FileStream & fileStream)
 {
-    eastl::string modeString;
+    // Copy
+    path = fileStream.path;
+    modeString = fileStream.modeString;
+    rwops = SDL_RWFromFile(path.c_str(), modeString.c_str());
+}
+
+FileStream::FileStream(FileStream && fileStream)
+{
+    // Move
+    rwops = fileStream.rwops;
+    path = fileStream.path;
+    modeString = fileStream.modeString;
+
+    fileStream.rwops = nullptr;
+    fileStream.path = "";
+    fileStream.modeString = "";
+}
+
+FileStream::FileStream(eastl::string _path, unsigned int mode)
+{
+    modeString = "";
 
     if (mode & FileWrite)
     {
@@ -38,6 +58,7 @@ FileStream::FileStream(eastl::string path, unsigned int mode)
     }
 
     rwops = SDL_RWFromFile(path.c_str(), modeString.c_str());
+    path = _path;
 }
 
 FileStream::~FileStream()
