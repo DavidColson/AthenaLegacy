@@ -1,7 +1,7 @@
 
 #include <cppfs/Tree.h>
 
-#include <algorithm>
+#include <EASTL/algorithm.h>
 #include <iostream>
 
 #include <cppfs/fs.h>
@@ -34,32 +34,32 @@ void Tree::clear()
     m_children.clear();
 }
 
-const std::string & Tree::path() const
+const eastl::string & Tree::path() const
 {
     return m_path;
 }
 
-void Tree::setPath(const std::string & path)
+void Tree::setPath(const eastl::string & path)
 {
     m_path = path;
 }
 
-void Tree::setPath(std::string && path)
+void Tree::setPath(eastl::string && path)
 {
     m_path = std::move(path);
 }
 
-const std::string & Tree::fileName() const
+const eastl::string & Tree::fileName() const
 {
     return m_filename;
 }
 
-void Tree::setFileName(const std::string & filename)
+void Tree::setFileName(const eastl::string & filename)
 {
     m_filename = filename;
 }
 
-void Tree::setFileName(std::string && filename)
+void Tree::setFileName(eastl::string && filename)
 {
     m_filename = filename;
 }
@@ -139,24 +139,24 @@ void Tree::setPermissions(unsigned int permissions)
     m_permissions = permissions;
 }
 
-const std::string & Tree::sha1() const
+const eastl::string & Tree::sha1() const
 {
     return m_sha1;
 }
 
-void Tree::setSha1(const std::string & hash)
+void Tree::setSha1(const eastl::string & hash)
 {
     m_sha1 = hash;
 }
 
-void Tree::setSha1(std::string && hash)
+void Tree::setSha1(eastl::string && hash)
 {
-    m_sha1 = std::move(hash);
+    m_sha1 = eastl::move(hash);
 }
 
-std::vector<std::string> Tree::listFiles() const
+eastl::vector<eastl::string> Tree::listFiles() const
 {
-    std::vector<std::string> children;
+    eastl::vector<eastl::string> children;
 
     if (!m_directory)
     {
@@ -171,17 +171,17 @@ std::vector<std::string> Tree::listFiles() const
     return children;
 }
 
-const std::vector< std::unique_ptr<Tree> > & Tree::children() const
+const eastl::vector< eastl::unique_ptr<Tree> > & Tree::children() const
 {
     return m_children;
 }
 
-std::vector< std::unique_ptr<Tree> > & Tree::children()
+eastl::vector< eastl::unique_ptr<Tree> > & Tree::children()
 {
     return m_children;
 }
 
-void Tree::add(std::unique_ptr<Tree> && tree)
+void Tree::add(eastl::unique_ptr<Tree> && tree)
 {
     // Check parameters
     if (!tree)
@@ -190,12 +190,12 @@ void Tree::add(std::unique_ptr<Tree> && tree)
     }
 
     // Add tree to list
-    m_children.push_back(std::move(tree));
+    m_children.push_back(eastl::move(tree));
 }
 
-void Tree::print(const std::string & indent) const
+void Tree::print(const eastl::string & indent) const
 {
-    std::cout << indent << m_filename << std::endl;
+    std::cout << indent.c_str() << m_filename.c_str() << std::endl;
 
     for (auto & tree : m_children)
     {
@@ -203,13 +203,13 @@ void Tree::print(const std::string & indent) const
     }
 }
 
-std::unique_ptr<Diff> Tree::createDiff(const Tree & target) const
+eastl::unique_ptr<Diff> Tree::createDiff(const Tree & target) const
 {
     auto diff = new Diff;
 
     createDiff(this, &target, *diff);
 
-    return std::unique_ptr<Diff>(diff);
+    return eastl::unique_ptr<Diff>(diff);
 }
 
 Tree::Tree(const Tree &)
@@ -245,7 +245,7 @@ void Tree::createDiff(const Tree * currentState, const Tree * targetState, Diff 
     for (const auto & file : currentState->children())
     {
         // Check if file is in the target state
-        if (std::find(targetFiles.begin(), targetFiles.end(), file->fileName()) == targetFiles.end())
+        if (eastl::find(targetFiles.begin(), targetFiles.end(), file->fileName()) == targetFiles.end())
         {
             // Check type
             if (file->isDirectory())
@@ -266,8 +266,8 @@ void Tree::createDiff(const Tree * currentState, const Tree * targetState, Diff 
     for (const auto & targetFile : targetState->children())
     {
         // Get file in the current state
-        const auto it = std::find(currentFiles.begin(), currentFiles.end(), targetFile->fileName());
-        Tree * currentFile = (it != currentFiles.end()) ? currentState->children()[std::distance(currentFiles.begin(), it)].get() : nullptr;
+        const auto it = eastl::find(currentFiles.begin(), currentFiles.end(), targetFile->fileName());
+        Tree * currentFile = (it != currentFiles.end()) ? currentState->children()[eastl::distance(currentFiles.begin(), it)].get() : nullptr;
 
         // Directory
         if (targetFile->isDirectory())

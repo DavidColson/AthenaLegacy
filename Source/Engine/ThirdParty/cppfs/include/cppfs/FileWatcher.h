@@ -2,9 +2,10 @@
 #pragma once
 
 
-#include <vector>
-#include <memory>
-#include <functional>
+#include <EASTL/vector.h>
+#include <EASTL/memory.h>
+#include <EASTL/functional.h>
+#include <EASTL/unique_ptr.h>
 
 #include <cppfs/cppfs.h>
 #include <cppfs/AbstractFileWatcherBackend.h>
@@ -33,7 +34,7 @@ public:
     *  @brief
     *    Callback function for file system events
     */
-    using EventFunc = std::function<void(FileHandle &, FileEvent)>;
+    using EventFunc = eastl::function<void(FileHandle &, FileEvent)>;
 
 
 public:
@@ -206,11 +207,11 @@ protected:
 
 
 protected:
-    std::unique_ptr<AbstractFileWatcherBackend> m_backend;       ///< Backend implementation (can be null)
-    std::vector<FileEventHandler *>             m_eventHandlers; ///< List of registered file event handlers
+    eastl::unique_ptr<AbstractFileWatcherBackend> m_backend;       ///< Backend implementation (can be null)
+    eastl::vector<FileEventHandler *>             m_eventHandlers; ///< List of registered file event handlers
 
     /// Functional event handlers that are owned by the file watcher
-    std::vector< std::unique_ptr<FunctionalFileEventHandler> > m_ownEventHandlers;
+    eastl::vector< eastl::unique_ptr<FunctionalFileEventHandler> > m_ownEventHandlers;
 };
 
 

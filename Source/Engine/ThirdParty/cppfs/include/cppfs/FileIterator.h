@@ -2,8 +2,9 @@
 #pragma once
 
 
-#include <memory>
-#include <string>
+#include <EASTL/memory.h>
+#include <EASTL/string.h>
+#include <EASTL/unique_ptr.h>
 
 namespace cppfs
 {
@@ -33,7 +34,7 @@ public:
     *  @param[in] backend
     *    Concrete file iterator backend
     */
-    FileIterator(std::unique_ptr<AbstractFileIteratorBackend> && backend);
+    FileIterator(eastl::unique_ptr<AbstractFileIteratorBackend> && backend);
 
     /**
     *  @brief
@@ -75,7 +76,7 @@ public:
     *  @return
     *    File name
     */
-    std::string operator*() const;
+    eastl::string operator*() const;
 
     /**
     *  @brief
@@ -118,7 +119,7 @@ public:
 
 
 protected:
-    std::unique_ptr<AbstractFileIteratorBackend> m_backend;
+    eastl::unique_ptr<AbstractFileIteratorBackend> m_backend;
 };
 
 

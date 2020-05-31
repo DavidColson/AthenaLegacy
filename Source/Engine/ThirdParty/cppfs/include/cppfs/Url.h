@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include <string>
+#include <EASTL/string.h>
 
 
 namespace cppfs
@@ -49,7 +49,7 @@ public:
     *  @param[in] url
     *    Url
     */
-    Url(const std::string & url);
+    Url(const eastl::string & url);
 
     /**
     *  @brief
@@ -58,7 +58,7 @@ public:
     *  @param[in] url
     *    Url
     */
-    Url(std::string && url);
+    Url(eastl::string && url);
 
     /**
     *  @brief
@@ -106,7 +106,7 @@ public:
     *  @return
     *    Url
     */
-    const std::string & toString() const;
+    const eastl::string & toString() const;
 
     /**
     *  @brief
@@ -115,7 +115,7 @@ public:
     *  @return
     *    Protocol part (including "://")
     */
-    const std::string & protocol() const;
+    const eastl::string & protocol() const;
 
     /**
     *  @brief
@@ -124,7 +124,7 @@ public:
     *  @return
     *    Location (everything after the protocol part)
     */
-    const std::string & location() const;
+    const eastl::string & location() const;
 
     /**
     *  @brief
@@ -133,7 +133,7 @@ public:
     *  @return
     *    Address (including username, password, and hostname)
     */
-    const std::string & address() const;
+    const eastl::string & address() const;
 
     /**
     *  @brief
@@ -142,7 +142,7 @@ public:
     *  @return
     *    Path (everything after the address)
     */
-    const std::string & path() const;
+    const eastl::string & path() const;
 
     /**
     *  @brief
@@ -151,7 +151,7 @@ public:
     *  @return
     *    Login part (username and password)
     */
-    const std::string & login() const;
+    const eastl::string & login() const;
 
     /**
     *  @brief
@@ -160,7 +160,7 @@ public:
     *  @return
     *    Host name
     */
-    const std::string & host() const;
+    const eastl::string & host() const;
 
     /**
     *  @brief
@@ -169,7 +169,7 @@ public:
     *  @return
     *    User name
     */
-    const std::string & username() const;
+    const eastl::string & username() const;
 
     /**
     *  @brief
@@ -178,7 +178,7 @@ public:
     *  @return
     *    Password
     */
-    const std::string & password() const;
+    const eastl::string & password() const;
 
 
 protected:
@@ -190,16 +190,16 @@ protected:
 
 
 protected:
-            std::string m_url;      ///< Url string
-    mutable bool        m_analyzed; ///< 'true' if Url has been analyzed, else 'false'
-    mutable std::string m_protocol; ///< Protocol part (including "://")
-    mutable std::string m_location; ///< Location (everything after the protocol part)
-    mutable std::string m_address;  ///< Address (including username, password, and hostname)
-    mutable std::string m_path;     ///< Path (everything after the address)
-    mutable std::string m_login;    ///< Login part (username and password)
-    mutable std::string m_host;     ///< Host name
-    mutable std::string m_username; ///< User name
-    mutable std::string m_password; ///< Password
+            eastl::string m_url;      ///< Url string
+    mutable bool          m_analyzed; ///< 'true' if Url has been analyzed, else 'false'
+    mutable eastl::string m_protocol; ///< Protocol part (including "://")
+    mutable eastl::string m_location; ///< Location (everything after the protocol part)
+    mutable eastl::string m_address;  ///< Address (including username, password, and hostname)
+    mutable eastl::string m_path;     ///< Path (everything after the address)
+    mutable eastl::string m_login;    ///< Login part (username and password)
+    mutable eastl::string m_host;     ///< Host name
+    mutable eastl::string m_username; ///< User name
+    mutable eastl::string m_password; ///< Password
 };
 
 

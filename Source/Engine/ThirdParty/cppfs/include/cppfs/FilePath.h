@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include <string>
+#include <EASTL/string.h>
 
 namespace cppfs
 {
@@ -60,7 +60,7 @@ public:
     *  @param[in] path
     *    File path
     */
-    FilePath(const std::string & path);
+    FilePath(const eastl::string & path);
 
     /**
     *  @brief
@@ -69,7 +69,7 @@ public:
     *  @param[in] path
     *    File path
     */
-    FilePath(std::string && path);
+    FilePath(eastl::string && path);
 
     /**
     *  @brief
@@ -122,7 +122,7 @@ public:
     *    (e.g., trailing separators are preserved). To get the path without
     *    trailing separators, use fullPath().
     */
-    const std::string & path() const;
+    const eastl::string & path() const;
 
     /**
     *  @brief
@@ -131,7 +131,7 @@ public:
     *  @param[in] path
     *    File path
     */
-    void setPath(const std::string & path);
+    void setPath(const eastl::string & path);
 
     /**
     *  @brief
@@ -140,7 +140,7 @@ public:
     *  @param[in] path
     *    File path
     */
-    void setPath(std::string && path);
+    void setPath(eastl::string && path);
 
     /**
     *  @brief
@@ -153,7 +153,7 @@ public:
     *    The path will be returned in native format, but otherwise unchanged
     *    (e.g., trailing separators are preserved).
     */
-    std::string toNative() const;
+    eastl::string toNative() const;
 
     /**
     *  @brief
@@ -195,7 +195,7 @@ public:
     *    If you want trailing separators to remain in the string, use path().
     *    Calling this function triggers a full analysis of the path (costly operation).
     */
-    const std::string & fullPath() const;
+    const eastl::string & fullPath() const;
 
     /**
     *  @brief
@@ -209,7 +209,7 @@ public:
     *    "/path/to/something.ex/".
     *    Calling this function triggers a full analysis of the path (costly operation).
     */
-    const std::string & fileName() const;
+    const eastl::string & fileName() const;
 
     /**
     *  @brief
@@ -223,7 +223,7 @@ public:
     *    "/path/to/something.ex/".
     *    Calling this function triggers a full analysis of the path (costly operation).
     */
-    const std::string & baseName() const;
+    const eastl::string & baseName() const;
 
     /**
     *  @brief
@@ -238,7 +238,7 @@ public:
     *    string is returned.
     *    Calling this function triggers a full analysis of the path (costly operation).
     */
-    const std::string & extension() const;
+    const eastl::string & extension() const;
 
     /**
     *  @brief
@@ -252,7 +252,7 @@ public:
     *    "/path/to/directory" and "/path/to/directory/".
     *    Calling this function triggers a full analysis of the path (costly operation).
     */
-    const std::string & directoryPath() const;
+    const eastl::string & directoryPath() const;
 
     /**
     *  @brief
@@ -265,7 +265,7 @@ public:
     *    If there is no drive letter (Linux, Mac), an empty string is returned.
     *    Calling this function triggers a full analysis of the path (costly operation).
     */
-    const std::string & driveLetter() const;
+    const eastl::string & driveLetter() const;
 
     /**
     *  @brief
@@ -325,7 +325,7 @@ public:
     *      '/a/../b/' - '/b'
     *      etc.
     */
-    std::string resolved() const;
+    eastl::string resolved() const;
 
 
 protected:
@@ -342,17 +342,17 @@ protected:
 
 
 protected:
-    std::string m_path;                  ///< Path (unified format)
-    bool        m_pointsToContent;       ///< 'true' if the path has a trailing separator, else 'false'
+    eastl::string   m_path;                  ///< Path (unified format)
+    bool            m_pointsToContent;       ///< 'true' if the path has a trailing separator, else 'false'
 
-    mutable bool        m_details;       ///< 'true' if path details have been analyzed, else 'false'
-    mutable std::string m_fullPath;      ///< Full path (without trailing separators)
-    mutable std::string m_filename;      ///< Filename component
-    mutable std::string m_basename;      ///< Basename component
-    mutable std::string m_extension;     ///< Extension component
-    mutable std::string m_directoryPath; ///< Path to containing directory
-    mutable std::string m_driveLetter;   ///< Drive letter component
-    mutable bool        m_absolute;      ///< 'true' if path is absolute, else 'false'
+    mutable bool            m_details;       ///< 'true' if path details have been analyzed, else 'false'
+    mutable eastl::string   m_fullPath;      ///< Full path (without trailing separators)
+    mutable eastl::string   m_filename;      ///< Filename component
+    mutable eastl::string   m_basename;      ///< Basename component
+    mutable eastl::string   m_extension;     ///< Extension component
+    mutable eastl::string   m_directoryPath; ///< Path to containing directory
+    mutable eastl::string   m_driveLetter;   ///< Drive letter component
+    mutable bool            m_absolute;      ///< 'true' if path is absolute, else 'false'
 };
 
 

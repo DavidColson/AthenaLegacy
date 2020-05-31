@@ -12,15 +12,15 @@ Change::Change()
 {
 }
 
-Change::Change(Operation operation, const std::string & path)
+Change::Change(Operation operation, const eastl::string & path)
 : m_operation(operation)
 , m_path(path)
 {
 }
 
-Change::Change(Operation operation, std::string && path)
+Change::Change(Operation operation, eastl::string && path)
 : m_operation(operation)
-, m_path(std::move(path))
+, m_path(eastl::move(path))
 {
 }
 
@@ -31,8 +31,8 @@ Change::Change(const Change & change)
 }
 
 Change::Change(Change && change)
-: m_operation(std::move(change.m_operation))
-, m_path(std::move(change.m_path))
+: m_operation(eastl::move(change.m_operation))
+, m_path(eastl::move(change.m_path))
 {
 }
 
@@ -50,13 +50,13 @@ Change & Change::operator=(const Change & change)
 
 Change & Change::operator=(Change && change)
 {
-    m_operation = std::move(change.m_operation);
-    m_path      = std::move(change.m_path);
+    m_operation = eastl::move(change.m_operation);
+    m_path      = eastl::move(change.m_path);
 
     return *this;
 }
 
-std::string Change::toString() const
+eastl::string Change::toString() const
 {
     switch (m_operation)
     {
@@ -73,7 +73,7 @@ Change::Operation Change::operation() const
     return m_operation;
 }
 
-const std::string & Change::path() const
+const eastl::string & Change::path() const
 {
     return m_path;
 }

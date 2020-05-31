@@ -1,7 +1,7 @@
 
 #include <cppfs/FileWatcher.h>
 
-#include <algorithm>
+#include <EASTL/algorithm.h>
 
 #include <cppfs/fs.h>
 #include <cppfs/FileHandle.h>
@@ -24,9 +24,9 @@ FileWatcher::FileWatcher(AbstractFileSystem * fs)
 }
 
 FileWatcher::FileWatcher(FileWatcher && fileWatcher)
-: m_backend(std::move(fileWatcher.m_backend))
-, m_eventHandlers(std::move(fileWatcher.m_eventHandlers))
-, m_ownEventHandlers(std::move(fileWatcher.m_ownEventHandlers))
+: m_backend(eastl::move(fileWatcher.m_backend))
+, m_eventHandlers(eastl::move(fileWatcher.m_eventHandlers))
+, m_ownEventHandlers(eastl::move(fileWatcher.m_ownEventHandlers))
 {
     // Fix pointer to file watcher
     if (m_backend) {
@@ -41,9 +41,9 @@ FileWatcher::~FileWatcher()
 FileWatcher & FileWatcher::operator=(FileWatcher && fileWatcher)
 {
     // Move backend
-    m_backend          = std::move(fileWatcher.m_backend);
-    m_eventHandlers    = std::move(fileWatcher.m_eventHandlers);
-    m_ownEventHandlers = std::move(fileWatcher.m_ownEventHandlers);
+    m_backend          = eastl::move(fileWatcher.m_backend);
+    m_eventHandlers    = eastl::move(fileWatcher.m_eventHandlers);
+    m_ownEventHandlers = eastl::move(fileWatcher.m_ownEventHandlers);
 
     // Fix pointer to file watcher
     if (m_backend) {
@@ -78,7 +78,7 @@ void FileWatcher::add(FileHandle & dir, unsigned int events, RecursiveMode recur
 void FileWatcher::addHandler(FileEventHandler * eventHandler)
 {
     // Check that event handler is valid and not already registered
-    if (!eventHandler || std::find(m_eventHandlers.begin(), m_eventHandlers.end(), eventHandler) != m_eventHandlers.end()) {
+    if (!eventHandler || eastl::find(m_eventHandlers.begin(), m_eventHandlers.end(), eventHandler) != m_eventHandlers.end()) {
         return;
     }
 
@@ -89,19 +89,19 @@ void FileWatcher::addHandler(FileEventHandler * eventHandler)
 void FileWatcher::addHandler(EventFunc funcFileEvent)
 {
     // Create event handler
-    auto ptr = std::unique_ptr<FunctionalFileEventHandler>(new FunctionalFileEventHandler(funcFileEvent));
+    auto ptr = eastl::unique_ptr<FunctionalFileEventHandler>(new FunctionalFileEventHandler(funcFileEvent));
 
     // Register event handler
     addHandler(ptr.get());
 
     // Take ownership
-    m_ownEventHandlers.push_back(std::move(ptr));
+    m_ownEventHandlers.push_back(eastl::move(ptr));
 }
 
 void FileWatcher::removeHandler(FileEventHandler * eventHandler)
 {
     // Check if event handler is registered
-    auto it = std::find(m_eventHandlers.begin(), m_eventHandlers.end(), eventHandler);
+    auto it = eastl::find(m_eventHandlers.begin(), m_eventHandlers.end(), eventHandler);
     if (it != m_eventHandlers.end()) {
         // Remove event handler
         m_eventHandlers.erase(it);

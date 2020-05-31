@@ -2,7 +2,9 @@
 #pragma once
 
 
-#include <memory>
+#include <EASTL/memory.h>
+#include <EASTL/shared_ptr.h>
+#include <EASTL/unique_ptr.h>
 
 #include <cppfs/AbstractFileHandleBackend.h>
 
@@ -30,7 +32,7 @@ public:
     *  @param[in] path
     *    Path to file or directory
     */
-    LocalFileHandle(std::shared_ptr<LocalFileSystem> fs, const std::string & path);
+    LocalFileHandle(eastl::shared_ptr<LocalFileSystem> fs, const eastl::string & path);
 
     /**
     *  @brief
@@ -39,16 +41,16 @@ public:
     virtual ~LocalFileHandle();
 
     // Virtual AbstractFileHandleBackend functions
-    virtual std::unique_ptr<AbstractFileHandleBackend> clone() const override;
+    virtual eastl::unique_ptr<AbstractFileHandleBackend> clone() const override;
     virtual AbstractFileSystem * fs() const override;
     virtual void updateFileInfo() override;
-    virtual std::string path() const override;
+    virtual eastl::string path() const override;
     virtual bool exists() const override;
     virtual bool isFile() const override;
     virtual bool isDirectory() const override;
     virtual bool isSymbolicLink() const override;
-    virtual std::vector<std::string> listFiles() const override;
-    virtual std::unique_ptr<AbstractFileIteratorBackend> begin() const override;
+    virtual eastl::vector<eastl::string> listFiles() const override;
+    virtual eastl::unique_ptr<AbstractFileIteratorBackend> begin() const override;
     virtual unsigned int size() const override;
     virtual unsigned int accessTime() const override;
     virtual unsigned int modificationTime() const override;
@@ -64,10 +66,10 @@ public:
     virtual bool move(AbstractFileHandleBackend & dest) override;
     virtual bool createLink(AbstractFileHandleBackend & dest) override;
     virtual bool createSymbolicLink(AbstractFileHandleBackend & dest) override;
-    virtual bool rename(const std::string & filename) override;
+    virtual bool rename(const eastl::string & filename) override;
     virtual bool remove() override;
-    virtual std::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode) const override;
-    virtual std::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode) override;
+    virtual eastl::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode) const override;
+    virtual eastl::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode) override;
 
 
 protected:
@@ -75,9 +77,9 @@ protected:
 
 
 protected:
-    std::shared_ptr<LocalFileSystem>   m_fs;       ///< File system that created this handle
-    std::string                        m_path;     ///< Path to file or directory
-    mutable void                     * m_fileInfo; ///< Information about the current file (created on demand)
+    eastl::shared_ptr<LocalFileSystem>   m_fs;       ///< File system that created this handle
+    eastl::string                        m_path;     ///< Path to file or directory
+    mutable void                        *m_fileInfo; ///< Information about the current file (created on demand)
 };
 
 

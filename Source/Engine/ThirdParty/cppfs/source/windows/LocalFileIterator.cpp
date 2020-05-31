@@ -11,7 +11,7 @@ namespace cppfs
 {
 
 
-LocalFileIterator::LocalFileIterator(std::shared_ptr<LocalFileSystem> fs, const std::string & path)
+LocalFileIterator::LocalFileIterator(eastl::shared_ptr<LocalFileSystem> fs, const eastl::string & path)
 : m_fs(fs)
 , m_path(path)
 , m_index(-1)
@@ -37,7 +37,7 @@ LocalFileIterator::~LocalFileIterator()
 	delete static_cast<WIN32_FIND_DATA *>(m_findData);
 }
 
-std::unique_ptr<AbstractFileIteratorBackend> LocalFileIterator::clone() const
+eastl::unique_ptr<AbstractFileIteratorBackend> LocalFileIterator::clone() const
 {
     auto * twin = new LocalFileIterator(m_fs, m_path);
 
@@ -46,7 +46,7 @@ std::unique_ptr<AbstractFileIteratorBackend> LocalFileIterator::clone() const
         twin->readNextEntry();
     }
 
-    return std::unique_ptr<AbstractFileIteratorBackend>(twin);
+    return eastl::unique_ptr<AbstractFileIteratorBackend>(twin);
 }
 
 AbstractFileSystem * LocalFileIterator::fs() const
@@ -59,7 +59,7 @@ bool LocalFileIterator::valid() const
     return (m_findHandle != nullptr);
 }
 
-std::string LocalFileIterator::path() const
+eastl::string LocalFileIterator::path() const
 {
     return m_path;
 }
@@ -69,7 +69,7 @@ int LocalFileIterator::index() const
     return m_index;
 }
 
-std::string LocalFileIterator::name() const
+eastl::string LocalFileIterator::name() const
 {
     // Check directory and entry handle
     if (!m_findHandle)
@@ -78,7 +78,7 @@ std::string LocalFileIterator::name() const
     }
 
     // Return filename of current item
-	return std::string(static_cast<WIN32_FIND_DATA *>(m_findData)->cFileName);
+	return eastl::string(static_cast<WIN32_FIND_DATA *>(m_findData)->cFileName);
 }
 
 void LocalFileIterator::next()
@@ -88,7 +88,7 @@ void LocalFileIterator::next()
 
 void LocalFileIterator::readNextEntry()
 {
-	std::string filename;
+	eastl::string filename;
 
 	do
 	{
@@ -96,7 +96,7 @@ void LocalFileIterator::readNextEntry()
 		if (!m_findHandle)
 		{
 			// Open directory
-			std::string query = FilePath(m_path).fullPath() + "/*";
+			eastl::string query = FilePath(m_path).fullPath() + "/*";
 			m_findHandle = FindFirstFileA(query.c_str(), static_cast<WIN32_FIND_DATA *>(m_findData));
 
 			// Abort if directory could not be opened
@@ -122,7 +122,7 @@ void LocalFileIterator::readNextEntry()
 		m_index++;
 
 		// Get filename
-		filename = std::string(static_cast<WIN32_FIND_DATA *>(m_findData)->cFileName);
+		filename = eastl::string(static_cast<WIN32_FIND_DATA *>(m_findData)->cFileName);
 	} while (filename == ".." || filename == ".");
 }
 

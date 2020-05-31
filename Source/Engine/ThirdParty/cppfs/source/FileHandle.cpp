@@ -4,7 +4,6 @@
 #include <iostream>
 #include <sstream>
 #include <iterator>
-#include <array>
 
 #if defined(__APPLE__)
     #define COMMON_DIGEST_FOR_OPENSSL
@@ -35,8 +34,8 @@ FileHandle::FileHandle()
 {
 }
 
-FileHandle::FileHandle(std::unique_ptr<AbstractFileHandleBackend> && backend)
-: m_backend(std::move(backend))
+FileHandle::FileHandle(eastl::unique_ptr<AbstractFileHandleBackend> && backend)
+: m_backend(eastl::move(backend))
 {
 }
 
@@ -46,7 +45,7 @@ FileHandle::FileHandle(const FileHandle & fileHandle)
 }
 
 FileHandle::FileHandle(FileHandle && fileHandle)
-: m_backend(std::move(fileHandle.m_backend))
+: m_backend(eastl::move(fileHandle.m_backend))
 {
 }
 
@@ -70,7 +69,7 @@ FileHandle & FileHandle::operator=(const FileHandle & fileHandle)
 
 FileHandle & FileHandle::operator=(FileHandle && fileHandle)
 {
-    m_backend = std::move(fileHandle.m_backend);
+    m_backend = eastl::move(fileHandle.m_backend);
 
     return *this;
 }
@@ -80,12 +79,12 @@ AbstractFileSystem * FileHandle::fs() const
     return m_backend ? m_backend->fs() : nullptr;
 }
 
-std::string FileHandle::path() const
+eastl::string FileHandle::path() const
 {
     return m_backend ? m_backend->path() : "";
 }
 
-std::string FileHandle::fileName() const
+eastl::string FileHandle::fileName() const
 {
     return m_backend ? FilePath(m_backend->path()).fileName() : "";
 }
@@ -115,9 +114,9 @@ bool FileHandle::isSymbolicLink() const
     return m_backend ? m_backend->isSymbolicLink() : false;
 }
 
-std::vector<std::string> FileHandle::listFiles() const
+eastl::vector<eastl::string> FileHandle::listFiles() const
 {
-    return m_backend ? m_backend->listFiles() : std::vector<std::string>();
+    return m_backend ? m_backend->listFiles() : eastl::vector<eastl::string>();
 }
 
 void FileHandle::traverse(VisitFunc funcFileEntry)
@@ -159,7 +158,7 @@ void FileHandle::traverse(FileVisitor & visitor)
     }
 }
 
-std::unique_ptr<Tree> FileHandle::readTree(const std::string & path) const
+eastl::unique_ptr<Tree> FileHandle::readTree(const eastl::string & path) const
 {
     // Check if file or directory exists
     if (!exists())
@@ -168,7 +167,7 @@ std::unique_ptr<Tree> FileHandle::readTree(const std::string & path) const
     }
 
     // Create tree
-    auto tree = std::unique_ptr<Tree>(new Tree);
+    auto tree = eastl::unique_ptr<Tree>(new Tree);
     tree->setPath(path);
     tree->setFileName(fileName());
     tree->setDirectory(isDirectory());
@@ -190,7 +189,7 @@ std::unique_ptr<Tree> FileHandle::readTree(const std::string & path) const
             if (!fh.exists()) continue;
 
             // Compose name
-            std::string subName = path;
+            eastl::string subName = path;
             if (!subName.empty()) subName += "/";
             subName += fh.fileName();
 
@@ -200,7 +199,7 @@ std::unique_ptr<Tree> FileHandle::readTree(const std::string & path) const
             // Add subtree to list
             if (subTree)
             {
-                tree->add(std::move(subTree));
+                tree->add(eastl::move(subTree));
             }
         }
     }
@@ -269,7 +268,7 @@ FileHandle FileHandle::parentDirectory() const
     return m_backend ? m_backend->fs()->open(FilePath(m_backend->path()).resolve("..").resolved()) : FileHandle();
 }
 
-FileHandle FileHandle::open(const std::string & path) const
+FileHandle FileHandle::open(const eastl::string & path) const
 {
     return m_backend ? m_backend->fs()->open(FilePath(m_backend->path()).resolve(path).fullPath()) : FileHandle();
 }
@@ -332,7 +331,7 @@ void FileHandle::copyDirectoryRec(FileHandle & dstDir)
     // Copy all entries
     for (auto it = begin(); it != end(); ++it)
     {
-        std::string filename = *it;
+        eastl::string filename = *it;
 
         FileHandle src = this->open(filename);
         FileHandle dst = dstDir.open(filename);
@@ -468,7 +467,7 @@ bool FileHandle::createSymbolicLink(FileHandle & dest)
     }
 }
 
-bool FileHandle::rename(const std::string & filename)
+bool FileHandle::rename(const eastl::string & filename)
 {
     // Check backend
     if (!m_backend)
@@ -514,7 +513,8 @@ FileWatcher FileHandle::watch(unsigned int events, RecursiveMode recursive)
     return std::move(watcher);
 }
 
-std::unique_ptr<std::istream> FileHandle::createInputStream(std::ios_base::openmode mode) const
+// @Improvement: Consider removing stream functions, as we're unlikely to use them
+eastl::unique_ptr<std::istream> FileHandle::createInputStream(std::ios_base::openmode mode) const
 {
     // Check backend
     if (!m_backend)
@@ -526,7 +526,7 @@ std::unique_ptr<std::istream> FileHandle::createInputStream(std::ios_base::openm
     return m_backend->createInputStream(mode);
 }
 
-std::unique_ptr<std::ostream> FileHandle::createOutputStream(std::ios_base::openmode mode)
+eastl::unique_ptr<std::ostream> FileHandle::createOutputStream(std::ios_base::openmode mode)
 {
     // Check backend
     if (!m_backend)
@@ -538,7 +538,7 @@ std::unique_ptr<std::ostream> FileHandle::createOutputStream(std::ios_base::open
     return m_backend->createOutputStream(mode);
 }
 
-std::string FileHandle::readFile() const
+eastl::string FileHandle::readFile() const
 {
     // Check if file exists
     if (isFile())
@@ -552,21 +552,21 @@ std::string FileHandle::readFile() const
         buffer << inputStream->rdbuf();
 
         // Return string
-        return buffer.str();
+        return eastl::string(buffer.str().c_str());
     }
 
     // Error, not a valid file
     return "";
 }
 
-bool FileHandle::writeFile(const std::string & content)
+bool FileHandle::writeFile(const eastl::string & content)
 {
     // Open output stream
     auto outputStream = createOutputStream();
     if (!outputStream) return false;
 
     // Write content to file
-    (*outputStream) << content;
+    (*outputStream) << content.c_str();
 
     // Done
     return true;

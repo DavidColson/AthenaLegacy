@@ -2,9 +2,10 @@
 #pragma once
 
 
-#include <memory>
-#include <vector>
-#include <string>
+#include <EASTL/memory.h>
+#include <EASTL/vector.h>
+#include <EASTL/string.h>
+#include <EASTL/unique_ptr.h>
 
 namespace cppfs
 {
@@ -51,7 +52,7 @@ public:
     *    empty (""), the path of the first-order child elements
     *    will equal their filenames, etc.
     */
-    const std::string & path() const;
+    const eastl::string & path() const;
 
     /**
     *  @brief
@@ -60,7 +61,7 @@ public:
     *  @param[in] path
     *    Path to file or directory
     */
-    void setPath(const std::string & path);
+    void setPath(const eastl::string & path);
 
     /**
     *  @brief
@@ -69,7 +70,7 @@ public:
     *  @param[in] path
     *    Path to file or directory
     */
-    void setPath(std::string && path);
+    void setPath(eastl::string && path);
 
     /**
     *  @brief
@@ -78,7 +79,7 @@ public:
     *  @return
     *    Filename
     */
-    const std::string & fileName() const;
+    const eastl::string & fileName() const;
 
     /**
     *  @brief
@@ -87,7 +88,7 @@ public:
     *  @param[in] filename
     *    Filename
     */
-    void setFileName(const std::string & filename);
+    void setFileName(const eastl::string & filename);
 
     /**
     *  @brief
@@ -96,7 +97,7 @@ public:
     *  @param[in] filename
     *    Filename
     */
-    void setFileName(std::string && filename);
+    void setFileName(eastl::string && filename);
 
     /**
     *  @brief
@@ -240,7 +241,7 @@ public:
     *  @return
     *    SHA1 hash
     */
-    const std::string & sha1() const;
+    const eastl::string & sha1() const;
 
     /**
     *  @brief
@@ -249,7 +250,7 @@ public:
     *  @param[in] hash
     *    SHA1 hash
     */
-    void setSha1(const std::string & hash);
+    void setSha1(const eastl::string & hash);
 
     /**
     *  @brief
@@ -258,7 +259,7 @@ public:
     *  @param[in] hash
     *    SHA1 hash
     */
-    void setSha1(std::string && hash);
+    void setSha1(eastl::string && hash);
 
     /**
     *  @brief
@@ -267,7 +268,7 @@ public:
     *  @return
     *    List of files, empty list if this is not a valid directory
     */
-    std::vector<std::string> listFiles() const;
+    eastl::vector<eastl::string> listFiles() const;
 
     /**
     *  @brief
@@ -276,7 +277,7 @@ public:
     *  @return
     *    List of children
     */
-    const std::vector< std::unique_ptr<Tree> > & children() const;
+    const eastl::vector< eastl::unique_ptr<Tree> > & children() const;
 
     /**
     *  @brief
@@ -285,7 +286,7 @@ public:
     *  @return
     *    List of children
     */
-    std::vector< std::unique_ptr<Tree> > & children();
+    eastl::vector< eastl::unique_ptr<Tree> > & children();
 
     /**
     *  @brief
@@ -297,7 +298,7 @@ public:
     *  @remarks
     *    The tree takes ownership over the child tree
     */
-    void add(std::unique_ptr<Tree> && tree);
+    void add(eastl::unique_ptr<Tree> && tree);
 
     /**
     *  @brief
@@ -306,7 +307,7 @@ public:
     *  @param[in] indent
     *    Indentation
     */
-    void print(const std::string & indent = "") const;
+    void print(const eastl::string & indent = "") const;
 
     /**
     *  @brief
@@ -323,7 +324,7 @@ public:
     *    that are needed to get from this state to the target state.
     *    The returned diff must be deleted by the caller.
     */
-    std::unique_ptr<Diff> createDiff(const Tree & target) const;
+    eastl::unique_ptr<Diff> createDiff(const Tree & target) const;
 
 
 protected:
@@ -336,8 +337,8 @@ protected:
 
 
 protected:
-    std::string   m_path;             ///< Path
-    std::string   m_filename;         ///< Filename
+    eastl::string   m_path;           ///< Path
+    eastl::string   m_filename;       ///< Filename
     bool          m_directory;        ///< 'true' if directory, 'false' if file
     unsigned int  m_size;             ///< File size
     unsigned int  m_accessTime;       ///< Time of last access
@@ -345,9 +346,9 @@ protected:
     unsigned int  m_userId;           ///< User ID
     unsigned int  m_groupId;          ///< Group ID
     unsigned long m_permissions;      ///< File permissions
-    std::string   m_sha1;             ///< SHA1 hash
+    eastl::string   m_sha1;           ///< SHA1 hash
 
-    std::vector< std::unique_ptr<Tree> > m_children; ///< List of children
+    eastl::vector< eastl::unique_ptr<Tree> > m_children; ///< List of children
 };
 
 

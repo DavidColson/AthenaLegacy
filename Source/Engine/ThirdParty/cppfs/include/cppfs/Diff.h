@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include <vector>
+#include <EASTL/vector.h>
 #include <iosfwd>
 
 #include <cppfs/Change.h>
@@ -44,7 +44,7 @@ public:
     *  @return
     *    List of changes
     */
-    const std::vector<Change> & changes() const;
+    const eastl::vector<Change> & changes() const;
 
     /**
     *  @brief
@@ -73,7 +73,7 @@ public:
     *  @param[in] path
     *    Path on which the operation takes place
     */
-    void add(Change::Operation operation, const std::string & path);
+    void add(Change::Operation operation, const eastl::string & path);
 
     /**
     *  @brief
@@ -84,7 +84,7 @@ public:
     *  @param[in] path
     *    Path on which the operation takes place
     */
-    void add(Change::Operation operation, std::string && path);
+    void add(Change::Operation operation, eastl::string && path);
 
     /**
     *  @brief
@@ -103,7 +103,7 @@ public:
 
 
 protected:
-    std::vector<Change> m_changes; ///< List of changes
+    eastl::vector<Change> m_changes; ///< List of changes
 };
 
 

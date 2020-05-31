@@ -2,9 +2,9 @@
 #include <cppfs/FilePath.h>
 
 #include <sstream>
-#include <algorithm>
-#include <vector>
-#include <string>
+#include <EASTL/algorithm.h>
+#include <EASTL/vector.h>
+#include <EASTL/string.h>
 
 
 namespace cppfs
@@ -33,27 +33,27 @@ FilePath::FilePath(const FilePath & filePath)
 }
 
 FilePath::FilePath(FilePath && filePath)
-: m_path(std::move(filePath.m_path))
-, m_pointsToContent(std::move(filePath.m_pointsToContent))
-, m_details(std::move(filePath.m_details))
-, m_fullPath(std::move(filePath.m_fullPath))
-, m_filename(std::move(filePath.m_filename))
-, m_basename(std::move(filePath.m_basename))
-, m_extension(std::move(filePath.m_extension))
-, m_directoryPath(std::move(filePath.m_directoryPath))
-, m_driveLetter(std::move(filePath.m_driveLetter))
-, m_absolute(std::move(filePath.m_absolute))
+: m_path(eastl::move(filePath.m_path))
+, m_pointsToContent(eastl::move(filePath.m_pointsToContent))
+, m_details(eastl::move(filePath.m_details))
+, m_fullPath(eastl::move(filePath.m_fullPath))
+, m_filename(eastl::move(filePath.m_filename))
+, m_basename(eastl::move(filePath.m_basename))
+, m_extension(eastl::move(filePath.m_extension))
+, m_directoryPath(eastl::move(filePath.m_directoryPath))
+, m_driveLetter(eastl::move(filePath.m_driveLetter))
+, m_absolute(eastl::move(filePath.m_absolute))
 {
 }
 
-FilePath::FilePath(const std::string & path)
+FilePath::FilePath(const eastl::string & path)
 : m_pointsToContent(false)
 , m_details(false)
 {
     setPath(path);
 }
 
-FilePath::FilePath(std::string && path)
+FilePath::FilePath(eastl::string && path)
 : m_pointsToContent(false)
 , m_details(false)
 {
@@ -89,26 +89,26 @@ FilePath & FilePath::operator=(const FilePath & filePath)
 
 FilePath & FilePath::operator=(FilePath && filePath)
 {
-    m_path            = std::move(filePath.m_path);
-    m_pointsToContent = std::move(filePath.m_pointsToContent);
-    m_details         = std::move(filePath.m_details);
-    m_fullPath        = std::move(filePath.m_fullPath);
-    m_filename        = std::move(filePath.m_filename);
-    m_basename        = std::move(filePath.m_basename);
-    m_extension       = std::move(filePath.m_extension);
-    m_directoryPath   = std::move(filePath.m_directoryPath);
-    m_driveLetter     = std::move(filePath.m_driveLetter);
-    m_absolute        = std::move(filePath.m_absolute);
+    m_path            = eastl::move(filePath.m_path);
+    m_pointsToContent = eastl::move(filePath.m_pointsToContent);
+    m_details         = eastl::move(filePath.m_details);
+    m_fullPath        = eastl::move(filePath.m_fullPath);
+    m_filename        = eastl::move(filePath.m_filename);
+    m_basename        = eastl::move(filePath.m_basename);
+    m_extension       = eastl::move(filePath.m_extension);
+    m_directoryPath   = eastl::move(filePath.m_directoryPath);
+    m_driveLetter     = eastl::move(filePath.m_driveLetter);
+    m_absolute        = eastl::move(filePath.m_absolute);
 
     return *this;
 }
 
-const std::string & FilePath::path() const
+const eastl::string & FilePath::path() const
 {
     return m_path;
 }
 
-void FilePath::setPath(const std::string & path)
+void FilePath::setPath(const eastl::string & path)
 {
     // Set new path
     m_path = path;
@@ -125,7 +125,7 @@ void FilePath::setPath(const std::string & path)
     m_absolute        = false;
 
     // Convert path into unified form
-    std::replace(m_path.begin(), m_path.end(), '\\', '/');
+    eastl::replace(m_path.begin(), m_path.end(), '\\', '/');
 
     // Check if path ends with a delimiter
     auto pos = m_path.find_last_of('/');
@@ -135,10 +135,10 @@ void FilePath::setPath(const std::string & path)
     }
 }
 
-void FilePath::setPath(std::string && path)
+void FilePath::setPath(eastl::string && path)
 {
     // Set new path
-    m_path = std::move(path);
+    m_path = eastl::move(path);
 
     // Reset state
     m_pointsToContent = false;
@@ -152,7 +152,7 @@ void FilePath::setPath(std::string && path)
     m_absolute        = false;
 
     // Convert path into unified form
-    std::replace(m_path.begin(), m_path.end(), '\\', '/');
+    eastl::replace(m_path.begin(), m_path.end(), '\\', '/');
 
     // Check if path ends with a delimiter
     auto pos = m_path.find_last_of('/');
@@ -162,12 +162,12 @@ void FilePath::setPath(std::string && path)
     }
 }
 
-std::string FilePath::toNative() const
+eastl::string FilePath::toNative() const
 {
     auto path = m_path;
 
 #if defined(SYSTEM_WINDOWS)
-    std::replace(path.begin(), path.end(), '/', '\\');
+    eastl::replace(path.begin(), path.end(), '/', '\\');
 #endif
 
     return path;
@@ -183,42 +183,42 @@ bool FilePath::pointsToContent() const
     return m_pointsToContent;
 }
 
-const std::string & FilePath::fullPath() const
+const eastl::string & FilePath::fullPath() const
 {
     analyze();
 
     return m_fullPath;
 }
 
-const std::string & FilePath::fileName() const
+const eastl::string & FilePath::fileName() const
 {
     analyze();
 
     return m_filename;
 }
 
-const std::string & FilePath::baseName() const
+const eastl::string & FilePath::baseName() const
 {
     analyze();
 
     return m_basename;
 }
 
-const std::string & FilePath::extension() const
+const eastl::string & FilePath::extension() const
 {
     analyze();
 
     return m_extension;
 }
 
-const std::string & FilePath::directoryPath() const
+const eastl::string & FilePath::directoryPath() const
 {
     analyze();
 
     return m_directoryPath;
 }
 
-const std::string & FilePath::driveLetter() const
+const eastl::string & FilePath::driveLetter() const
 {
     analyze();
 
@@ -263,20 +263,20 @@ FilePath FilePath::resolve(const FilePath & path) const
     return FilePath(fullPath() + "/" + path.path());
 }
 
-std::string FilePath::resolved() const
+eastl::string FilePath::resolved() const
 {
     // Split path into parts
-    std::vector<std::string> parts;
-    std::stringstream ss(m_path);
+    eastl::vector<eastl::string> parts;
+    std::stringstream ss(m_path.c_str());
 
     std::string name;
-    while (std::getline(ss, name, '/'))
+    while (std::getline(ss, name.c_str(), '/'))
     {
-        parts.push_back(name);
+        parts.push_back(name.c_str());
     }
 
     // Process sub-paths, handling '.' and '..'
-    std::vector<std::string> stack;
+    eastl::vector<eastl::string> stack;
     size_t removableItems = 0;
     bool absolute = false;
 
@@ -284,7 +284,7 @@ std::string FilePath::resolved() const
     for (size_t i = 0; i < numParts; i++)
     {
         // Get sub-path
-        const std::string & path = parts[i];
+        const eastl::string & path = parts[i];
 
         // Check if it is the beginning of an absolute path
         if (i == 0 && (path.empty() || (path.length() == 2 && path[1] == ':'))) {
@@ -318,7 +318,7 @@ std::string FilePath::resolved() const
     }
 
     // Compose resolved string
-    std::string resolved = "";
+    eastl::string resolved = "";
 
     for (size_t i = 0; i < stack.size(); i++)
     {
@@ -353,13 +353,14 @@ void FilePath::analyze() const
     m_absolute      = false;
 
     // Split path into parts
-    std::vector<std::string> parts;
-    std::stringstream ss(m_path);
+    // @Improvement: Rid yourself of the dependency on string stream since all this does is split the path into lines. We can do that ourselves.
+    eastl::vector<eastl::string> parts;
+    std::stringstream ss(m_path.c_str());
 
     std::string name;
     while (std::getline(ss, name, '/'))
     {
-        parts.push_back(name);
+        parts.push_back(name.c_str());
     }
 
     // Fix sub-paths
@@ -368,7 +369,7 @@ void FilePath::analyze() const
     for (size_t i = 0; i < numParts; i++)
     {
         // Get sub-path
-        const std::string & path = parts[i];
+        const eastl::string & path = parts[i];
 
         // If this is the first path and it is absolute, ensure '/' at the end
         if (i == 0 && (path.empty() || (path.length() == 2 && path[1] == ':')))
@@ -417,7 +418,7 @@ void FilePath::analyze() const
     // Determine basename and extension
     size_t pos = m_filename.find_first_of('.', 1);
 
-    if (m_filename == "." || m_filename == ".." || pos == std::string::npos)
+    if (m_filename == "." || m_filename == ".." || pos == eastl::string::npos)
     {
         m_basename  = m_filename;
         m_extension = "";

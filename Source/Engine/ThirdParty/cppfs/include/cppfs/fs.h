@@ -2,8 +2,9 @@
 #pragma once
 
 
-#include <memory>
-#include <string>
+#include <EASTL/memory.h>
+#include <EASTL/string.h>
+#include <EASTL/shared_ptr.h>
 
 #include <cppfs/AbstractFileSystem.h>
 
@@ -31,7 +32,7 @@ namespace fs
 *  @return
 *    Pointer to local file system (never null)
 */
-std::shared_ptr<AbstractFileSystem> localFS();
+eastl::shared_ptr<AbstractFileSystem> localFS();
 
 /**
 *  @brief
@@ -45,7 +46,7 @@ std::shared_ptr<AbstractFileSystem> localFS();
 *  @return
 *    File handle
 */
-FileHandle open(const std::string & path);
+FileHandle open(const eastl::string & path);
 
 /**
 *  @brief
@@ -57,7 +58,7 @@ FileHandle open(const std::string & path);
 *  @return
 *    Hash string
 */
-std::string hashToString(const unsigned char * hash);
+eastl::string hashToString(const unsigned char * hash);
 
 
 } // namespace fs

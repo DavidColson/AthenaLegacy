@@ -3,7 +3,7 @@
 
 #include <sstream>
 #include <iomanip>
-#include <iterator>
+#include <EASTL/iterator.h>
 
 #if defined(__APPLE__)
     #define COMMON_DIGEST_FOR_OPENSSL
@@ -16,7 +16,6 @@
 #endif
 
 #include <cppfs/system.h>
-#include <cppfs/LoginCredentials.h>
 #include <cppfs/Url.h>
 #include <cppfs/FileHandle.h>
 #include <cppfs/AbstractFileSystem.h>
@@ -35,20 +34,20 @@ namespace fs
 {
 
 
-std::shared_ptr<AbstractFileSystem> localFS()
+eastl::shared_ptr<AbstractFileSystem> localFS()
 {
-    static std::shared_ptr<LocalFileSystem> fs(new LocalFileSystem);
+    static eastl::shared_ptr<LocalFileSystem> fs(new LocalFileSystem);
 
     return fs;
 }
 
-FileHandle open(const std::string & path)
+FileHandle open(const eastl::string & path)
 {
     // Parse url
     Url url(path);
 
     // Get local path
-    std::string localPath = url.path();
+    eastl::string localPath = url.path();
 
     // Open local file system
     auto fs = localFS();
@@ -57,7 +56,7 @@ FileHandle open(const std::string & path)
     return fs->open(localPath);
 }
 
-std::string hashToString(const unsigned char * hash)
+eastl::string hashToString(const unsigned char * hash)
 {
     std::stringstream stream;
     stream << std::hex << std::setfill('0') << std::setw(2);
@@ -67,7 +66,7 @@ std::string hashToString(const unsigned char * hash)
         stream << static_cast<unsigned int>(hash[i]);
     }
 
-    return stream.str();
+    return stream.str().c_str();
 }
 
 

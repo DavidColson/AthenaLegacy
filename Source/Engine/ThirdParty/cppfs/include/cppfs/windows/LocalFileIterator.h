@@ -2,7 +2,9 @@
 #pragma once
 
 
-#include <memory>
+#include <EASTL/memory.h>
+#include <EASTL/shared_ptr.h>
+#include <EASTL/unique_ptr.h>
 
 #include <cppfs/AbstractFileIteratorBackend.h>
 
@@ -30,7 +32,7 @@ public:
     *  @param[in] path
     *    Path to file or directory
     */
-    LocalFileIterator(std::shared_ptr<LocalFileSystem> fs, const std::string & path);
+    LocalFileIterator(eastl::shared_ptr<LocalFileSystem> fs, const eastl::string & path);
 
     /**
     *  @brief
@@ -39,12 +41,12 @@ public:
     virtual ~LocalFileIterator();
 
     // Virtual AbstractFileIteratorBackend functions
-    virtual std::unique_ptr<AbstractFileIteratorBackend> clone() const override;
+    virtual eastl::unique_ptr<AbstractFileIteratorBackend> clone() const override;
     virtual AbstractFileSystem * fs() const override;
     virtual bool valid() const override;
-    virtual std::string path() const override;
+    virtual eastl::string path() const override;
     virtual int index() const override;
-    virtual std::string name() const override;
+    virtual eastl::string name() const override;
     virtual void next() override;
 
 
@@ -53,8 +55,8 @@ protected:
 
 
 protected:
-    std::shared_ptr<LocalFileSystem>   m_fs;         ///< File system that created this iterator
-    std::string                        m_path;       ///< Path to file or directory
+    eastl::shared_ptr<LocalFileSystem>   m_fs;         ///< File system that created this iterator
+    eastl::string                        m_path;       ///< Path to file or directory
     int                                m_index;      ///< Index of the current entry
 	void                             * m_findHandle; ///< Search handle
 	void                             * m_findData;   ///< Information about the current file

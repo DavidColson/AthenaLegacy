@@ -2,9 +2,9 @@
 #pragma once
 
 
-#include <memory>
-#include <string>
-
+#include <EASTL/memory.h>
+#include <EASTL/string.h>
+#include <EASTL/unique_ptr.h>
 
 namespace cppfs
 {
@@ -41,7 +41,7 @@ public:
     *  @param[in] path
     *    Path to file or directory
     */
-    virtual FileHandle open(const std::string & path) = 0;
+    virtual FileHandle open(const eastl::string & path) = 0;
 
     /**
     *  @brief
@@ -50,7 +50,7 @@ public:
     *  @param[in] path
     *    Path to file or directory
     */
-    virtual FileHandle open(std::string && path) = 0;
+    virtual FileHandle open(eastl::string && path) = 0;
 
     /**
     *  @brief
@@ -62,7 +62,7 @@ public:
     *  @return
     *    Watcher backend (must NOT be null!)
     */
-    virtual std::unique_ptr<AbstractFileWatcherBackend> createFileWatcher(FileWatcher & fileWatcher) = 0;
+    virtual eastl::unique_ptr<AbstractFileWatcherBackend> createFileWatcher(FileWatcher & fileWatcher) = 0;
 };
 
 

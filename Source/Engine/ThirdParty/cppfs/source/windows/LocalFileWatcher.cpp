@@ -1,7 +1,7 @@
 
 #include <cppfs/windows/LocalFileWatcher.h>
 
-#include <algorithm>
+#include <EASTL/algorithm.h>
 
 #include <cppfs/FilePath.h>
 #include <cppfs/windows/LocalFileSystem.h>
@@ -37,7 +37,7 @@ namespace cppfs
 {
 
 
-LocalFileWatcher::LocalFileWatcher(FileWatcher * fileWatcher, std::shared_ptr<LocalFileSystem> fs)
+LocalFileWatcher::LocalFileWatcher(FileWatcher * fileWatcher, eastl::shared_ptr<LocalFileSystem> fs)
 : AbstractFileWatcherBackend(fileWatcher)
 , m_fs(fs)
 , m_waitStopEvent(::CreateEvent(NULL, TRUE, FALSE, NULL))
@@ -74,18 +74,19 @@ void LocalFileWatcher::add(FileHandle & dir, unsigned int events, RecursiveMode 
         NULL                                                    // File with attributes to copy
     );
 
+    // @TODO: No exceptions! Remove this somehow
     // Check if directory could be opened
     if (dirHandle == INVALID_HANDLE_VALUE) {
         throw std::runtime_error("failed to create directory listener");
     }
 
     // Create new watcher
-    std::unique_ptr<Watcher> watcher(new Watcher);
+    eastl::unique_ptr<Watcher> watcher(new Watcher);
     watcher->dir        = dir;
     watcher->events     = events;
     watcher->recursive  = recursive;
-    watcher->dirHandle  = std::shared_ptr<void>(dirHandle, ::CloseHandle);
-    watcher->event      = std::shared_ptr<void>(::CreateEvent(NULL, TRUE, FALSE, NULL), ::CloseHandle);
+    watcher->dirHandle  = eastl::shared_ptr<void>(dirHandle, ::CloseHandle);
+    watcher->event      = eastl::shared_ptr<void>(::CreateEvent(NULL, TRUE, FALSE, NULL), ::CloseHandle);
     watcher->overlapped.hEvent = watcher->event.get();
 
     // Check if event could be created
@@ -98,7 +99,7 @@ void LocalFileWatcher::add(FileHandle & dir, unsigned int events, RecursiveMode 
 
     // Add watcher to list
     ScopedCriticalSection lock(&m_mutexWatchers);
-    m_watchers.push_back(std::move(*watcher.release()));
+    m_watchers.push_back(eastl::move(*watcher.release()));
 }
 
 void LocalFileWatcher::watch(int timeout)
@@ -106,7 +107,7 @@ void LocalFileWatcher::watch(int timeout)
     ScopedCriticalSection lock(&m_mutexWatchers);
 
     // Initialize list of handles to wait for
-    std::vector<::HANDLE> waitHandles;
+    eastl::vector<::HANDLE> waitHandles;
     waitHandles.push_back(m_waitStopEvent); // This is now WAIT_OBJECT_0
 
     // Process all watcher
@@ -144,7 +145,8 @@ void LocalFileWatcher::watch(int timeout)
             // Error creating the watcher
             auto error = GetLastError();
             if (error != ERROR_IO_PENDING) {
-                throw std::runtime_error("Error calling ReadDirectoryChangesW: " + std::to_string(error));
+                eastl::string errString = "Error calling ReadDirectoryChangesW: " + eastl::to_string(error);
+                throw std::runtime_error(errString.c_str());
             }
         }
     }
@@ -173,7 +175,8 @@ void LocalFileWatcher::watch(int timeout)
     auto index = waitResult - (WAIT_OBJECT_0 + 1);
     if (index < 0 || index >= (int)m_watchers.size()) {
         // Invalid watcher index
-        throw std::runtime_error("Wait returned result: " + std::to_string(waitResult));
+        eastl::string errString = "Wait returned result: " + eastl::to_string(waitResult);
+        throw std::runtime_error(errString.c_str());
     }
 
     // Get watcher
@@ -203,7 +206,7 @@ void LocalFileWatcher::watch(int timeout)
             // Check if conversion was successful
             if (numBytes != 0) {
                 // Get filename in unified format
-                std::string fname = FilePath(std::string(fileName, fileName + numBytes)).path();
+                eastl::string fname = FilePath(eastl::string(fileName, fileName + numBytes)).path();
 
                 // Determine event type
                 FileEvent eventType = (FileEvent)0;

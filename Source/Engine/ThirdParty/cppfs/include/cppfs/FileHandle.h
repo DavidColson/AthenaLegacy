@@ -2,11 +2,12 @@
 #pragma once
 
 
-#include <memory>
 #include <ios>
-#include <functional>
-#include <vector>
-#include <string>
+#include <EASTL/memory.h>
+#include <EASTL/functional.h>
+#include <EASTL/vector.h>
+#include <EASTL/string.h>
+#include <EASTL/unique_ptr.h>
 
 #include <cppfs/cppfs.h>
 #include <cppfs/AbstractFileHandleBackend.h>
@@ -45,7 +46,7 @@ class FileWatcher;
 class FileHandle
 {
 public:
-    using VisitFunc = std::function<bool(FileHandle &)>;
+    using VisitFunc = eastl::function<bool(FileHandle &)>;
 
 
 public:
@@ -62,7 +63,7 @@ public:
     *  @param[in] backend
     *    Concrete file handle backend
     */
-    FileHandle(std::unique_ptr<AbstractFileHandleBackend> && backend);
+    FileHandle(eastl::unique_ptr<AbstractFileHandleBackend> && backend);
 
     /**
     *  @brief
@@ -122,7 +123,7 @@ public:
     *  @return
     *    Path to file or directory
     */
-    std::string path() const;
+    eastl::string path() const;
 
     /**
     *  @brief
@@ -131,7 +132,7 @@ public:
     *  @return
     *    Filename
     */
-    std::string fileName() const;
+    eastl::string fileName() const;
 
     /**
     *  @brief
@@ -188,7 +189,7 @@ public:
     *  @return
     *    List of files, empty list if this is not a valid directory
     */
-    std::vector<std::string> listFiles() const;
+    eastl::vector<eastl::string> listFiles() const;
 
     /**
     *  @brief
@@ -231,7 +232,7 @@ public:
     *  @return
     *    File tree, nullptr if this file does not exist
     */
-    std::unique_ptr<Tree> readTree(const std::string & path = "") const;
+    eastl::unique_ptr<Tree> readTree(const eastl::string & path = "") const;
 
     /**
     *  @brief
@@ -352,7 +353,7 @@ public:
     *  @return
     *    File handle
     */
-    FileHandle open(const std::string & path) const;
+    FileHandle open(const eastl::string & path) const;
 
     /**
     *  @brief
@@ -457,7 +458,7 @@ public:
     *  @return
     *    'true' if successful, else 'false'
     */
-    bool rename(const std::string & filename);
+    bool rename(const eastl::string & filename);
 
     /**
     *  @brief
@@ -505,7 +506,7 @@ public:
     *  @remarks
     *    The created stream object has to be destroyed be the caller.
     */
-    std::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode = std::ios_base::in) const;
+    eastl::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode = std::ios_base::in) const;
 
     /**
     *  @brief
@@ -520,7 +521,7 @@ public:
     *  @remarks
     *    The created stream object has to be destroyed be the caller.
     */
-    std::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode = std::ios_base::out);
+    eastl::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode = std::ios_base::out);
 
     /**
     *  @brief
@@ -529,7 +530,7 @@ public:
     *  @return
     *    File content, "" on error
     */
-    std::string readFile() const;
+    eastl::string readFile() const;
 
     /**
     *  @brief
@@ -541,7 +542,7 @@ public:
     *  @return
     *    'true' on success, else 'false'
     */
-    bool writeFile(const std::string & content);
+    bool writeFile(const eastl::string & content);
 
 
 protected:
@@ -571,7 +572,7 @@ protected:
 
 
 protected:
-    std::unique_ptr<AbstractFileHandleBackend> m_backend; ///< Backend implementation (can be null)
+    eastl::unique_ptr<AbstractFileHandleBackend> m_backend; ///< Backend implementation (can be null)
 };
 
 

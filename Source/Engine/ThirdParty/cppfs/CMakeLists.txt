@@ -34,7 +34,6 @@ set(headers
     ${include_path}/AbstractFileWatcherBackend.h
     ${include_path}/InputStream.h
     ${include_path}/OutputStream.h
-    ${include_path}/LoginCredentials.h
     ${include_path}/FilePath.h
     ${include_path}/Url.h
     ${include_path}/Tree.h
@@ -63,7 +62,6 @@ set(sources
     ${source_path}/AbstractFileWatcherBackend.cpp
     ${source_path}/InputStream.cpp
     ${source_path}/OutputStream.cpp
-    ${source_path}/LoginCredentials.cpp
     ${source_path}/FilePath.cpp
     ${source_path}/Url.cpp
     ${source_path}/Tree.cpp

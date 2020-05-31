@@ -2,9 +2,10 @@
 #pragma once
 
 
-#include <memory>
-#include <vector>
-#include <string>
+#include <EASTL/memory.h>
+#include <EASTL/vector.h>
+#include <EASTL/string.h>
+#include <EASTL/unique_ptr.h>
 #include <ios>
 #include <iosfwd>
 
@@ -43,7 +44,7 @@ public:
     *  @return
     *    File handle
     */
-    virtual std::unique_ptr<AbstractFileHandleBackend> clone() const = 0;
+    virtual eastl::unique_ptr<AbstractFileHandleBackend> clone() const = 0;
 
     /**
     *  @brief
@@ -67,7 +68,7 @@ public:
     *  @return
     *    Path to file or directory
     */
-    virtual std::string path() const = 0;
+    virtual eastl::string path() const = 0;
 
     /**
     *  @brief
@@ -112,7 +113,7 @@ public:
     *  @return
     *    List of files, empty list if this is not a valid directory
     */
-    virtual std::vector<std::string> listFiles() const = 0;
+    virtual eastl::vector<eastl::string> listFiles() const = 0;
 
     /**
     *  @brief
@@ -121,7 +122,7 @@ public:
     *  @return
     *    Iterator backend, must NOT be null
     */
-    virtual std::unique_ptr<AbstractFileIteratorBackend> begin() const = 0;
+    virtual eastl::unique_ptr<AbstractFileIteratorBackend> begin() const = 0;
 
     /**
     *  @brief
@@ -280,7 +281,7 @@ public:
     *  @return
     *    'true' if successful, else 'false'
     */
-    virtual bool rename(const std::string & filename) = 0;
+    virtual bool rename(const eastl::string & filename) = 0;
 
     /**
     *  @brief
@@ -308,7 +309,7 @@ public:
     *  @remarks
     *    The created stream object has to be destroyed be the caller.
     */
-    virtual std::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode) const = 0;
+    virtual eastl::unique_ptr<std::istream> createInputStream(std::ios_base::openmode mode) const = 0;
 
     /**
     *  @brief
@@ -323,7 +324,7 @@ public:
     *  @remarks
     *    The created stream object has to be destroyed be the caller.
     */
-    virtual std::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode) = 0;
+    virtual eastl::unique_ptr<std::ostream> createOutputStream(std::ios_base::openmode mode) = 0;
 };
 
 

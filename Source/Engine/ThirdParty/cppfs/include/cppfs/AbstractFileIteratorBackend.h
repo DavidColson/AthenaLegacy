@@ -2,8 +2,9 @@
 #pragma once
 
 
-#include <memory>
-#include <string>
+#include <EASTL/memory.h>
+#include <EASTL/unique_ptr.h>
+#include <EASTL/string.h>
 
 namespace cppfs
 {
@@ -38,7 +39,7 @@ public:
     *  @return
     *    File iterator
     */
-    virtual std::unique_ptr<AbstractFileIteratorBackend> clone() const = 0;
+    virtual eastl::unique_ptr<AbstractFileIteratorBackend> clone() const = 0;
 
     /**
     *  @brief
@@ -65,7 +66,7 @@ public:
     *  @return
     *    Path
     */
-    virtual std::string path() const = 0;
+    virtual eastl::string path() const = 0;
 
     /**
     *  @brief
@@ -83,7 +84,7 @@ public:
     *  @return
     *    File name
     */
-    virtual std::string name() const = 0;
+    virtual eastl::string name() const = 0;
 
     /**
     *  @brief

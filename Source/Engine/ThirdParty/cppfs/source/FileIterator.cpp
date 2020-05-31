@@ -12,8 +12,8 @@ FileIterator::FileIterator()
 {
 }
 
-FileIterator::FileIterator(std::unique_ptr<AbstractFileIteratorBackend> && backend)
-: m_backend(std::move(backend))
+FileIterator::FileIterator(eastl::unique_ptr<AbstractFileIteratorBackend> && backend)
+: m_backend(eastl::move(backend))
 {
 }
 
@@ -23,7 +23,7 @@ FileIterator::FileIterator(const FileIterator & fileIterator)
 }
 
 FileIterator::FileIterator(FileIterator && fileIterator)
-: m_backend(std::move(fileIterator.m_backend))
+: m_backend(eastl::move(fileIterator.m_backend))
 {
 }
 
@@ -45,7 +45,7 @@ FileIterator & FileIterator::operator=(const FileIterator & fileIterator)
     return *this;
 }
 
-std::string FileIterator::operator*() const
+eastl::string FileIterator::operator*() const
 {
     return m_backend ? m_backend->name() : "";
 }
@@ -64,8 +64,8 @@ bool FileIterator::operator==(const FileIterator & it) const
     bool valid2 = false;
     AbstractFileSystem * fs1 = nullptr;
     AbstractFileSystem * fs2 = nullptr;
-    std::string path1;
-    std::string path2;
+    eastl::string path1;
+    eastl::string path2;
     int  index1 = -1;
     int  index2 = -1;
 

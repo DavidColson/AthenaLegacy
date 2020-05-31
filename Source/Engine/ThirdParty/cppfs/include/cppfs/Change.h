@@ -2,7 +2,7 @@
 #pragma once
 
 
-#include <string>
+#include <EASTL/string.h>
 
 namespace cppfs
 {
@@ -45,7 +45,7 @@ public:
     *  @param[in] path
     *    Path on which the operation takes place
     */
-    Change(Operation operation, const std::string & path);
+    Change(Operation operation, const eastl::string & path);
 
     /**
     *  @brief
@@ -56,7 +56,7 @@ public:
     *  @param[in] path
     *    Path on which the operation takes place
     */
-    Change(Operation operation, std::string && path);
+    Change(Operation operation, eastl::string && path);
 
     /**
     *  @brief
@@ -107,7 +107,7 @@ public:
     *  @return
     *    String representation of the change
     */
-    std::string toString() const;
+    eastl::string toString() const;
 
     /**
     *  @brief
@@ -125,12 +125,12 @@ public:
     *  @return
     *    Path on which the operation takes place
     */
-    const std::string & path() const;
+    const eastl::string & path() const;
 
 
 protected:
     Operation   m_operation; ///< Operation type
-    std::string m_path;      ///< Path on which the operation takes place
+    eastl::string m_path;      ///< Path on which the operation takes place
 };
 
 

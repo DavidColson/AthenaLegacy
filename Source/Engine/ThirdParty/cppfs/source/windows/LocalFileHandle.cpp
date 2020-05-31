@@ -15,7 +15,7 @@ namespace cppfs
 {
 
 
-LocalFileHandle::LocalFileHandle(std::shared_ptr<LocalFileSystem> fs, const std::string & path)
+LocalFileHandle::LocalFileHandle(eastl::shared_ptr<LocalFileSystem> fs, const eastl::string & path)
 : m_fs(fs)
 , m_path(path)
 , m_fileInfo(nullptr)
@@ -30,9 +30,9 @@ LocalFileHandle::~LocalFileHandle()
     }
 }
 
-std::unique_ptr<AbstractFileHandleBackend> LocalFileHandle::clone() const
+eastl::unique_ptr<AbstractFileHandleBackend> LocalFileHandle::clone() const
 {
-    return std::unique_ptr<AbstractFileHandleBackend>(new LocalFileHandle(m_fs, m_path));
+    return eastl::unique_ptr<AbstractFileHandleBackend>(new LocalFileHandle(m_fs, m_path));
 }
 
 AbstractFileSystem * LocalFileHandle::fs() const
@@ -50,7 +50,7 @@ void LocalFileHandle::updateFileInfo()
     }
 }
 
-std::string LocalFileHandle::path() const
+eastl::string LocalFileHandle::path() const
 {
     return m_path;
 }
@@ -98,13 +98,13 @@ bool LocalFileHandle::isSymbolicLink() const
     return false;
 }
 
-std::vector<std::string> LocalFileHandle::listFiles() const
+eastl::vector<eastl::string> LocalFileHandle::listFiles() const
 {
-    std::vector<std::string> entries;
+    eastl::vector<eastl::string> entries;
 
     // Open directory
     WIN32_FIND_DATA findData;
-    std::string query = FilePath(m_path).fullPath() + "/*";
+    eastl::string query = FilePath(m_path).fullPath() + "/*";
     HANDLE findHandle = FindFirstFileA(query.c_str(), &findData);
 
     if (findHandle == INVALID_HANDLE_VALUE)
@@ -116,7 +116,7 @@ std::vector<std::string> LocalFileHandle::listFiles() const
     do
     {
         // Get name
-        std::string name = findData.cFileName;
+        eastl::string name = findData.cFileName;
 
         // Ignore . and ..
         if (name != ".." && name != ".")
@@ -132,9 +132,9 @@ std::vector<std::string> LocalFileHandle::listFiles() const
     return entries;
 }
 
-std::unique_ptr<AbstractFileIteratorBackend> LocalFileHandle::begin() const
+eastl::unique_ptr<AbstractFileIteratorBackend> LocalFileHandle::begin() const
 {
-    return std::unique_ptr<AbstractFileIteratorBackend>(new LocalFileIterator(m_fs, m_path));
+    return eastl::unique_ptr<AbstractFileIteratorBackend>(new LocalFileIterator(m_fs, m_path));
 }
 
 unsigned int LocalFileHandle::size() const
@@ -245,12 +245,12 @@ bool LocalFileHandle::copy(AbstractFileHandleBackend & dest)
     if (!isFile()) return false;
 
     // Get source and target filenames
-    std::string src = m_path;
-    std::string dst = dest.path();
+    eastl::string src = m_path;
+    eastl::string dst = dest.path();
 
     if (dest.isDirectory())
     {
-        std::string filename = FilePath(m_path).fileName();
+        eastl::string filename = FilePath(m_path).fileName();
         dst = FilePath(dest.path()).resolve(filename).fullPath();
     }
 
@@ -272,12 +272,12 @@ bool LocalFileHandle::move(AbstractFileHandleBackend & dest)
     if (!exists()) return false;
 
     // Get source and target filenames
-    std::string src = m_path;
-    std::string dst = dest.path();
+    eastl::string src = m_path;
+    eastl::string dst = dest.path();
 
     if (dest.isDirectory())
     {
-        std::string filename = FilePath(m_path).fileName();
+        eastl::string filename = FilePath(m_path).fileName();
         dst = FilePath(dest.path()).resolve(filename).fullPath();
     }
 
@@ -302,12 +302,12 @@ bool LocalFileHandle::createLink(AbstractFileHandleBackend & dest)
     if (!isFile()) return false;
 
     // Get source and target filenames
-    std::string src = m_path;
-    std::string dst = dest.path();
+    eastl::string src = m_path;
+    eastl::string dst = dest.path();
 
     if (dest.isDirectory())
     {
-        std::string filename = FilePath(m_path).fileName();
+        eastl::string filename = FilePath(m_path).fileName();
         dst = FilePath(dest.path()).resolve(filename).fullPath();
     }
 
@@ -328,12 +328,12 @@ bool LocalFileHandle::createSymbolicLink(AbstractFileHandleBackend & dest)
     if (!isFile()) return false;
 
     // Get source and target filenames
-    std::string src = m_path;
-    std::string dst = dest.path();
+    eastl::string src = m_path;
+    eastl::string dst = dest.path();
 
     if (dest.isDirectory())
     {
-        std::string filename = FilePath(m_path).fileName();
+        eastl::string filename = FilePath(m_path).fileName();
         dst = FilePath(dest.path()).resolve(filename).fullPath();
     }
 
@@ -348,13 +348,13 @@ bool LocalFileHandle::createSymbolicLink(AbstractFileHandleBackend & dest)
     return true;
 }
 
-bool LocalFileHandle::rename(const std::string & filename)
+bool LocalFileHandle::rename(const eastl::string & filename)
 {
     // Check file
     if (!exists()) return false;
 
     // Compose new file path
-    std::string path = FilePath(FilePath(m_path).directoryPath()).resolve(filename).fullPath();
+    eastl::string path = FilePath(FilePath(m_path).directoryPath()).resolve(filename).fullPath();
 
     // Rename
     if (!MoveFileA(m_path.c_str(), path.c_str()))
@@ -387,14 +387,14 @@ bool LocalFileHandle::remove()
     return true;
 }
 
-std::unique_ptr<std::istream> LocalFileHandle::createInputStream(std::ios_base::openmode mode) const
+eastl::unique_ptr<std::istream> LocalFileHandle::createInputStream(std::ios_base::openmode mode) const
 {
-    return std::unique_ptr<std::istream>(new std::ifstream(m_path, mode));
+    return eastl::unique_ptr<std::istream>(new std::ifstream(m_path.c_str(), mode));
 }
 
-std::unique_ptr<std::ostream> LocalFileHandle::createOutputStream(std::ios_base::openmode mode)
+eastl::unique_ptr<std::ostream> LocalFileHandle::createOutputStream(std::ios_base::openmode mode)
 {
-    return std::unique_ptr<std::ostream>(new std::ofstream(m_path, mode));
+    return eastl::unique_ptr<std::ostream>(new std::ofstream(m_path.c_str(), mode));
 }
 
 void LocalFileHandle::readFileInfo() const

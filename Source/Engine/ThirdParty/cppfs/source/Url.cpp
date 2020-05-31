@@ -1,7 +1,7 @@
 
 #include <cppfs/Url.h>
 
-#include <algorithm>
+#include <EASTL/algorithm.h>
 
 
 namespace cppfs
@@ -37,20 +37,20 @@ Url::Url(const Url & url)
 }
 
 Url::Url(Url && url)
-: m_url(std::move(url.m_url))
-, m_analyzed(std::move(url.m_analyzed))
-, m_protocol(std::move(url.m_protocol))
-, m_location(std::move(url.m_location))
-, m_address(std::move(url.m_address))
-, m_path(std::move(url.m_path))
-, m_login(std::move(url.m_login))
-, m_host(std::move(url.m_host))
-, m_username(std::move(url.m_username))
-, m_password(std::move(url.m_password))
+: m_url(eastl::move(url.m_url))
+, m_analyzed(eastl::move(url.m_analyzed))
+, m_protocol(eastl::move(url.m_protocol))
+, m_location(eastl::move(url.m_location))
+, m_address(eastl::move(url.m_address))
+, m_path(eastl::move(url.m_path))
+, m_login(eastl::move(url.m_login))
+, m_host(eastl::move(url.m_host))
+, m_username(eastl::move(url.m_username))
+, m_password(eastl::move(url.m_password))
 {
 }
 
-Url::Url(const std::string & url)
+Url::Url(const eastl::string & url)
 : m_url(url)
 , m_analyzed(false)
 , m_protocol("")
@@ -64,8 +64,8 @@ Url::Url(const std::string & url)
 {
 }
 
-Url::Url(std::string && url)
-: m_url(std::move(url))
+Url::Url(eastl::string && url)
+: m_url(eastl::move(url))
 , m_analyzed(false)
 , m_protocol("")
 , m_location("")
@@ -114,68 +114,68 @@ Url & Url::operator=(const Url & url)
 
 Url & Url::operator=(Url && url)
 {
-    m_url      = std::move(url.m_url);
-    m_analyzed = std::move(url.m_analyzed);
-    m_protocol = std::move(url.m_protocol);
-    m_location = std::move(url.m_location);
-    m_address  = std::move(url.m_address);
-    m_path     = std::move(url.m_path);
-    m_login    = std::move(url.m_login);
-    m_host     = std::move(url.m_host);
-    m_username = std::move(url.m_username);
-    m_password = std::move(url.m_password);
+    m_url      = eastl::move(url.m_url);
+    m_analyzed = eastl::move(url.m_analyzed);
+    m_protocol = eastl::move(url.m_protocol);
+    m_location = eastl::move(url.m_location);
+    m_address  = eastl::move(url.m_address);
+    m_path     = eastl::move(url.m_path);
+    m_login    = eastl::move(url.m_login);
+    m_host     = eastl::move(url.m_host);
+    m_username = eastl::move(url.m_username);
+    m_password = eastl::move(url.m_password);
 
     return *this;
 }
 
-const std::string & Url::toString() const
+const eastl::string & Url::toString() const
 {
     return m_url;
 }
 
-const std::string & Url::protocol() const
+const eastl::string & Url::protocol() const
 {
     analyze();
     return m_protocol;
 }
 
-const std::string & Url::location() const
+const eastl::string & Url::location() const
 {
     analyze();
     return m_location;
 }
 
-const std::string & Url::address() const
+const eastl::string & Url::address() const
 {
     analyze();
     return m_address;
 }
 
-const std::string & Url::path() const
+const eastl::string & Url::path() const
 {
     analyze();
     return m_path;
 }
 
-const std::string & Url::login() const
+const eastl::string & Url::login() const
 {
     analyze();
     return m_login;
 }
 
-const std::string & Url::host() const
+const eastl::string & Url::host() const
 {
     analyze();
     return m_host;
 }
 
-const std::string & Url::username() const
+const eastl::string & Url::username() const
 {
     analyze();
     return m_username;
 }
 
-const std::string & Url::password() const
+const eastl::string & Url::password() const
 {
     analyze();
     return m_password;
@@ -197,9 +197,9 @@ void Url::analyze() const
     m_password = "";
 
     // Get protocol and location
-    std::size_t pos = m_url.find("://");
+    size_t pos = m_url.find("://");
 
-    if (pos != std::string::npos)
+    if (pos != eastl::string::npos)
     {
         m_protocol = m_url.substr(0, pos + 3);
         m_location = m_url.substr(pos+3);
@@ -213,7 +213,7 @@ void Url::analyze() const
     pos = m_location.find("/");
 
     // [TODO] Find a better solution, e.g., a real regex to deal with different paths/urls
-    if (m_protocol != "" && m_protocol != "file://" && pos != std::string::npos)
+    if (m_protocol != "" && m_protocol != "file://" && pos != eastl::string::npos)
     {
         m_address = m_location.substr(0, pos);
         m_path    = m_location.substr(pos);
@@ -226,7 +226,7 @@ void Url::analyze() const
     // Get login and host
     pos = m_address.find("@");
 
-    if (pos != std::string::npos)
+    if (pos != eastl::string::npos)
     {
         m_login = m_address.substr(0, pos);
         m_host  = m_address.substr(pos+1);
@@ -240,7 +240,7 @@ void Url::analyze() const
     // Get username and password
     pos = m_login.find(":");
 
-    if (pos != std::string::npos)
+    if (pos != eastl::string::npos)
     {
         m_username = m_login.substr(0, pos);
         m_password = m_login.substr(pos+1);
