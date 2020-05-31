@@ -7,6 +7,7 @@
 #include <EASTL/shared_ptr.h>
 
 #include <cppfs/AbstractFileSystem.h>
+#include <cppfs/FilePath.h>
 
 
 namespace cppfs
@@ -46,7 +47,7 @@ eastl::shared_ptr<AbstractFileSystem> localFS();
 *  @return
 *    File handle
 */
-FileHandle open(const eastl::string & path);
+FileHandle open(const FilePath & path);
 
 /**
 *  @brief

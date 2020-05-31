@@ -16,7 +16,6 @@
 #endif
 
 #include <cppfs/system.h>
-#include <cppfs/Url.h>
 #include <cppfs/FileHandle.h>
 #include <cppfs/AbstractFileSystem.h>
 #include <cppfs/FileIterator.h>
@@ -41,19 +40,13 @@ eastl::shared_ptr<AbstractFileSystem> localFS()
     return fs;
 }
 
-FileHandle open(const eastl::string & path)
+FileHandle open(const FilePath & path)
 {
-    // Parse url
-    Url url(path);
-
-    // Get local path
-    eastl::string localPath = url.path();
-
     // Open local file system
     auto fs = localFS();
 
     // Open path
-    return fs->open(localPath);
+    return fs->open(path.fullPath());
 }
 
 eastl::string hashToString(const unsigned char * hash)

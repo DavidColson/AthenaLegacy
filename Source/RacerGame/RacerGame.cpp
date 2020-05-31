@@ -13,6 +13,7 @@
 
 #include <cppfs/fs.h>
 #include <cppfs/FileHandle.h>
+#include <cppfs/FilePath.h>
 
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
@@ -151,9 +152,14 @@ int main(int argc, char *argv[])
 
 	using namespace cppfs;
 
-	FileHandle handle = fs::open("RacerScene.txt");
-	// -413086157
-	Log::Debug("File %s, size: %i last mod time %i", handle.fileName().c_str(), handle.size(), handle.modificationTime());
+	FileHandle file = fs::open("Resources/Models/monkey.gltf@0");
+
+	Log::Debug("File: %s has size %i", file.fileName(), file.size());
+
+	FilePath path = "Resources/Models/monkey.gltf@0";
+
+	eastl::string extension = path.extension();
+	eastl::string innerExtension = path.innerExtension();
 
 	Scene* pScene = new Scene();
 	SetupScene(*pScene);

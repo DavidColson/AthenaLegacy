@@ -35,7 +35,6 @@ set(headers
     ${include_path}/InputStream.h
     ${include_path}/OutputStream.h
     ${include_path}/FilePath.h
-    ${include_path}/Url.h
     ${include_path}/Tree.h
     ${include_path}/Diff.h
     ${include_path}/Change.h
@@ -63,7 +62,6 @@ set(sources
     ${source_path}/InputStream.cpp
     ${source_path}/OutputStream.cpp
     ${source_path}/FilePath.cpp
-    ${source_path}/Url.cpp
     ${source_path}/Tree.cpp
     ${source_path}/Diff.cpp
     ${source_path}/Change.cpp

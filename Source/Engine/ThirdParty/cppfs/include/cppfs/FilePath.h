@@ -242,6 +242,22 @@ public:
 
     /**
     *  @brief
+    *    Get file inner extension (denoted by @N after the file extension, where N is a number)
+    *    Used in Athena to point to data within files
+    *
+    *  @return
+    *    Inner Extension of the stored path
+    *
+    *  @remarks
+    *    This function returns "@N" for both "/path/to/something.ex@N" and
+    *    "/path/to/something.ex@N/". If the path has no extension, an empty
+    *    string is returned.
+    *    Calling this function triggers a full analysis of the path (costly operation).
+    */
+    const eastl::string & innerExtension() const;
+
+    /**
+    *  @brief
     *    Get directory path
     *
     *  @return
@@ -350,6 +366,7 @@ protected:
     mutable eastl::string   m_filename;      ///< Filename component
     mutable eastl::string   m_basename;      ///< Basename component
     mutable eastl::string   m_extension;     ///< Extension component
+    mutable eastl::string   m_innerExtension;///< Inner Extension component (for specifying data within a file)
     mutable eastl::string   m_directoryPath; ///< Path to containing directory
     mutable eastl::string   m_driveLetter;   ///< Drive letter component
     mutable bool            m_absolute;      ///< 'true' if path is absolute, else 'false'

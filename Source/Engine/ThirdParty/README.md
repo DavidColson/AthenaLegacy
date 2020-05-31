@@ -33,4 +33,4 @@ Exact mirror of upstream repo plus a CMakeLists file to compile within the engin
 - Source: https://github.com/cginternals/cppfs/
 - Version: 1.3.0
 
-Files stripped down to just source. Examples, scripts and tests all stripped out. Custom CMakeLists.txt being used. Removed all SSH code. Stripped out base64 encoding functions, we have our own in engine. Replaced all stl use with EASTL.
+Files stripped down to just source. Examples, scripts and tests all stripped out. Custom CMakeLists.txt being used. Removed all SSH code, including login credentials and URL parsing code. Stripped out base64 encoding functions, we have our own in engine. Replaced all stl use with EASTL.

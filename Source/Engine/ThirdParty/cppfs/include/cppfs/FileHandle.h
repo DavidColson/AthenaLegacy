@@ -493,6 +493,8 @@ public:
     */
     FileWatcher watch(unsigned int events = FileCreated | FileRemoved | FileModified | FileAttrChanged, RecursiveMode recursive = Recursive);
 
+    // @TODO: Replace these stream functions with SDL RWops functions
+
     /**
     *  @brief
     *    Create input stream to read from the file
