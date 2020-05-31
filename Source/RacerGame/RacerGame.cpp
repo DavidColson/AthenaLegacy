@@ -11,6 +11,9 @@
 #include <SceneSerializer.h>
 #include <AssetDatabase.h>
 
+#include <cppfs/fs.h>
+#include <cppfs/FileHandle.h>
+
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
@@ -145,6 +148,12 @@ void SetupScene(Scene& scene)
 int main(int argc, char *argv[])
 {
 	Engine::Initialize();
+
+	using namespace cppfs;
+
+	FileHandle handle = fs::open("RacerScene.txt");
+	// -413086157
+	Log::Debug("File %s, size: %i last mod time %i", handle.fileName().c_str(), handle.size(), handle.modificationTime());
 
 	Scene* pScene = new Scene();
 	SetupScene(*pScene);

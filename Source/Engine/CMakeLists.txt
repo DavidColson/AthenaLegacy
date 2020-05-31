@@ -18,6 +18,7 @@ add_subdirectory(ThirdParty/Imgui)
 add_subdirectory(ThirdParty/EASTL)
 add_subdirectory(ThirdParty/EABase)
 add_subdirectory(ThirdParty/FreeType)
+add_subdirectory(ThirdParty/cppfs)
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 

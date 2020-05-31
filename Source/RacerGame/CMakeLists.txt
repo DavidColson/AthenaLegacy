@@ -6,10 +6,11 @@ include_directories("../Engine/Devices/")
 include_directories("../Engine/Modules/")
 include_directories("../Engine/ThirdParty/")
 include_directories("../Engine/ThirdParty/FreeType/include")
+include_directories("../Engine/ThirdParty/cppfs/include")
 include_directories("/")
 
 add_executable (RacerGame WIN32 "")
-target_link_libraries(RacerGame ${SDL2_LIBRARIES} Engine d3d11 d3d10 d3dcompiler dxguid freetype Imgui EASTL)
+target_link_libraries(RacerGame ${SDL2_LIBRARIES} Engine d3d11 d3d10 d3dcompiler dxguid freetype Imgui EASTL cppfs)
 
 target_sources(RacerGame
     PRIVATE
