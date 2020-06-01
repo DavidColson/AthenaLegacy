@@ -9,9 +9,9 @@
 #include <EASTL/string.h>
 #include <EASTL/unique_ptr.h>
 
-#include <cppfs/cppfs.h>
-#include <cppfs/AbstractFileHandleBackend.h>
-#include <cppfs/FileStream.h>
+#include <cppfs.h>
+#include <AbstractFileHandleBackend.h>
+#include <FileStream.h>
 
 namespace FileSys
 {

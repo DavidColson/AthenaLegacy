@@ -49,8 +49,8 @@ to setup and build *cppfs*.
 Opening files and checking for existence and type:
 
 ```C++
-#include <cppfs/fs.h>
-#include <cppfs/FileHandle.h>
+#include <fs.h>
+#include <FileHandle.h>
 
 using namespace FileSys;
 
@@ -67,8 +67,8 @@ void openFile(const std::string & filename)
 Open a file for reading or writing:
 
 ```C++
-#include <cppfs/fs.h>
-#include <cppfs/FileHandle.h>
+#include <fs.h>
+#include <FileHandle.h>
 
 using namespace FileSys;
 
@@ -90,8 +90,8 @@ void openFile(const std::string & filename)
 Listing directory entries:
 
 ```C++
-#include <cppfs/fs.h>
-#include <cppfs/FileHandle.h>
+#include <fs.h>
+#include <FileHandle.h>
 
 using namespace FileSys;
 

@@ -5,8 +5,8 @@
 #include <memory>
 #include <map>
 
-#include <cppfs/AbstractFileWatcherBackend.h>
-#include <cppfs/FileHandle.h>
+#include <AbstractFileWatcherBackend.h>
+#include <FileHandle.h>
 
 
 namespace FileSys

@@ -1,13 +1,13 @@
 
-#include <cppfs/posix/LocalFileSystem.h>
+#include <posix/LocalFileSystem.h>
 
-#include <cppfs/FileHandle.h>
-#include <cppfs/FileWatcher.h>
-#include <cppfs/AbstractFileWatcherBackend.h>
-#include <cppfs/posix/LocalFileHandle.h>
+#include <FileHandle.h>
+#include <FileWatcher.h>
+#include <AbstractFileWatcherBackend.h>
+#include <posix/LocalFileHandle.h>
 
 #ifdef SYSTEM_LINUX
-    #include <cppfs/linux/LocalFileWatcher.h>
+    #include <linux/LocalFileWatcher.h>
 #endif
 
 

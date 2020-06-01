@@ -7,9 +7,9 @@
 #include <EASTL/functional.h>
 #include <EASTL/unique_ptr.h>
 
-#include <cppfs/cppfs.h>
-#include <cppfs/AbstractFileWatcherBackend.h>
-#include <cppfs/FunctionalFileEventHandler.h>
+#include <cppfs.h>
+#include <AbstractFileWatcherBackend.h>
+#include <FunctionalFileEventHandler.h>
 
 
 namespace FileSys

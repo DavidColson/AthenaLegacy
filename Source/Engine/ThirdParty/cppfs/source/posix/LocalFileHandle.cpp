@@ -1,5 +1,5 @@
 
-#include <cppfs/posix/LocalFileHandle.h>
+#include <posix/LocalFileHandle.h>
 
 #include <fstream>
 #include <dirent.h>
@@ -7,10 +7,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <cppfs/cppfs.h>
-#include <cppfs/FilePath.h>
-#include <cppfs/posix/LocalFileSystem.h>
-#include <cppfs/posix/LocalFileIterator.h>
+#include <cppfs.h>
+#include <FilePath.h>
+#include <posix/LocalFileSystem.h>
+#include <posix/LocalFileIterator.h>
 
 
 namespace FileSys

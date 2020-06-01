@@ -1,14 +1,14 @@
 
-#include <cppfs/windows/LocalFileHandle.h>
+#include <windows/LocalFileHandle.h>
 
 #include <fstream>
 
 #include <windows.h>
 
-#include <cppfs/cppfs.h>
-#include <cppfs/FilePath.h>
-#include <cppfs/windows/LocalFileSystem.h>
-#include <cppfs/windows/LocalFileIterator.h>
+#include <cppfs.h>
+#include <FilePath.h>
+#include <windows/LocalFileSystem.h>
+#include <windows/LocalFileIterator.h>
 
 
 namespace FileSys

@@ -1,8 +1,8 @@
-#include <cppfs/FileStream.h>
+#include <FileStream.h>
 
 #include <SDL_rwops.h>
 
-#include <cppfs/cppfs.h>
+#include <cppfs.h>
 
 namespace FileSys
 {
@@ -57,7 +57,7 @@ FileStream::FileStream(eastl::string _path, unsigned int mode)
         modeString += "b";
     }
 
-    rwops = SDL_RWFromFile(path.c_str(), modeString.c_str());
+    rwops = SDL_RWFromFile(_path.c_str(), modeString.c_str());
     path = _path;
 }
 

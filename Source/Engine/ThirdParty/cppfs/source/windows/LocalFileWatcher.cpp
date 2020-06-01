@@ -1,10 +1,10 @@
 
-#include <cppfs/windows/LocalFileWatcher.h>
+#include <windows/LocalFileWatcher.h>
 
 #include <EASTL/algorithm.h>
 
-#include <cppfs/FilePath.h>
-#include <cppfs/windows/LocalFileSystem.h>
+#include <FilePath.h>
+#include <windows/LocalFileSystem.h>
 
 
 namespace

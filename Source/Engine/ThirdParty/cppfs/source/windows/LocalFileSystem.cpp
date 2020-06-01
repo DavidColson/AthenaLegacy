@@ -1,9 +1,9 @@
 
-#include <cppfs/windows/LocalFileSystem.h>
+#include <windows/LocalFileSystem.h>
 
-#include <cppfs/FileHandle.h>
-#include <cppfs/windows/LocalFileHandle.h>
-#include <cppfs/windows/LocalFileWatcher.h>
+#include <FileHandle.h>
+#include <windows/LocalFileHandle.h>
+#include <windows/LocalFileWatcher.h>
 
 
 namespace FileSys

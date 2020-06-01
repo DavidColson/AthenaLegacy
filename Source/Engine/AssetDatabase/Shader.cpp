@@ -3,9 +3,9 @@
 #include "Scanning.h"
 #include "Log.h"
 
-#include <cppfs/FileSys.h>
+#include <FileSys.h>
 
-void Shader::Load(eastl::string path)
+void Shader::Load(FileSys::FilePath path)
 {
     FileSys::FileHandle fHandle = FileSys::open(path);
     eastl::string contents = fHandle.readFile();
@@ -38,8 +38,8 @@ void Shader::Load(eastl::string path)
         layout.push_back({"NORMAL",AttributeType::Float3});
         layout.push_back({"TEXCOORD_",AttributeType::Float2});
         layout.push_back({"COLOR_",AttributeType::Float4});
-        vertShader = GfxDevice::CreateVertexShader(contents, "VSMain", layout, path.c_str());
-        pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", path.c_str());
+        vertShader = GfxDevice::CreateVertexShader(contents, "VSMain", layout, path.fullPath().c_str());
+        pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", path.fullPath().c_str());
         program = GfxDevice::CreateProgram(vertShader, pixelShader);
     }
     else if (typeString == "postprocess")
@@ -51,8 +51,6 @@ void Shader::Load(eastl::string path)
         pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", "Post processing");
         program = GfxDevice::CreateProgram(vertShader, pixelShader);
     }
-
-    AssetDB::RegisterAsset(this, path);
 }
 
 Shader::~Shader()

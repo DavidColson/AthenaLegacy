@@ -4,7 +4,7 @@
 
 #include <memory>
 
-#include <cppfs/cppfs.h>
+#include <cppfs.h>
 
 namespace FileSys
 {

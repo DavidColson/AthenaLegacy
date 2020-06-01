@@ -6,7 +6,7 @@
 #include <EASTL/shared_ptr.h>
 #include <EASTL/unique_ptr.h>
 
-#include <cppfs/AbstractFileIteratorBackend.h>
+#include <AbstractFileIteratorBackend.h>
 
 
 namespace FileSys

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <EASTL/string.h>
+#include <FileSys.h>
 
 enum class AssetType
 {
@@ -22,7 +23,7 @@ struct AssetHandle
 
 struct Asset
 {
-    virtual void Load(eastl::string path) = 0;
+    virtual void Load(FileSys::FilePath path) = 0;
 };
 
 // Some notes:
@@ -44,7 +45,7 @@ namespace AssetDB
 
     void FreeAsset(AssetHandle handle);
     
-    bool IsSubasset(AssetHandle handle, eastl::string& outTopLevelIdentifier = eastl::string());
+    bool IsSubasset(AssetHandle handle);
 
     void RegisterAsset(Asset* pAsset, eastl::string identifier);
 }

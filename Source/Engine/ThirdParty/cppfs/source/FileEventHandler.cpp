@@ -1,7 +1,7 @@
 
-#include <cppfs/FileEventHandler.h>
+#include <FileEventHandler.h>
 
-#include <cppfs/FileHandle.h>
+#include <FileHandle.h>
 
 
 namespace FileSys

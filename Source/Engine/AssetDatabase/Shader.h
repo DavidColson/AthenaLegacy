@@ -6,7 +6,7 @@
 
 struct Shader : Asset
 {
-    virtual void Load(eastl::string path) override;
+    virtual void Load(FileSys::FilePath path) override;
     ~Shader();
 
     PixelShaderHandle pixelShader;

@@ -11,8 +11,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include <cppfs/AbstractFileWatcherBackend.h>
-#include <cppfs/FileHandle.h>
+#include <AbstractFileWatcherBackend.h>
+#include <FileHandle.h>
 
 
 namespace FileSys

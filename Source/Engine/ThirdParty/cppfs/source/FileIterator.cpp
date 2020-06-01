@@ -1,7 +1,7 @@
 
-#include <cppfs/FileIterator.h>
+#include <FileIterator.h>
 
-#include <cppfs/AbstractFileIteratorBackend.h>
+#include <AbstractFileIteratorBackend.h>
 
 
 namespace FileSys

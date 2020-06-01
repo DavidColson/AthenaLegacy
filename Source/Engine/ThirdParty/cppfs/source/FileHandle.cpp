@@ -1,18 +1,18 @@
 
-#include <cppfs/FileHandle.h>
+#include <FileHandle.h>
 
 #include <sstream>
 
-#include <cppfs/FileSys.h>
-#include <cppfs/FilePath.h>
-#include <cppfs/FileIterator.h>
-#include <cppfs/FileVisitor.h>
-#include <cppfs/FunctionalFileVisitor.h>
-#include <cppfs/FileWatcher.h>
-#include <cppfs/Tree.h>
-#include <cppfs/AbstractFileSystem.h>
-#include <cppfs/AbstractFileHandleBackend.h>
-#include <cppfs/AbstractFileIteratorBackend.h>
+#include <FileSys.h>
+#include <FilePath.h>
+#include <FileIterator.h>
+#include <FileVisitor.h>
+#include <FunctionalFileVisitor.h>
+#include <FileWatcher.h>
+#include <Tree.h>
+#include <AbstractFileSystem.h>
+#include <AbstractFileHandleBackend.h>
+#include <AbstractFileIteratorBackend.h>
 
 
 namespace FileSys

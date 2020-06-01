@@ -47,7 +47,7 @@ struct Primitive
 
 struct Mesh : public Asset
 {
-    virtual void Load(eastl::string path) override;
+    virtual void Load(FileSys::FilePath path) override;
 
     eastl::string name;
     eastl::vector<Primitive> primitives;

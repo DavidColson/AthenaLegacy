@@ -2,11 +2,11 @@
 
 #include "Rendering/RectPacking.h"
 
-void Font::Load(eastl::string path)
+void Font::Load(FileSys::FilePath path)
 {   
     FT_Face face;
 
-    FT_Error err = FT_New_Face(FontSystem::GetFreeType(), path.c_str(), 0, &face);
+    FT_Error err = FT_New_Face(FontSystem::GetFreeType(), path.fullPath().c_str(), 0, &face);
 	if (err)
 	{
 		Log::Warn("FreeType Error: %s", FT_Error_String(err));
@@ -65,8 +65,6 @@ void Font::Load(eastl::string path)
 
 	fontTexture = GfxDevice::CreateTexture(texWidth, texHeight, TextureFormat::R8, pTextureDataAsR8, "Font Atlas");
 	delete[] pTextureDataAsR8;
-    
-    AssetDB::RegisterAsset(this, path);
 }
 
 Font::~Font()

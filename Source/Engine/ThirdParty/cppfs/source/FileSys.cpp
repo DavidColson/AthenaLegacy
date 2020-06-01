@@ -1,5 +1,5 @@
 
-#include <cppfs/FileSys.h>
+#include <FileSys.h>
 
 #include <sstream>
 #include <iomanip>
@@ -9,21 +9,21 @@
     #define COMMON_DIGEST_FOR_OPENSSL
     #include <CommonCrypto/CommonDigest.h>
     #define SHA1 CC_SHA1
-    #include <cppfs/ssh/SshFileSystem.h>
+    #include <ssh/SshFileSystem.h>
 #elif defined(CPPFS_USE_OpenSSL)
     #include <openssl/sha.h>
-    #include <cppfs/ssh/SshFileSystem.h>
+    #include <ssh/SshFileSystem.h>
 #endif
 
-#include <cppfs/system.h>
-#include <cppfs/FileHandle.h>
-#include <cppfs/AbstractFileSystem.h>
-#include <cppfs/FileIterator.h>
+#include <system.h>
+#include <FileHandle.h>
+#include <AbstractFileSystem.h>
+#include <FileIterator.h>
 
 #ifdef SYSTEM_WINDOWS
-    #include <cppfs/windows/LocalFileSystem.h>
+    #include <windows/LocalFileSystem.h>
 #else
-    #include <cppfs/posix/LocalFileSystem.h>
+    #include <posix/LocalFileSystem.h>
 #endif
 
 

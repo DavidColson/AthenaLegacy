@@ -6,9 +6,9 @@
 #include <EASTL/string.h>
 #include <EASTL/shared_ptr.h>
 
-#include <cppfs/AbstractFileSystem.h>
-#include <cppfs/FilePath.h>
-#include <cppfs/FileHandle.h>
+#include <AbstractFileSystem.h>
+#include <FilePath.h>
+#include <FileHandle.h>
 
 
 namespace FileSys

@@ -6,7 +6,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include <cppfs/AbstractFileIteratorBackend.h>
+#include <AbstractFileIteratorBackend.h>
 
 
 namespace FileSys

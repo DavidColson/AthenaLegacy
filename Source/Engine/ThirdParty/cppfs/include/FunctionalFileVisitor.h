@@ -4,7 +4,7 @@
 
 #include <functional>
 
-#include <cppfs/FileVisitor.h>
+#include <FileVisitor.h>
 
 
 namespace FileSys

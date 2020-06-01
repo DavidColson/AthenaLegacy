@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <cppfs/FileStream.h>
+#include <FileStream.h>
 
 #include <EASTL/memory.h>
 #include <EASTL/vector.h>

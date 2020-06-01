@@ -1,12 +1,12 @@
 
-#include <cppfs/Tree.h>
+#include <Tree.h>
 
 #include <EASTL/algorithm.h>
 #include <Log.h>
 
-#include <cppfs/fs.h>
-#include <cppfs/FileHandle.h>
-#include <cppfs/Diff.h>
+#include <FileSys.h>
+#include <FileHandle.h>
+#include <Diff.h>
 
 
 namespace FileSys

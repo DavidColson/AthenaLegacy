@@ -6,7 +6,7 @@
 #include <EASTL/unique_ptr.h>
 #include <EASTL/shared_ptr.h>
 
-#include <cppfs/AbstractFileSystem.h>
+#include <AbstractFileSystem.h>
 
 
 namespace FileSys

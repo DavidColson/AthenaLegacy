@@ -1,17 +1,17 @@
 
-#include <cppfs/linux/LocalFileWatcher.h>
+#include <linux/LocalFileWatcher.h>
 
 #include <unistd.h>
 #include <limits.h>
 #include <sys/inotify.h>
 
-#include <cppfs/cppfs.h>
-#include <cppfs/FilePath.h>
-#include <cppfs/FileHandle.h>
-#include <cppfs/FileIterator.h>
-#include <cppfs/FileWatcher.h>
-#include <cppfs/posix/LocalFileSystem.h>
-#include <cppfs/posix/LocalFileIterator.h>
+#include <cppfs.h>
+#include <FilePath.h>
+#include <FileHandle.h>
+#include <FileIterator.h>
+#include <FileWatcher.h>
+#include <posix/LocalFileSystem.h>
+#include <posix/LocalFileIterator.h>
 
 
 namespace FileSys

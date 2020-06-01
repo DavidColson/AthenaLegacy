@@ -1,7 +1,7 @@
 
-#include <cppfs/AbstractFileSystem.h>
+#include <AbstractFileSystem.h>
 
-#include <cppfs/FileWatcher.h>
+#include <FileWatcher.h>
 
 
 namespace FileSys

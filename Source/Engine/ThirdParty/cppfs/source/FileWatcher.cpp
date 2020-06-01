@@ -1,12 +1,12 @@
 
-#include <cppfs/FileWatcher.h>
+#include <FileWatcher.h>
 
 #include <EASTL/algorithm.h>
 
-#include <cppfs/FileSys.h>
-#include <cppfs/FileHandle.h>
-#include <cppfs/FileEventHandler.h>
-#include <cppfs/AbstractFileSystem.h>
+#include <FileSys.h>
+#include <FileHandle.h>
+#include <FileEventHandler.h>
+#include <AbstractFileSystem.h>
 
 
 namespace FileSys

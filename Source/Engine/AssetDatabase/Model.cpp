@@ -8,7 +8,7 @@
 #include "Mesh.h" 
 #include "AssetDatabase.h"
 
-#include <cppfs/FileSys.h>
+#include <FileSys.h>
 #include <SDL.h>
 
 // Actually owns the data
@@ -62,7 +62,7 @@ struct Accessor
     Type type;
 };
 
-void Model::Load(eastl::string path)
+void Model::Load(FileSys::FilePath path)
 {
     // Load file
     FileSys::FileHandle fHandle = FileSys::open(path);
@@ -198,14 +198,16 @@ void Model::Load(eastl::string path)
             mesh.primitives.push_back(prim);
         }
         meshes.push_back(mesh);
-        eastl::string meshAssetIdentifier = path;
-        meshAssetIdentifier.append_sprintf(":%i", i);
+
+        // We'll manually register the mesh asset, since we created it rather than the asset database
+        eastl::string meshAssetIdentifier = path.path();
+        meshAssetIdentifier.append_sprintf(":mesh_%i", i);
         meshes.back().Load(meshAssetIdentifier);
+        AssetDB::RegisterAsset(&(meshes.back()), meshAssetIdentifier);
     }
 
     for (int i = 0; i < rawDataBuffers.size(); i++)
     {
         delete rawDataBuffers[i].pBytes;
     }
-    AssetDB::RegisterAsset(this, path);
 }

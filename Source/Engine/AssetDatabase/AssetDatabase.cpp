@@ -14,13 +14,15 @@
 namespace
 {
     eastl::map<uint64_t, Asset*> assets;
-    eastl::map<uint64_t, eastl::string> assetIdentifiers;
 
-    struct HotReloadAsset
+    struct AssetMeta
     {
-        AssetHandle handle;
+        eastl::string fullIdentifier;
+        eastl::string subAssetName;
+        FileSys::FilePath path;
     };
-    eastl::vector<HotReloadAsset> hotReloadWatchers;
+    eastl::map<uint64_t, AssetMeta> assetMetas;
+    //eastl::vector<HotReloadAsset> hotReloadWatchers;
 }
 
 uint64_t CalculateFNV(const char* str)
@@ -40,86 +42,72 @@ uint64_t CalculateFNV(const char* str)
 AssetHandle::AssetHandle(eastl::string identifier)
 {
     id = CalculateFNV(identifier.c_str());
-    assetIdentifiers[id] = identifier;
-}
-
-eastl::string ExtractFileExtension(eastl::string path)
-{   
-    int extensionStart = (int)path.length();
-    int extensionEnd = 0;
-    for (int i = (int)path.length() - 1; i >= 0; i--)
+    if (assetMetas.count(id) == 0)
     {
-        if (path[i] == ':')
-            extensionStart = i;
-        
-        if (path[i] == '.')
-            extensionEnd = i + 1;
-    }
-    return path.substr(extensionEnd, extensionStart - extensionEnd);
-}
+        eastl::string subAssetName;
+        size_t subAssetPos  = identifier.find_last_of(":");
+        if (subAssetPos != eastl::string::npos)
+            subAssetName = identifier.substr(subAssetPos + 1);
 
+        AssetMeta meta;
+        meta.path = FileSys::FilePath(identifier.substr(0, subAssetPos));
+        meta.subAssetName = subAssetName;
+        meta.fullIdentifier = identifier;
+        assetMetas[id] = meta;
+    }
+}
 Asset* AssetDB::GetAssetRaw(AssetHandle handle)
 {
-    Asset* pAsset;
     if (assets.count(handle.id) == 0)
     {
-        eastl::string identifier = assetIdentifiers[handle.id];
-        eastl::string fileType = ExtractFileExtension(identifier);
+        Asset* pAsset;
+        FileSys::FilePath& path = assetMetas[handle.id].path;
+        eastl::string fileType = path.extension();
 
-        // Composite asset
-        eastl::string topLevelAssetIdentifier;
-        if (IsSubasset(handle, topLevelAssetIdentifier))
+        if (fileType == ".txt")
         {
-            AssetHandle topAssetHandle(topLevelAssetIdentifier);
-
-            Asset* pTopAsset; 
-            if (fileType == "gltf")
-            {
-                pTopAsset = new Model();
-            }
-            pTopAsset->Load(topLevelAssetIdentifier);
-            pAsset = assets[handle.id];
+            pAsset = new Text();
         }
-        // Non composite asset
+        else if (fileType == ".wav")
+        {
+            pAsset = new Sound();
+        }
+        else if (fileType == ".hlsl")
+        {
+            pAsset = new Shader();
+        }
+        else if (fileType == ".otf" || fileType == ".ttf")
+        {
+            pAsset = new Font();
+        }
+        else if (fileType == ".gltf")
+        {
+            pAsset = new Model();
+        }
         else
         {
-            if (fileType == "txt")
-            {
-                pAsset = new Text();
-            }
-            else if (fileType == "wav")
-            {
-                pAsset = new Sound();
-            }
-            else if (fileType == "hlsl")
-            {
-                pAsset = new Shader();
-            }
-            else if (fileType == "otf" || fileType == "ttf")
-            {
-                pAsset = new Font();
-            }
-            else
-            {
-                Log::Crit("Attempting to load an unsupported asset type. Will crash imminently");
-            }
-            
-            pAsset->Load(assetIdentifiers[handle.id]);
+            Log::Crit("Attempting to load an unsupported asset type. Will crash imminently");
         }
+        
+        pAsset->Load(path);
+
+        // If a subasset was requested, we've just loaded the parent asset, 
+        // so register the parent with a different identifier pointing to just the file
+        if (IsSubasset(handle))
+            RegisterAsset(pAsset, assetMetas[handle.id].path.fullPath());
+        else
+            RegisterAsset(pAsset, assetMetas[handle.id].fullIdentifier);
     }
-    else
-    {
-        pAsset = assets[handle.id];
-    }
-    return pAsset;
+
+    return assets[handle.id];
 }
 
 eastl::string AssetDB::GetAssetIdentifier(AssetHandle handle)
 {
-    if (assetIdentifiers.count(handle.id) == 0)
+    if (assetMetas.count(handle.id) == 0)
         return "";
 
-    return assetIdentifiers[handle.id];
+    return assetMetas[handle.id].fullIdentifier;
 }
 
 void AssetDB::FreeAsset(AssetHandle handle)
@@ -132,29 +120,12 @@ void AssetDB::FreeAsset(AssetHandle handle)
     assets.erase(handle.id);
 }
 
-bool AssetDB::IsSubasset(AssetHandle handle, eastl::string& outTopLevelIdentifier)
+bool AssetDB::IsSubasset(AssetHandle handle)
 {
-    eastl::string identifier = assetIdentifiers[handle.id];
-
-    bool foundSubAssetIdentifier = false;
-    int location = (int)identifier.length() - 1;
-    for (int i = (int)identifier.length() - 1; i >= 0; i--)
-    {
-        if (identifier[i] == ':')
-        {
-            foundSubAssetIdentifier = true;
-            break;
-        }
-        location--;
-    }
-    outTopLevelIdentifier = identifier.substr(0, location);
-    return foundSubAssetIdentifier;
+    return !assetMetas[handle.id].subAssetName.empty();
 }
 
 void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
 {
     assets[AssetHandle(identifier).id] = pAsset;
-
-    HotReloadAsset hotReloader;
-    hotReloader.handle = AssetHandle(identifier);
 }

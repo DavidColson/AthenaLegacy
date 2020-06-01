@@ -1,5 +1,5 @@
 
-#include <cppfs/FilePath.h>
+#include <FilePath.h>
 
 #include <sstream>
 #include <EASTL/algorithm.h>
@@ -26,7 +26,6 @@ FilePath::FilePath(const FilePath & filePath)
 , m_filename(filePath.m_filename)
 , m_basename(filePath.m_basename)
 , m_extension(filePath.m_extension)
-, m_innerExtension(filePath.m_innerExtension)
 , m_directoryPath(filePath.m_directoryPath)
 , m_driveLetter(filePath.m_driveLetter)
 , m_absolute(filePath.m_absolute)
@@ -41,7 +40,6 @@ FilePath::FilePath(FilePath && filePath)
 , m_filename(eastl::move(filePath.m_filename))
 , m_basename(eastl::move(filePath.m_basename))
 , m_extension(eastl::move(filePath.m_extension))
-, m_innerExtension(eastl::move(filePath.m_innerExtension))
 , m_directoryPath(eastl::move(filePath.m_directoryPath))
 , m_driveLetter(eastl::move(filePath.m_driveLetter))
 , m_absolute(eastl::move(filePath.m_absolute))
@@ -82,7 +80,6 @@ FilePath & FilePath::operator=(const FilePath & filePath)
     m_filename        = filePath.m_filename;
     m_basename        = filePath.m_basename;
     m_extension       = filePath.m_extension;
-    m_innerExtension  = filePath.m_innerExtension;
     m_directoryPath   = filePath.m_directoryPath;
     m_driveLetter     = filePath.m_driveLetter;
     m_absolute        = filePath.m_absolute;
@@ -99,7 +96,6 @@ FilePath & FilePath::operator=(FilePath && filePath)
     m_filename        = eastl::move(filePath.m_filename);
     m_basename        = eastl::move(filePath.m_basename);
     m_extension       = eastl::move(filePath.m_extension);
-    m_innerExtension  = eastl::move(filePath.m_innerExtension);
     m_directoryPath   = eastl::move(filePath.m_directoryPath);
     m_driveLetter     = eastl::move(filePath.m_driveLetter);
     m_absolute        = eastl::move(filePath.m_absolute);
@@ -124,7 +120,6 @@ void FilePath::setPath(const eastl::string & path)
     m_filename        = "";
     m_basename        = "";
     m_extension       = "";
-    m_innerExtension  = "";
     m_directoryPath   = "";
     m_driveLetter     = "";
     m_absolute        = false;
@@ -152,7 +147,6 @@ void FilePath::setPath(eastl::string && path)
     m_filename        = "";
     m_basename        = "";
     m_extension       = "";
-    m_innerExtension  = "";
     m_directoryPath   = "";
     m_driveLetter     = "";
     m_absolute        = false;
@@ -215,13 +209,6 @@ const eastl::string & FilePath::extension() const
     analyze();
 
     return m_extension;
-}
-
-const eastl::string & FilePath::innerExtension() const
-{
-    analyze();
-
-    return m_innerExtension;
 }
 
 const eastl::string & FilePath::directoryPath() const
@@ -361,7 +348,6 @@ void FilePath::analyze() const
     m_filename      = "";
     m_basename      = "";
     m_extension     = "";
-    m_innerExtension     = "";
     m_directoryPath = "";
     m_driveLetter   = "";
     m_absolute      = false;
@@ -402,14 +388,6 @@ void FilePath::analyze() const
 
     // Determine filename
     m_filename = (numParts > 0) ? parts[numParts-1] : "";
-
-    // Extract and strip the inner extension if there is one
-    size_t innerExtPos  = m_filename.find_first_of("@", 1);
-    if (innerExtPos != eastl::string::npos)
-    {
-        m_innerExtension = m_filename.substr(innerExtPos);
-        m_filename = m_filename.substr(0, innerExtPos);
-    }
 
     // Determine directory path and full path
     m_directoryPath = "";

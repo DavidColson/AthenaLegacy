@@ -1,7 +1,7 @@
 
-#include <cppfs/FileVisitor.h>
+#include <FileVisitor.h>
 
-#include <cppfs/FileHandle.h>
+#include <FileHandle.h>
 
 
 namespace FileSys
