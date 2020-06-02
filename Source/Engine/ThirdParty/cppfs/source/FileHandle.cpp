@@ -89,6 +89,16 @@ bool FileHandle::exists() const
     return m_backend ? m_backend->exists() : false;
 }
 
+bool FileHandle::isInUse() const
+{
+    if (exists() && isFile())
+    {
+        FileStream stream = createFileStream(FileRead);
+        if (!stream.isValid()) return true;
+    }
+    return false;
+}
+
 bool FileHandle::isFile() const
 {
     return m_backend ? m_backend->isFile() : false;
@@ -218,7 +228,7 @@ unsigned int FileHandle::accessTime() const
     return m_backend ? m_backend->accessTime() : 0;
 }
 
-unsigned int FileHandle::modificationTime() const
+uint64_t FileHandle::modificationTime() const
 {
     return m_backend ? m_backend->modificationTime() : 0;
 }
@@ -503,7 +513,6 @@ FileWatcher FileHandle::watch(unsigned int events, RecursiveMode recursive)
     return std::move(watcher);
 }
 
-// @Improvement: Consider removing stream functions, as we're unlikely to use them
 FileStream FileHandle::createFileStream(unsigned int mode) const
 {
     // Check backend

@@ -22,7 +22,13 @@ namespace
         FileSys::FilePath path;
     };
     eastl::map<uint64_t, AssetMeta> assetMetas;
-    //eastl::vector<HotReloadAsset> hotReloadWatchers;
+
+    struct HotReloadingAsset
+    {
+        AssetHandle asset;
+        uint64_t cacheLastModificationTime;
+    };
+    eastl::vector<HotReloadingAsset> hotReloadWatches;
 }
 
 uint64_t CalculateFNV(const char* str)
@@ -127,5 +133,43 @@ bool AssetDB::IsSubasset(AssetHandle handle)
 
 void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
 {
-    assets[AssetHandle(identifier).id] = pAsset;
+    AssetHandle handle = AssetHandle(identifier); 
+    assets[handle.id] = pAsset;
+
+    // See if this asset is already in the hot reload watches, if so skip the rest of the function
+    for (const HotReloadingAsset& hot : hotReloadWatches)
+    {
+        if (hot.asset.id == handle.id)
+            return;
+    }
+
+    // Don't hot reload audio
+    // @Improvement actually define an asset type enum or something, this is icky
+    if (assetMetas[handle.id].path.extension() != ".wav")
+    {
+        HotReloadingAsset hot;
+        hot.asset = handle;
+        hot.cacheLastModificationTime = FileSys::open(assetMetas[hot.asset.id].path).modificationTime();
+        hotReloadWatches.push_back(hot);
+    }
+}
+
+void AssetDB::UpdateHotReloading()
+{
+    for (HotReloadingAsset& hot : hotReloadWatches)
+    {
+        FileSys::FileHandle file = FileSys::open(assetMetas[hot.asset.id].path);
+        if (hot.cacheLastModificationTime != file.modificationTime())
+        {
+            if (file.isInUse())
+                continue;
+
+            Asset* pAsset = assets[hot.asset.id];
+            assets.erase(hot.asset.id);
+            delete pAsset;
+
+            pAsset = GetAssetRaw(hot.asset);
+            hot.cacheLastModificationTime = file.modificationTime();
+        }
+    }
 }

@@ -96,6 +96,8 @@ void Engine::Run(Scene *pScene)
 	{
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
+		AssetDB::UpdateHotReloading();
+
 		RenderSystem::PreUpdate(*pCurrentScene, (float)frameTime);
 
 		// Deal with events

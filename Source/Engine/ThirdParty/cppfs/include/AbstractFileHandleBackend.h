@@ -150,7 +150,7 @@ public:
     *  @return
     *    Time stamp
     */
-    virtual unsigned int modificationTime() const = 0;
+    virtual uint64_t modificationTime() const = 0;
 
     /**
     *  @brief

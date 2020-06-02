@@ -166,7 +166,7 @@ unsigned int LocalFileHandle::accessTime() const
     return 0;
 }
 
-unsigned int LocalFileHandle::modificationTime() const
+uint64_t LocalFileHandle::modificationTime() const
 {
     readFileInfo();
 
@@ -174,7 +174,7 @@ unsigned int LocalFileHandle::modificationTime() const
     {
         // [TODO] Use 64bit numbers
         FILETIME time = ((WIN32_FILE_ATTRIBUTE_DATA *)m_fileInfo)->ftLastWriteTime;
-        return static_cast<unsigned int>(static_cast<__int64>(time.dwHighDateTime) << 32 | time.dwLowDateTime);
+        return static_cast<uint64_t>(time.dwHighDateTime) << 32 | static_cast<uint64_t>(time.dwLowDateTime);
     }
 
     return 0;

@@ -157,6 +157,15 @@ public:
 
     /**
     *  @brief
+    *    Check if file is in use by another process
+    *
+    *  @return
+    *    'true' if in use, else 'false'
+    */
+    bool isInUse() const;
+
+    /**
+    *  @brief
     *    Check if item is a file
     *
     *  @return
@@ -277,7 +286,7 @@ public:
     *  @return
     *    Time stamp
     */
-    unsigned int modificationTime() const;
+    uint64_t modificationTime() const;
 
     /**
     *  @brief

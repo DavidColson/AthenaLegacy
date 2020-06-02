@@ -37,6 +37,12 @@ struct Vert_PosTexCol
 
 struct Primitive
 {
+    ~Primitive()
+    {
+        GfxDevice::FreeVertexBuffer(gfxVertBuffer);
+        GfxDevice::FreeIndexBuffer(gfxIndexBuffer);
+    }
+
     eastl::vector<Vert_PosNormTexCol> vertBuffer{ nullptr };
     eastl::vector<uint16_t> indexBuffer{ nullptr };
 

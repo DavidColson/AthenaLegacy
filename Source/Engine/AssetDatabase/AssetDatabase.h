@@ -48,4 +48,6 @@ namespace AssetDB
     bool IsSubasset(AssetHandle handle);
 
     void RegisterAsset(Asset* pAsset, eastl::string identifier);
+
+    void UpdateHotReloading();
 }

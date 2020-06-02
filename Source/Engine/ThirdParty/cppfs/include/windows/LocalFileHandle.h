@@ -53,7 +53,7 @@ public:
     virtual eastl::unique_ptr<AbstractFileIteratorBackend> begin() const override;
     virtual unsigned int size() const override;
     virtual unsigned int accessTime() const override;
-    virtual unsigned int modificationTime() const override;
+    virtual uint64_t modificationTime() const override;
     virtual unsigned int userId() const override;
     virtual void setUserId(unsigned int uid) override;
     virtual unsigned int groupId() const override;
