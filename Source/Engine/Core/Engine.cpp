@@ -135,6 +135,7 @@ void Engine::Run(Scene *pScene)
 		if (pPendingSceneLoad)
 		{
 			delete pCurrentScene;
+			AssetDB::CollectGarbage();
 			pCurrentScene = pPendingSceneLoad;
 			pPendingSceneLoad = nullptr;
 		}
@@ -156,6 +157,7 @@ void Engine::Run(Scene *pScene)
 	}
 
 	delete pCurrentScene;
+	AssetDB::CollectGarbage();
 
 	// Shutdown everything
 	RenderSystem::Destroy();

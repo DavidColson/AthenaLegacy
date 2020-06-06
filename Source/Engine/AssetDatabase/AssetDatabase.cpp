@@ -20,6 +20,7 @@ namespace
         eastl::string fullIdentifier;
         eastl::string subAssetName;
         FileSys::FilePath path;
+        uint32_t refCount{ 0 };
     };
     eastl::map<uint64_t, AssetMeta> assetMetas;
 
@@ -30,6 +31,10 @@ namespace
     };
     eastl::vector<HotReloadingAsset> hotReloadWatches;
 }
+
+
+// Asset Handle
+// ****************************
 
 uint64_t CalculateFNV(const char* str)
 {
@@ -61,7 +66,48 @@ AssetHandle::AssetHandle(eastl::string identifier)
         meta.fullIdentifier = identifier;
         assetMetas[id] = meta;
     }
+    assetMetas[id].refCount += 1;
 }
+
+AssetHandle::AssetHandle(const AssetHandle& copy)
+{
+    id = copy.id;
+    assetMetas[id].refCount += 1;
+}
+
+AssetHandle::AssetHandle(AssetHandle&& move)
+{
+    // Don't increment ref counter
+    id = move.id;
+    move.id = 0;
+}
+
+AssetHandle& AssetHandle::operator=(const AssetHandle& copy)
+{
+    id = copy.id;
+    assetMetas[id].refCount += 1;
+    return *this;
+}
+
+AssetHandle& AssetHandle::operator=(AssetHandle&& move)
+{
+    // Don't increment ref counter
+    id = move.id;
+    move.id = 0;
+    return *this;
+}
+
+AssetHandle::~AssetHandle()
+{
+    if (id != 0)
+        assetMetas[id].refCount -= 1;
+}
+
+
+
+// Asset Database
+// ****************************
+
 Asset* AssetDB::GetAssetRaw(AssetHandle handle)
 {
     if (assets.count(handle.id) == 0)
@@ -151,6 +197,7 @@ void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
         hot.asset = handle;
         hot.cacheLastModificationTime = FileSys::open(assetMetas[hot.asset.id].path).modificationTime();
         hotReloadWatches.push_back(hot);
+        assetMetas[handle.id].refCount -= 1; // Assets in the hot reloader should not count as real references
     }
 }
 
@@ -161,6 +208,9 @@ void AssetDB::UpdateHotReloading()
         FileSys::FileHandle file = FileSys::open(assetMetas[hot.asset.id].path);
         if (hot.cacheLastModificationTime != file.modificationTime())
         {
+            if (assetMetas[hot.asset.id].refCount == 0)
+                continue; // Don't hot reload an asset no one is referencing
+
             if (file.isInUse())
                 continue;
 
@@ -170,6 +220,17 @@ void AssetDB::UpdateHotReloading()
 
             pAsset = GetAssetRaw(hot.asset);
             hot.cacheLastModificationTime = file.modificationTime();
+        }
+    }
+}
+
+void AssetDB::CollectGarbage()
+{
+    for (const eastl::pair<uint64_t, AssetMeta>& assetMeta : assetMetas)
+    {
+        if (assetMeta.second.refCount == 0)
+        {
+            FreeAsset(AssetHandle(assetMeta.second.fullIdentifier));
         }
     }
 }

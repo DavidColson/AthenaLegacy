@@ -17,13 +17,22 @@ struct AssetHandle
 {
     AssetHandle() : id(0) {}
     AssetHandle(eastl::string identifier);
+    AssetHandle(uint64_t id);
 
-    uint64_t id;
+    AssetHandle(const AssetHandle& copy);
+	AssetHandle(AssetHandle&& move);
+	AssetHandle& operator=(const AssetHandle& copy);
+	AssetHandle& operator=(AssetHandle&& move);
+
+    ~AssetHandle();
+
+    uint64_t id{ 0 };
 };
 
 struct Asset
 {
     virtual void Load(FileSys::FilePath path) = 0;
+    virtual ~Asset() {};
 };
 
 // Some notes:
@@ -50,4 +59,6 @@ namespace AssetDB
     void RegisterAsset(Asset* pAsset, eastl::string identifier);
 
     void UpdateHotReloading();
+
+    void CollectGarbage();
 }
