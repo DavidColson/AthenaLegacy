@@ -122,7 +122,7 @@ void AudioDevice::Initialize()
     desiredWaveSpec.format = AUDIO_FORMAT;
     desiredWaveSpec.freq = AUDIO_FREQUENCY;
     desiredWaveSpec.samples = AUDIO_SAMPLES;
-    device = SDL_OpenAudioDevice(SDL_GetAudioDeviceName(0, 0), 0, &desiredWaveSpec, &gotWaveSpec, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+    device = SDL_OpenAudioDevice(SDL_GetAudioDeviceName(0, 0), 0, &desiredWaveSpec, &gotWaveSpec, 0);
     if (device != 0)
     {
         Log::Info("Successfully opened audio device - %s",  SDL_GetAudioDeviceName(0, 0));

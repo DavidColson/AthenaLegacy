@@ -8,7 +8,7 @@ set(VERSION_PATCH "0")
 # Sources
 #
 
-set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include/cppfs")
+set(include_path "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(source_path  "${CMAKE_CURRENT_SOURCE_DIR}/source")
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
