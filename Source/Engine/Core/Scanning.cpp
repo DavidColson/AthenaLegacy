@@ -15,9 +15,19 @@ char Scan::Advance(ScanningState& scan)
 	if (scan.file[scan.current - 1] == '\n')
 	{
 		scan.line++;
-		scan.currentLineStart = scan.current;	
+		scan.currentLineStart = scan.current;
 	}
 	return scan.file[scan.current - 1];
+}
+
+bool Scan::Match(ScanningState& scan, char expected)
+{
+	if (scan.file[scan.current] == expected)
+	{
+		Advance(scan);
+		return true;
+	}
+	return false;
 }
 
 char Scan::Peek(ScanningState& scan)
@@ -71,9 +81,30 @@ bool Scan::IsAtEnd(ScanningState& scan)
 
 bool Scan::IsPartOfNumber(char c)
 {
-	return (c >= '0' && c <= '9') || c == '-';
+	return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.';
 }
 
+bool Scan::IsDigit(char c)
+{
+	return (c >= '0' && c <= '9');
+}
+
+bool Scan::IsHexDigit(char c)
+{
+	return isxdigit(c);
+}
+
+bool Scan::IsAlpha(char c)
+{
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+}
+    
+bool Scan::IsAlphaNumeric(char c)
+{
+	return IsAlpha(c) || IsDigit(c);
+}
+
+// TODO: Move into Json tokenizer, and specialize into json strings
 eastl::string Scan::ParseToString(ScanningState& scan, char bound)
 {	
 	int start = scan.current;

@@ -18,6 +18,8 @@ namespace Scan
 
     char Advance(ScanningState& scan);
 
+    bool Match(ScanningState& scan, char expected);
+
     char Peek(ScanningState& scan);
 
     char PeekNext(ScanningState& scan);
@@ -31,6 +33,14 @@ namespace Scan
     bool IsAtEnd(ScanningState& scan);
 
     bool IsPartOfNumber(char c);
+
+    bool IsDigit(char c);
+
+    bool IsHexDigit(char c);
+
+    bool IsAlpha(char c);
+    
+    bool IsAlphaNumeric(char c);
 
     eastl::string ParseToString(ScanningState& scan, char bound);
 
