@@ -37,15 +37,15 @@ struct Token
 	Token(TokenType _type, int _line, int _column, int _index, eastl::string _stringOrIdentifier)
 	 : type(_type), line(_line), column(_column), index(_index), stringOrIdentifier(_stringOrIdentifier) {}
 
-	Token(TokenType _type, int _line, int _column, int _index, double _dNumber)
-	 : type(_type), line(_line), column(_column), index(_index), dNumber(_dNumber) {}
+	Token(TokenType _type, int _line, int _column, int _index, double _number)
+	 : type(_type), line(_line), column(_column), index(_index), number(_number) {}
 
 	Token(TokenType _type, int _line, int _column, int _index, bool _boolean)
 	 : type(_type), line(_line), column(_column), index(_index), boolean(_boolean) {}
 
 	TokenType type;
 	eastl::string stringOrIdentifier;
-	double dNumber;
+	double number;
 	bool boolean;
 
 	int line;
@@ -251,6 +251,102 @@ eastl::vector<Token> TokenizeJson(eastl::string jsonText)
 	return tokens;
 }
 
+eastl::map<eastl::string, JsonValue> _ParseObject(eastl::vector<Token>& tokens, int& currentToken);
+eastl::vector<JsonValue> _ParseArray(eastl::vector<Token>& tokens, int& currentToken);
+
+JsonValue _ParseValue(eastl::vector<Token>& tokens, int& currentToken)
+{
+	Token& token = tokens[currentToken];
+
+	switch (token.type)
+	{
+	case LeftBrace:
+		return JsonValue(_ParseObject(tokens, currentToken)); break;
+	case LeftBracket:
+		return JsonValue(_ParseArray(tokens, currentToken)); break;
+	case String:
+		currentToken++;
+		return JsonValue(token.stringOrIdentifier); break;
+	case Number:
+	{
+		currentToken++;
+		double n = token.number;
+		double intPart;
+		if (modf(n, &intPart) == 0.0)
+			return JsonValue((long)intPart);
+		else
+			return JsonValue(n);
+		break;
+	}
+	case Boolean:
+		currentToken++;
+		return JsonValue(token.boolean); break;
+	case Null:
+		currentToken++;
+	default:
+		return JsonValue(); break;
+	}
+	return JsonValue();
+}
+
+eastl::map<eastl::string, JsonValue> _ParseObject(eastl::vector<Token>& tokens, int& currentToken)
+{
+	currentToken++; // Advance over opening brace
+
+	eastl::map<eastl::string, JsonValue> map;
+	while (currentToken < tokens.size() && tokens[currentToken].type != RightBrace)
+	{
+		// We expect, 
+		// identifier or string
+		if (tokens[currentToken].type != Identifier && tokens[currentToken].type != String)
+			Log::Crit("Expected identifier or string");
+
+		eastl::string key = tokens[currentToken].stringOrIdentifier;
+		currentToken += 1;
+
+		// colon
+		if (tokens[currentToken].type != Colon)
+			Log::Crit("Expected colon");
+		currentToken += 1;
+		
+		// String, Number, Boolean, Null
+		// If left bracket or brace encountered, skip until closing
+		map[key] = _ParseValue(tokens, currentToken);
+
+		// Comma, or right brace
+		if (tokens[currentToken].type == RightBrace)
+			break;
+		if (tokens[currentToken].type != Comma)
+			Log::Crit("Expected comma or Right Curly Brace");
+		currentToken += 1;
+	}
+	currentToken++; // Advance over closing brace
+	return map;
+}
+
+eastl::vector<JsonValue> _ParseArray(eastl::vector<Token>& tokens, int& currentToken)
+{
+	currentToken++; // Advance over opening bracket
+
+	eastl::vector<JsonValue> array;
+	while (currentToken < tokens.size() && tokens[currentToken].type != RightBracket)
+	{
+		// We expect, 
+		// String, Number, Boolean, Null
+		array.push_back(_ParseValue(tokens, currentToken));
+
+		// Comma, or right brace
+		if (tokens[currentToken].type == RightBracket)
+			break;
+		if (tokens[currentToken].type != Comma)
+			Log::Crit("Expected comma or right bracket");
+		currentToken += 1;
+	}
+	currentToken++; // Advance over closing bracket
+	return array;
+}
+
+
 
 
 // JsonValue implementation
@@ -295,6 +391,7 @@ JsonValue::JsonValue(const JsonValue& copy)
 		break;
 	case Type::String:
    		internalData.pString = new eastl::string(*(copy.internalData.pString));
+		break;
 	default:
 		internalData = copy.internalData;
 		break;
@@ -471,215 +568,11 @@ JsonValue JsonValue::NewArray()
 	return JsonValue(eastl::vector<JsonValue>());
 }
 
-// Value Parsing
-////////////////
-
-eastl::vector<JsonValue> ParseArray(Scan::ScanningState& scan);
-eastl::map<eastl::string, JsonValue> ParseObject(Scan::ScanningState& scan);
-
-JsonValue ParseNumber(Scan::ScanningState& scan)
-{	
-	int start = scan.current;
-	while (Scan::IsPartOfNumber(Peek(scan)))
-	{
-		Scan::Advance(scan);
-	}
-
-	bool hasFraction = false;
-	if (Scan::Peek(scan) == '.' && Scan::IsPartOfNumber(PeekNext(scan)))
-	{
-		Scan::Advance(scan);
-		while (Scan::IsPartOfNumber(Peek(scan)))
-		{
-			Scan::Advance(scan);
-		}
-		hasFraction = true;
-	}
-
-	long exponent = 0;
-	if (Scan::Peek(scan) == 'e' || Scan::Peek(scan) == 'E')
-	{
-		Scan::Advance(scan); // advance past e or E
-		if (!(Scan::IsPartOfNumber(Scan::Peek(scan)) || Scan::Peek(scan) == '+'))
-			Scan::HandleError(scan, "Expected digits for the exponent, none provided", scan.current);
-
-		int exponentStart = scan.current;
-		while (Scan::IsPartOfNumber(Peek(scan)) || Peek(scan) == '+')
-		{
-			Scan::Advance(scan);
-		}
-		exponent = strtol(scan.file.substr(exponentStart, (scan.current - exponentStart)).c_str(), nullptr, 10);
-	}
-
-	if (hasFraction)
-		return strtod(scan.file.substr(start, (scan.current - start)).c_str(), nullptr);
-	
-	return strtol(scan.file.substr(start, (scan.current - start)).c_str(), nullptr, 10) * (long)pow(10, exponent);
-}
-
-bool ParseNull(Scan::ScanningState& scan)
-{
-	int start = scan.current;
-	for (int i = 0; i < 4; i++)
-		Scan::Advance(scan);
-
-	if (scan.file.substr(start, 4) == "null")
-	{
-		return true;
-	}
-
-	Scan::HandleError(scan, "Expected 'null'", start);
-	return false;
-}
-
-bool ParseTrue(Scan::ScanningState& scan)
-{
-	int start = scan.current;
-	for (int i = 0; i < 4; i++)
-		Scan::Advance(scan);
-
-	if (scan.file.substr(start, 4) == "true")
-	{
-		return true;
-	}
-
-	Scan::HandleError(scan, "Expected 'true'", start);
-	return false;
-}
-
-bool ParseFalse(Scan::ScanningState& scan)
-{
-	int start = scan.current;
-	for (int i = 0; i < 5; i++)
-		Scan::Advance(scan);
-
-	if (scan.file.substr(start, 5) == "false")
-	{
-		return true;
-	}
-
-	Scan::HandleError(scan, "Expected 'false'", start);
-	return false;
-}
-
-JsonValue ParseValue(Scan::ScanningState& scan)
-{
-	switch (Scan::Peek(scan))
-	{
-	case '{':
-		return ParseObject(scan);
-		break;
-	case '[':
-		return ParseArray(scan);
-		break;
-	case '"':
-		// For JSON5 this bound could be '
-		return Scan::ParseToString(scan, '"');
-		break;
-	case 'n':
-		if (ParseNull(scan))
-			return JsonValue();
-		break;
-	case 't':
-		if (ParseTrue(scan))
-			return JsonValue(true);
-		break;
-	case 'f':
-		if (ParseFalse(scan))
-			return JsonValue(false);
-		break;
-	default:
-		if (Scan::IsPartOfNumber(Peek(scan)))
-			return ParseNumber(scan);
-		else
-			Scan::HandleError(scan, "Unknown value, please give a known value", scan.current);
-		break;
-	}
-	return JsonValue();
-}
-
-eastl::vector<JsonValue> ParseArray(Scan::ScanningState& scan)
-{
-	eastl::vector<JsonValue> array;
-	Advance(scan); // advance past opening '['
-
-	while (!Scan::IsAtEnd(scan) && Scan::Peek(scan) != ']')
-	{
-		Scan::AdvanceOverWhitespace(scan);
-		array.push_back(ParseValue(scan));	
-		Scan::AdvanceOverWhitespace(scan);
-
-		char nextC = Scan::Peek(scan);
-		if (nextC == ',')
-			Scan::Advance(scan);
-		else if (nextC == ']')
-			continue;
-		else
-		{
-			Scan::HandleError(scan, "Expected a ',' for next array element, or ']' to end the array", scan.current);
-			return array;
-		}
-	}
-	Scan::AdvanceOverWhitespace(scan);
-	Scan::Advance(scan); // Advance over closing ']'
-	return array;
-}
-
-eastl::map<eastl::string, JsonValue> ParseObject(Scan::ScanningState& scan)
-{
-	eastl::map<eastl::string, JsonValue> map;
-	Scan::Advance(scan); // advance past opening '{'
-
-	while (!Scan::IsAtEnd(scan) && Scan::Peek(scan) != '}')
-	{
-		Scan::AdvanceOverWhitespace(scan);
-		
-		if (Scan::Peek(scan) != '"')
-			Scan::HandleError(scan, "Expected '\"' to start a new key", scan.current);
-
-		// For JSON5 this could be a non quoted identifier
-		eastl::string key = Scan::ParseToString(scan, '"');
-
-		Scan::AdvanceOverWhitespace(scan);
-		if (Scan::Advance(scan) != ':')
-		{
-			Scan::HandleError(scan, "Expected a key value separator here, ':'", scan.current - 1);
-			return map;
-		}
-		Scan::AdvanceOverWhitespace(scan);
-
-		map[key] = ParseValue(scan);
-		Scan::AdvanceOverWhitespace(scan);
-
-		char nextC = Scan::Peek(scan);
-		if (nextC == ',')
-			Scan::Advance(scan);
-		else if (nextC == '}')
-			continue;
-		else
-		{
-			Scan::HandleError(scan, "Expected a ',' for next object element, or '}' to end the object", scan.current);
-			return map;
-		}
-	}
-	Scan::AdvanceOverWhitespace(scan);
-	Scan::Advance(scan); // Advance over closing '}'
-	return map;
-}
-
 JsonValue ParseJsonFile(eastl::string& file)
 {
 	eastl::vector<Token> tokens = TokenizeJson(file);
 
-
-
-    Scan::ScanningState scan;
-	scan.file = file;
-	scan.current = 0;
-	scan.line = 1;
-	Scan::AdvanceOverWhitespace(scan);
-	JsonValue json = ParseValue(scan);
-	if (scan.encounteredError)
-		return JsonValue();
-    return json;
+	int firstToken = 0;
+	JsonValue json5 = _ParseValue(tokens, firstToken);
+	return json5;
 }
