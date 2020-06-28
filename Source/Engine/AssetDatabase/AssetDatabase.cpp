@@ -168,8 +168,14 @@ void AssetDB::FreeAsset(AssetHandle handle)
         return;
 
     Asset* pAsset = assets[handle.id];
-    delete pAsset;
     assets.erase(handle.id);
+    
+    // Don't actually free subassets, let their parents be freed instead
+    // TODO: Make subassets force their parents to have a ref count so they don't get deleted
+    if (!assetMetas[handle.id].subAssetName.empty()) 
+        return;
+
+    delete pAsset;
 }
 
 bool AssetDB::IsSubasset(AssetHandle handle)
