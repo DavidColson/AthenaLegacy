@@ -7,32 +7,34 @@
 #include <EASTL/stack.h>
 #include <EASTL/vector.h>
 
-eastl::string TypeData::Serialize(Variant value)
+
+eastl::string RecursiveObjectSerialize(Variant value, eastl::string indentation = "")
 {
-    // TODO: Replace with json-like serialization (no need to actual make a json value, too much memory thrashing)
     eastl::string outString;
+    outString.append("{");
+    if (value.pTypeData->members.size() > 0)
+        outString.append("\n");
+
     for (Member& member : *value.pTypeData)
     {
-        eastl::string serialized = member.GetType().Serialize(member.Get(value));
-        
-        // If we're a composite type, we need to indent our value
+        eastl::string serialized;
         if (member.GetType().members.size() > 0)
-        {
-            // Add indentation for this member
-            serialized.insert(0, "\n");
-            for (int i = 0; i < serialized.length(); i++)
-            {
-                if (serialized[i] == '\n' && i < serialized.length() - 2)
-                    serialized.insert(i + 1, "  ");
-            }
-        }
-        outString.append_sprintf("%s: %s", member.name, serialized.c_str());
+            serialized = RecursiveObjectSerialize(member.Get(value), indentation + "    ");
+        else
+            serialized = member.GetType().Serialize(member.Get(value));
 
-        // New line if you're not a composite type
-        if (member.GetType().members.size() == 0)
-            outString += '\n';
+		outString.append_sprintf("    %s%s: %s,\n", indentation.c_str(), member.name, serialized.c_str());
     }
+
+    if (value.pTypeData->members.size() > 0)
+        outString.append_sprintf("%s", indentation.c_str());
+    outString.append("}");
     return outString;
+}
+
+eastl::string TypeData::Serialize(Variant value)
+{
+    return RecursiveObjectSerialize(value);
 }
 
 eastl::string ParseIdentifier(Scan::ScanningState& scan, char endChar)
