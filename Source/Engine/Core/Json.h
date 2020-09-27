@@ -69,3 +69,4 @@ struct JsonValue
 };
 
 JsonValue ParseJsonFile(eastl::string& file);
+eastl::string SerializeJsonValue(JsonValue json, eastl::string indentation = "");

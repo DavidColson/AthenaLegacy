@@ -3,7 +3,7 @@
 #include "Log.h"
 #include "ErrorHandling.h"
 #include "Scanning.h"
-
+#include "TypeSystem.h"
 
 
 // Tokenizer
@@ -114,8 +114,7 @@ eastl::string ParseString(Scan::ScanningState& scan, char bound)
 	return result;
 }
 
-// TODO: Rename to parseNumber when we remove the old version
-double ParseNumb(Scan::ScanningState& scan)
+double ParseNumber(Scan::ScanningState& scan)
 {	
 	scan.current -= 1; // Go back to get the first digit or symbol
 	int start = scan.current;
@@ -221,7 +220,7 @@ eastl::vector<Token> TokenizeJson(eastl::string jsonText)
 			// Numbers
 			if (Scan::IsDigit(c) || c == '+' || c == '-' || c == '.')
 			{
-				double num = ParseNumb(scan);
+				double num = ParseNumber(scan);
 				tokens.push_back(Token{Number, scan.line, column, loc, num});
 				break;
 			}
@@ -251,19 +250,19 @@ eastl::vector<Token> TokenizeJson(eastl::string jsonText)
 	return tokens;
 }
 
-eastl::map<eastl::string, JsonValue> _ParseObject(eastl::vector<Token>& tokens, int& currentToken);
-eastl::vector<JsonValue> _ParseArray(eastl::vector<Token>& tokens, int& currentToken);
+eastl::map<eastl::string, JsonValue> ParseObject(eastl::vector<Token>& tokens, int& currentToken);
+eastl::vector<JsonValue> ParseArray(eastl::vector<Token>& tokens, int& currentToken);
 
-JsonValue _ParseValue(eastl::vector<Token>& tokens, int& currentToken)
+JsonValue ParseValue(eastl::vector<Token>& tokens, int& currentToken)
 {
 	Token& token = tokens[currentToken];
 
 	switch (token.type)
 	{
 	case LeftBrace:
-		return JsonValue(_ParseObject(tokens, currentToken)); break;
+		return JsonValue(ParseObject(tokens, currentToken)); break;
 	case LeftBracket:
-		return JsonValue(_ParseArray(tokens, currentToken)); break;
+		return JsonValue(ParseArray(tokens, currentToken)); break;
 	case String:
 		currentToken++;
 		return JsonValue(token.stringOrIdentifier); break;
@@ -289,7 +288,7 @@ JsonValue _ParseValue(eastl::vector<Token>& tokens, int& currentToken)
 	return JsonValue();
 }
 
-eastl::map<eastl::string, JsonValue> _ParseObject(eastl::vector<Token>& tokens, int& currentToken)
+eastl::map<eastl::string, JsonValue> ParseObject(eastl::vector<Token>& tokens, int& currentToken)
 {
 	currentToken++; // Advance over opening brace
 
@@ -311,7 +310,7 @@ eastl::map<eastl::string, JsonValue> _ParseObject(eastl::vector<Token>& tokens, 
 		
 		// String, Number, Boolean, Null
 		// If left bracket or brace encountered, skip until closing
-		map[key] = _ParseValue(tokens, currentToken);
+		map[key] = ParseValue(tokens, currentToken);
 
 		// Comma, or right brace
 		if (tokens[currentToken].type == RightBrace)
@@ -324,7 +323,7 @@ eastl::map<eastl::string, JsonValue> _ParseObject(eastl::vector<Token>& tokens, 
 	return map;
 }
 
-eastl::vector<JsonValue> _ParseArray(eastl::vector<Token>& tokens, int& currentToken)
+eastl::vector<JsonValue> ParseArray(eastl::vector<Token>& tokens, int& currentToken)
 {
 	currentToken++; // Advance over opening bracket
 
@@ -333,7 +332,7 @@ eastl::vector<JsonValue> _ParseArray(eastl::vector<Token>& tokens, int& currentT
 	{
 		// We expect, 
 		// String, Number, Boolean, Null
-		array.push_back(_ParseValue(tokens, currentToken));
+		array.push_back(ParseValue(tokens, currentToken));
 
 		// Comma, or right brace
 		if (tokens[currentToken].type == RightBracket)
@@ -362,6 +361,7 @@ JsonValue::~JsonValue()
 	{
 		delete internalData.pString;
 	}
+	type = Type::Null;
 }
 
 JsonValue::JsonValue()
@@ -384,10 +384,10 @@ JsonValue::JsonValue(const JsonValue& copy)
 	switch (copy.type)
 	{
 	case Type::Array:
-		internalData.pArray = new eastl::vector<JsonValue>(copy.internalData.pArray->begin(), copy.internalData.pArray->end());
+		internalData.pArray = new eastl::vector<JsonValue>(*copy.internalData.pArray);
 		break;
 	case Type::Object:
-		internalData.pObject = new eastl::map<eastl::string, JsonValue>(copy.internalData.pObject->begin(), copy.internalData.pObject->end());
+		internalData.pObject = new eastl::map<eastl::string, JsonValue>(*copy.internalData.pObject);
 		break;
 	case Type::String:
    		internalData.pString = new eastl::string(*(copy.internalData.pString));
@@ -573,6 +573,64 @@ JsonValue ParseJsonFile(eastl::string& file)
 	eastl::vector<Token> tokens = TokenizeJson(file);
 
 	int firstToken = 0;
-	JsonValue json5 = _ParseValue(tokens, firstToken);
+	JsonValue json5 = ParseValue(tokens, firstToken);
 	return json5;
+}
+
+eastl::string SerializeJsonValue(JsonValue json, eastl::string indentation)
+{
+	eastl::string result = "";
+	switch (json.type)
+	{
+	case JsonValue::Type::Array:
+		result.append("[");
+		if (json.Count() > 0)
+			result.append("\n");
+
+		for (const JsonValue& val : *json.internalData.pArray)
+		{
+			result.append_sprintf("    %s%s,\n", indentation.c_str(), SerializeJsonValue(val, indentation + "    ").c_str());
+		}
+
+		if (json.Count() > 0)
+			result.append_sprintf("%s", indentation.c_str());
+		result.append("]");
+		break;
+	case JsonValue::Type::Object:
+	{
+		result.append("{");
+		if (json.Count() > 0)
+			result.append("\n");
+
+		for (const eastl::pair<eastl::string, JsonValue>& val : *json.internalData.pObject)
+		{
+			result.append_sprintf("    %s%s: %s,\n", indentation.c_str(), val.first.c_str(), SerializeJsonValue(val.second, indentation + "    ").c_str());
+		}
+
+		if (json.Count() > 0)
+			result.append_sprintf("%s", indentation.c_str());
+		result.append("}");
+	}
+	break;
+	case JsonValue::Type::Floating:
+		result.append(TypeDatabase::Get<double>().Serialize(json.ToFloat()));
+		break;
+		// TODO: Serialize with exponentials like we do with floats
+	case JsonValue::Type::Integer:
+		result.append(TypeDatabase::Get<int>().Serialize((int)json.ToInt()));
+		break;
+	case JsonValue::Type::Boolean:
+		result.append(TypeDatabase::Get<bool>().Serialize(json.ToBool()));
+		break;
+	case JsonValue::Type::String:
+		result.append(TypeDatabase::Get<eastl::string>().Serialize(json.ToString()));
+		break;
+	case JsonValue::Type::Null:
+		result.append("null");
+		break;
+	default:
+		result.append("CANT SERIALIZE YET");
+		break;
+	}
+	return result;
 }

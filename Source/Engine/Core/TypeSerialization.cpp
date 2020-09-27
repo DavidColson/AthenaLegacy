@@ -9,6 +9,7 @@
 
 eastl::string TypeData::Serialize(Variant value)
 {
+    // TODO: Replace with json-like serialization (no need to actual make a json value, too much memory thrashing)
     eastl::string outString;
     for (Member& member : *value.pTypeData)
     {
