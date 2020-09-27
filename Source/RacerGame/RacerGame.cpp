@@ -10,6 +10,7 @@
 #include <Rendering/SceneDrawSystem.h>
 #include <SceneSerializer.h>
 #include <AssetDatabase.h>
+#include <Json.h>
 
 #include <FileSys.h>
 
@@ -55,29 +56,6 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 void SetupScene(Scene& scene)
 {
 	scene.RegisterSystem(SystemPhase::Update, CameraControlSystem);
-
-	// Custom mesh asset
-	Mesh* pCubeMesh = new Mesh();
-	pCubeMesh->name = "Cube";
-	Primitive cubePrimitive;
-	cubePrimitive.vertBuffer = {
-		Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Front bottom left
-        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Front bottom right
-        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Front top left
-        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }, // Front top right
-
-        Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Back bottom left
-        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Back bottom right
-        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Back top left
-        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }  // Back top right
-    };
-	cubePrimitive.indexBuffer = {
-		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
-	};
-	cubePrimitive.topologyType = TopologyType::TriangleStrip;
-	pCubeMesh->primitives.push_back(cubePrimitive);
-	pCubeMesh->CreateGfxDeviceBuffers();
-	AssetDB::RegisterAsset(pCubeMesh, "cube");
 
 	EntityID camera = scene.NewEntity("Camera");
 	scene.Assign<CCamera>(camera)->fov = 102;
@@ -142,8 +120,54 @@ void SetupScene(Scene& scene)
 	}
 
 	FileSys::FileHandle fHandle = FileSys::open("SerializeRacerScene.txt");
-	fHandle.writeFile(SceneSerializer::Serialize(scene));
+	JsonValue jsonScene = SceneSerializer::ToJson(scene);
+	fHandle.writeFile(SerializeJsonValue(jsonScene));
 }
+
+struct InnerStruct
+{
+	float thisIsAFloat{ 22.0f };
+	int thisIsAnInt{ 6 };
+
+	REFLECT();
+};
+
+struct Component
+{
+  int myInt{ 5 };
+  int mySecondInt{ 3 };
+
+  float myFloat{ 21.412312731f };
+  double myDouble{ 21.4123127311928746123 };
+
+  eastl::string myString{ "Ducks" };
+  bool myBool = false;
+
+  EntityID anEntityId;
+
+  AssetHandle monkey{ "Resources/Models/monkey.gltf:mesh_0" };
+
+  InnerStruct myInnerStruct;
+
+  REFLECT()
+};
+
+REFLECT_BEGIN(InnerStruct)
+REFLECT_MEMBER(thisIsAFloat)
+REFLECT_MEMBER(thisIsAnInt)
+REFLECT_END()
+
+REFLECT_BEGIN(Component)
+REFLECT_MEMBER(myInt)
+REFLECT_MEMBER(mySecondInt)
+REFLECT_MEMBER(myFloat)
+REFLECT_MEMBER(myDouble)
+REFLECT_MEMBER(myString)
+REFLECT_MEMBER(myBool)
+REFLECT_MEMBER(anEntityId)
+REFLECT_MEMBER(monkey)
+REFLECT_MEMBER(myInnerStruct)
+REFLECT_END()
 
 int main(int argc, char *argv[])
 {
@@ -151,11 +175,37 @@ int main(int argc, char *argv[])
 
 	using namespace FileSys;
 
-	FileHandle sceneFile = open("RacerScene.txt");
-	eastl::string contents = sceneFile.readFile();
+	// Custom mesh asset
+	Mesh* pCubeMesh = new Mesh();
+	pCubeMesh->name = "Cube";
+	Primitive cubePrimitive;
+	cubePrimitive.vertBuffer = {
+		Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Front bottom left
+        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Front bottom right
+        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Front top left
+        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }, // Front top right
 
-	Scene* pScene = new Scene();
-	SetupScene(*pScene);
+        Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Back bottom left
+        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Back bottom right
+        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Back top left
+        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }  // Back top right
+    };
+	cubePrimitive.indexBuffer = {
+		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
+	};
+	cubePrimitive.topologyType = TopologyType::TriangleStrip;
+	pCubeMesh->primitives.push_back(cubePrimitive);
+	pCubeMesh->CreateGfxDeviceBuffers();
+	AssetDB::RegisterAsset(pCubeMesh, "cube");
+
+	// Scene* pScene = new Scene();
+	// SetupScene(*pScene);
+
+	FileSys::FileHandle fHandle = FileSys::open("SerializeRacerScene.txt");
+	JsonValue jsonScene = ParseJsonFile(fHandle.readFile());
+	Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
+	pScene->RegisterSystem(SystemPhase::Update, CameraControlSystem);
+
 
 	// Run everything
 	Engine::Run(pScene);

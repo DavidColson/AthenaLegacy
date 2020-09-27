@@ -57,6 +57,7 @@ JsonValue TypeData::ToJson(Variant value)
 {
     JsonValue result = JsonValue::NewObject();
 
+	// TODO: Order of members is lost using this method. We have our member offsets, see if we can use it somehow
     for (Member& member : *value.pTypeData)
     {
         result[member.name] = member.GetType().ToJson(member.Get(value));
@@ -255,13 +256,13 @@ struct TypeData_EntityID : TypeData
 	virtual JsonValue ToJson(Variant var) override
 	{
 		JsonValue val = JsonValue::NewObject();
-		val["EntityID"] = "";
+		val["EntityID"] = JsonValue((long)var.GetValue<EntityID>().Index());
 		return val;
 	}
 
 	virtual Variant FromJson(const JsonValue& val) override
 	{
-		return EntityID();
+		return EntityID::New((int)val.Get("EntityID").ToInt(), 0);
 	}
 };
 template <>

@@ -20,29 +20,6 @@
 
 #include <SDL.h>
 
-struct Component
-{
-  int myInt{ 5 };
-  int mySecondInt{ 3 };
-
-  float myFloat{ 21.412312731f };
-  double myDouble{ 21.4123127311928746123 };
-
-  eastl::string myString{ "Ducks" };
-  bool myBool = false;
-
-  REFLECT()
-};
-
-REFLECT_BEGIN(Component)
-REFLECT_MEMBER(myInt)
-REFLECT_MEMBER(mySecondInt)
-REFLECT_MEMBER(myFloat)
-REFLECT_MEMBER(myDouble)
-REFLECT_MEMBER(myString)
-REFLECT_MEMBER(myBool)
-REFLECT_END()
-
 Scene* CreateMainAsteroidsScene()
 {
 	Scene& scene = *(new Scene());
@@ -225,32 +202,8 @@ void LoadMenu()
 int main(int argc, char *argv[])
 {
 	// Unused at the moment
-	(void)argc;
-	(void)argv;
-
 
 	Engine::Initialize();
-
-	// Type system testing
-	{
-		// Variant newComponent = TypeDatabase::CreateNew("Component");
-		Variant newComponent = TypeDatabase::GetFromString("Component").New();
-		Component& newComp = newComponent.GetValue<Component>();
-
-		Log::Debug("newComp int %i", newComp.myInt);
-
-		TypeData& typeData = TypeDatabase::Get<Component>();
-		Member& myInMember = typeData.GetMember("myInt");
-		myInMember.Set(&newComp, 1337);
-
-		Log::Debug("newComp int %i", newComp.myInt);
-
-		Log::Debug("Iterator printing Members of type: %s", typeData.name);
-		for (Member& member : typeData)
-		{			
-			Log::Debug("Name: %s Type: %s val: %i", member.name, member.GetType().name, *member.GetAs<int>(&newComp));
-		}
-	}
 
 	// Run everything
 	Engine::Run(CreateMainMenuScene());

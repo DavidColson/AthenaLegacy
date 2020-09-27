@@ -57,13 +57,15 @@ struct Constructor_Internal : public Constructor
 	}
 };
 
+struct ComponentCreator;
 
 // Actual Type data
 struct TypeData
 {
 	const char* name;
 	size_t size;
-	Constructor* pConstructor;
+	Constructor* pConstructor{ nullptr };
+	ComponentCreator* pComponentCreator{ nullptr };
 	eastl::map<size_t, Member> members;
 	eastl::map<eastl::string, size_t> memberOffsets;
 
@@ -245,4 +247,16 @@ namespace TypeDatabase
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
+		selfTypeData->members = {
+
+// Special version of reflection function used for components. Allows for storing specialized component assignment object
+#define REFLECT_COMPONENT_BEGIN(Struct)\
+	TypeData Struct::typeData{Struct::initReflection};\
+	void Struct::initReflection(TypeData* selfTypeData) {\
+		using XX = Struct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->name = #Struct;\
+		selfTypeData->size = sizeof(XX);\
+		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
+		selfTypeData->pComponentAssignment = new ComponentAssignment_Internal<XX>;\
 		selfTypeData->members = {

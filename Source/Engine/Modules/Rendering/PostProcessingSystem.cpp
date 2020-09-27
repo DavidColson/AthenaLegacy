@@ -5,7 +5,7 @@
 #include "Shader.h"
 #include <SDL_timer.h>
 
-REFLECT_BEGIN(CPostProcessing)
+REFLECT_COMPONENT_BEGIN(CPostProcessing)
 REFLECT_END()
 
 void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)

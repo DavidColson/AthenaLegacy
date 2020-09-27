@@ -61,12 +61,7 @@ struct JsonValue
  	const JsonValue& Get(eastl::string identifier) const;
 	const JsonValue& Get(size_t index) const;
 
-	template <typename T>
-	void Append(T newVal)
-	{
-		ASSERT(type == Type::Array, "Attempting to treat this value as an array when it is not.");
-		internalData.pArray->push_back(newVal);
-	}
+	void Append(JsonValue& value);
 
 	~JsonValue();
 };

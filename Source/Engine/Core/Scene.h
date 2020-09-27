@@ -222,6 +222,25 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 	}
 };
 
+// A wrapper for storing the component assignment function for a specific component for use later when you might not
+// know the actual type of the component. Used primarily for level loading
+struct ComponentAssignment
+{
+	virtual Variant Assign(Scene& scene, EntityID entity) = 0;
+};
+
+template<typename T>
+struct ComponentAssignment_Internal : public ComponentAssignment
+{
+	virtual Variant Assign(Scene& scene, EntityID entity) override
+	{
+		Variant result;
+		result.pTypeData = &TypeDatabase::Get<T>();
+		result.pData = scene.Assign<T>(entity);
+		return result;
+	}
+};
+
 // *****************************************
 // A game scene, holds enties and systems
 // Updates systems and manages creation and

@@ -574,6 +574,12 @@ const JsonValue& JsonValue::Get(size_t index) const
 	return internalData.pArray->operator[](index);
 }
 
+void JsonValue::Append(JsonValue& value)
+{
+	ASSERT(type == Type::Array, "Attempting to treat this value as an array when it is not.");
+	internalData.pArray->push_back(value);
+}
+
 JsonValue JsonValue::NewObject()
 {
 	return JsonValue(eastl::map<eastl::string, JsonValue>());

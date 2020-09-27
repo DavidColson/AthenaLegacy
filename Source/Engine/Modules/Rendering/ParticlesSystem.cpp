@@ -7,7 +7,7 @@
 #include "Mesh.h"
 #include "Vec4.h"
 
-REFLECT_BEGIN(CParticleEmitter)
+REFLECT_COMPONENT_BEGIN(CParticleEmitter)
 REFLECT_MEMBER(looping)
 REFLECT_MEMBER(lifetime)
 REFLECT_MEMBER(initialCount)

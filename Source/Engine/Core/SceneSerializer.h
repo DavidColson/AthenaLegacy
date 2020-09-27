@@ -6,5 +6,6 @@
 
 namespace SceneSerializer
 {
-    eastl::string Serialize(Scene& scene);
+    JsonValue ToJson(Scene& scene);
+    Scene* NewSceneFromJson(JsonValue json);
 }

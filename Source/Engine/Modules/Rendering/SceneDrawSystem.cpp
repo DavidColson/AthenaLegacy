@@ -16,11 +16,11 @@ namespace
     ConstBufferHandle g_transformBufferHandle;
 }
 
-REFLECT_BEGIN(CCamera)
+REFLECT_COMPONENT_BEGIN(CCamera)
 REFLECT_MEMBER(fov)
 REFLECT_END()
 
-REFLECT_BEGIN(CRenderable)
+REFLECT_COMPONENT_BEGIN(CRenderable)
 REFLECT_MEMBER(shaderHandle)
 REFLECT_MEMBER(meshHandle)
 REFLECT_END()

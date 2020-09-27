@@ -12,7 +12,7 @@
 
 #include "Imgui/imgui.h"
 
-REFLECT_BEGIN(CText)
+REFLECT_COMPONENT_BEGIN(CText)
 REFLECT_MEMBER(text)
 REFLECT_END()
 
