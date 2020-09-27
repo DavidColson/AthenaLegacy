@@ -4,7 +4,6 @@
 // @ I'd like these custom types to be taken outside of the core of the type system
 #include "Scene.h"
 #include "AssetDatabase.h"
-
 #include "Scanning.h"
 
 #include <EASTL/string.h>
@@ -54,6 +53,33 @@ Member& TypeData::GetMember(const char* _name)
 	return members[memberOffsets[_name]];
 }
 
+JsonValue TypeData::ToJson(Variant value)
+{
+    JsonValue result = JsonValue::NewObject();
+
+    for (Member& member : *value.pTypeData)
+    {
+        result[member.name] = member.GetType().ToJson(member.Get(value));
+    }
+
+    return result;
+}
+
+Variant TypeData::FromJson(const JsonValue& json)
+{
+    Variant var = New();
+
+    for (const eastl::pair<eastl::string, JsonValue>& val : *json.internalData.pObject)
+	{
+        Member& mem = GetMember(val.first.c_str());
+
+        Variant parsed = mem.GetType().FromJson(val.second);
+        mem.Set(var, parsed);   
+    }
+
+    return var;
+}
+
 
 
 namespace TypeDatabase
@@ -78,7 +104,6 @@ namespace TypeDatabase
 //////////////////
 
 // @TODO: Set constructors!
-// @Improvement: the parse functions should return optionals telling you whether they failed so we can properly handle parsing within a whole document
 
 struct TypeData_Int : TypeData
 {
@@ -87,16 +112,14 @@ struct TypeData_Int : TypeData
 		TypeDatabase::Data::Get().typeNames.emplace("int", this);
 	}
 
-	virtual eastl::string Serialize(Variant var) override
+	virtual JsonValue ToJson(Variant var) override
 	{
-		eastl::string out;
-		out.sprintf("%i", var.GetValue<int>());
-		return out;
+		return JsonValue((long)var.GetValue<int>());
 	}
 
-	virtual Variant Parse(eastl::string_view str) override
+	virtual Variant FromJson(const JsonValue& val) override
 	{
-		return (int)strtol(eastl::string(str).c_str(), nullptr, 10);
+		return (int)val.ToInt();
 	}
 };
 template <>
@@ -117,16 +140,14 @@ struct TypeData_Float : TypeData
 		TypeDatabase::Data::Get().typeNames.emplace("float", this);
 	}
 
-	virtual eastl::string Serialize(Variant var) override
+	virtual JsonValue ToJson(Variant var) override
 	{
-		eastl::string out;
-		out.sprintf("%.9g", var.GetValue<float>());
-		return out;
+		return JsonValue((double)var.GetValue<float>());
 	}
 
-	virtual Variant Parse(eastl::string_view str) override
+	virtual Variant FromJson(const JsonValue& val) override
 	{
-		return strtof(eastl::string(str).c_str(), nullptr);
+		return (float)val.ToFloat();
 	}
 };
 template <>
@@ -147,16 +168,14 @@ struct TypeData_Double : TypeData
 		TypeDatabase::Data::Get().typeNames.emplace("double", this);
 	}
 
-	virtual eastl::string Serialize(Variant var) override
+	virtual JsonValue ToJson(Variant var) override
 	{
-		eastl::string out;
-		out.sprintf("%.17g", var.GetValue<double>());
-		return out;
+		return JsonValue(var.GetValue<double>());
 	}
 
-	virtual Variant Parse(eastl::string_view str) override
+	virtual Variant FromJson(const JsonValue& val) override
 	{
-		return strtod(eastl::string(str).c_str(), nullptr);
+		return val.ToFloat();
 	}
 };
 template <>
@@ -177,21 +196,14 @@ struct TypeData_String : TypeData
 		TypeDatabase::Data::Get().typeNames.emplace("eastl::string", this);
 	}
 
-	virtual eastl::string Serialize(Variant var) override
+	virtual JsonValue ToJson(Variant var) override
 	{
-		eastl::string out;
-		out.sprintf("\"%s\"", var.GetValue<eastl::string>().c_str());
-		return out;
+		return JsonValue(var.GetValue<eastl::string>());
 	}
 
-	virtual Variant Parse(eastl::string_view str) override
+	virtual Variant FromJson(const JsonValue& val) override
 	{
-		Scan::ScanningState scan;
-		scan.file = str;
-		scan.current = 0;
-		scan.line = 1;
-
-		return Scan::ParseToString(scan, '"');
+		return val.ToString();
 	}
 };
 template <>
@@ -212,22 +224,14 @@ struct TypeData_Bool : TypeData
 		TypeDatabase::Data::Get().typeNames.emplace("bool", this);
 	}
 
-	virtual eastl::string Serialize(Variant var) override
+	virtual JsonValue ToJson(Variant var) override
 	{
-		eastl::string out;
-		bool val = var.GetValue<bool>();
-        out.sprintf("%s", val ? "true" : "false");
-		return out;
+		return JsonValue(var.GetValue<bool>());
 	}
 
-	virtual Variant Parse(eastl::string_view str) override
+	virtual Variant FromJson(const JsonValue& val) override
 	{
-		if (str == "true")
-			return true;
-		if (str == "false")
-			return false;
-		
-		return false;
+		return val.ToBool();
 	}
 };
 template <>
@@ -248,13 +252,14 @@ struct TypeData_EntityID : TypeData
 		TypeDatabase::Data::Get().typeNames.emplace("EntityID", this);
 	}
 
-	virtual eastl::string Serialize(Variant var) override
+	virtual JsonValue ToJson(Variant var) override
 	{
-		eastl::string out = "EntityID()";
-		return out;
+		JsonValue val = JsonValue::NewObject();
+		val["EntityID"] = "";
+		return val;
 	}
 
-	virtual Variant Parse(eastl::string_view str) override
+	virtual Variant FromJson(const JsonValue& val) override
 	{
 		return EntityID();
 	}
@@ -277,44 +282,17 @@ struct TypeData_AssetHandle: TypeData
 		TypeDatabase::Data::Get().typeNames.emplace("AssetHandle", this);
 	}
 
-	virtual eastl::string Serialize(Variant var) override
+	virtual JsonValue ToJson(Variant var) override
 	{
-		eastl::string out;
+		JsonValue val = JsonValue::NewObject();
 		AssetHandle handle = var.GetValue<AssetHandle>();
-        out.sprintf("AssetHandle(\"%s\")", AssetDB::GetAssetIdentifier(handle).c_str());
-		return out;
+		val["Asset"] = AssetDB::GetAssetIdentifier(handle);
+		return val;
 	}
 
-	virtual Variant Parse(eastl::string_view str) override
+	virtual Variant FromJson(const JsonValue& val) override
 	{
-		Scan::ScanningState scan;
-		scan.file = str;
-		scan.current = 0;
-		scan.line = 1;
-
-		if (Scan::Peek(scan) == 'A')
-		{
-			for (int i = 0; i < 12; i++)
-				Scan::Advance(scan);
-			
-			if (scan.file.substr(0, 12) != "AssetHandle(")
-			{
-				Scan::HandleError(scan, "Expected \"AssetHandle(\" here", 0);
-				return AssetHandle();
-			}
-			eastl::string identifier = Scan::ParseToString(scan, '"');
-			if (Scan::Advance(scan) != ')')
-			{
-				Scan::HandleError(scan, "Expected end of asset handle \")\"", scan.current);
-				return AssetHandle();
-			}
-
-			return AssetHandle(identifier);
-		}
-		else
-		{
-			return AssetHandle();
-		}
+		return AssetHandle(val.Get("Asset").ToString());
 	}
 };
 template <>

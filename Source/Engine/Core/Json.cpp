@@ -3,8 +3,6 @@
 #include "Log.h"
 #include "ErrorHandling.h"
 #include "Scanning.h"
-#include "TypeSystem.h"
-
 
 // Tokenizer
 ///////////////////////////
@@ -249,6 +247,9 @@ eastl::vector<Token> TokenizeJson(eastl::string jsonText)
 	}
 	return tokens;
 }
+
+
+
 
 eastl::map<eastl::string, JsonValue> ParseObject(eastl::vector<Token>& tokens, int& currentToken);
 eastl::vector<JsonValue> ParseArray(eastl::vector<Token>& tokens, int& currentToken);
@@ -498,45 +499,47 @@ JsonValue::JsonValue(bool boolean)
     type = Type::Boolean;
 }
 
-eastl::string JsonValue::ToString()
+eastl::string JsonValue::ToString() const
 {
 	if (type == Type::String)
 		return *(internalData.pString);
 	return eastl::string();
 }
 
-double JsonValue::ToFloat()
+double JsonValue::ToFloat() const
 {
 	if (type == Type::Floating)
 		return internalData.floatingNumber;
+	else if (type == Type::Integer)
+		return (double)internalData.integerNumber;
 	return 0.0f;
 }
 
-long JsonValue::ToInt()
+long JsonValue::ToInt() const
 {
 	if (type == Type::Integer)
 		return internalData.integerNumber;
 	return 0;
 }
 
-bool JsonValue::ToBool()
+bool JsonValue::ToBool() const
 {
 	if (type == Type::Boolean)
 		return internalData.boolean;
 	return 0;
 }
 
-bool JsonValue::IsNull()
+bool JsonValue::IsNull() const
 {
 	return type == Type::Null;
 }
 
-bool JsonValue::HasKey(eastl::string identifier)
+bool JsonValue::HasKey(eastl::string identifier) const
 {
 	return internalData.pObject->count(identifier) >= 1;
 }
 
-int JsonValue::Count()
+int JsonValue::Count() const
 {
 	ASSERT(type == Type::Array || type == Type::Object, "Attempting to treat this value as an array or object when it is not.");
 	if (type == Type::Array)
@@ -552,6 +555,19 @@ JsonValue& JsonValue::operator[](eastl::string identifier)
 }
 
 JsonValue& JsonValue::operator[](size_t index)
+{
+	ASSERT(type == Type::Array, "Attempting to treat this value as an array when it is not.");
+	ASSERT(internalData.pArray->size() > index, "Accessing an element that does not exist in this array, you probably need to append");
+	return internalData.pArray->operator[](index);
+}
+
+const JsonValue& JsonValue::Get(eastl::string identifier) const
+{
+	ASSERT(type == Type::Object, "Attempting to treat this value as an object when it is not.");
+	return internalData.pObject->operator[](identifier);
+}
+
+const JsonValue& JsonValue::Get(size_t index) const
 {
 	ASSERT(type == Type::Array, "Attempting to treat this value as an array when it is not.");
 	ASSERT(internalData.pArray->size() > index, "Accessing an element that does not exist in this array, you probably need to append");
@@ -613,17 +629,17 @@ eastl::string SerializeJsonValue(JsonValue json, eastl::string indentation)
 	}
 	break;
 	case JsonValue::Type::Floating:
-		result.append(TypeDatabase::Get<double>().Serialize(json.ToFloat()));
+		result.append_sprintf("%.17g", json.ToFloat());
 		break;
 		// TODO: Serialize with exponentials like we do with floats
 	case JsonValue::Type::Integer:
-		result.append(TypeDatabase::Get<int>().Serialize((int)json.ToInt()));
+		result.append_sprintf("%i", json.ToInt());
 		break;
 	case JsonValue::Type::Boolean:
-		result.append(TypeDatabase::Get<bool>().Serialize(json.ToBool()));
+		result.append_sprintf("%s", json.ToBool() ? "true" : "false");
 		break;
 	case JsonValue::Type::String:
-		result.append(TypeDatabase::Get<eastl::string>().Serialize(json.ToString()));
+		result.append_sprintf("\"%s\"", json.ToString().c_str());
 		break;
 	case JsonValue::Type::Null:
 		result.append("null");

@@ -46,17 +46,20 @@ struct JsonValue
 	static JsonValue NewObject();
 	static JsonValue NewArray();
 
-	bool IsNull();
-	bool HasKey(eastl::string identifier);
-	int Count();
+	bool IsNull() const;
+	bool HasKey(eastl::string identifier) const;
+	int Count() const;
 
-	eastl::string ToString();
-	double ToFloat();
-	long ToInt();
-	bool ToBool();
+	eastl::string ToString() const;
+	double ToFloat() const;
+	long ToInt() const;
+	bool ToBool() const;
 
 	JsonValue& operator[](eastl::string identifier);
 	JsonValue& operator[](size_t index);
+
+ 	const JsonValue& Get(eastl::string identifier) const;
+	const JsonValue& Get(size_t index) const;
 
 	template <typename T>
 	void Append(T newVal)

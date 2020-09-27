@@ -4,6 +4,7 @@
 #include <EASTL/map.h>
 
 #include "Variant.h"
+#include "Json.h"
 
 struct TypeData;
 
@@ -76,8 +77,8 @@ struct TypeData
 	~TypeData();
 	Variant New();
 	
-	virtual eastl::string Serialize(Variant var);
-	virtual Variant Parse(eastl::string_view);
+	virtual JsonValue ToJson(Variant var);
+	virtual Variant FromJson(const JsonValue& val);
 
 	// Since type data is globally stored in the type database, equality checks can check the pointer addresses
 	bool operator==(const TypeData& other)
