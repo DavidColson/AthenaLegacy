@@ -204,6 +204,9 @@ void Model::Load(FileSys::FilePath path)
         meshAssetIdentifier.append_sprintf(":mesh_%i", i);
         meshes.back().Load(meshAssetIdentifier);
         AssetDB::RegisterAsset(&(meshes.back()), meshAssetIdentifier);
+
+        // TODO: I don't like this, to error prone
+        subAssets.push_back(AssetHandle(meshAssetIdentifier)); // Store an asset handle to the subasset, which keeps it's refcount above 0 so it doesn't get garbage collected
     }
 
     for (int i = 0; i < rawDataBuffers.size(); i++)

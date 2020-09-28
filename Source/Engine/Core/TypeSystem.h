@@ -249,7 +249,7 @@ namespace TypeDatabase
 		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
 		selfTypeData->members = {
 
-// Special version of reflection function used for components. Allows for storing specialized component assignment object
+// Special version of reflection function used for components. Allows for storing specialized component creator object
 #define REFLECT_COMPONENT_BEGIN(Struct)\
 	TypeData Struct::typeData{Struct::initReflection};\
 	void Struct::initReflection(TypeData* selfTypeData) {\
@@ -258,5 +258,5 @@ namespace TypeDatabase
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
-		selfTypeData->pComponentAssignment = new ComponentAssignment_Internal<XX>;\
+		selfTypeData->pComponentCreator = new ComponentCreator_Internal<XX>;\
 		selfTypeData->members = {

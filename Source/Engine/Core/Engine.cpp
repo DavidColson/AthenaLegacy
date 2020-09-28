@@ -25,6 +25,8 @@ namespace
 
 	bool g_gameRunning{ true };
 
+	void (*pSceneCallBack)(Scene& scene);
+
 	Scene* pCurrentScene{ nullptr };
 	Scene* pPendingSceneLoad{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
@@ -55,6 +57,11 @@ void Engine::NewSceneCreated(Scene& scene)
 void Engine::SetActiveScene(Scene* pScene)
 {
 	pPendingSceneLoad = pScene;
+}
+
+void Engine::SetSceneCreateCallback(void (*pCallBackFunc)(Scene&))
+{
+	pSceneCallBack = pCallBackFunc;
 }
 
 void Engine::Initialize()
@@ -88,6 +95,7 @@ void Engine::Initialize()
 void Engine::Run(Scene *pScene)
 {	
 	pCurrentScene = pScene;
+	pSceneCallBack(*pCurrentScene);
 
 	// Game update loop
 	double frameTime = 0.016f;
@@ -137,6 +145,7 @@ void Engine::Run(Scene *pScene)
 			delete pCurrentScene;
 			AssetDB::CollectGarbage();
 			pCurrentScene = pPendingSceneLoad;
+			pSceneCallBack(*pCurrentScene);
 			pPendingSceneLoad = nullptr;
 		}
 

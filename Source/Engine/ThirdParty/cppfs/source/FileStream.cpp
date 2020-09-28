@@ -1,6 +1,7 @@
 #include <FileStream.h>
 
 #include <SDL_rwops.h>
+#include <Log.h>
 
 #include <cppfs.h>
 
@@ -58,6 +59,11 @@ FileStream::FileStream(eastl::string _path, unsigned int mode)
     }
 
     rwops = SDL_RWFromFile(_path.c_str(), modeString.c_str());
+    if (rwops == nullptr)
+    {
+        Log::Crit("Opening file stream for file %s failed with error: %s", _path.c_str(), SDL_GetError());
+    }
+
     path = _path;
 }
 

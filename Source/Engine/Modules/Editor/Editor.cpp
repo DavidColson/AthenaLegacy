@@ -7,11 +7,15 @@
 #include "Vec2.h"
 #include "Profiler.h"
 #include "Engine.h"
+#include "SceneSerializer.h"
+#include "Json.h"
+#include "FileSys.h"
 
 #include <Imgui/imgui.h>
 #include <Imgui/misc/cpp/imgui_stdlib.h>
 
 #include <SDL_scancode.h>
+
 
 namespace {
 	bool showEditor = true;
@@ -21,6 +25,10 @@ namespace {
 	bool showFrameStats = true;
 	bool showImGuiDemo = false;
 	EntityID selectedEntity = EntityID::InvalidID();
+
+	eastl::string levelSaveModalFilename;
+	eastl::vector<eastl::string> levelOpenModalFiles;
+	int selectedLevelFile = -1;
 
 	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
 	double oldRealFrameTime;
@@ -275,10 +283,16 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 	if (!showEditor)
 		return;
 
+	bool bSaveModal = false;
+	bool bOpenModal = false;
 	if (ImGui::BeginMainMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
 		{
+			if (ImGui::MenuItem("Save Level"))
+           		bSaveModal = true;
+			if (ImGui::MenuItem("Open Level"))
+				bOpenModal = true;
 			if (ImGui::MenuItem("Show Imgui Demo")) { showImGuiDemo = !showImGuiDemo; }
 			ImGui::Separator();
 			if (ImGui::MenuItem("Quit")) { Engine::StartShutdown(); }
@@ -293,6 +307,78 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
+	}
+
+	if (bSaveModal)
+	{
+		levelSaveModalFilename.set_capacity(100);
+		ImGui::OpenPopup("Save Level As");
+	}
+	if (ImGui::BeginPopupModal("Save Level As", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Choose a filename\n\n");
+		ImGui::Separator();
+		
+		ImGui::Text("Filename: ");
+		ImGui::SameLine();
+		ImGui::InputText("", &levelSaveModalFilename);
+		ImGui::SameLine();
+		ImGui::Text(".lvl");
+
+		if (ImGui::Button("Save", ImVec2(120, 0))) 
+		{
+			eastl::string filePath;
+			filePath.sprintf("Resources/Levels/%s.lvl", levelSaveModalFilename.c_str());
+			FileSys::FileHandle fHandle = FileSys::open(filePath);
+			JsonValue jsonScene = SceneSerializer::ToJson(scene);
+			fHandle.writeFile(SerializeJsonValue(jsonScene));
+			ImGui::CloseCurrentPopup(); 
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
+	}
+
+	if (bOpenModal)
+	{
+		ImGui::OpenPopup("Open Level");
+
+		levelOpenModalFiles.clear();
+		FileSys::FileHandle levelsFolder = FileSys::open("Resources/Levels/");
+		eastl::vector<eastl::string> levels = levelsFolder.listFiles();
+		for (eastl::string& levelName : levels)
+		{
+			levelOpenModalFiles.push_back({levelName, false});
+		}
+	}
+	if (ImGui::BeginPopupModal("Open Level", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Choose a file\n");
+		ImGui::Separator();
+		
+		ImGui::BeginChild("Levels", ImVec2(0.0f, 200.0f), true);
+		for (int i = 0; i < levelOpenModalFiles.size(); i++)
+		{
+			if (ImGui::Selectable(levelOpenModalFiles[i].c_str(), i == selectedLevelFile))
+				selectedLevelFile = i;
+		}
+		ImGui::EndChild();
+
+		if (ImGui::Button("Open", ImVec2(120, 0))) 
+		{
+			eastl::string levelPath;
+			levelPath.sprintf("Resources/Levels/%s", levelOpenModalFiles[selectedLevelFile].c_str());
+			FileSys::FileHandle levelFileHandle = FileSys::open(levelPath);
+			JsonValue jsonScene = ParseJsonFile(levelFileHandle.readFile());
+			Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
+			Engine::SetActiveScene(pScene);
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
 	}
 
 	ShowLog();

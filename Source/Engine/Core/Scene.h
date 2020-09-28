@@ -215,6 +215,7 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 {
 	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { pTypeData = &TypeDatabase::Get<T>(); }
 
+	// TODO: This could potentially be moved to be inside TypeData and applied to a variant of the component
 	virtual void destroy(size_t index) override
 	{
 		ASSERT(index < MAX_ENTITIES, "Trying to delete an entity with an ID greater than max allowed entities");
@@ -224,13 +225,13 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 
 // A wrapper for storing the component assignment function for a specific component for use later when you might not
 // know the actual type of the component. Used primarily for level loading
-struct ComponentAssignment
+struct ComponentCreator
 {
 	virtual Variant Assign(Scene& scene, EntityID entity) = 0;
 };
 
 template<typename T>
-struct ComponentAssignment_Internal : public ComponentAssignment
+struct ComponentCreator_Internal : public ComponentCreator
 {
 	virtual Variant Assign(Scene& scene, EntityID entity) override
 	{

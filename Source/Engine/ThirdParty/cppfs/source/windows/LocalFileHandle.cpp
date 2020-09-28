@@ -1,6 +1,8 @@
 
 #include <windows/LocalFileHandle.h>
 
+#include <Log.h>
+
 #include <fstream>
 
 #include <windows.h>
@@ -215,6 +217,11 @@ bool LocalFileHandle::createDirectory()
     // Create directory
     if (!CreateDirectoryA(m_path.c_str(), nullptr))
     {
+        DWORD error = GetLastError();
+        if (error == ERROR_ALREADY_EXISTS)
+            Log::Crit("Could not create directory because it already exists");
+        if (error == ERROR_PATH_NOT_FOUND)
+            Log::Crit("Could not create directory because one or more intermediate directories do not exist");
         return false;
     }
 

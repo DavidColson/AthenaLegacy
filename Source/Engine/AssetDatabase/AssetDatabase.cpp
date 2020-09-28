@@ -203,7 +203,6 @@ void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
         hot.asset = handle;
         hot.cacheLastModificationTime = FileSys::open(assetMetas[hot.asset.id].path).modificationTime();
         hotReloadWatches.push_back(hot);
-        assetMetas[handle.id].refCount -= 1; // Assets in the hot reloader should not count as real references
     }
 }
 

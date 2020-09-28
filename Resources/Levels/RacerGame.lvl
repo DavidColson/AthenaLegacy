@@ -1,0 +1,277 @@
+[
+    {
+        CCamera: {
+            fov: 102,
+        },
+        CName: {
+            name: "Camera",
+        },
+        CTransform: {
+            localPos: {
+                x: 4.8830366134643555,
+                y: 2.2657017707824707,
+                z: -6.126795768737793,
+            },
+            localRot: {
+                x: -0.56319993734359741,
+                y: 2.1184005737304688,
+                z: 0,
+            },
+            localSca: {
+                x: 1,
+                y: 1,
+                z: 1,
+            },
+        },
+    },
+    {
+        CName: {
+            name: "Cube",
+        },
+        CParent: {
+            firstChild: {
+                EntityID: 2,
+            },
+            nChildren: 5,
+        },
+        CRenderable: {
+            meshHandle: {
+                Asset: "cube",
+            },
+            shaderHandle: {
+                Asset: "Resources/Shaders/VertColor.hlsl",
+            },
+        },
+        CTransform: {
+            localPos: {
+                x: 0,
+                y: 0,
+                z: -3,
+            },
+            localRot: {
+                x: 0,
+                y: 0,
+                z: 0,
+            },
+            localSca: {
+                x: 0.5,
+                y: 0.5,
+                z: 0.5,
+            },
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: 4,
+            },
+            parent: {
+                EntityID: 1,
+            },
+            prev: {
+                EntityID: -1,
+            },
+        },
+        CName: {
+            name: "Cube2",
+        },
+        CParent: {
+            firstChild: {
+                EntityID: 3,
+            },
+            nChildren: 3,
+        },
+        CRenderable: {
+            meshHandle: {
+                Asset: "cube",
+            },
+            shaderHandle: {
+                Asset: "Resources/Shaders/VertColor.hlsl",
+            },
+        },
+        CTransform: {
+            localPos: {
+                x: 1,
+                y: 0,
+                z: -5,
+            },
+            localRot: {
+                x: 0,
+                y: 0,
+                z: 0,
+            },
+            localSca: {
+                x: 1,
+                y: 1,
+                z: 1,
+            },
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: 8,
+            },
+            parent: {
+                EntityID: 2,
+            },
+            prev: {
+                EntityID: -1,
+            },
+        },
+        CName: {
+            name: "Cube3",
+        },
+        CRenderable: {
+            meshHandle: {
+                Asset: "cube",
+            },
+            shaderHandle: {
+                Asset: "Resources/Shaders/VertColor.hlsl",
+            },
+        },
+        CTransform: {
+            localPos: {
+                x: 1,
+                y: 0,
+                z: -5,
+            },
+            localRot: {
+                x: 0,
+                y: 0,
+                z: 0,
+            },
+            localSca: {
+                x: 1,
+                y: 1,
+                z: 1,
+            },
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: 5,
+            },
+            parent: {
+                EntityID: 1,
+            },
+            prev: {
+                EntityID: 2,
+            },
+        },
+        CName: {
+            name: "ChildEnt",
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: 6,
+            },
+            parent: {
+                EntityID: 1,
+            },
+            prev: {
+                EntityID: 4,
+            },
+        },
+        CName: {
+            name: "ChildEnt",
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: 7,
+            },
+            parent: {
+                EntityID: 1,
+            },
+            prev: {
+                EntityID: 5,
+            },
+        },
+        CName: {
+            name: "ChildEnt",
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: -1,
+            },
+            parent: {
+                EntityID: 1,
+            },
+            prev: {
+                EntityID: 6,
+            },
+        },
+        CName: {
+            name: "ChildEnt",
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: 9,
+            },
+            parent: {
+                EntityID: 2,
+            },
+            prev: {
+                EntityID: 3,
+            },
+        },
+        CName: {
+            name: "ChildEnt",
+        },
+    },
+    {
+        CChild: {
+            next: {
+                EntityID: -1,
+            },
+            parent: {
+                EntityID: 2,
+            },
+            prev: {
+                EntityID: 8,
+            },
+        },
+        CName: {
+            name: "ChildEnt",
+        },
+    },
+    {
+        CName: {
+            name: "Monkey",
+        },
+        CRenderable: {
+            meshHandle: {
+                Asset: "Resources/Models/monkey.gltf:mesh_0",
+            },
+            shaderHandle: {
+                Asset: "Resources/Shaders/VertColor.hlsl",
+            },
+        },
+        CTransform: {
+            localPos: {
+                x: 0,
+                y: 0,
+                z: 0,
+            },
+            localRot: {
+                x: 0,
+                y: 3.1410000324249268,
+                z: 0,
+            },
+            localSca: {
+                x: 1,
+                y: 1,
+                z: 1,
+            },
+        },
+    },
+]

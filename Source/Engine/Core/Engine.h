@@ -8,7 +8,9 @@ namespace Engine
 	void Run(Scene* pInitialScene);
 	void StartShutdown();
 
-	void NewSceneCreated(Scene& scene);
 	void SetActiveScene(Scene* pScene);
+	void SetSceneCreateCallback(void (*pCallBackFunc)(Scene&));
+	
+	void NewSceneCreated(Scene& scene);
 	void GetFrameRates(double& outReal, double& outLimited);
 }

@@ -8,8 +8,8 @@
 #include <SDL.h>
 #include <Input/Input.h>
 #include <Rendering/SceneDrawSystem.h>
-#include <SceneSerializer.h>
 #include <AssetDatabase.h>
+#include <SceneSerializer.h>
 #include <Json.h>
 
 #include <FileSys.h>
@@ -53,122 +53,6 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	}
 }
 
-void SetupScene(Scene& scene)
-{
-	scene.RegisterSystem(SystemPhase::Update, CameraControlSystem);
-
-	EntityID camera = scene.NewEntity("Camera");
-	scene.Assign<CCamera>(camera)->fov = 102;
-	scene.Assign<CTransform>(camera);
-
-	// Make cube
-	EntityID cube = scene.NewEntity("Cube");
-	{
-		CTransform* pTrans = scene.Assign<CTransform>(cube);
-		pTrans->localPos = Vec3f(0.0f, 0.0f, -3.0f);
-		pTrans->localSca = Vec3f(0.5f, 0.5f, 0.5f);
-		
-		CRenderable* pRenderable = scene.Assign<CRenderable>(cube);
-		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
-		pRenderable->meshHandle = AssetHandle("cube");
-	}
-
-	// Make another cube
-	EntityID cube2 = scene.NewEntity("Cube2");
-	{
-		CTransform* pTrans = scene.Assign<CTransform>(cube2);
-		scene.SetParent(cube2, cube);
-		pTrans->localPos = Vec3f(1.0f, 0.0f, -5.0f);
-		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
-		
-		CRenderable* pRenderable = scene.Assign<CRenderable>(cube2);
-		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
-		pRenderable->meshHandle = AssetHandle("cube");
-	}
-
-	EntityID cube3 = scene.NewEntity("Cube3");
-	{
-		scene.SetParent(cube3, cube2);
-		CTransform* pTrans = scene.Assign<CTransform>(cube3);
-		pTrans->localPos = Vec3f(1.0f, 0.0f, -5.0f);
-		pTrans->localSca = Vec3f(1.0f, 1.0f, 1.0f);
-
-		CRenderable* pRenderable = scene.Assign<CRenderable>(cube3);
-		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
-		pRenderable->meshHandle = AssetHandle("cube");
-	}
-
-	for(int i = 0; i < 4; i++)
-	{
-		EntityID newEnt = scene.NewEntity("ChildEnt");
-		scene.SetParent(newEnt, cube);
-	}
-
-	for(int i = 0; i < 2; i++)
-	{
-		EntityID newEnt = scene.NewEntity("ChildEnt");
-		scene.SetParent(newEnt, cube2);
-	}
-
-	{
-		EntityID triangle = scene.NewEntity("Monkey");
-		CTransform* pTriangleTrans = scene.Assign<CTransform>(triangle);
-		
-		CRenderable* pRenderable = scene.Assign<CRenderable>(triangle);
-		pRenderable->shaderHandle = AssetHandle("Resources/Shaders/VertColor.hlsl");
-		pRenderable->meshHandle = AssetHandle("Resources/Models/monkey.gltf:mesh_0");
-	}
-
-	FileSys::FileHandle fHandle = FileSys::open("SerializeRacerScene.txt");
-	JsonValue jsonScene = SceneSerializer::ToJson(scene);
-	fHandle.writeFile(SerializeJsonValue(jsonScene));
-}
-
-struct InnerStruct
-{
-	float thisIsAFloat{ 22.0f };
-	int thisIsAnInt{ 6 };
-
-	REFLECT();
-};
-
-struct Component
-{
-  int myInt{ 5 };
-  int mySecondInt{ 3 };
-
-  float myFloat{ 21.412312731f };
-  double myDouble{ 21.4123127311928746123 };
-
-  eastl::string myString{ "Ducks" };
-  bool myBool = false;
-
-  EntityID anEntityId;
-
-  AssetHandle monkey{ "Resources/Models/monkey.gltf:mesh_0" };
-
-  InnerStruct myInnerStruct;
-
-  REFLECT()
-};
-
-REFLECT_BEGIN(InnerStruct)
-REFLECT_MEMBER(thisIsAFloat)
-REFLECT_MEMBER(thisIsAnInt)
-REFLECT_END()
-
-REFLECT_BEGIN(Component)
-REFLECT_MEMBER(myInt)
-REFLECT_MEMBER(mySecondInt)
-REFLECT_MEMBER(myFloat)
-REFLECT_MEMBER(myDouble)
-REFLECT_MEMBER(myString)
-REFLECT_MEMBER(myBool)
-REFLECT_MEMBER(anEntityId)
-REFLECT_MEMBER(monkey)
-REFLECT_MEMBER(myInnerStruct)
-REFLECT_END()
-
 int main(int argc, char *argv[])
 {
 	Engine::Initialize();
@@ -198,14 +82,16 @@ int main(int argc, char *argv[])
 	pCubeMesh->CreateGfxDeviceBuffers();
 	AssetDB::RegisterAsset(pCubeMesh, "cube");
 
-	// Scene* pScene = new Scene();
-	// SetupScene(*pScene);
-
-	FileSys::FileHandle fHandle = FileSys::open("SerializeRacerScene.txt");
+	
+	// Open the level we want to play
+	FileSys::FileHandle fHandle = FileSys::open("Resources/Levels/RacerGame.lvl");
 	JsonValue jsonScene = ParseJsonFile(fHandle.readFile());
 	Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
-	pScene->RegisterSystem(SystemPhase::Update, CameraControlSystem);
 
+	// Register systems
+	Engine::SetSceneCreateCallback([](Scene& newScene) {
+		newScene.RegisterSystem(SystemPhase::Update, CameraControlSystem);
+	});
 
 	// Run everything
 	Engine::Run(pScene);
