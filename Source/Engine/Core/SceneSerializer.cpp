@@ -56,17 +56,14 @@ Scene* SceneSerializer::NewSceneFromJson(JsonValue json)
 
                 TypeData& componentTypeData = TypeDatabase::GetFromString(val.first.c_str());
 
-                Variant destinationComponentData;
-                if (componentTypeData.pComponentCreator)
+                void* pDestinationComponentData;
+                if (componentTypeData.pComponentHandler)
                 {
-                    destinationComponentData = componentTypeData.pComponentCreator->Assign(*pScene, entId);
+                    pDestinationComponentData = componentTypeData.pComponentHandler->Assign(*pScene, entId);
                 }
                 
                 Variant sourceComponentData = componentTypeData.FromJson(val.second);
-                memcpy(destinationComponentData.pData, sourceComponentData.pData, componentTypeData.size);
-
-                // This prevents the variant destructors from killing this information, which actually points to the real component data
-                destinationComponentData.pData = nullptr;
+                memcpy(pDestinationComponentData, sourceComponentData.pData, componentTypeData.size);
             }
         }
     }

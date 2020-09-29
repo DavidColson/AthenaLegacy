@@ -223,22 +223,24 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 	}
 };
 
-// A wrapper for storing the component assignment function for a specific component for use later when you might not
-// know the actual type of the component. Used primarily for level loading
-struct ComponentCreator
+// A wrapper for storing the templated functions for dealing with a specific function. Used when handling components without the actual type involved
+struct ComponentHandler
 {
-	virtual Variant Assign(Scene& scene, EntityID entity) = 0;
+	virtual void* Assign(Scene& scene, EntityID entity) = 0;
+	virtual void Remove(Scene& scene, EntityID entity) = 0;
 };
 
 template<typename T>
-struct ComponentCreator_Internal : public ComponentCreator
+struct ComponentHandler_Internal : public ComponentHandler
 {
-	virtual Variant Assign(Scene& scene, EntityID entity) override
+	virtual void* Assign(Scene& scene, EntityID entity) override
 	{
-		Variant result;
-		result.pTypeData = &TypeDatabase::Get<T>();
-		result.pData = scene.Assign<T>(entity);
-		return result;
+		return scene.Assign<T>(entity);
+	}
+
+	virtual void Remove(Scene& scene, EntityID entity) override
+	{
+		scene.Remove<T>(entity);
 	}
 };
 

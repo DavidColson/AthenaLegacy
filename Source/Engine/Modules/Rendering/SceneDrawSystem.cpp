@@ -56,14 +56,17 @@ void SceneDrawSystem::OnFrame(Scene& scene, float deltaTime)
 		CRenderable* pRenderable = scene.Get<CRenderable>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);
 
+		Shader* pShader = AssetDB::GetAsset<Shader>(pRenderable->shaderHandle);
+		Mesh* pMesh = AssetDB::GetAsset<Mesh>(pRenderable->meshHandle);
+		if (pShader == nullptr || pMesh == nullptr)
+			return;
+
 		Matrixf wvp = proj * view * pTrans->globalTransform;
 		cbTransformBuf trans{ wvp };
 		GfxDevice::BindConstantBuffer(g_transformBufferHandle, &trans, ShaderType::Vertex, 0);
 
-		Shader* pShader = AssetDB::GetAsset<Shader>(pRenderable->shaderHandle);
 		GfxDevice::BindProgram(pShader->program);
 
-		Mesh* pMesh = AssetDB::GetAsset<Mesh>(pRenderable->meshHandle);
 		for (Primitive& prim : pMesh->primitives)
 		{
 			GfxDevice::SetTopologyType(prim.topologyType);

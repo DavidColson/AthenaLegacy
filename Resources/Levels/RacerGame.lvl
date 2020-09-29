@@ -2,19 +2,21 @@
     {
         CCamera: {
             fov: 102,
+            horizontalAngle: 1.1887186765670776,
+            verticalAngle: -0.52489984035491943,
         },
         CName: {
             name: "Camera",
         },
         CTransform: {
             localPos: {
-                x: 4.8830366134643555,
-                y: 2.2657017707824707,
-                z: -6.126795768737793,
+                x: 6.671231746673584,
+                y: 2.2735238075256348,
+                z: -0.71867233514785767,
             },
             localRot: {
-                x: -0.56319993734359741,
-                y: 2.1184005737304688,
+                x: -0.52489984035491943,
+                y: 1.1887186765670776,
                 z: 0,
             },
             localSca: {
@@ -264,12 +266,42 @@
             },
             localRot: {
                 x: 0,
-                y: 3.1410000324249268,
+                y: 1.9409999847412109,
                 z: 0,
             },
             localSca: {
                 x: 1,
                 y: 1,
+                z: 1,
+            },
+        },
+    },
+    {
+        CName: {
+            name: "NewCube",
+        },
+        CRenderable: {
+            meshHandle: {
+                Asset: "cube",
+            },
+            shaderHandle: {
+                Asset: "Resources/Shaders/VertColor.hlsl",
+            },
+        },
+        CTransform: {
+            localPos: {
+                x: -4.9000000953674316,
+                y: 2.7999999523162842,
+                z: -8.1999998092651367,
+            },
+            localRot: {
+                x: 0,
+                y: 0.30000001192092896,
+                z: 0,
+            },
+            localSca: {
+                x: 1,
+                y: 1.6000000238418579,
                 z: 1,
             },
         },

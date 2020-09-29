@@ -99,14 +99,12 @@ void Engine::Run(Scene *pScene)
 
 	// Game update loop
 	double frameTime = 0.016f;
-	double targetFrameTime = 0.016f;
+	double targetFrameTime = 0.0166f;
 	while (g_gameRunning)
 	{
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
 		AssetDB::UpdateHotReloading();
-
-		RenderSystem::PreUpdate(*pCurrentScene, (float)frameTime);
 
 		// Deal with events
 		SDL_Event event;
@@ -131,6 +129,9 @@ void Engine::Run(Scene *pScene)
 				break;
 			}
 		}
+
+		// Note that pre-update has to happen after input processing or else imgui gets confused
+		RenderSystem::PreUpdate(*pCurrentScene, (float)frameTime);
 
 		// Simulate current game scene
 		pCurrentScene->SimulateScene((float)frameTime);

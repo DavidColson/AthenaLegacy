@@ -110,8 +110,12 @@ AssetHandle::~AssetHandle()
 
 Asset* AssetDB::GetAssetRaw(AssetHandle handle)
 {
+    // TODO: consider the asset type when someone gets an asset, if they request an asset that exists, but it's a different type, gracefully fail
     if (assets.count(handle.id) == 0)
     {
+        if (assetMetas[handle.id].path.isEmpty())
+            return nullptr;
+
         Asset* pAsset;
         FileSys::FilePath& path = assetMetas[handle.id].path;
         eastl::string fileType = path.extension();
@@ -138,7 +142,8 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
         }
         else
         {
-            Log::Crit("Attempting to load an unsupported asset type. Will crash imminently");
+            Log::Crit("Attempting to load an unsupported asset type");
+            return nullptr;
         }
         
         pAsset->Load(path);

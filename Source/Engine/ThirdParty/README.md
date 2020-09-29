@@ -24,9 +24,9 @@ Exact mirror of upstream repo.
 ## Imgui
 
 - Source: https://github.com/ocornut/imgui
-- Version: 1.66
+- Version: 1.78
 
-Exact mirror of upstream repo plus a CMakeLists file to compile within the engine.
+Have edited imconfig.h for our custom asserts and types. Also changed std to eastl in imgui_stdlib.h/.cpp. Removed the includes from sdl and d3d imp files. Added a custom cmake file for our project.
 
 ## cppfs
 
