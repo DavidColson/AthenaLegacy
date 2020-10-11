@@ -126,3 +126,58 @@ bool FileSys::NewDirectories(const Path& newPath)
     } 
     return true;
 }
+
+Path FileSys::DirectoryIterator::Iterator::operator*() const
+{
+    return parentPath / currentPath;
+}
+
+bool FileSys::DirectoryIterator::Iterator::operator==(const Iterator& other) const
+{
+    return currentHandle == other.currentHandle;
+}
+
+bool FileSys::DirectoryIterator::Iterator::operator!=(const Iterator& other) const
+{
+    return currentHandle != other.currentHandle;
+}
+
+FileSys::DirectoryIterator::Iterator& FileSys::DirectoryIterator::Iterator::operator++()
+{
+    // If current is directory
+    // Then add it to a stack of directories, and do find first file on it, then continue as normal until findNextFile fails.
+    // If the stack isn't empty, then get the last handle/data combo from the stack, popping it off, and carry on.
+    // When stack is empty set currenthandle to invalid and finish
+
+    WIN32_FIND_DATAA data;
+    if (!FindNextFileA((HANDLE)currentHandle, &data))
+    {
+        currentHandle = (void*)INVALID_HANDLE_VALUE;
+        currentPath = Path();
+        return *this;
+    }
+    currentPath = Path(data.cFileName);
+    return *this;
+}
+
+FileSys::DirectoryIterator::DirectoryIterator(Path directory)
+{
+    directory /= "*";
+    directoryToIterate = directory;;
+}
+
+const FileSys::DirectoryIterator::Iterator FileSys::DirectoryIterator::begin() const
+{
+    WIN32_FIND_DATAA data;
+    HANDLE hFile = FindFirstFileA(directoryToIterate.AsRawString(), &data);
+
+    while (!strcmp(data.cFileName, ".") || !strcmp(data.cFileName, ".."))
+        FindNextFileA(hFile, &data);
+
+    return Iterator((void*)hFile, Path(data.cFileName), directoryToIterate.ParentPath());
+}
+
+const FileSys::DirectoryIterator::Iterator FileSys::DirectoryIterator::end() const
+{
+    return Iterator((void*)INVALID_HANDLE_VALUE, Path(), directoryToIterate.ParentPath());
+}
