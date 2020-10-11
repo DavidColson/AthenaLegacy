@@ -3,6 +3,11 @@
 #include <EASTL/vector.h>
 #include <EASTL/algorithm.h>
 
+Path::Path()
+{
+    stringPath = "";
+}
+
 Path::Path(eastl::string pathAsString)
 {
     stringPath = pathAsString;
@@ -45,14 +50,14 @@ Path& Path::operator=(Path&& path)
     return *this;
 }
 
-eastl::string Path::RootName() const
+Path Path::RootName() const
 {
     if (hasValidRootname)
         return pathParts[0];;
     return "";
 }
 
-eastl::string Path::RootDirectory() const
+Path Path::RootDirectory() const
 {
     if (RootName() == "")
     {
@@ -64,25 +69,25 @@ eastl::string Path::RootDirectory() const
     return pathParts[1];
 }
 
-eastl::string Path::RootPath() const
+Path Path::RootPath() const
 {
     return RootName() + RootDirectory();
 }
 
-eastl::string Path::RelativePath() const
+Path Path::RelativePath() const
 {
     eastl::string relativePath = stringPath;
-    eastl::string rootPath = RootPath();
+    eastl::string rootPath = RootPath().AsString();
     // remove rootPath
     size_t pos = 0;
-    if ((pos = relativePath.find(RootPath())) != eastl::string::npos)
+    if ((pos = relativePath.find(rootPath)) != eastl::string::npos)
     {
         relativePath.erase(0, pos + rootPath.length());
     }
     return relativePath;
 }
 
-eastl::string Path::ParentPath() const
+Path Path::ParentPath() const
 {
     eastl::string parentPath;
     for (size_t i = 0; i < eastl::max((int)pathParts.size()-2, 0); i++)
@@ -92,15 +97,15 @@ eastl::string Path::ParentPath() const
     return parentPath;
 }
 
-eastl::string Path::Filename() const
+Path Path::Filename() const
 {
     size_t numParts = pathParts.size();
     return (numParts > 0) ? pathParts[numParts-1] : "";
 }
 
-eastl::string Path::Stem() const
+Path Path::Stem() const
 {
-    eastl::string filename = Filename();
+    eastl::string filename = Filename().AsString();
     size_t pos = filename.find_first_of('.', 1);
 
     if (filename == "." || filename == ".." || pos == eastl::string::npos)
@@ -114,9 +119,9 @@ eastl::string Path::Stem() const
 
 }
 
-eastl::string Path::Extension() const
+Path Path::Extension() const
 {
-    eastl::string filename = Filename();
+    eastl::string filename = Filename().AsString();
     size_t pos = filename.find_first_of('.', 1);
 
     if (filename == "." || filename == ".." || pos == eastl::string::npos)
@@ -127,7 +132,14 @@ eastl::string Path::Extension() const
     {
         return filename.substr(pos);
     }
+}
 
+Path Path::RemoveTrailingSlash() const
+{
+    char c = stringPath[stringPath.length() - 1];
+    if (c == '/' || c == '\\')
+        return stringPath.substr(0, stringPath.length() - 1);
+    return stringPath;
 }
 
 bool Path::IsEmpty() const
@@ -137,7 +149,7 @@ bool Path::IsEmpty() const
 
 bool Path::HasRootPath() const
 {
-    return !RootPath().empty();
+    return !RootPath().IsEmpty();
 }
 
 bool Path::HasRootName() const
@@ -147,32 +159,32 @@ bool Path::HasRootName() const
 
 bool Path::HasRootDirectory() const
 {
-    return !RootDirectory().empty();
+    return !RootDirectory().IsEmpty();
 }
 
 bool Path::HasRelativePath() const
 {
-    return !RelativePath().empty();
+    return !RelativePath().IsEmpty();
 }
 
 bool Path::HasParentPath() const
 {
-    return !ParentPath().empty();
+    return !ParentPath().IsEmpty();
 }
 
 bool Path::HasFilename() const
 {
-    return !Filename().empty();
+    return !Filename().IsEmpty();
 }
 
 bool Path::HasStem() const
 {
-    return !Stem().empty();
+    return !Stem().IsEmpty();
 }
 
 bool Path::HasExtension() const
 {
-    return !Extension().empty();
+    return !Extension().IsEmpty();
 }
 
 bool Path::IsAbsolute() const
@@ -190,8 +202,20 @@ eastl::string Path::AsString() const
     return stringPath;
 }
 
+const char* Path::AsRawString() const
+{
+    return stringPath.c_str();
+}
+
 Path& Path::operator/=(const Path& pathToAppend)
 {
+    if (IsEmpty())
+    {
+        stringPath = pathToAppend.stringPath;
+        Analyze();
+        return *this;   
+    }
+
     if (pathToAppend.IsAbsolute())
     {
         stringPath = pathToAppend.stringPath;
@@ -224,6 +248,9 @@ size_t FindNextSeparatorLoc(const eastl::string& path, size_t startPos)
 
 void Path::Analyze()
 {
+    if (IsEmpty())
+        return;
+
     pathParts.clear();
     // Split path into parts
     size_t pos1 = 0;
@@ -256,16 +283,22 @@ void Path::Analyze()
         pathParts.push_back(stringPath.substr(pos2, 1)); // separator
         pos1 = pos2+1;
     }
+    
+    // Final token
     if (pos1 != eastl::string::npos)
-        pathParts.push_back(stringPath.substr(pos1, stringPath.length() - pos1));
+    {
+        token = stringPath.substr(pos1, stringPath.length() - pos1);
+        if (!token.empty())
+            pathParts.push_back(stringPath.substr(pos1, stringPath.length() - pos1));
+    }
 }
 
-const Path::PathIterator Path::begin() 
+const Path::PathIterator Path::begin() const
 {
     return PathIterator(pathParts.begin());
 }
 
-const Path::PathIterator Path::end()
+const Path::PathIterator Path::end() const
 {
     return PathIterator(pathParts.end());
 }
@@ -298,3 +331,26 @@ Path::PathIterator& Path::PathIterator::operator++()
     return *this;
 }
 
+Path operator/(const Path& lhs, const Path& rhs)
+{
+    Path newPath = lhs;
+    newPath /= rhs;
+    return newPath;
+}
+
+Path operator+(const Path& lhs, const Path& rhs)
+{
+    Path newPath = lhs;
+    newPath += rhs;
+    return newPath;
+}
+
+bool operator==(const Path& lhs, const Path& rhs)
+{
+    return lhs.AsString() == rhs.AsString();
+}
+
+bool operator!=(const Path& lhs, const Path& rhs)
+{
+    return lhs.AsString() != rhs.AsString();
+}

@@ -32,6 +32,8 @@ target_sources(Engine
         "Json.cpp"
         "Path.h"
         "Path.cpp"
+        "FileSystem.h"
+        "FileSystem_Win32.cpp"
         "Base64.h"
         "Base64.cpp"
         "Scanning.h"

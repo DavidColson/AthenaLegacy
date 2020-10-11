@@ -19,21 +19,23 @@ public:
 
     Path& operator=(Path&& path);
 
-    eastl::string RootName() const;
+    Path RootName() const;
 
-    eastl::string RootDirectory() const;
+    Path RootDirectory() const;
 
-    eastl::string RootPath() const;
+    Path RootPath() const;
 
-    eastl::string RelativePath() const;
+    Path RelativePath() const;
 
-    eastl::string ParentPath() const;
+    Path ParentPath() const;
 
-    eastl::string Filename() const;
+    Path Filename() const;
 
-    eastl::string Stem() const;
+    Path Stem() const;
 
-    eastl::string Extension() const;
+    Path Extension() const;
+
+    Path RemoveTrailingSlash() const;
 
     bool IsEmpty() const;
 
@@ -59,13 +61,15 @@ public:
 
     eastl::string AsString() const;
 
+    const char* AsRawString() const;
+
     Path& operator/=(const Path& pathToAppend);
     
     Path& operator+=(const Path& pathToConcat);
 
     struct PathIterator
 	{
-		PathIterator(eastl::vector<eastl::string>::iterator _pathPartsIter) : pathPartsIter(_pathPartsIter) {}
+		PathIterator(eastl::vector<eastl::string>::const_iterator _pathPartsIter) : pathPartsIter(_pathPartsIter) {}
 
 		Path operator*() const;
 		bool operator==(const PathIterator& other) const;
@@ -73,12 +77,12 @@ public:
 
 		PathIterator& operator++();
 
-		eastl::vector<eastl::string>::iterator pathPartsIter;
+		eastl::vector<eastl::string>::const_iterator pathPartsIter;
 	};
 
-	const PathIterator begin();
+	const PathIterator begin() const;
 
-	const PathIterator end();
+	const PathIterator end() const;
 
 protected:
     void Analyze();
@@ -88,3 +92,11 @@ protected:
     eastl::string   stringPath;
     char preferredSeparator = '/';
 };
+
+Path operator/(const Path& lhs, const Path& rhs);
+
+Path operator+(const Path& lhs, const Path& rhs);
+
+bool operator==(const Path& lhs, const Path& rhs);
+
+bool operator!=(const Path& lhs, const Path& rhs);
