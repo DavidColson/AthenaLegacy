@@ -3,13 +3,10 @@
 #include <SDL_rwops.h>
 #include <Log.h>
 
-#include <cppfs.h>
-
-namespace FileSys
-{
 
 FileStream::FileStream()
 {
+
 }
 
 FileStream::FileStream(const FileStream & fileStream)
@@ -69,10 +66,10 @@ FileStream::FileStream(eastl::string _path, unsigned int mode)
 
 FileStream::~FileStream()
 {
-    close();
+    Close();
 }
 
-void FileStream::close()
+void FileStream::Close()
 {
     if (rwops == nullptr)
         return;
@@ -81,7 +78,7 @@ void FileStream::close()
     rwops = nullptr;
 }
 
-eastl::string FileStream::read(size_t length)
+eastl::string FileStream::Read(size_t length)
 {
     if (rwops == nullptr)
         return "";
@@ -95,7 +92,7 @@ eastl::string FileStream::read(size_t length)
     return result;
 }
 
-void FileStream::read(char* buffer, size_t length)
+void FileStream::Read(char* buffer, size_t length)
 {
     if (rwops == nullptr)
         return;
@@ -103,7 +100,7 @@ void FileStream::read(char* buffer, size_t length)
     SDL_RWread(rwops, buffer, length, 1);
 }
 
-void FileStream::write(const char* buffer, size_t length)
+void FileStream::Write(const char* buffer, size_t length)
 {
     if (rwops == nullptr)
         return;
@@ -111,7 +108,7 @@ void FileStream::write(const char* buffer, size_t length)
     SDL_RWwrite(rwops, buffer, length, 1);
 }
 
-size_t FileStream::seek(size_t offset, SeekFrom from)
+size_t FileStream::Seek(size_t offset, SeekFrom from)
 {
     if (rwops == nullptr)
         return 0;
@@ -124,7 +121,7 @@ size_t FileStream::seek(size_t offset, SeekFrom from)
         return SDL_RWseek(rwops, offset, RW_SEEK_CUR);
 }
 
-size_t FileStream::tell()
+size_t FileStream::Tell()
 {
     if (rwops == nullptr)
         return 0;
@@ -132,7 +129,7 @@ size_t FileStream::tell()
     return SDL_RWtell(rwops);
 }
 
-size_t FileStream::size()
+size_t FileStream::Size()
 {
     if (rwops == nullptr)
         return 0;
@@ -140,9 +137,7 @@ size_t FileStream::size()
     return SDL_RWsize(rwops);
 }
 
-bool FileStream::isValid()
+bool FileStream::IsValid()
 {
     return rwops != nullptr;
-}
-
 }

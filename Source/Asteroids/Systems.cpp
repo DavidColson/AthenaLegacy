@@ -357,6 +357,8 @@ void InvincibilitySystemUpdate(Scene& scene, float deltaTime)
 		if (pInvincibility->m_timer <= 0.0f)
 		{
 			scene.Remove<CInvincibility>(PLAYER_ID);
+			CVisibility* visiblity = scene.Get<CVisibility>(PLAYER_ID);
+			visiblity->visible = true;
 			return;
 		}
 

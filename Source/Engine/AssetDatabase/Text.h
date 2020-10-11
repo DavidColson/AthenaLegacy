@@ -4,7 +4,7 @@
 
 struct Text : Asset
 {
-    virtual void Load(FileSys::FilePath path) override;
+    virtual void Load(Path path) override;
 
     eastl::string contents;
 };

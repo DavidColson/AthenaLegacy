@@ -6,7 +6,7 @@
 
 struct Sound : Asset
 {
-    virtual void Load(FileSys::FilePath path) override;
+    virtual void Load(Path path) override;
     ~Sound();
 
     SDL_AudioSpec spec;

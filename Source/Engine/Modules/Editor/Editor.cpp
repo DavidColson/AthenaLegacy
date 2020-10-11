@@ -9,7 +9,7 @@
 #include "Engine.h"
 #include "SceneSerializer.h"
 #include "Json.h"
-#include "FileSys.h"
+#include "FileSystem.h"
 #include "AssetDatabase.h"
 
 #include <Imgui/imgui.h>
@@ -379,9 +379,8 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 		{
 			eastl::string filePath;
 			filePath.sprintf("Resources/Levels/%s.lvl", levelSaveModalFilename.c_str());
-			FileSys::FileHandle fHandle = FileSys::open(filePath);
 			JsonValue jsonScene = SceneSerializer::ToJson(scene);
-			fHandle.writeFile(SerializeJsonValue(jsonScene));
+			FileSys::WriteWholeFile(filePath, SerializeJsonValue(jsonScene));
 			ImGui::CloseCurrentPopup(); 
 		}
 		ImGui::SetItemDefaultFocus();
@@ -395,11 +394,10 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 		ImGui::OpenPopup("Open Level");
 
 		levelOpenModalFiles.clear();
-		FileSys::FileHandle levelsFolder = FileSys::open("Resources/Levels/");
-		eastl::vector<eastl::string> levels = levelsFolder.listFiles();
-		for (eastl::string& levelName : levels)
+		eastl::vector<Path> levels = FileSys::ListFiles("Resources/Levels/");
+		for (Path& levelName : levels)
 		{
-			levelOpenModalFiles.push_back({levelName, false});
+			levelOpenModalFiles.push_back(levelName.AsString());
 		}
 	}
 	if (ImGui::BeginPopupModal("Open Level", NULL, ImGuiWindowFlags_AlwaysAutoResize))
@@ -417,10 +415,7 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 
 		if (ImGui::Button("Open", ImVec2(120, 0))) 
 		{
-			eastl::string levelPath;
-			levelPath.sprintf("Resources/Levels/%s", levelOpenModalFiles[selectedLevelFile].c_str());
-			FileSys::FileHandle levelFileHandle = FileSys::open(levelPath);
-			JsonValue jsonScene = ParseJsonFile(levelFileHandle.readFile());
+			JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile(levelOpenModalFiles[selectedLevelFile]));
 			Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
 			Engine::SetActiveScene(pScene);
 			ImGui::CloseCurrentPopup();

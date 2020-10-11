@@ -7,8 +7,8 @@
 #include "GraphicsDevice.h"
 #include "Mesh.h" 
 #include "AssetDatabase.h"
+#include "FileSystem.h"
 
-#include <FileSys.h>
 #include <SDL.h>
 
 // Actually owns the data
@@ -62,11 +62,10 @@ struct Accessor
     Type type;
 };
 
-void Model::Load(FileSys::FilePath path)
+void Model::Load(Path path)
 {
     // Load file
-    FileSys::FileHandle fHandle = FileSys::open(path);
-    eastl::string file = fHandle.readFile();
+    eastl::string file = FileSys::ReadWholeFile(path);
 
     // Parse json
     JsonValue parsed = ParseJsonFile(file);
@@ -200,7 +199,7 @@ void Model::Load(FileSys::FilePath path)
         meshes.push_back(mesh);
 
         // We'll manually register the mesh asset, since we created it rather than the asset database
-        eastl::string meshAssetIdentifier = path.path();
+        eastl::string meshAssetIdentifier = path.AsString();
         meshAssetIdentifier.append_sprintf(":mesh_%i", i);
         meshes.back().Load(meshAssetIdentifier);
         AssetDB::RegisterAsset(&(meshes.back()), meshAssetIdentifier);

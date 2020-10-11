@@ -95,7 +95,9 @@ void Engine::Initialize()
 void Engine::Run(Scene *pScene)
 {	
 	pCurrentScene = pScene;
-	pSceneCallBack(*pCurrentScene);
+
+	if (pSceneCallBack)
+		pSceneCallBack(*pCurrentScene);
 
 	// Game update loop
 	double frameTime = 0.016f;
@@ -146,7 +148,8 @@ void Engine::Run(Scene *pScene)
 			delete pCurrentScene;
 			AssetDB::CollectGarbage();
 			pCurrentScene = pPendingSceneLoad;
-			pSceneCallBack(*pCurrentScene);
+			if (pSceneCallBack)
+				pSceneCallBack(*pCurrentScene);
 			pPendingSceneLoad = nullptr;
 		}
 

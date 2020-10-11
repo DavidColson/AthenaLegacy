@@ -1,9 +1,8 @@
 #include "Text.h"
 
-#include <FileSys.h>
+#include <FileSystem.h>
 
-void Text::Load(FileSys::FilePath path)
+void Text::Load(Path path)
 {
-    FileSys::FileHandle fHandle = FileSys::open(path.fullPath());
-    contents = fHandle.readFile();
+    contents = FileSys::ReadWholeFile(path);
 }

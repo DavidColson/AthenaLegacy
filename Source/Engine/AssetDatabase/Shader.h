@@ -6,7 +6,7 @@
 
 struct Shader : Asset
 {
-    virtual void Load(FileSys::FilePath path) override;
+    virtual void Load(Path path) override;
     ~Shader();
 
     PixelShaderHandle pixelShader;

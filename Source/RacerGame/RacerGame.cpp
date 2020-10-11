@@ -11,8 +11,9 @@
 #include <AssetDatabase.h>
 #include <SceneSerializer.h>
 #include <Json.h>
+#include <Path.h>
 
-#include <FileSys.h>
+#include <FileSystem.h>
 
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
@@ -84,8 +85,7 @@ int main(int argc, char *argv[])
 
 	
 	// Open the level we want to play
-	FileSys::FileHandle fHandle = FileSys::open("Resources/Levels/RacerGame.lvl");
-	JsonValue jsonScene = ParseJsonFile(fHandle.readFile());
+	JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile("Resources/Levels/RacerGame.lvl"));
 	Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
 
 	// Register systems

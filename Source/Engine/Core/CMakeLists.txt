@@ -34,6 +34,8 @@ target_sources(Engine
         "Path.cpp"
         "FileSystem.h"
         "FileSystem_Win32.cpp"
+        "FileStream.h"
+        "FileStream.cpp"
         "Base64.h"
         "Base64.cpp"
         "Scanning.h"

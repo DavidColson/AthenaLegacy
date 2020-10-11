@@ -1,7 +1,7 @@
 #pragma once
 
 #include <EASTL/string.h>
-#include <FileSys.h>
+#include <Path.h>
 
 enum class AssetType
 {
@@ -31,7 +31,7 @@ struct AssetHandle
 
 struct Asset
 {
-    virtual void Load(FileSys::FilePath path) = 0;
+    virtual void Load(Path path) = 0;
     virtual ~Asset() {};
 };
 

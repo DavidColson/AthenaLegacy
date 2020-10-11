@@ -2,9 +2,9 @@
 
 #include "Log.h"
 
-void Sound::Load(FileSys::FilePath path)
+void Sound::Load(Path path)
 {
-    if (SDL_LoadWAV(path.fullPath().c_str(), &spec, &buffer, &length) == nullptr)
+    if (SDL_LoadWAV(path.AsRawString(), &spec, &buffer, &length) == nullptr)
     {
         Log::Warn("%s", SDL_GetError());
     }

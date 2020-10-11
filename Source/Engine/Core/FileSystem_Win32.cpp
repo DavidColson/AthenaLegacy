@@ -1,6 +1,7 @@
 #include "FileSystem.h"
 
 #include "Log.h"
+#include "FileStream.h"
 
 #include <windows.h>
 
@@ -72,6 +73,16 @@ bool FileSys::IsEmpty(const Path& path)
         }
         return true;
     }
+}
+
+bool FileSys::IsInUse(const Path& path)
+{
+    if (Exists(path) && IsFile(path))
+    {
+        FileStream stream = FileStream(path.AsString(), FileRead);
+        if (!stream.IsValid()) return true;
+    }
+    return false;
 }
 
 uint64_t FileSys::LastWriteTime(const Path& path)
@@ -160,6 +171,47 @@ bool FileSys::NewDirectories(const Path& newPath)
                 return false;
         }
     } 
+    return true;
+}
+
+eastl::vector<Path> FileSys::ListFiles(const Path& path)
+{
+    eastl::vector<Path> files;
+    for (Path path : FileSys::DirectoryIterator(path))
+    {
+        if (IsFile(path))
+            files.push_back(path);
+    }
+    return files;
+}
+
+eastl::string FileSys::ReadWholeFile(Path path)
+{
+    // Check if file exists
+    if (IsFile(path))
+    {
+        // Open input stream
+        FileStream stream = FileStream(path.AsRawString(), FileRead);
+        if (!stream.IsValid()) return "";
+
+        // Return string
+        return stream.Read(stream.Size());
+    }
+
+    // Error, not a valid file
+    return "";
+}
+
+bool FileSys::WriteWholeFile(Path path, const eastl::string & content)
+{
+    // Open output stream
+    FileStream stream = FileStream(path.AsRawString(), FileWrite);
+    if (!stream.IsValid()) return false;
+
+    // Write content to file
+    stream.Write(content.data(), content.size());
+
+    // Done
     return true;
 }
 

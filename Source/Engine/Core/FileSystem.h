@@ -13,6 +13,8 @@ namespace FileSys
 
     bool IsEmpty(const Path& path);
 
+    bool IsInUse(const Path& path);
+
     uint64_t LastWriteTime(const Path& path);
 
     uint64_t LastAccessTime(const Path& path);
@@ -26,6 +28,12 @@ namespace FileSys
     bool NewDirectory(const Path& newPath);
 
     bool NewDirectories(const Path& newPath);
+
+    eastl::vector<Path> ListFiles(const Path& path);
+
+    eastl::string ReadWholeFile(Path path);
+
+    bool WriteWholeFile(Path path, const eastl::string & content);
 
     class DirectoryIterator
     {

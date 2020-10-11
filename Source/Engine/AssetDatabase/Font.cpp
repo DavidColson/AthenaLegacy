@@ -2,11 +2,11 @@
 
 #include "Rendering/RectPacking.h"
 
-void Font::Load(FileSys::FilePath path)
+void Font::Load(Path path)
 {   
     FT_Face face;
 
-    FT_Error err = FT_New_Face(FontSystem::GetFreeType(), path.fullPath().c_str(), 0, &face);
+    FT_Error err = FT_New_Face(FontSystem::GetFreeType(), path.AsRawString(), 0, &face);
 	if (err)
 	{
 		Log::Warn("FreeType Error: %s", FT_Error_String(err));

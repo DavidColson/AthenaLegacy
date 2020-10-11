@@ -2,13 +2,12 @@
 
 #include "Scanning.h"
 #include "Log.h"
+#include "FileSystem.h"
 
-#include <FileSys.h>
 
-void Shader::Load(FileSys::FilePath path)
+void Shader::Load(Path path)
 {
-    FileSys::FileHandle fHandle = FileSys::open(path);
-    eastl::string contents = fHandle.readFile();
+    eastl::string contents = FileSys::ReadWholeFile(path);
 
     eastl::string typeString;
 
@@ -38,8 +37,8 @@ void Shader::Load(FileSys::FilePath path)
         layout.push_back({"NORMAL",AttributeType::Float3});
         layout.push_back({"TEXCOORD_",AttributeType::Float2});
         layout.push_back({"COLOR_",AttributeType::Float4});
-        vertShader = GfxDevice::CreateVertexShader(contents, "VSMain", layout, path.fullPath().c_str());
-        pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", path.fullPath().c_str());
+        vertShader = GfxDevice::CreateVertexShader(contents, "VSMain", layout, path.AsRawString());
+        pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", path.AsRawString());
         program = GfxDevice::CreateProgram(vertShader, pixelShader);
     }
     else if (typeString == "postprocess")

@@ -8,7 +8,7 @@
 
 struct Font : Asset
 {
-    virtual void Load(FileSys::FilePath path) override;
+    virtual void Load(Path path) override;
     ~Font();
 
 	TextureHandle fontTexture;

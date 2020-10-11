@@ -7,6 +7,7 @@
 #include "Sound.h"
 #include "Shader.h"
 #include "Font.h"
+#include "FileSystem.h"
 
 #include <EASTL/map.h>
 #include <EASTL/string.h>
@@ -19,7 +20,7 @@ namespace
     {
         eastl::string fullIdentifier;
         eastl::string subAssetName;
-        FileSys::FilePath path;
+        Path path;
         uint32_t refCount{ 0 };
     };
     eastl::map<uint64_t, AssetMeta> assetMetas;
@@ -61,7 +62,7 @@ AssetHandle::AssetHandle(eastl::string identifier)
             subAssetName = identifier.substr(subAssetPos + 1);
 
         AssetMeta meta;
-        meta.path = FileSys::FilePath(identifier.substr(0, subAssetPos));
+        meta.path = Path(identifier.substr(0, subAssetPos));
         meta.subAssetName = subAssetName;
         meta.fullIdentifier = identifier;
         assetMetas[id] = meta;
@@ -113,12 +114,12 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
     // TODO: consider the asset type when someone gets an asset, if they request an asset that exists, but it's a different type, gracefully fail
     if (assets.count(handle.id) == 0)
     {
-        if (assetMetas[handle.id].path.isEmpty())
+        if (assetMetas[handle.id].path.IsEmpty())
             return nullptr;
 
         Asset* pAsset;
-        FileSys::FilePath& path = assetMetas[handle.id].path;
-        eastl::string fileType = path.extension();
+        Path& path = assetMetas[handle.id].path;
+        eastl::string fileType = path.Extension().AsString();
 
         if (fileType == ".txt")
         {
@@ -151,7 +152,7 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
         // If a subasset was requested, we've just loaded the parent asset, 
         // so register the parent with a different identifier pointing to just the file
         if (IsSubasset(handle))
-            RegisterAsset(pAsset, assetMetas[handle.id].path.fullPath());
+            RegisterAsset(pAsset, assetMetas[handle.id].path.AsString());
         else
             RegisterAsset(pAsset, assetMetas[handle.id].fullIdentifier);
     }
@@ -202,11 +203,11 @@ void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
 
     // Don't hot reload audio
     // @Improvement actually define an asset type enum or something, this is icky
-    if (assetMetas[handle.id].path.extension() != ".wav")
+    if (assetMetas[handle.id].path.Extension() != ".wav")
     {
         HotReloadingAsset hot;
-        hot.asset = handle;
-        hot.cacheLastModificationTime = FileSys::open(assetMetas[hot.asset.id].path).modificationTime();
+        hot.asset = handle; 
+        hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.asset.id].path);;
         hotReloadWatches.push_back(hot);
     }
 }
@@ -215,13 +216,12 @@ void AssetDB::UpdateHotReloading()
 {
     for (HotReloadingAsset& hot : hotReloadWatches)
     {
-        FileSys::FileHandle file = FileSys::open(assetMetas[hot.asset.id].path);
-        if (hot.cacheLastModificationTime != file.modificationTime())
+        if (hot.cacheLastModificationTime != FileSys::LastWriteTime(assetMetas[hot.asset.id].path))
         {
             if (assetMetas[hot.asset.id].refCount == 0)
                 continue; // Don't hot reload an asset no one is referencing
 
-            if (file.isInUse())
+            if (FileSys::IsInUse(assetMetas[hot.asset.id].path))
                 continue;
 
             Asset* pAsset = assets[hot.asset.id];
@@ -229,7 +229,7 @@ void AssetDB::UpdateHotReloading()
             delete pAsset;
 
             pAsset = GetAssetRaw(hot.asset);
-            hot.cacheLastModificationTime = file.modificationTime();
+            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.asset.id].path);
         }
     }
 }

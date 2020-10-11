@@ -7,6 +7,6 @@ struct Model : Asset
     eastl::vector<Mesh> meshes;
     eastl::vector<AssetHandle> subAssets;
 
-    virtual void Load(FileSys::FilePath path) override;
+    virtual void Load(Path path) override;
     ~Model() {}
 };
