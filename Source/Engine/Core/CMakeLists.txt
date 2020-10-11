@@ -30,6 +30,8 @@ target_sources(Engine
         "Vsnprintf.cpp"
         "Json.h"
         "Json.cpp"
+        "Path.h"
+        "Path.cpp"
         "Base64.h"
         "Base64.cpp"
         "Scanning.h"
