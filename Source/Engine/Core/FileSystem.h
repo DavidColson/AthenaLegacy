@@ -1,9 +1,32 @@
 #pragma once
 
 #include "Path.h"
+#include <EASTL/vector.h>
 
 namespace FileSys
 {
+    bool Exists(const Path& path);
+
+    bool IsDirectory(const Path& path);
+
+    bool IsFile(const Path& path);
+
+    bool IsEmpty(const Path& path);
+
+    uint64_t LastWriteTime(const Path& path);
+
+    uint64_t LastAccessTime(const Path& path);
+
+    uint64_t FileSize(const Path& path);
+
+    Path CurrentDirectory();
+
+    bool Move(const Path& existingPath, const Path& newPath, bool createNecessaryDirs = false);
+
+    bool NewDirectory(const Path& newPath);
+
+    bool NewDirectories(const Path& newPath);
+
     class DirectoryIterator
     {
     public:
@@ -31,23 +54,38 @@ namespace FileSys
         Path directoryToIterate;
     };
 
-    bool Exists(const Path& path);
+    class RecursiveDirectoryIterator
+    {
+    public:
+        RecursiveDirectoryIterator(Path directory);
 
-    bool IsDirectory(const Path& path);
+        struct Iterator
+        {
+            Iterator(void* handle, Path path, Path parent) : currentHandle(handle), currentPath(path), parentPath(parent) {}
 
-    bool IsFile(const Path& path);
+            Path operator*() const;
+            bool operator==(const Iterator& other) const;
+            bool operator!=(const Iterator& other) const;
 
-    uint64_t LastWriteTime(const Path& path);
+            Iterator& operator++();
+            
+            Path parentPath;
+            Path currentPath;
+            void* currentHandle;
+            bool skipNextIteration = false;
 
-    uint64_t LastAccessTime(const Path& path);
+            struct IteratorLevel
+            {
+                Path path;
+                void* handle;
+            };
+            eastl::vector<IteratorLevel> pathStack;
+        };
 
-    uint64_t FileSize(const Path& path);
+        const Iterator begin() const;
 
-    Path CurrentDirectory();
-
-    bool Move(const Path& existingPath, const Path& newPath, bool createNecessaryDirs = false);
-
-    bool NewDirectory(const Path& newPath);
-
-    bool NewDirectories(const Path& newPath);
+        const Iterator end() const;
+    private:
+        Path directoryToIterate;
+    };
 }

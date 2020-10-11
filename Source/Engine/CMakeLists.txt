@@ -25,6 +25,8 @@ GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_precompile_headers(Engine PRIVATE "Core/PreCompiledHeader.h")
 
+target_link_libraries(Engine ${SDL2_LIBRARIES} freetype Imgui EASTL cppfs d3d11 d3d10 d3dcompiler dxguid)
+
 if(MSVC)
   target_compile_options(Engine PRIVATE /W3 /WX)
 else()

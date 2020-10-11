@@ -10,7 +10,7 @@ include_directories("../Engine/ThirdParty/cppfs/include")
 include_directories("/")
 
 add_executable (AsteroidsGame WIN32 "")
-target_link_libraries(AsteroidsGame ${SDL2_LIBRARIES} Engine d3d11 d3d10 d3dcompiler dxguid freetype Imgui EASTL cppfs)
+target_link_libraries(AsteroidsGame Engine)
 
 target_sources(AsteroidsGame
     PRIVATE
