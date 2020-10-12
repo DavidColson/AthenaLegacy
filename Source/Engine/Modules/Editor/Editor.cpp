@@ -11,6 +11,8 @@
 #include "Json.h"
 #include "FileSystem.h"
 #include "AssetDatabase.h"
+#include "GraphicsDevice.h"
+#include "Rendering/RenderSystem.h"
 
 #include <Imgui/imgui.h>
 #include <Imgui/misc/cpp/imgui_stdlib.h>
@@ -34,6 +36,9 @@ namespace {
 	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
 	double oldRealFrameTime;
 	double oldObservedFrameTime;
+
+	TextureHandle gameFrame{ INVALID_HANDLE };
+	ImVec2 gameWindowSizeCache;
 }
 
 struct LogApp
@@ -380,6 +385,35 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 
 	ImGui::End(); // Ending MainDockspaceWindow
 
+	bool showGameView = true;
+	ImGui::Begin("Game", &showGameView);
+
+	if (GfxDevice::IsValid(gameFrame))
+	{
+		ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
+		ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
+		ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
+		ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 50% opaque whit
+
+		// TODO: This doesn't trigger if the window is resized from a changing dockspace
+		if (Vec2f(gameWindowSizeCache) != Vec2f(ImGui::GetContentRegionAvail()))
+		{
+			gameWindowSizeCache = ImGui::GetContentRegionAvail();
+			// Trigger game scene resize
+			RenderSystem::OnWindowResize(scene, gameWindowSizeCache.x, gameWindowSizeCache.y);
+		}
+
+		ImGui::Image(GfxDevice::GetImGuiTextureID(gameFrame), ImVec2(gameWindowSizeCache.x, gameWindowSizeCache.y), uv_min, uv_max);
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::CaptureMouseFromApp(false);
+			ImGui::CaptureKeyboardFromApp(false);
+		}
+	}
+
+	ImGui::End(); // Ending Game
+
 	if (bSaveModal)
 	{
 		levelSaveModalFilename.set_capacity(100);
@@ -453,4 +487,20 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 	ShowFrameStats();
 	if (showImGuiDemo)
 		ImGui::ShowDemoWindow();
+}
+
+bool Editor::IsInEditor()
+{
+	return showEditor;
+}
+
+void Editor::SetGameFrame(TextureHandle texture)
+{
+	gameFrame = texture;
+}
+
+void Editor::FreeGameFrame()
+{
+	GfxDevice::FreeTexture(gameFrame);
+	gameFrame = INVALID_HANDLE;
 }

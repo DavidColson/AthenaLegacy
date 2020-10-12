@@ -2,6 +2,7 @@
 #include "Input.h"
 #include "Engine.h"
 #include "GraphicsDevice.h"
+#include "Log.h"
 
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>

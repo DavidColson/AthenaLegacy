@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <Imgui/imgui.h> 
 #include <Imgui/examples/imgui_impl_sdl.h>
+#include <Imgui/examples/imgui_impl_dx11.h>
 
 #include "GraphicsDevice.h"
 #include "Rendering/RenderSystem.h"
@@ -48,7 +49,6 @@ void Engine::NewSceneCreated(Scene& scene)
 	RenderSystem::OnSceneCreate(scene);
 
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
-	scene.RegisterSystem(SystemPhase::Update, Editor::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, TransformHeirarchy);
 
 	// @Improvement consider allowing engine config files to change the update order of systems
@@ -122,7 +122,6 @@ void Engine::Run(Scene *pScene)
 					if (event.window.windowID == SDL_GetWindowID(g_pWindow))
 					{
 						GfxDevice::ResizeWindow((float)event.window.data1, (float)event.window.data2);
-						RenderSystem::OnWindowResize(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
 					}
 					break;
 				default:
@@ -144,6 +143,37 @@ void Engine::Run(Scene *pScene)
 
 		// Render the frame
 		RenderSystem::OnFrame(*pCurrentScene, (float)frameTime);
+
+		if (Editor::IsInEditor())
+		{
+			Editor::FreeGameFrame();
+			Editor::SetGameFrame(RenderSystem::GetGameFrame());
+		}
+		Editor::OnFrame(*pCurrentScene, (float)frameTime);
+
+		// Render game frame onto screen
+		{
+			GfxDevice::SetBackBufferActive();
+			GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });	
+			GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+
+			// Consider imgui living "above" the render system. Such that when editor is active, we do the imgui frame drawing,
+			// And the game render does it flow into a render target, and then editor renders after. Would require a lot of refactoring though... 
+			{
+				GFX_SCOPED_EVENT("Drawing imgui");
+				ImGui::Render();
+				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+				if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+				{
+					ImGui::UpdatePlatformWindows();
+					ImGui::RenderPlatformWindowsDefault();
+				}
+			}
+
+			GfxDevice::PresentBackBuffer();
+			GfxDevice::ClearRenderState();
+			GfxDevice::PrintQueuedDebugMessages();
+		}
 
 		// Deal with scene loading
 		if (pPendingSceneLoad)

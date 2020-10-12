@@ -465,8 +465,7 @@ void GfxDevice::ClearBackBuffer(eastl::array<float, 4> color)
 
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
 	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-		pCtx->pDeviceContext->RSSetState(pCtx->pRasterizerState);
-
+	pCtx->pDeviceContext->RSSetState(pCtx->pRasterizerState);
 }
 
 // ***********************************************************************
@@ -780,7 +779,7 @@ void* GfxDevice::GetImGuiTextureID(TextureHandle handle)
 
 // ***********************************************************************
 
-RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, const eastl::string &debugName)
+RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, int multiSamples, const eastl::string &debugName)
 {
 	RenderTarget renderTarget;
 
@@ -792,8 +791,8 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 		textureDesc.Width = UINT(width);
 		textureDesc.Height = UINT(height);
 		textureDesc.MipLevels = textureDesc.ArraySize = 1;
-		textureDesc.Format = formatLookup[static_cast<int>(TextureFormat::RGBA32F)];
-		textureDesc.SampleDesc.Count = 1;
+		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.SampleDesc.Count = multiSamples;
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
 		textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 		textureDesc.CPUAccessFlags = 0;
@@ -803,7 +802,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
 		shaderResourceViewDesc.Format = textureDesc.Format;
-		shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		shaderResourceViewDesc.ViewDimension = multiSamples > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
 		shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
 		shaderResourceViewDesc.Texture2D.MipLevels = 1;
 		pCtx->pDevice->CreateShaderResourceView(texture.pTexture, &shaderResourceViewDesc, &texture.pShaderResourceView);
@@ -815,8 +814,8 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 
 	// Then create the render target view
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	renderTargetViewDesc.ViewDimension = multiSamples > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	pCtx->pDevice->CreateRenderTargetView(texture.pTexture, &renderTargetViewDesc, &renderTarget.pView);
 	SetDebugName(renderTarget.pView, "[RENDER_TGT] " + debugName);
@@ -830,7 +829,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 		textureDesc.Height = UINT(height);
 		textureDesc.MipLevels = textureDesc.ArraySize = 1;
 		textureDesc.Format = formatLookup[static_cast<int>(TextureFormat::D24S8)];
-		textureDesc.SampleDesc.Count = 1;
+		textureDesc.SampleDesc.Count = multiSamples;
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
 		textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 		textureDesc.CPUAccessFlags = 0;
@@ -845,7 +844,7 @@ RenderTargetHandle GfxDevice::CreateRenderTarget(float width, float height, cons
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	depthStencilViewDesc.ViewDimension = multiSamples > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 	pCtx->pDevice->CreateDepthStencilView(depthStencilTexture.pTexture, &depthStencilViewDesc, &renderTarget.pDepthStencilView);
 	SetDebugName(renderTarget.pDepthStencilView, "[DEPTH_STCL_VIEW] " + debugName);
@@ -892,6 +891,7 @@ void GfxDevice::ClearRenderTarget(RenderTargetHandle handle, eastl::array<float,
 	if (clearStencil) clearFlags |= D3D11_CLEAR_STENCIL;
 	pCtx->pDeviceContext->ClearRenderTargetView(renderTarget.pView, color.data());
 	pCtx->pDeviceContext->ClearDepthStencilView(renderTarget.pDepthStencilView,  clearFlags, 1.0f, 0);
+	pCtx->pDeviceContext->RSSetState(pCtx->pRasterizerState);
 }
 
 // ***********************************************************************
@@ -903,6 +903,39 @@ TextureHandle GfxDevice::GetTexture(RenderTargetHandle handle)
 
 	RenderTarget &renderTarget = pCtx->poolRenderTarget[handle.id];
 	return renderTarget.texture;
+}
+
+// ***********************************************************************
+
+TextureHandle GfxDevice::MakeResolvedTexture(RenderTargetHandle handle)
+{
+	if (!IsValid(handle))
+		return TextureHandle();
+
+	RenderTarget &renderTarget = pCtx->poolRenderTarget[handle.id];
+	Texture renderTex = pCtx->poolTexture[renderTarget.texture.id];
+	Texture resolvedTexture;
+
+	D3D11_TEXTURE2D_DESC textureDesc;
+	renderTex.pTexture->GetDesc(&textureDesc);
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.SampleDesc.Count = 1;
+	pCtx->pDevice->CreateTexture2D(&textureDesc, nullptr, &resolvedTexture.pTexture);
+	SetDebugName(resolvedTexture.pTexture, "[TEXTURE_2D] Resolved multisampled render texture (name me better)");
+
+	pCtx->pDeviceContext->ResolveSubresource(resolvedTexture.pTexture, D3D11CalcSubresource(0, 0, 1), renderTex.pTexture, D3D11CalcSubresource(0, 0, 1), textureDesc.Format);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+	pCtx->pDevice->CreateShaderResourceView(resolvedTexture.pTexture, &shaderResourceViewDesc, &resolvedTexture.pShaderResourceView);
+	SetDebugName(resolvedTexture.pShaderResourceView, "[SHADER_RSRC_VIEW] Resolved multisampled render texture (name me better)");
+
+	TextureHandle resolvedTexHandle = pCtx->allocTextureHandle.NewHandle();
+	pCtx->poolTexture[resolvedTexHandle.id] = resolvedTexture;
+	return resolvedTexHandle;
 }
 
 // ***********************************************************************

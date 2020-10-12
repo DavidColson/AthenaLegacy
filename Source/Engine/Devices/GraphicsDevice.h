@@ -280,7 +280,7 @@ namespace GfxDevice
 
 	// Render Targets
 
-	RenderTargetHandle CreateRenderTarget(float width, float height, const eastl::string& debugName = "");
+	RenderTargetHandle CreateRenderTarget(float width, float height, int multiSamples = 1, const eastl::string& debugName = "");
 
 	void BindRenderTarget(RenderTargetHandle handle);
 
@@ -289,6 +289,8 @@ namespace GfxDevice
 	void ClearRenderTarget(RenderTargetHandle handle, eastl::array<float, 4> color, bool clearDepth, bool clearStencil);
 
 	TextureHandle GetTexture(RenderTargetHandle handle);
+
+	TextureHandle MakeResolvedTexture(RenderTargetHandle handle);
 
 	void FreeRenderTarget(RenderTargetHandle handle);
 
