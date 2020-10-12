@@ -35,8 +35,6 @@ static VkDescriptorPool         g_DescriptorPool = VK_NULL_HANDLE;
 static ImGui_ImplVulkanH_Window g_MainWindowData;
 static uint32_t                 g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
-static int                      g_SwapChainResizeWidth = 0;
-static int                      g_SwapChainResizeHeight = 0;
 
 static void check_vk_result(VkResult err)
 {
@@ -66,10 +64,9 @@ static void SetupVulkan(const char** extensions, uint32_t extensions_count)
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create_info.enabledExtensionCount = extensions_count;
         create_info.ppEnabledExtensionNames = extensions;
-
 #ifdef IMGUI_VULKAN_DEBUG_REPORT
-        // Enabling multiple validation layers grouped as LunarG standard validation
-        const char* layers[] = { "VK_LAYER_LUNARG_standard_validation" };
+        // Enabling validation layers
+        const char* layers[] = { "VK_LAYER_KHRONOS_validation" };
         create_info.enabledLayerCount = 1;
         create_info.ppEnabledLayerNames = layers;
 
@@ -247,6 +244,11 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
     VkSemaphore image_acquired_semaphore  = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
     err = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+    if (err == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        g_SwapChainRebuild = true;
+        return;
+    }
     check_vk_result(err);
 
     ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
@@ -304,6 +306,8 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 
 static void FramePresent(ImGui_ImplVulkanH_Window* wd)
 {
+    if (g_SwapChainRebuild)
+        return;
     VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
     VkPresentInfoKHR info = {};
     info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -313,6 +317,11 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd)
     info.pSwapchains = &wd->Swapchain;
     info.pImageIndices = &wd->FrameIndex;
     VkResult err = vkQueuePresentKHR(g_Queue, &info);
+    if (err == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        g_SwapChainRebuild = true;
+        return;
+    }
     check_vk_result(err);
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
 }
@@ -357,12 +366,24 @@ int main(int, char**)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
+
+    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
 
     // Setup Platform/Renderer bindings
     ImGui_ImplSDL2_InitForVulkan(window);
@@ -445,24 +466,22 @@ int main(int, char**)
             ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT)
                 done = true;
-            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED && event.window.windowID == SDL_GetWindowID(window))
-            {
-                // Note: your own application may rely on SDL_WINDOWEVENT_MINIMIZED/SDL_WINDOWEVENT_RESTORED to skip updating all-together.
-                // Here ImGui_ImplSDL2_NewFrame() will set io.DisplaySize to zero which will disable rendering but let application run.
-                // Please note that you can't Present into a minimized window.
-                g_SwapChainResizeWidth = (int)event.window.data1;
-                g_SwapChainResizeHeight = (int)event.window.data2;
-                g_SwapChainRebuild = true;
-            }
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
+                done = true;
         }
 
         // Resize swap chain?
-        if (g_SwapChainRebuild && g_SwapChainResizeWidth > 0 && g_SwapChainResizeHeight > 0)
+        if (g_SwapChainRebuild)
         {
-            g_SwapChainRebuild = false;
-            ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
-            ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, g_SwapChainResizeWidth, g_SwapChainResizeHeight, g_MinImageCount);
-            g_MainWindowData.FrameIndex = 0;
+            int width, height;
+            SDL_GetWindowSize(window, &width, &height);
+            if (width > 0 && height > 0)
+            {
+                ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
+                ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
+                g_MainWindowData.FrameIndex = 0;
+                g_SwapChainRebuild = false;
+            }
         }
 
         // Start the Dear ImGui frame
@@ -509,14 +528,22 @@ int main(int, char**)
 
         // Rendering
         ImGui::Render();
-        ImDrawData* draw_data = ImGui::GetDrawData();
-        const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
-        if (!is_minimized)
+        ImDrawData* main_draw_data = ImGui::GetDrawData();
+        const bool main_is_minimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
+        memcpy(&wd->ClearValue.color.float32[0], &clear_color, 4 * sizeof(float));
+        if (!main_is_minimized)
+            FrameRender(wd, main_draw_data);
+
+        // Update and Render additional Platform Windows
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
-            memcpy(&wd->ClearValue.color.float32[0], &clear_color, 4 * sizeof(float));
-            FrameRender(wd, draw_data);
-            FramePresent(wd);
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
         }
+
+        // Present Main Platform Window
+        if (!main_is_minimized)
+            FramePresent(wd);
     }
 
     // Cleanup

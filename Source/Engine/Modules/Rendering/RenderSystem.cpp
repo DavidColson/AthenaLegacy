@@ -18,6 +18,8 @@ void RenderSystem::Initialize()
     Shapes::Initialize();
 	DebugDraw::Initialize();
 	FontSystem::Initialize();
+
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 }
 
 void RenderSystem::OnSceneCreate(Scene& scene)

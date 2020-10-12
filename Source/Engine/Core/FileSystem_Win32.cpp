@@ -179,7 +179,7 @@ eastl::vector<Path> FileSys::ListFiles(const Path& path)
     eastl::vector<Path> files;
     for (Path path : FileSys::DirectoryIterator(path))
     {
-        if (IsFile(path))
+        if (path.HasFilename())
             files.push_back(path);
     }
     return files;
