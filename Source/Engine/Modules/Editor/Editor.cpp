@@ -333,9 +333,28 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 	if (!showEditor)
 		return;
 
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->GetWorkPos());
+	ImGui::SetNextWindowSize(viewport->GetWorkSize());
+	ImGui::SetNextWindowViewport(viewport->ID);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;;
+
+	bool open = true;
+	ImGui::Begin("MainDockspaceWindow", &open, window_flags);
+
+	ImGui::PopStyleVar(3);
+	
+	ImGuiID dockspace_id = ImGui::GetID("MainDockspace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
 	bool bSaveModal = false;
 	bool bOpenModal = false;
-	if (ImGui::BeginMainMenuBar())
+	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
 		{
@@ -356,8 +375,10 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 			if (ImGui::MenuItem("FrameStats")) { showFrameStats = !showFrameStats; }
 			ImGui::EndMenu();
 		}
-		ImGui::EndMainMenuBar();
+		ImGui::EndMenuBar();
 	}
+
+	ImGui::End(); // Ending MainDockspaceWindow
 
 	if (bSaveModal)
 	{

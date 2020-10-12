@@ -78,7 +78,7 @@ void Engine::Initialize()
 		SDL_WINDOWPOS_UNDEFINED,
 		int(width),
 		int(height),
-		0
+		SDL_WINDOW_RESIZABLE
 	);
 
 	Log::SetLogLevel(Log::EDebug);
@@ -119,8 +119,11 @@ void Engine::Run(Scene *pScene)
 				switch (event.window.event)
 				{
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					GfxDevice::ResizeWindow((float)event.window.data1, (float)event.window.data2);
-					RenderSystem::OnWindowResize(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
+					if (event.window.windowID == SDL_GetWindowID(g_pWindow))
+					{
+						GfxDevice::ResizeWindow((float)event.window.data1, (float)event.window.data2);
+						RenderSystem::OnWindowResize(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
+					}
 					break;
 				default:
 					break;

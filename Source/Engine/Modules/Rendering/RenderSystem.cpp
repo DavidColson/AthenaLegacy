@@ -18,8 +18,6 @@ void RenderSystem::Initialize()
     Shapes::Initialize();
 	DebugDraw::Initialize();
 	FontSystem::Initialize();
-
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 }
 
 void RenderSystem::OnSceneCreate(Scene& scene)
@@ -53,10 +51,22 @@ void RenderSystem::OnFrame(Scene& scene, float deltaTime)
     DebugDraw::OnFrame(scene, deltaTime);
     PostProcessingSystem::OnFrame(scene, deltaTime);
 
+    // If game is in editor mode
+    // At this point copy and resolve the backbuffer
+    // Give the texture handle to imgui, and call into editor main draw
+    // Imgui will then draw it into a dock window
+    // If we ever did a scene view, it would just be a custom render system taking the scene drawing to a render texture
+
     {
         GFX_SCOPED_EVENT("Drawing imgui");
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
     }
 
     GfxDevice::PresentBackBuffer();

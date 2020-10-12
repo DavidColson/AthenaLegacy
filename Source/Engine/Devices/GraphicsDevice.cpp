@@ -306,6 +306,8 @@ void GfxDevice::Initialize(SDL_Window *pWindow, float width, float height)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO &io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	ImGui_ImplSDL2_InitForD3D(pWindow);
 	ImGui_ImplDX11_Init(pCtx->pDevice, pCtx->pDeviceContext);
 	io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
