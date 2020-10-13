@@ -163,7 +163,7 @@ void Shapes::OnFrame(Scene& scene, float /* deltaTime */)
 	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
-	TransformData trans{ Matrixf::Orthographic(0.f, RenderSystem::GetGameViewWidth(), 0.0f, RenderSystem::GetGameViewHeight(), -1.0f, 10.0f), 5.0f };
+	TransformData trans{ Matrixf::Orthographic(0.f, RenderSystem::GetWidth(), 0.0f, RenderSystem::GetHeight(), -1.0f, 10.0f), 5.0f };
 	GfxDevice::BindConstantBuffer(pState->transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders

@@ -92,8 +92,6 @@ struct BlendState
 
 struct Context
 {
-	SDL_Window *pWindow{nullptr};
-
 	IDXGISwapChain *pSwapChain{nullptr};
 	ID3D11Device *pDevice{nullptr};
 	ID3D11DeviceContext *pDeviceContext{nullptr};
@@ -116,9 +114,6 @@ struct Context
 	DEFINE_RESOURCE_POOLS(TextureHandle, Texture)
 	DEFINE_RESOURCE_POOLS(ConstBufferHandle, ConstantBuffer)
 	DEFINE_RESOURCE_POOLS(BlendStateHandle, BlendState)
-
-	float windowWidth{0};
-	float windowHeight{0};
 };
 
 namespace
@@ -192,15 +187,11 @@ void SetDebugName(ID3D11DeviceChild *child, const eastl::string &name)
 void GfxDevice::Initialize(SDL_Window *pWindow, float width, float height)
 {
 	pCtx = new Context();
-	pCtx->pWindow = pWindow;
 
 	SDL_SysWMinfo wmInfo;
 	SDL_VERSION(&wmInfo.version);
 	SDL_GetWindowWMInfo(pWindow, &wmInfo);
 	HWND hwnd = wmInfo.info.win.window;
-
-	pCtx->windowWidth = width;
-	pCtx->windowHeight = height;
 
 	int multisampleCount = 4;
 
@@ -357,32 +348,8 @@ void GfxDevice::PrintQueuedDebugMessages()
 	pCtx->pDebugInfoQueue->ClearStoredMessages();
 }
 
-// ***********************************************************************
-
-SDL_Window *GfxDevice::GetWindow()
+void GfxDevice::ResizeBackBuffer(float width, float height)
 {
-	return pCtx->pWindow;
-}
-
-// ***********************************************************************
-
-float GfxDevice::GetWindowWidth()
-{
-	return pCtx->windowWidth;
-}
-
-// ***********************************************************************
-
-float GfxDevice::GetWindowHeight()
-{
-	return pCtx->windowHeight;
-}
-
-void GfxDevice::ResizeWindow(float width, float height)
-{
-	pCtx->windowHeight = height;
-	pCtx->windowWidth = width;
-
 	FreeRenderTarget(pCtx->backBuffer);
 	pCtx->pDeviceContext->ClearState();
 	pCtx->pSwapChain->ResizeBuffers(1, (UINT)width, (UINT)height, DXGI_FORMAT_UNKNOWN, 0);
@@ -581,9 +548,11 @@ BlendStateHandle GfxDevice::CreateBlendState(const BlendingInfo& info)
 void GfxDevice::SetBlending(BlendStateHandle handle)
 {
 	if (!IsValid(handle))
+	{
+		pCtx->pDeviceContext->OMSetBlendState(NULL, NULL, 0xffffffff);
 		return;
+	}
 	BlendState &state = pCtx->poolBlendState[handle.id];
-
 	pCtx->pDeviceContext->OMSetBlendState(state.pState, state.info.blendFactor.data(), 0xffffffff);
 }
 

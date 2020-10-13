@@ -188,13 +188,7 @@ namespace GfxDevice
 
 	void PrintQueuedDebugMessages();
 
-	SDL_Window* GetWindow();
-
-	float GetWindowWidth();
-
-	float GetWindowHeight();
-
-	void ResizeWindow(float width, float height);
+	void ResizeBackBuffer(float width, float height);
 
 	void SetViewport(float x, float y, float width, float height);
 

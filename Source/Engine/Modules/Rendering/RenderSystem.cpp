@@ -21,13 +21,13 @@ namespace
     Vec2f gameWindowSize;
 }
 
-void RenderSystem::Initialize()
+void RenderSystem::Initialize(float width, float height)
 {
     Shapes::Initialize();
 	DebugDraw::Initialize();
 	FontSystem::Initialize();
 
-    gameRenderTarget = GfxDevice::CreateRenderTarget(GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight(), 4, "Game Render Target");
+    gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, 4, "Game Render Target");
 }
 
 void RenderSystem::OnSceneCreate(Scene& scene)
@@ -39,13 +39,6 @@ void RenderSystem::OnSceneCreate(Scene& scene)
 
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnAddPostProcessing);
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnRemove, PostProcessingSystem::OnRemovePostProcessing);
-}
-
-void RenderSystem::PreUpdate(Scene& scene, float deltaTime)
-{
-    ImGui_ImplDX11_NewFrame();
-	ImGui_ImplSDL2_NewFrame(GfxDevice::GetWindow());
-	ImGui::NewFrame();
 }
 
 void RenderSystem::OnFrame(Scene& scene, float deltaTime)
@@ -80,17 +73,17 @@ TextureHandle RenderSystem::GetGameFrame()
     return GfxDevice::MakeResolvedTexture(gameRenderTarget); 
 }
 
-float RenderSystem::GetGameViewWidth()
+float RenderSystem::GetWidth()
 {
     return gameWindowSize.x;
 }
 
-float RenderSystem::GetGameViewHeight()
+float RenderSystem::GetHeight()
 {
     return gameWindowSize.y;
 }
 
-void RenderSystem::OnWindowResize(Scene& scene, float newWidth, float newHeight)
+void RenderSystem::ResizeGameFrame(Scene& scene, float newWidth, float newHeight)
 {
     gameWindowSize = Vec2f(newWidth, newHeight);
 

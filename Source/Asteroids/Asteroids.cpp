@@ -50,8 +50,8 @@ Scene* CreateMainAsteroidsScene()
 	ASSERT(ship == PLAYER_ID, "Player must be spawned first");
 	CTransform* pShipTransform = scene.Assign<CTransform>(ship);
 
-	const float w = RenderSystem::GetGameViewWidth();
-	const float h = RenderSystem::GetGameViewHeight();
+	const float w = RenderSystem::GetWidth();
+	const float h = RenderSystem::GetHeight();
 	pShipTransform->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 	pShipTransform->localSca = Vec3f(30.f, 35.f, 1.0f);
 	scene.Assign<CDynamics>(ship);
@@ -149,8 +149,8 @@ Scene* CreateMainMenuScene()
 	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
 	scene.RegisterSystem(SystemPhase::Update, MenuInterationSystem);
 
-	const float w = RenderSystem::GetGameViewWidth();
-	const float h = RenderSystem::GetGameViewHeight();
+	const float w = RenderSystem::GetWidth();
+	const float h = RenderSystem::GetHeight();
 
 	EntityID titleText =scene.NewEntity("Main Menu Title");
 	CTransform* pTrans = scene.Assign<CTransform>(titleText);

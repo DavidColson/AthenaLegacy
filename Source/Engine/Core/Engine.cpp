@@ -5,6 +5,7 @@
 #include <Imgui/examples/imgui_impl_sdl.h>
 #include <Imgui/examples/imgui_impl_dx11.h>
 
+#include "AppWindow.h"
 #include "GraphicsDevice.h"
 #include "Rendering/RenderSystem.h"
 #include "AudioDevice.h"
@@ -31,6 +32,8 @@ namespace
 	Scene* pCurrentScene{ nullptr };
 	Scene* pPendingSceneLoad{ nullptr };
 	SDL_Window* g_pWindow{ nullptr };
+
+	RenderTargetHandle editorRenderTarget;
 }
 
 void Engine::GetFrameRates(double& outReal, double& outLimited)
@@ -67,29 +70,21 @@ void Engine::SetSceneCreateCallback(void (*pCallBackFunc)(Scene&))
 void Engine::Initialize()
 {
 	// Startup flow
+	Log::Info("Engine starting up");
+	
 	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 
-	float width = 1800.0f;
-	float height = 1000.0f;
-
-	g_pWindow = SDL_CreateWindow(
-		"Asteroids",
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		int(width),
-		int(height),
-		SDL_WINDOW_RESIZABLE
-	);
+	AppWindow::Create(1800.f, 1000.f);
 
 	Log::SetLogLevel(Log::EDebug);
 
-	Log::Info("Engine starting up");
-	Log::Info("Window size W: %.1f H: %.1f", width, height);
-
-	GfxDevice::Initialize(g_pWindow, width, height);
-	RenderSystem::Initialize();
+	RenderSystem::Initialize(1800.0f, 1000.0f);
 	AudioDevice::Initialize();
 	Input::CreateInputState();	
+
+
+	// TEMP
+    editorRenderTarget = GfxDevice::CreateRenderTarget(AppWindow::GetWidth(), AppWindow::GetHeight(), 1, "Editor Render Target");
 }
 
 void Engine::Run(Scene *pScene)
@@ -120,12 +115,20 @@ void Engine::Run(Scene *pScene)
 				{
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
 					if (event.window.windowID == SDL_GetWindowID(g_pWindow))
-					{
-						GfxDevice::ResizeWindow((float)event.window.data1, (float)event.window.data2);
-					}
+						AppWindow::Resize((float)event.window.data1, (float)event.window.data2);
 					break;
 				default:
 					break;
+				}
+				break;
+			case SDL_KEYDOWN:
+				if (event.key.keysym.scancode == SDL_SCANCODE_F8)
+				{
+					Editor::ToggleEditor();
+					if (!Editor::IsInEditor())
+					{
+						RenderSystem::ResizeGameFrame(*pCurrentScene, AppWindow::GetWidth(), AppWindow::GetHeight());
+					}
 				}
 				break;
 			case SDL_QUIT:
@@ -134,32 +137,31 @@ void Engine::Run(Scene *pScene)
 			}
 		}
 
-		// Note that pre-update has to happen after input processing or else imgui gets confused
-		RenderSystem::PreUpdate(*pCurrentScene, (float)frameTime);
+		if (Editor::IsInEditor())
+		{
+			ImGui_ImplDX11_NewFrame();
+			ImGui_ImplSDL2_NewFrame(AppWindow::GetSDLWindow());
+			ImGui::NewFrame();
+		}
 
 		// Simulate current game scene
 		pCurrentScene->SimulateScene((float)frameTime);
 		Profiler::ClearFrameData();
 
-		// Render the frame
+		// Render the game
 		RenderSystem::OnFrame(*pCurrentScene, (float)frameTime);
 
+		// If in editor, render the editor
 		if (Editor::IsInEditor())
 		{
-			Editor::FreeGameFrame();
 			Editor::SetGameFrame(RenderSystem::GetGameFrame());
-		}
-		Editor::OnFrame(*pCurrentScene, (float)frameTime);
+			Editor::OnFrame(*pCurrentScene, (float)frameTime);
 
-		// Render game frame onto screen
-		{
-			GfxDevice::SetBackBufferActive();
-			GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });	
-			GfxDevice::SetViewport(0.0f, 0.0f, GfxDevice::GetWindowWidth(), GfxDevice::GetWindowHeight());
+			GfxDevice::BindRenderTarget(editorRenderTarget);
+			GfxDevice::ClearRenderTarget(editorRenderTarget, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
+			GfxDevice::SetViewport(0.0f, 0.0f, AppWindow::GetWidth(), AppWindow::GetHeight());
 
-			// Consider imgui living "above" the render system. Such that when editor is active, we do the imgui frame drawing,
-			// And the game render does it flow into a render target, and then editor renders after. Would require a lot of refactoring though... 
-			{
+			{			
 				GFX_SCOPED_EVENT("Drawing imgui");
 				ImGui::Render();
 				ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -170,9 +172,14 @@ void Engine::Run(Scene *pScene)
 				}
 			}
 
-			GfxDevice::PresentBackBuffer();
-			GfxDevice::ClearRenderState();
-			GfxDevice::PrintQueuedDebugMessages();
+			GfxDevice::UnbindRenderTarget(editorRenderTarget);
+			Editor::FreeGameFrame();
+
+			AppWindow::RenderToWindow(GfxDevice::GetTexture(editorRenderTarget));
+		}
+		else
+		{
+			AppWindow::RenderToWindow(RenderSystem::GetGameFrame());
 		}
 
 		// Deal with scene loading
@@ -209,7 +216,7 @@ void Engine::Run(Scene *pScene)
 	RenderSystem::Destroy();
 	AudioDevice::Destroy();
 	GfxDevice::Destroy();
+	AppWindow::Destroy();
 
-	SDL_DestroyWindow(g_pWindow);
 	SDL_Quit();
 }

@@ -332,9 +332,6 @@ void ShowFrameStats()
 
 void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 {
-	if (Input::GetKeyDown(SDL_SCANCODE_F8))
-		showEditor = !showEditor;
-
 	if (!showEditor)
 		return;
 
@@ -399,8 +396,7 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 		if (Vec2f(gameWindowSizeCache) != Vec2f(ImGui::GetContentRegionAvail()))
 		{
 			gameWindowSizeCache = ImGui::GetContentRegionAvail();
-			// Trigger game scene resize
-			RenderSystem::OnWindowResize(scene, gameWindowSizeCache.x, gameWindowSizeCache.y);
+			RenderSystem::ResizeGameFrame(scene, gameWindowSizeCache.x, gameWindowSizeCache.y);
 		}
 
 		ImGui::Image(GfxDevice::GetImGuiTextureID(gameFrame), ImVec2(gameWindowSizeCache.x, gameWindowSizeCache.y), uv_min, uv_max);
@@ -492,6 +488,14 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 bool Editor::IsInEditor()
 {
 	return showEditor;
+}
+
+void Editor::ToggleEditor()
+{
+	showEditor = !showEditor;
+
+	// Triggers a resize of the game window
+	gameWindowSizeCache = ImVec2(0.0f, 0.0f);
 }
 
 void Editor::SetGameFrame(TextureHandle texture)

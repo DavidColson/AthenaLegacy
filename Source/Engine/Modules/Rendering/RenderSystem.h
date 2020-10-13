@@ -5,16 +5,15 @@ struct TextureHandle;
 
 namespace RenderSystem
 {
-    void Initialize();
+    void Initialize(float width, float height);
     void OnSceneCreate(Scene& scene);
-    void PreUpdate(Scene& scene, float deltaTime);
     void OnFrame(Scene& scene, float deltaTime);
     void Destroy();
 
     TextureHandle GetGameFrame();
 
-    float GetGameViewWidth();
-    float GetGameViewHeight();
+    float GetWidth();
+    float GetHeight();
 
-    void OnWindowResize(Scene& scene, float newWidth, float newHeight);
+    void ResizeGameFrame(Scene& scene, float newWidth, float newHeight);
 }

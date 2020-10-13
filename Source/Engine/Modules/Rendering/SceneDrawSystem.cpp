@@ -39,7 +39,7 @@ void SceneDrawSystem::OnFrame(Scene& scene, float deltaTime)
     PROFILE();
 
 	Matrixf view = Matrixf::Identity();
-	Matrixf proj = Matrixf::Perspective(RenderSystem::GetGameViewWidth(), RenderSystem::GetGameViewHeight(), 0.1f, 100.0f, 60.0f);
+	Matrixf proj = Matrixf::Perspective(RenderSystem::GetWidth(), RenderSystem::GetHeight(), 0.1f, 100.0f, 60.0f);
 	for (EntityID cams : SceneView<CCamera, CTransform>(scene))
 	{
 		CCamera* pCam = scene.Get<CCamera>(cams);
@@ -49,7 +49,7 @@ void SceneDrawSystem::OnFrame(Scene& scene, float deltaTime)
 		Quatf rotation = Quatf::MakeFromEuler(pTrans->localRot);
 		view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
 
-		proj = Matrixf::Perspective(RenderSystem::GetGameViewWidth(), RenderSystem::GetGameViewHeight(), 0.1f, 100.0f, pCam->fov);
+		proj = Matrixf::Perspective(RenderSystem::GetWidth(), RenderSystem::GetHeight(), 0.1f, 100.0f, pCam->fov);
 	}
 
 	for (EntityID ent : SceneView<CRenderable, CTransform>(scene))

@@ -165,7 +165,7 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		GfxDevice::BindVertexBuffers(2, buffers);
 
 		Matrixf view = Matrixf::MakeTranslation(Vec3f(0.0f, 0.0f, 0.0f));
-		Matrixf projection = Matrixf::Orthographic(0.f, RenderSystem::GetGameViewWidth(), 0.0f, RenderSystem::GetGameViewHeight(), -1.0f, 10.0f);
+		Matrixf projection = Matrixf::Orthographic(0.f, RenderSystem::GetWidth(), 0.0f, RenderSystem::GetHeight(), -1.0f, 10.0f);
 		Matrixf vp = projection * view;
 		ParticlesTransform trans{ vp };
 		GfxDevice::BindConstantBuffer(pEmitter->transBuffer, &trans, ShaderType::Vertex, 0);

@@ -24,6 +24,8 @@ target_sources(Engine
         "Quat.cpp"
         "Engine.h"
         "Engine.cpp"
+        "AppWindow.h"
+        "AppWindow.cpp"
         "Profiler.h"
         "Profiler.cpp"
         "Memory.h"
