@@ -105,8 +105,15 @@ void Engine::Run(Scene *pScene)
 				switch (event.window.event)
 				{
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					if (event.window.windowID == SDL_GetWindowID(g_pWindow))
+					if (event.window.windowID == SDL_GetWindowID(AppWindow::GetSDLWindow()))
+					{
 						AppWindow::Resize((float)event.window.data1, (float)event.window.data2);
+
+						if (Editor::IsInEditor())
+							Editor::ResizeEditorFrame((float)event.window.data1, (float)event.window.data2);
+						else
+							RenderSystem::ResizeGameFrame(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
+					}
 					break;
 				default:
 					break;

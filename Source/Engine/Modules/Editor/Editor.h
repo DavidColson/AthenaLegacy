@@ -12,9 +12,8 @@ namespace Editor
 	TextureHandle DrawFrame(Scene& scene, float deltaTime);
 	void Destroy();
 	
+	void ResizeEditorFrame(float width, float height);
+	
 	bool IsInEditor();
 	void ToggleEditor();
-
-	void SetGameFrame(TextureHandle texture);
-	void FreeGameFrame();
 }

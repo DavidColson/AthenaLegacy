@@ -361,9 +361,11 @@ void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 		{
 			Editor::ToggleEditor();
 
-			// When leaving editor mode, tell the game to resize itself to full screen
+			// When leaving editor mode, tell the game to resize itself to full screen, otherwise resize ourselves
 			if (!Editor::IsInEditor())
 				RenderSystem::ResizeGameFrame(scene, AppWindow::GetWidth(), AppWindow::GetHeight());
+			else
+				Editor::ResizeEditorFrame(AppWindow::GetWidth(), AppWindow::GetHeight());
 		}
 		break;
 	default:
@@ -549,6 +551,14 @@ void Editor::Destroy()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
+}
+
+void Editor::ResizeEditorFrame(float width, float height)
+{
+	GfxDevice::FreeRenderTarget(editorRenderTarget);
+    editorRenderTarget = GfxDevice::CreateRenderTarget(width, height, 1, "Editor Render Target");
+	// Triggers a resize of the game window
+	gameWindowSizeCache = ImVec2(0.0f, 0.0f);
 }
 
 bool Editor::IsInEditor()
