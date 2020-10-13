@@ -17,6 +17,7 @@
 
 namespace
 {
+    TextureHandle resolvedGameFrame;
     RenderTargetHandle gameRenderTarget;
     Vec2f gameWindowSize;
 }
@@ -41,12 +42,10 @@ void RenderSystem::OnSceneCreate(Scene& scene)
 	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnRemove, PostProcessingSystem::OnRemovePostProcessing);
 }
 
-void RenderSystem::OnFrame(Scene& scene, float deltaTime)
+TextureHandle RenderSystem::DrawFrame(Scene& scene, float deltaTime)
 {
     GfxDevice::BindRenderTarget(gameRenderTarget);
     GfxDevice::ClearRenderTarget(gameRenderTarget, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
-
-    // TODO: This needs to be GAME window, not application window
     GfxDevice::SetViewport(0.0f, 0.0f, gameWindowSize.x, gameWindowSize.y);
 
     SceneDrawSystem::OnFrame(scene, deltaTime);
@@ -59,6 +58,12 @@ void RenderSystem::OnFrame(Scene& scene, float deltaTime)
     //PostProcessingSystem::OnFrame(scene, deltaTime);
 
     GfxDevice::UnbindRenderTarget(gameRenderTarget);
+
+    // Since the game is multisampled, we have to resolve the multisampled render target to a texture before we're done
+    GfxDevice::FreeTexture(resolvedGameFrame);
+    resolvedGameFrame = GfxDevice::MakeResolvedTexture(gameRenderTarget);
+
+    return resolvedGameFrame; 
 }
 
 void RenderSystem::Destroy()
@@ -66,11 +71,6 @@ void RenderSystem::Destroy()
     DebugDraw::Destroy();
 	Shapes::Destroy();
 	FontSystem::Destroy();
-}
-
-TextureHandle RenderSystem::GetGameFrame()
-{
-    return GfxDevice::MakeResolvedTexture(gameRenderTarget); 
 }
 
 float RenderSystem::GetWidth()
@@ -81,6 +81,11 @@ float RenderSystem::GetWidth()
 float RenderSystem::GetHeight()
 {
     return gameWindowSize.y;
+}
+
+TextureHandle RenderSystem::GetCurrentFrame()
+{
+    return resolvedGameFrame;
 }
 
 void RenderSystem::ResizeGameFrame(Scene& scene, float newWidth, float newHeight)

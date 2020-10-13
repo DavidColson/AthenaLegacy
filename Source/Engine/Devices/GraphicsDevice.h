@@ -184,6 +184,8 @@ namespace GfxDevice
 {
 	void Initialize(SDL_Window* pWindow, float width, float height);
 
+	void InitImgui();
+
 	void Destroy();
 
 	void PrintQueuedDebugMessages();

@@ -12,12 +12,14 @@
 #include "FileSystem.h"
 #include "AssetDatabase.h"
 #include "GraphicsDevice.h"
+#include "AppWindow.h"
 #include "Rendering/RenderSystem.h"
 
+#include <SDL.h>
 #include <Imgui/imgui.h>
 #include <Imgui/misc/cpp/imgui_stdlib.h>
-
-#include <SDL_scancode.h>
+#include <Imgui/examples/imgui_impl_sdl.h>
+#include <Imgui/examples/imgui_impl_dx11.h>
 
 
 namespace {
@@ -37,7 +39,8 @@ namespace {
 	double oldRealFrameTime;
 	double oldObservedFrameTime;
 
-	TextureHandle gameFrame{ INVALID_HANDLE };
+    RenderTargetHandle editorRenderTarget;
+
 	ImVec2 gameWindowSizeCache;
 }
 
@@ -330,11 +333,53 @@ void ShowFrameStats()
 	ImGui::End();
 }
 
-void Editor::OnFrame(Scene& scene, float /* deltaTime */)
+void Editor::Initialize()
 {
-	if (!showEditor)
-		return;
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO &io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	ImGui_ImplSDL2_InitForD3D(AppWindow::GetSDLWindow());
 
+	// One day imgui should just use the graphics device API and not need to do this
+	GfxDevice::InitImgui();
+
+	io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
+	ImGui::StyleColorsDark();
+
+    editorRenderTarget = GfxDevice::CreateRenderTarget(AppWindow::GetWidth(), AppWindow::GetHeight(), 1, "Editor Render Target");
+}
+
+void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
+{
+	ImGui_ImplSDL2_ProcessEvent(event);
+	switch (event->type)
+	{
+	case SDL_KEYDOWN:
+		if (event->key.keysym.scancode == SDL_SCANCODE_F8)
+		{
+			Editor::ToggleEditor();
+
+			// When leaving editor mode, tell the game to resize itself to full screen
+			if (!Editor::IsInEditor())
+				RenderSystem::ResizeGameFrame(scene, AppWindow::GetWidth(), AppWindow::GetHeight());
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void Editor::PreUpdate()
+{
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplSDL2_NewFrame(AppWindow::GetSDLWindow());
+	ImGui::NewFrame();
+}
+
+TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
+{
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->GetWorkPos());
 	ImGui::SetNextWindowSize(viewport->GetWorkSize());
@@ -385,27 +430,24 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 	bool showGameView = true;
 	ImGui::Begin("Game", &showGameView);
 
-	if (GfxDevice::IsValid(gameFrame))
+	ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
+	ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
+	ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
+	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 50% opaque whit
+
+	// TODO: This doesn't trigger if the window is resized from a changing dockspace
+	if (Vec2f(gameWindowSizeCache) != Vec2f(ImGui::GetContentRegionAvail()))
 	{
-		ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
-		ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
-		ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
-		ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 50% opaque whit
+		gameWindowSizeCache = ImGui::GetContentRegionAvail();
+		RenderSystem::ResizeGameFrame(scene, gameWindowSizeCache.x, gameWindowSizeCache.y);
+	}
 
-		// TODO: This doesn't trigger if the window is resized from a changing dockspace
-		if (Vec2f(gameWindowSizeCache) != Vec2f(ImGui::GetContentRegionAvail()))
-		{
-			gameWindowSizeCache = ImGui::GetContentRegionAvail();
-			RenderSystem::ResizeGameFrame(scene, gameWindowSizeCache.x, gameWindowSizeCache.y);
-		}
+	ImGui::Image(GfxDevice::GetImGuiTextureID(RenderSystem::GetCurrentFrame()), ImVec2(gameWindowSizeCache.x, gameWindowSizeCache.y), uv_min, uv_max);
 
-		ImGui::Image(GfxDevice::GetImGuiTextureID(gameFrame), ImVec2(gameWindowSizeCache.x, gameWindowSizeCache.y), uv_min, uv_max);
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::CaptureMouseFromApp(false);
-			ImGui::CaptureKeyboardFromApp(false);
-		}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::CaptureMouseFromApp(false);
+		ImGui::CaptureKeyboardFromApp(false);
 	}
 
 	ImGui::End(); // Ending Game
@@ -483,6 +525,30 @@ void Editor::OnFrame(Scene& scene, float /* deltaTime */)
 	ShowFrameStats();
 	if (showImGuiDemo)
 		ImGui::ShowDemoWindow();
+
+	// Render
+	GfxDevice::BindRenderTarget(editorRenderTarget);
+	GfxDevice::ClearRenderTarget(editorRenderTarget, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
+	GfxDevice::SetViewport(0.0f, 0.0f, AppWindow::GetWidth(), AppWindow::GetHeight());
+	{			
+		GFX_SCOPED_EVENT("Drawing imgui");
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+	}
+	GfxDevice::UnbindRenderTarget(editorRenderTarget);
+
+	return GfxDevice::GetTexture(editorRenderTarget);
+}
+
+void Editor::Destroy()
+{
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
 }
 
 bool Editor::IsInEditor()
@@ -496,15 +562,4 @@ void Editor::ToggleEditor()
 
 	// Triggers a resize of the game window
 	gameWindowSizeCache = ImVec2(0.0f, 0.0f);
-}
-
-void Editor::SetGameFrame(TextureHandle texture)
-{
-	gameFrame = texture;
-}
-
-void Editor::FreeGameFrame()
-{
-	GfxDevice::FreeTexture(gameFrame);
-	gameFrame = INVALID_HANDLE;
 }

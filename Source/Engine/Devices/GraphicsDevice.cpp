@@ -5,8 +5,8 @@
 #include <D3DCompiler.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+
 #include <Imgui/imgui.h>
-#include <Imgui/examples/imgui_impl_sdl.h>
 #include <Imgui/examples/imgui_impl_dx11.h>
 
 #include "Log.h"
@@ -292,25 +292,19 @@ void GfxDevice::Initialize(SDL_Window *pWindow, float width, float height)
 
 	// #TODO: Note that this interface is only available on windows 8 or later. Might fail on older machines
 	pCtx->pDeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void **)&pCtx->pUserDefinedAnnotation);
+}
 
-	// Init Imgui (ideally one day imgui uses GfxDevice, and exists outside here)
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO &io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	ImGui_ImplSDL2_InitForD3D(pWindow);
+// ***********************************************************************
+
+void GfxDevice::InitImgui()
+{
 	ImGui_ImplDX11_Init(pCtx->pDevice, pCtx->pDeviceContext);
-	io.Fonts->AddFontFromFileTTF("Source/Engine/ThirdParty/Imgui/misc/fonts/Roboto-Medium.ttf", 13.0f);
-	ImGui::StyleColorsDark();
 }
 
 // ***********************************************************************
 
 void GfxDevice::Destroy()
 {
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
 	pCtx->pSwapChain->Release();
 	FreeRenderTarget(pCtx->backBuffer);
 	pCtx->pUserDefinedAnnotation->Release();

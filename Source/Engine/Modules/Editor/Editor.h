@@ -2,10 +2,15 @@
 
 struct Scene;
 struct TextureHandle;
+union SDL_Event;
 
 namespace Editor
 {
-	void OnFrame(Scene& scene, float deltaTime);
+	void Initialize();
+	void PreUpdate();
+	void ProcessEvent(Scene& scene, SDL_Event* event);
+	TextureHandle DrawFrame(Scene& scene, float deltaTime);
+	void Destroy();
 	
 	bool IsInEditor();
 	void ToggleEditor();

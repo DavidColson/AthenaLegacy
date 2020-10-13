@@ -7,11 +7,10 @@ namespace RenderSystem
 {
     void Initialize(float width, float height);
     void OnSceneCreate(Scene& scene);
-    void OnFrame(Scene& scene, float deltaTime);
+    TextureHandle DrawFrame(Scene& scene, float deltaTime);
     void Destroy();
 
-    TextureHandle GetGameFrame();
-
+    TextureHandle GetCurrentFrame();
     float GetWidth();
     float GetHeight();
 
