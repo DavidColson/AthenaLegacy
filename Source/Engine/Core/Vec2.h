@@ -165,7 +165,7 @@ struct Vec2
 	**/
 	inline bool operator!=(const Vec2& rhs) const
 	{
-		return x != rhs.x && y != rhs.y;
+		return x != rhs.x || y != rhs.y;
 	}
 
 	/**
