@@ -2,4 +2,14 @@ target_sources(Engine
     PRIVATE
         "Editor.h"
         "Editor.cpp"
+        "FrameStats.h"
+        "FrameStats.cpp"
+        "EntityInspector.h"
+        "EntityInspector.cpp"
+        "SceneHeirarchy.h"
+        "SceneHeirarchy.cpp"
+        "GameView.h"
+        "GameView.cpp"
+        "Console.h"
+        "Console.cpp"
 )

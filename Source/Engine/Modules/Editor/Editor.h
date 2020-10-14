@@ -1,8 +1,18 @@
 #pragma once
 
+#include "Vec2.h"
+
 struct Scene;
 struct TextureHandle;
 union SDL_Event;
+
+struct EditorTool
+{
+	bool open { true };
+	eastl::string menuName{ "unnamed tool" };
+	virtual void Update(Scene& scene) = 0;
+	virtual void OnEditorResize(Vec2f newSize) {}
+};
 
 namespace Editor
 {
@@ -16,4 +26,7 @@ namespace Editor
 	
 	bool IsInEditor();
 	void ToggleEditor();
+
+	EntityID GetSelectedEntity();
+	void SetSelectedEntity(EntityID entity);
 }

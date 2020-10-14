@@ -5,7 +5,6 @@
 #include "Scene.h"
 #include "Vec3.h"
 #include "Vec2.h"
-#include "Profiler.h"
 #include "Engine.h"
 #include "SceneSerializer.h"
 #include "Json.h"
@@ -15,6 +14,12 @@
 #include "AppWindow.h"
 #include "Rendering/RenderSystem.h"
 
+#include "EntityInspector.h"
+#include "FrameStats.h"
+#include "SceneHeirarchy.h"
+#include "GameView.h"
+#include "Console.h"
+
 #include <SDL.h>
 #include <Imgui/imgui.h>
 #include <Imgui/misc/cpp/imgui_stdlib.h>
@@ -23,19 +28,9 @@
 #include <EASTL/unique_ptr.h>
 
 
-struct EditorTool
-{
-	bool open { true };
-	eastl::string menuName{ "unnamed tool" };
-	virtual void Update() = 0;
-};
-
 namespace {
 	bool showEditor = true;
-	bool showLog = true;
-	bool showEntityInspector = true;
-	bool showEntityList = true;
-	bool showImGuiDemo = false;
+
 	EntityID selectedEntity = EntityID::InvalidID();
 
 	eastl::string levelSaveModalFilename;
@@ -44,308 +39,32 @@ namespace {
 
     RenderTargetHandle editorRenderTarget;
 
-	ImVec2 gameWindowSizeCache;
-
 	eastl::vector<eastl::unique_ptr<EditorTool>> tools;
 }
 
-struct LogApp
+// ***********************************************************************
+
+struct ImGuiDemoTool : public EditorTool
 {
-    ImGuiTextFilter     filter;
-    bool                scrollToBottom{ true };
-
-    void Draw()
-    {
-        ImGui::Begin("Log", &showLog);
-
-		ImGui::Checkbox("Scroll To Bottom", &scrollToBottom);
-		ImGui::SameLine();
-		ImGui::Button("Clear");
-		ImGui::SameLine();
-		filter.Draw("Filter", -100.0f);
-		ImGui::Separator();
-
-		ImGui::BeginChild("ScrollingRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-		for (const Log::LogEntry& entry : Log::GetLogHistory())
-		{
-			const char* item = entry.message.c_str();
-			if (filter.PassFilter(item, nullptr))
-			{
-				ImVec4 col = ImGui::GetStyleColorVec4(ImGuiCol_Text);;
-				switch (entry.level)
-				{
-				case Log::ECrit:
-					col = ImColor(1.0f, 0.0f, 0.0f); break;
-				case Log::EWarn:
-					col = ImColor(1.0f, 1.0f, 0.0f); break;
-				default: break;
-				}
-
-				ImGui::PushStyleColor(ImGuiCol_Text, col);
-				ImGui::TextUnformatted(item);
-            	ImGui::PopStyleColor();
-			}
-		}
-		
-		if (scrollToBottom)
-			ImGui::SetScrollHereY(1.0f);
-		ImGui::EndChild();
-
-		ImGui::End();
-    }
+	ImGuiDemoTool() { menuName = "Imgui Demo"; open = false; }
+	virtual void Update(Scene& scene) override { ImGui::ShowDemoWindow(&open); }
 };
 
-void ShowLog()
+// ***********************************************************************
+
+EntityID Editor::GetSelectedEntity()
 {
-	// This isn't ideal, put it inside an editor state struct or something
-	static LogApp log;
-
-	if (!showLog)
-		return;
-
-	log.Draw();
+	return selectedEntity;
 }
 
-void ShowEntityInspector(Scene& scene)
+// ***********************************************************************
+
+void Editor::SetSelectedEntity(EntityID entity)
 {
-	if (!showEntityInspector)
-		return;
-
-	ImGui::Begin("Entity Inspector", &showEntityInspector);
-
-	if (ImGui::Button("Add Component", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
-		ImGui::OpenPopup("Select Component");
-	if (ImGui::BeginPopup("Select Component"))
-	{
-		ImGui::Text("Aquarium");
-		ImGui::Separator();
-
-		for (eastl::pair<eastl::string, TypeData*> type : TypeDatabase::Data::Get().typeNames)
-		{
-			if (type.second->pComponentHandler)
-			{
-				if (ImGui::Selectable(type.first.c_str()))
-				{
-					Log::Info("Create component of type %s", type.first.c_str());
-					type.second->pComponentHandler->Assign(scene, selectedEntity);
-				}
-			}
-		}
-		ImGui::EndPopup();
-	}
-    ImGui::NewLine();
-    ImGui::NewLine();
-
-
-	if (selectedEntity.Index() > scene.entities.size())
-	{
-		ImGui::End();
-		return;
-	}
-	// We have the entity Id
-	for (int i = 0; i < MAX_COMPONENTS; i++)
-	{
-		// For each component ID, check the bitmask, if no, continue, if yes, save the ID and proceed to access that components data
-		eastl::bitset<MAX_COMPONENTS> mask;
-		mask.set(i, true);
-			
-		if (mask == (scene.entities[selectedEntity.Index()].mask & mask))
-		{
-			TypeData* pComponentType = scene.componentPools[i]->pTypeData;
-			if (ImGui::CollapsingHeader(pComponentType->name, ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				if (strstr(pComponentType->name, "CName") == nullptr && strstr(pComponentType->name, "CChild") == nullptr && strstr(pComponentType->name,"CParent") == nullptr)
-				{
-					ImGui::PushID(i);
-					if (ImGui::Button("Remove Component", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
-					{
-						pComponentType->pComponentHandler->Remove(scene, selectedEntity);
-					}
-					ImGui::PopID();
-				}
-				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
-				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
-
-				// Make a new variant to hide this void*
-				void* pComponentData = scene.componentPools[i]->get(selectedEntity.Index());
-
-				// Loop through all the members of the component, showing the appropriate UI elements
-				for (Member& member : *pComponentType)
-				{
-					if (member.IsType<float>())
-					{
-						float* number = member.GetAs<float>(pComponentData);
-						ImGui::DragFloat(member.name, number, 0.1f);
-					}
-					else if (member.IsType<int>())
-					{
-						int* number = member.GetAs<int>(pComponentData);
-						ImGui::DragInt(member.name, number, 0.1f);
-					}
-					else if (member.IsType<Vec2f>())
-					{
-						Vec2f& vec = *member.GetAs<Vec2f>(pComponentData);
-						float list[2] = { vec.x, vec.y };
-						ImGui::DragFloat2(member.name, list, 0.1f);
-						vec.x = list[0]; vec.y = list[1];
-					}
-					else if (member.IsType<Vec3f>())
-					{
-						Vec3f& vec = *member.GetAs<Vec3f>(pComponentData);
-						float list[3] = { vec.x, vec.y, vec.z };
-						ImGui::DragFloat3(member.name, list, 0.1f);
-						vec.x = list[0]; vec.y = list[1]; vec.z = list[2];
-					}
-					else if (member.IsType<bool>())
-					{
-						bool* boolean = member.GetAs<bool>(pComponentData);
-						ImGui::Checkbox(member.name, boolean);
-					}
-					else if (member.IsType<eastl::string>())
-					{
-						eastl::string* str = member.GetAs<eastl::string>(pComponentData);
-						ImGui::InputText(member.name, str);
-					}
-					else if (member.IsType<EntityID>())
-					{
-						EntityID& entity = *member.GetAs<EntityID>(pComponentData);
-						ImGui::Text("{index: %i version: %i}  %s", entity.Index(), entity.Version(), member.name);
-					}
-					else if (member.IsType<AssetHandle>())
-					{
-						AssetHandle* handle = member.GetAs<AssetHandle>(pComponentData);
-						eastl::string identifier = AssetDB::GetAssetIdentifier(*handle);
-						identifier.set_capacity(200);
-
-						if (ImGui::InputText(member.name, &identifier, ImGuiInputTextFlags_EnterReturnsTrue))
-						{
-							*handle = AssetHandle(identifier);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	ImGui::End();
+	selectedEntity = entity;
 }
 
-void RecurseDrawEntityTree(Scene& scene, EntityID parent)
-{
-	CParent* pParent = scene.Get<CParent>(parent);
-			
-	EntityID currChild = pParent->firstChild;
-	for(int i = 0; i < pParent->nChildren; i++)
-	{
-		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-		
-		if (!scene.Has<CParent>(currChild))
-			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
-		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)currChild.value, nodeFlags, "%i - %s", currChild.Index(), scene.GetEntityName(currChild).c_str());
-		if (ImGui::IsItemClicked())
-			selectedEntity = currChild;
-		
-		if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
-		{
-			if (scene.Has<CParent>(currChild))
-				RecurseDrawEntityTree(scene, currChild);
-
-			ImGui::TreePop();
-		}
-		currChild = scene.Get<CChild>(currChild)->next;
-	}
-}
-
-void ShowEntityList(Scene& scene)
-{
-	if (!showEntityList)
-		return;
-
-	ImGui::Begin("Entity Editor", &showEntityList);
-
-	if (ImGui::Button("Add Entity", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
-	{
-		scene.NewEntity("Entity");
-	}
-
-	for (EntityID entity : SceneView<>(scene))
-	{
-		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-
-		if (selectedEntity == entity)
-			nodeFlags |= ImGuiTreeNodeFlags_Selected;
-
-		if (!scene.Has<CParent>(entity))
-			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
-		if (scene.Has<CChild>(entity))
-			continue;
-
-		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)entity.value, nodeFlags, "%i - %s", entity.Index(), scene.GetEntityName(entity).c_str());
-		if (ImGui::IsItemClicked())
-			selectedEntity = entity;
-		
-		if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
-		{
-			if (scene.Has<CParent>(entity))
-				RecurseDrawEntityTree(scene, entity);
-
-			ImGui::TreePop();
-		}
-	}
-
-	ImGui::End();
-}
-
-struct FrameStats : public EditorTool
-{
-	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
-	double oldRealFrameTime;
-	double oldObservedFrameTime;
-
-	FrameStats()
-	{
-		menuName = "Frame Stats";
-	}
-
-	virtual void Update() override
-	{
-		double realFrameTime;
-		double observedFrameTime;
-		Engine::GetFrameRates(realFrameTime, observedFrameTime);
-
-		if (++frameStatsCounter > 30)
-		{
-			oldRealFrameTime = realFrameTime;
-			oldObservedFrameTime = observedFrameTime;
-			frameStatsCounter = 0;
-		}
-
-		ImGui::Begin("Frame Stats", &open);
-
-		ImGui::Text("Real frame time %.6f ms/frame (%.3f FPS)", oldRealFrameTime * 1000.0, 1.0 / oldRealFrameTime);
-		ImGui::Text("Observed frame time %.6f ms/frame (%.3f FPS)", oldObservedFrameTime * 1000.0, 1.0 / oldObservedFrameTime);
-
-		ImGui::Separator();
-
-		int elements = 0;
-		Profiler::ScopeData* pFrameData = nullptr;
-		Profiler::GetFrameData(&pFrameData, elements);
-		for (size_t i = 0; i < elements; ++i)
-		{
-			// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
-			// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
-			double inMs = pFrameData[i].time * 1000.0;
-			eastl::string str;
-			str.sprintf("%s - %fms/frame", pFrameData[i].name, inMs);
-			ImGui::Text(str.c_str());
-		}
-
-		ImGui::End();
-	}
-};
+// ***********************************************************************
 
 void Editor::Initialize()
 {
@@ -365,7 +84,14 @@ void Editor::Initialize()
     editorRenderTarget = GfxDevice::CreateRenderTarget(AppWindow::GetWidth(), AppWindow::GetHeight(), 1, "Editor Render Target");
 
 	tools.push_back(eastl::make_unique<FrameStats>());
+	tools.push_back(eastl::make_unique<EntityInspector>());
+	tools.push_back(eastl::make_unique<SceneHeirarchy>());
+	tools.push_back(eastl::make_unique<GameView>());
+	tools.push_back(eastl::make_unique<Console>());
+	tools.push_back(eastl::make_unique<ImGuiDemoTool>());
 }
+
+// ***********************************************************************
 
 void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 {
@@ -389,12 +115,16 @@ void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 	}
 }
 
+// ***********************************************************************
+
 void Editor::PreUpdate()
 {
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplSDL2_NewFrame(AppWindow::GetSDLWindow());
 	ImGui::NewFrame();
 }
+
+// ***********************************************************************
 
 TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 {
@@ -406,6 +136,9 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 		ImGui::RenderPlatformWindowsDefault();
 		return INVALID_HANDLE;
 	}
+
+	// Setup dockspace
+	// ---------------
 
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->GetWorkPos());
@@ -426,6 +159,10 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 	ImGuiID dockspace_id = ImGui::GetID("MainDockspace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 
+
+	// Create main menu bar
+	// --------------------
+
 	bool bSaveModal = false;
 	bool bOpenModal = false;
 	if (ImGui::BeginMenuBar())
@@ -436,18 +173,12 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
            		bSaveModal = true;
 			if (ImGui::MenuItem("Open Level"))
 				bOpenModal = true;
-			if (ImGui::MenuItem("Show Imgui Demo")) { showImGuiDemo = !showImGuiDemo; }
 			ImGui::Separator();
 			if (ImGui::MenuItem("Quit")) { Engine::StartShutdown(); }
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Editors"))
 		{
-
-			if (ImGui::MenuItem("Entity List")) { showEntityList = !showEntityList; }
-			if (ImGui::MenuItem("Entity Inspector")) { showEntityInspector = !showEntityInspector; }
-			if (ImGui::MenuItem("Console")) { showLog = !showLog; }
-			
 			for (eastl::unique_ptr<EditorTool>& tool : tools)
 			{
 				if (ImGui::MenuItem(tool->menuName.c_str()))
@@ -461,30 +192,9 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 
 	ImGui::End(); // Ending MainDockspaceWindow
 
-	bool showGameView = true;
-	ImGui::Begin("Game", &showGameView);
 
-	ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
-	ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
-	ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
-	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 50% opaque whit\
-
-	// TODO: This doesn't trigger if the window is resized from a changing dockspace
-	if (Vec2f(gameWindowSizeCache) != Vec2f(ImGui::GetContentRegionAvail()))
-	{
-		gameWindowSizeCache = ImGui::GetContentRegionAvail();
-		RenderSystem::ResizeGameFrame(scene, gameWindowSizeCache.x, gameWindowSizeCache.y);
-	}
-
-	ImGui::Image(GfxDevice::GetImGuiTextureID(RenderSystem::GetCurrentFrame()), ImVec2(gameWindowSizeCache.x, gameWindowSizeCache.y), uv_min, uv_max);
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::CaptureMouseFromApp(false);
-		ImGui::CaptureKeyboardFromApp(false);
-	}
-
-	ImGui::End(); // Ending Game
+	// Create level save and load modals
+	// ---------------------------
 
 	if (bSaveModal)
 	{
@@ -553,20 +263,18 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 		ImGui::EndPopup();
 	}
 
-	ShowLog();
-	ShowEntityInspector(scene);
-	ShowEntityList(scene);
+	// Update/Draw editor tools
+	// ------------------------
 
 	for (eastl::unique_ptr<EditorTool>& tool : tools)
 	{
 		if (tool->open)
-			tool->Update();
+			tool->Update(scene);
 	}
 
-	if (showImGuiDemo)
-		ImGui::ShowDemoWindow();
+	// Render editor to our render target
+	// ----------------------------------
 
-	// Render
 	GfxDevice::BindRenderTarget(editorRenderTarget);
 	GfxDevice::ClearRenderTarget(editorRenderTarget, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
 	GfxDevice::SetViewport(0.0f, 0.0f, AppWindow::GetWidth(), AppWindow::GetHeight());
@@ -585,24 +293,36 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 	return GfxDevice::GetTexture(editorRenderTarget);
 }
 
+// ***********************************************************************
+
 void Editor::Destroy()
 {
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 }
 
+// ***********************************************************************
+
 void Editor::ResizeEditorFrame(float width, float height)
 {
 	GfxDevice::FreeRenderTarget(editorRenderTarget);
     editorRenderTarget = GfxDevice::CreateRenderTarget(width, height, 1, "Editor Render Target");
-	// Triggers a resize of the game window
-	gameWindowSizeCache = ImVec2(0.0f, 0.0f);
+
+	for (eastl::unique_ptr<EditorTool>& tool : tools)
+	{
+		if (tool->open)
+			tool->OnEditorResize(Vec2f(width, height));
+	}
 }
+
+// ***********************************************************************
 
 bool Editor::IsInEditor()
 {
 	return showEditor;
 }
+
+// ***********************************************************************
 
 void Editor::ToggleEditor()
 {
@@ -613,7 +333,4 @@ void Editor::ToggleEditor()
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 	else
 		io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
-
-	// Triggers a resize of the game window
-	gameWindowSizeCache = ImVec2(0.0f, 0.0f);
 }
