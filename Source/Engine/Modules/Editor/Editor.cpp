@@ -20,14 +20,21 @@
 #include <Imgui/misc/cpp/imgui_stdlib.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
 #include <Imgui/examples/imgui_impl_dx11.h>
+#include <EASTL/unique_ptr.h>
 
+
+struct EditorTool
+{
+	bool open { true };
+	eastl::string menuName{ "unnamed tool" };
+	virtual void Update() = 0;
+};
 
 namespace {
 	bool showEditor = true;
 	bool showLog = true;
 	bool showEntityInspector = true;
 	bool showEntityList = true;
-	bool showFrameStats = true;
 	bool showImGuiDemo = false;
 	EntityID selectedEntity = EntityID::InvalidID();
 
@@ -35,13 +42,11 @@ namespace {
 	eastl::vector<eastl::string> levelOpenModalFiles;
 	int selectedLevelFile = -1;
 
-	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
-	double oldRealFrameTime;
-	double oldObservedFrameTime;
-
     RenderTargetHandle editorRenderTarget;
 
 	ImVec2 gameWindowSizeCache;
+
+	eastl::vector<eastl::unique_ptr<EditorTool>> tools;
 }
 
 struct LogApp
@@ -294,44 +299,53 @@ void ShowEntityList(Scene& scene)
 	ImGui::End();
 }
 
-void ShowFrameStats()
+struct FrameStats : public EditorTool
 {
-	if (!showFrameStats)
-		return;
+	int frameStatsCounter = 0; // used so we only update framerate every few frames to make it less annoying to read
+	double oldRealFrameTime;
+	double oldObservedFrameTime;
 
-	double realFrameTime;
-	double observedFrameTime;
-	Engine::GetFrameRates(realFrameTime, observedFrameTime);
-
-	if (++frameStatsCounter > 30)
+	FrameStats()
 	{
-		oldRealFrameTime = realFrameTime;
-		oldObservedFrameTime = observedFrameTime;
-		frameStatsCounter = 0;
+		menuName = "Frame Stats";
 	}
 
-	ImGui::Begin("Frame Stats", &showFrameStats);
-
-	ImGui::Text("Real frame time %.6f ms/frame (%.3f FPS)", oldRealFrameTime * 1000.0, 1.0 / oldRealFrameTime);
-	ImGui::Text("Observed frame time %.6f ms/frame (%.3f FPS)", oldObservedFrameTime * 1000.0, 1.0 / oldObservedFrameTime);
-
-	ImGui::Separator();
-
-	int elements = 0;
-	Profiler::ScopeData* pFrameData = nullptr;
-	Profiler::GetFrameData(&pFrameData, elements);
-	for (size_t i = 0; i < elements; ++i)
+	virtual void Update() override
 	{
-		// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
-		// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
-		double inMs = pFrameData[i].time * 1000.0;
-		eastl::string str;
-		str.sprintf("%s - %fms/frame", pFrameData[i].name, inMs);
-		ImGui::Text(str.c_str());
-	}
+		double realFrameTime;
+		double observedFrameTime;
+		Engine::GetFrameRates(realFrameTime, observedFrameTime);
 
-	ImGui::End();
-}
+		if (++frameStatsCounter > 30)
+		{
+			oldRealFrameTime = realFrameTime;
+			oldObservedFrameTime = observedFrameTime;
+			frameStatsCounter = 0;
+		}
+
+		ImGui::Begin("Frame Stats", &open);
+
+		ImGui::Text("Real frame time %.6f ms/frame (%.3f FPS)", oldRealFrameTime * 1000.0, 1.0 / oldRealFrameTime);
+		ImGui::Text("Observed frame time %.6f ms/frame (%.3f FPS)", oldObservedFrameTime * 1000.0, 1.0 / oldObservedFrameTime);
+
+		ImGui::Separator();
+
+		int elements = 0;
+		Profiler::ScopeData* pFrameData = nullptr;
+		Profiler::GetFrameData(&pFrameData, elements);
+		for (size_t i = 0; i < elements; ++i)
+		{
+			// Might want to add some smoothing and history to this data? Can be noisey, especially for functions not called every frame
+			// Also maybe sort so we can see most expensive things at the top? Lots of expansion possibility here really
+			double inMs = pFrameData[i].time * 1000.0;
+			eastl::string str;
+			str.sprintf("%s - %fms/frame", pFrameData[i].name, inMs);
+			ImGui::Text(str.c_str());
+		}
+
+		ImGui::End();
+	}
+};
 
 void Editor::Initialize()
 {
@@ -349,6 +363,8 @@ void Editor::Initialize()
 	ImGui::StyleColorsDark();
 
     editorRenderTarget = GfxDevice::CreateRenderTarget(AppWindow::GetWidth(), AppWindow::GetHeight(), 1, "Editor Render Target");
+
+	tools.push_back(eastl::make_unique<FrameStats>());
 }
 
 void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
@@ -427,10 +443,17 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 		}
 		if (ImGui::BeginMenu("Editors"))
 		{
+
 			if (ImGui::MenuItem("Entity List")) { showEntityList = !showEntityList; }
 			if (ImGui::MenuItem("Entity Inspector")) { showEntityInspector = !showEntityInspector; }
 			if (ImGui::MenuItem("Console")) { showLog = !showLog; }
-			if (ImGui::MenuItem("FrameStats")) { showFrameStats = !showFrameStats; }
+			
+			for (eastl::unique_ptr<EditorTool>& tool : tools)
+			{
+				if (ImGui::MenuItem(tool->menuName.c_str()))
+					tool->open = !tool->open;
+			}
+			
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
@@ -444,7 +467,7 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 	ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 	ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
 	ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
-	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 50% opaque whit
+	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // 50% opaque whit\
 
 	// TODO: This doesn't trigger if the window is resized from a changing dockspace
 	if (Vec2f(gameWindowSizeCache) != Vec2f(ImGui::GetContentRegionAvail()))
@@ -533,7 +556,13 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 	ShowLog();
 	ShowEntityInspector(scene);
 	ShowEntityList(scene);
-	ShowFrameStats();
+
+	for (eastl::unique_ptr<EditorTool>& tool : tools)
+	{
+		if (tool->open)
+			tool->Update();
+	}
+
 	if (showImGuiDemo)
 		ImGui::ShowDemoWindow();
 
