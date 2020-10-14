@@ -382,6 +382,15 @@ void Editor::PreUpdate()
 
 TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 {
+	if (!showEditor)
+	{
+		// Need to run this code even when editor is disabled to correctly update the imgui viewports
+		ImGui::Render();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		return INVALID_HANDLE;
+	}
+
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->GetWorkPos());
 	ImGui::SetNextWindowSize(viewport->GetWorkSize());
@@ -569,6 +578,12 @@ bool Editor::IsInEditor()
 void Editor::ToggleEditor()
 {
 	showEditor = !showEditor;
+
+	ImGuiIO &io = ImGui::GetIO();
+	if (showEditor)
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	else
+		io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
 
 	// Triggers a resize of the game window
 	gameWindowSizeCache = ImVec2(0.0f, 0.0f);

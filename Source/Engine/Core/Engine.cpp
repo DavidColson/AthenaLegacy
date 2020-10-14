@@ -126,8 +126,7 @@ void Engine::Run(Scene *pScene)
 		}
 
 		// Preparing editor code now allows game code to define it's own editors 
-		if (Editor::IsInEditor())
-			Editor::PreUpdate();
+		Editor::PreUpdate();
 
 		// Simulate current game scene
 		pCurrentScene->SimulateScene((float)frameTime);
@@ -136,16 +135,13 @@ void Engine::Run(Scene *pScene)
 		// Render the game
 		TextureHandle gameFrame = RenderSystem::DrawFrame(*pCurrentScene, (float)frameTime);
 
-		// If in editor, render the editor, editor will pull game frames if it wants to
+		// Render the editor
+		TextureHandle editorFrame = Editor::DrawFrame(*pCurrentScene, (float)frameTime);
+		
 		if (Editor::IsInEditor())
-		{
-			TextureHandle editorFrame = Editor::DrawFrame(*pCurrentScene, (float)frameTime);
 			AppWindow::RenderToWindow(editorFrame);
-		}
 		else
-		{
 			AppWindow::RenderToWindow(gameFrame);
-		}
 
 		// Deal with scene loading
 		if (pPendingSceneLoad)
