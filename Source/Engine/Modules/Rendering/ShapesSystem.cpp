@@ -41,6 +41,8 @@ namespace
 	CShapesSystemState* pState = nullptr;
 }
 
+// ***********************************************************************
+
 void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thickness, Vec4f color, bool connected)
 {  
 	// Vector manipulation here is slow, can do better
@@ -83,6 +85,8 @@ void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thicknes
     }
     pState->drawQueue.emplace_back(DrawCall { vertCount, vertCount });
 }
+
+// ***********************************************************************
 
 void Shapes::Initialize()
 {
@@ -128,6 +132,8 @@ void Shapes::Initialize()
 	pState->transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Shapes transforms");
 }
 
+// ***********************************************************************
+
 void Shapes::Destroy()
 {
 	GfxDevice::FreeProgram(pState->shaderProgram);
@@ -135,6 +141,8 @@ void Shapes::Destroy()
 	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
 	GfxDevice::FreeConstBuffer(pState->transformDataBuffer);
 }
+
+// ***********************************************************************
 
 void Shapes::OnFrame(Scene& scene, float /* deltaTime */)
 {

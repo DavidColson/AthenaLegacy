@@ -26,6 +26,8 @@ REFLECT_MEMBER(prev)
 REFLECT_MEMBER(next)
 REFLECT_END()
 
+// ***********************************************************************
+
 void RecursiveTransformTree(Scene& scene, EntityID root)
 {
     CTransform* pParentTrans = scene.Get<CTransform>(root);
@@ -48,6 +50,8 @@ void RecursiveTransformTree(Scene& scene, EntityID root)
 		currChild = scene.Get<CChild>(currChild)->next;
     }
 }
+
+// ***********************************************************************
 
 void TransformHeirarchy(Scene& scene, float deltaTime)
 {
@@ -75,21 +79,29 @@ void TransformHeirarchy(Scene& scene, float deltaTime)
     }
 }
 
+// ***********************************************************************
+
 BaseComponentPool::BaseComponentPool(size_t elementsize)
 {
     elementSize = elementsize;
     pData = new char[elementSize * MAX_ENTITIES];
 }
 
+// ***********************************************************************
+
 BaseComponentPool::~BaseComponentPool()
 {
     delete[] pData;
 }
 
+// ***********************************************************************
+
 Scene::Scene()
 {
     Engine::NewSceneCreated(*this);
 }
+
+// ***********************************************************************
 
 Scene::~Scene()
 {
@@ -102,6 +114,8 @@ Scene::~Scene()
         delete pPool;
     }
 }
+
+// ***********************************************************************
 
 EntityID Scene::NewEntity(const char* name)
 {
@@ -118,6 +132,8 @@ EntityID Scene::NewEntity(const char* name)
     Assign<CName>(entities.back().id)->name = name;
     return entities.back().id;
 }
+
+// ***********************************************************************
 
 void Scene::DestroyEntity(EntityID id)
 {
@@ -144,10 +160,14 @@ void Scene::DestroyEntity(EntityID id)
     nActiveEntities--;
 }
 
+// ***********************************************************************
+
 eastl::string Scene::GetEntityName(EntityID entity)
 {
     return Get<CName>(entity)->name;
 }
+
+// ***********************************************************************
 
 void Scene::SetParent(EntityID child, EntityID parent)
 {
@@ -183,6 +203,8 @@ void Scene::SetParent(EntityID child, EntityID parent)
     pParent->nChildren += 1;
 }
 
+// ***********************************************************************
+
 void Scene::UnsetParent(EntityID child, EntityID parent)
 {
     CChild* pChild = Get<CChild>(child);
@@ -209,6 +231,8 @@ void Scene::UnsetParent(EntityID child, EntityID parent)
     pParent->nChildren -= 1;
 }
 
+// ***********************************************************************
+
 void Scene::RegisterSystem(SystemPhase phase, SystemFunc func)
 {
     switch (phase)
@@ -227,6 +251,8 @@ void Scene::RegisterSystem(SystemPhase phase, SystemFunc func)
     }
 }
 
+// ***********************************************************************
+
 void Scene::SimulateScene(float deltaTime)
 {
     for (SystemFunc func : preUpdateSystems)
@@ -238,6 +264,8 @@ void Scene::SimulateScene(float deltaTime)
         func(*this, deltaTime);
     }
 }
+
+// ***********************************************************************
 
 void Scene::RenderScene(float deltaTime)
 {

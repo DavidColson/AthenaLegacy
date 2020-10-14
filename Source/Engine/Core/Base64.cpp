@@ -2,6 +2,8 @@
 
 #include "Log.h"
 
+// ***********************************************************************
+
 eastl::string printBits(int size, void const * const ptr)
 {
     // Little endian
@@ -22,6 +24,8 @@ eastl::string printBits(int size, void const * const ptr)
 }
 
 static eastl::string lookup = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+// ***********************************************************************
 
 eastl::string DecodeBase64(eastl::string const& encodedString)
 {
@@ -49,6 +53,8 @@ eastl::string DecodeBase64(eastl::string const& encodedString)
 
     return output;
 }
+
+// ***********************************************************************
 
 eastl::string EncodeBase64(size_t length, const char* bytes)
 {

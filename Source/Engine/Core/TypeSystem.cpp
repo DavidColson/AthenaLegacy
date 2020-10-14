@@ -8,6 +8,8 @@
 
 #include <EASTL/string.h>
 
+// ***********************************************************************
+
 Variant Member::Get(Variant& instance)
 {
 	Variant var;
@@ -18,11 +20,15 @@ Variant Member::Get(Variant& instance)
 	return var;
 }
 
+// ***********************************************************************
+
 void Member::Set(void* instance, Variant newValue)
 {
 	char* location = reinterpret_cast<char*>(instance);
 	memcpy(location + offset, newValue.pData, newValue.pTypeData->size);
 }
+
+// ***********************************************************************
 
 void Member::Set(Variant& instance, Variant newValue)
 {
@@ -32,26 +38,36 @@ void Member::Set(Variant& instance, Variant newValue)
 
 
 
+// ***********************************************************************
+
 TypeData::~TypeData()
 {
 	delete pConstructor;
 }
+
+// ***********************************************************************
 
 Variant TypeData::New()
 {
 	return pConstructor->Invoke();
 }
 
+// ***********************************************************************
+
 bool TypeData::MemberExists(const char* _name)
 {
 	return memberOffsets.count(_name) == 1;
 }
+
+// ***********************************************************************
 
 Member& TypeData::GetMember(const char* _name)
 {
 	ASSERT(memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
 	return members[memberOffsets[_name]];
 }
+
+// ***********************************************************************
 
 JsonValue TypeData::ToJson(Variant value)
 {
@@ -65,6 +81,8 @@ JsonValue TypeData::ToJson(Variant value)
 
     return result;
 }
+
+// ***********************************************************************
 
 Variant TypeData::FromJson(const JsonValue& json)
 {
@@ -134,6 +152,8 @@ TypeData& getPrimitiveTypeData<int>()
 
 
 
+// ***********************************************************************
+
 struct TypeData_Float : TypeData
 {
 	TypeData_Float() : TypeData{"float", sizeof(float)} 
@@ -161,6 +181,8 @@ TypeData& getPrimitiveTypeData<float>()
 
 
 
+
+// ***********************************************************************
 
 struct TypeData_Double : TypeData
 {
@@ -190,6 +212,8 @@ TypeData& getPrimitiveTypeData<double>()
 
 
 
+// ***********************************************************************
+
 struct TypeData_String : TypeData
 {
 	TypeData_String() : TypeData{"eastl::string", sizeof(eastl::string)} 
@@ -218,6 +242,8 @@ TypeData& getPrimitiveTypeData<eastl::string>()
 
 
 
+// ***********************************************************************
+
 struct TypeData_Bool : TypeData
 {
 	TypeData_Bool() : TypeData{"bool", sizeof(bool)} 
@@ -245,6 +271,8 @@ TypeData& getPrimitiveTypeData<bool>()
 
 
 
+
+// ***********************************************************************
 
 struct TypeData_EntityID : TypeData
 {
@@ -275,6 +303,8 @@ TypeData& getPrimitiveTypeData<EntityID>()
 
 
 
+
+// ***********************************************************************
 
 struct TypeData_AssetHandle: TypeData
 {

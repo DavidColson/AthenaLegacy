@@ -51,6 +51,8 @@ struct Token
 	int index;
 };
 
+// ***********************************************************************
+
 eastl::string ParseString(Scan::ScanningState& scan, char bound)
 {	
 	int start = scan.current;
@@ -112,6 +114,8 @@ eastl::string ParseString(Scan::ScanningState& scan, char bound)
 	return result;
 }
 
+// ***********************************************************************
+
 double ParseNumber(Scan::ScanningState& scan)
 {	
 	scan.current -= 1; // Go back to get the first digit or symbol
@@ -145,6 +149,8 @@ double ParseNumber(Scan::ScanningState& scan)
 	// If it's 0.0, ".0", "0." or 0. if not there's been an error in the parsing. I know this is cheeky. I don't care.
 	return strtod(scan.file.substr(start, (scan.current - start)).c_str(), nullptr);
 }
+
+// ***********************************************************************
 
 eastl::vector<Token> TokenizeJson(eastl::string jsonText)
 {
@@ -251,6 +257,8 @@ eastl::vector<Token> TokenizeJson(eastl::string jsonText)
 
 
 
+// ***********************************************************************
+
 eastl::map<eastl::string, JsonValue> ParseObject(eastl::vector<Token>& tokens, int& currentToken);
 eastl::vector<JsonValue> ParseArray(eastl::vector<Token>& tokens, int& currentToken);
 
@@ -289,6 +297,8 @@ JsonValue ParseValue(eastl::vector<Token>& tokens, int& currentToken)
 	return JsonValue();
 }
 
+// ***********************************************************************
+
 eastl::map<eastl::string, JsonValue> ParseObject(eastl::vector<Token>& tokens, int& currentToken)
 {
 	currentToken++; // Advance over opening brace
@@ -324,6 +334,8 @@ eastl::map<eastl::string, JsonValue> ParseObject(eastl::vector<Token>& tokens, i
 	return map;
 }
 
+// ***********************************************************************
+
 eastl::vector<JsonValue> ParseArray(eastl::vector<Token>& tokens, int& currentToken)
 {
 	currentToken++; // Advance over opening bracket
@@ -352,6 +364,8 @@ eastl::vector<JsonValue> ParseArray(eastl::vector<Token>& tokens, int& currentTo
 // JsonValue implementation
 ///////////////////////////
 
+// ***********************************************************************
+
 JsonValue::~JsonValue()
 {
 	if (type == Type::Array)
@@ -365,11 +379,15 @@ JsonValue::~JsonValue()
 	type = Type::Null;
 }
 
+// ***********************************************************************
+
 JsonValue::JsonValue()
 {
     type = Type::Null;
     internalData.pArray = nullptr;
 }
+
+// ***********************************************************************
 
 JsonValue::JsonValue(const JsonValue& copy)
 {
@@ -400,6 +418,8 @@ JsonValue::JsonValue(const JsonValue& copy)
 	type = copy.type;
 }
 
+// ***********************************************************************
+
 JsonValue::JsonValue(JsonValue&& copy)
 {
 	internalData = copy.internalData;
@@ -408,6 +428,8 @@ JsonValue::JsonValue(JsonValue&& copy)
 	type = copy.type;
 	copy.type = Type::Null;	
 }
+
+// ***********************************************************************
 
 JsonValue& JsonValue::operator=(const JsonValue& copy)
 {
@@ -439,6 +461,8 @@ JsonValue& JsonValue::operator=(const JsonValue& copy)
 	return *this;
 }
 
+// ***********************************************************************
+
 JsonValue& JsonValue::operator=(JsonValue&& copy)
 {
 	internalData = copy.internalData;
@@ -450,12 +474,16 @@ JsonValue& JsonValue::operator=(JsonValue&& copy)
 	return *this;
 }
 
+// ***********************************************************************
+
 JsonValue::JsonValue(eastl::vector<JsonValue>& array)
 {
     internalData.pArray = nullptr;
     internalData.pArray = new eastl::vector<JsonValue>(array.begin(), array.end());
     type = Type::Array;
 }
+
+// ***********************************************************************
 
 JsonValue::JsonValue(eastl::map<eastl::string, JsonValue>& object)
 {
@@ -464,12 +492,16 @@ JsonValue::JsonValue(eastl::map<eastl::string, JsonValue>& object)
     type = Type::Object;
 }
 
+// ***********************************************************************
+
 JsonValue::JsonValue(eastl::string string)
 {
     internalData.pArray = nullptr;
     internalData.pString = new eastl::string(string);
     type = Type::String;
 }
+
+// ***********************************************************************
 
 JsonValue::JsonValue(const char* string)
 {
@@ -478,12 +510,16 @@ JsonValue::JsonValue(const char* string)
     type = Type::String;
 }
 
+// ***********************************************************************
+
 JsonValue::JsonValue(double number)
 {
     internalData.pArray = nullptr;
     internalData.floatingNumber = number;
     type = Type::Floating;
 }
+
+// ***********************************************************************
 
 JsonValue::JsonValue(long number)
 {
@@ -492,6 +528,8 @@ JsonValue::JsonValue(long number)
     type = Type::Integer;
 }
 
+// ***********************************************************************
+
 JsonValue::JsonValue(bool boolean)
 {
     internalData.pArray = nullptr;
@@ -499,12 +537,16 @@ JsonValue::JsonValue(bool boolean)
     type = Type::Boolean;
 }
 
+// ***********************************************************************
+
 eastl::string JsonValue::ToString() const
 {
 	if (type == Type::String)
 		return *(internalData.pString);
 	return eastl::string();
 }
+
+// ***********************************************************************
 
 double JsonValue::ToFloat() const
 {
@@ -515,12 +557,16 @@ double JsonValue::ToFloat() const
 	return 0.0f;
 }
 
+// ***********************************************************************
+
 long JsonValue::ToInt() const
 {
 	if (type == Type::Integer)
 		return internalData.integerNumber;
 	return 0;
 }
+
+// ***********************************************************************
 
 bool JsonValue::ToBool() const
 {
@@ -529,15 +575,21 @@ bool JsonValue::ToBool() const
 	return 0;
 }
 
+// ***********************************************************************
+
 bool JsonValue::IsNull() const
 {
 	return type == Type::Null;
 }
 
+// ***********************************************************************
+
 bool JsonValue::HasKey(eastl::string identifier) const
 {
 	return internalData.pObject->count(identifier) >= 1;
 }
+
+// ***********************************************************************
 
 int JsonValue::Count() const
 {
@@ -548,11 +600,15 @@ int JsonValue::Count() const
 		return (int)internalData.pObject->size();
 }
 
+// ***********************************************************************
+
 JsonValue& JsonValue::operator[](eastl::string identifier)
 {
 	ASSERT(type == Type::Object, "Attempting to treat this value as an object when it is not.");
 	return internalData.pObject->operator[](identifier);
 }
+
+// ***********************************************************************
 
 JsonValue& JsonValue::operator[](size_t index)
 {
@@ -561,11 +617,15 @@ JsonValue& JsonValue::operator[](size_t index)
 	return internalData.pArray->operator[](index);
 }
 
+// ***********************************************************************
+
 const JsonValue& JsonValue::Get(eastl::string identifier) const
 {
 	ASSERT(type == Type::Object, "Attempting to treat this value as an object when it is not.");
 	return internalData.pObject->operator[](identifier);
 }
+
+// ***********************************************************************
 
 const JsonValue& JsonValue::Get(size_t index) const
 {
@@ -574,21 +634,29 @@ const JsonValue& JsonValue::Get(size_t index) const
 	return internalData.pArray->operator[](index);
 }
 
+// ***********************************************************************
+
 void JsonValue::Append(JsonValue& value)
 {
 	ASSERT(type == Type::Array, "Attempting to treat this value as an array when it is not.");
 	internalData.pArray->push_back(value);
 }
 
+// ***********************************************************************
+
 JsonValue JsonValue::NewObject()
 {
 	return JsonValue(eastl::map<eastl::string, JsonValue>());
 }
 
+// ***********************************************************************
+
 JsonValue JsonValue::NewArray()
 {
 	return JsonValue(eastl::vector<JsonValue>());
 }
+
+// ***********************************************************************
 
 JsonValue ParseJsonFile(eastl::string& file)
 {
@@ -598,6 +666,8 @@ JsonValue ParseJsonFile(eastl::string& file)
 	JsonValue json5 = ParseValue(tokens, firstToken);
 	return json5;
 }
+
+// ***********************************************************************
 
 eastl::string SerializeJsonValue(JsonValue json, eastl::string indentation)
 {

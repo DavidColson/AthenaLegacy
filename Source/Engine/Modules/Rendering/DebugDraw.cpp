@@ -41,6 +41,8 @@ namespace
 	CDebugDrawingState* pState = nullptr;
 }
 
+// ***********************************************************************
+
 void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)
 {
 	float div = 6.282f / 20.f;
@@ -55,6 +57,8 @@ void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)
 	pState->drawQueue.emplace_back(DrawCall{20, 21});
 }
 
+// ***********************************************************************
+
 void DebugDraw::Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color)
 {
 	pState->vertexList.emplace_back(DebugVertex{ Vec3f(start.x, start.y, 0.5f), color });
@@ -64,6 +68,8 @@ void DebugDraw::Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color)
 
 	pState->drawQueue.emplace_back(DrawCall{ 2, 2 });
 }
+
+// ***********************************************************************
 
 void DebugDraw::Initialize()
 {
@@ -104,6 +110,8 @@ void DebugDraw::Initialize()
 	pState->transformDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(TransformData), "Debug draw transforms");
 }
 
+// ***********************************************************************
+
 void DebugDraw::Destroy()
 {
 	GfxDevice::FreeProgram(pState->debugShaderProgram);
@@ -111,6 +119,8 @@ void DebugDraw::Destroy()
 	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
 	GfxDevice::FreeConstBuffer(pState->transformDataBuffer);
 }
+
+// ***********************************************************************
 
 void DebugDraw::OnFrame(Scene& scene, float /* deltaTime */)
 {

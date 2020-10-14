@@ -31,16 +31,22 @@ namespace
 	SDL_Window* g_pWindow{ nullptr };
 }
 
+// ***********************************************************************
+
 void Engine::GetFrameRates(double& outReal, double& outLimited)
 {
 	outReal = g_realFrameTime;
 	outLimited = g_observedFrameTime;
 }
 
+// ***********************************************************************
+
 void Engine::StartShutdown()
 {
 	g_gameRunning = false;
 }
+
+// ***********************************************************************
 
 void Engine::NewSceneCreated(Scene& scene)
 {
@@ -52,15 +58,21 @@ void Engine::NewSceneCreated(Scene& scene)
 	// @Improvement consider allowing engine config files to change the update order of systems
 }
 
+// ***********************************************************************
+
 void Engine::SetActiveScene(Scene* pScene)
 {
 	pPendingSceneLoad = pScene;
 }
 
+// ***********************************************************************
+
 void Engine::SetSceneCreateCallback(void (*pCallBackFunc)(Scene&))
 {
 	pSceneCallBack = pCallBackFunc;
 }
+
+// ***********************************************************************
 
 void Engine::Initialize()
 {
@@ -77,6 +89,8 @@ void Engine::Initialize()
 	Input::CreateInputState();	
 	Editor::Initialize();
 }
+
+// ***********************************************************************
 
 void Engine::Run(Scene *pScene)
 {	

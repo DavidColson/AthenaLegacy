@@ -9,6 +9,8 @@
 REFLECT_COMPONENT_BEGIN(CPostProcessing)
 REFLECT_END()
 
+// ***********************************************************************
+
 void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 {
     CPostProcessing& pp = *(scene.Get<CPostProcessing>(entity));
@@ -33,6 +35,8 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
     pp.fullScreenTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Fullscreen texture");
 }
 
+// ***********************************************************************
+
 void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
 {
     CPostProcessing& pp = *(scene.Get<CPostProcessing>(entity));
@@ -44,6 +48,8 @@ void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
 	GfxDevice::FreeRenderTarget(pp.blurredFrame[0]);
 	GfxDevice::FreeRenderTarget(pp.blurredFrame[1]);
 }
+
+// ***********************************************************************
 
 void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
 {
@@ -121,6 +127,8 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
     }
     GfxDevice::FreeTexture(preProcessedFrame);
 }
+
+// ***********************************************************************
 
 void PostProcessingSystem::OnWindowResize(Scene& scene, float newWidth, float newHeight)
 {

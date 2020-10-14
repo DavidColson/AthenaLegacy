@@ -39,6 +39,8 @@ namespace
     AudioCallbackData callbackData; // Do not write without locking audio callback thread
 }
 
+// ***********************************************************************
+
 void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
 {
     AudioCallbackData* data = (AudioCallbackData*)userdata;
@@ -107,6 +109,8 @@ void AudioCallback(void *userdata, Uint8 *stream, int nRequestedBytes)
     }
 }
 
+// ***********************************************************************
+
 void AudioDevice::Initialize()
 {
     Log::Info("Audio Initialization, listing available %i devices", SDL_GetNumAudioDevices(0));
@@ -134,6 +138,8 @@ void AudioDevice::Initialize()
 
     SDL_PauseAudioDevice(device, 0);
 }
+
+// ***********************************************************************
 
 SoundID AudioDevice::PlaySound(AssetHandle soundAsset, float volume, bool loop)
 {
@@ -169,6 +175,8 @@ SoundID AudioDevice::PlaySound(AssetHandle soundAsset, float volume, bool loop)
     return SoundID(-1);
 }
 
+// ***********************************************************************
+
 void AudioDevice::PauseSound(SoundID sound)
 {
     if (sound == SoundID(-1))
@@ -182,6 +190,8 @@ void AudioDevice::PauseSound(SoundID sound)
     }
     SDL_UnlockAudioDevice(device);
 }
+
+// ***********************************************************************
 
 void AudioDevice::UnPauseSound(SoundID sound)
 {
@@ -197,6 +207,8 @@ void AudioDevice::UnPauseSound(SoundID sound)
     SDL_UnlockAudioDevice(device);
 }
 
+// ***********************************************************************
+
 void AudioDevice::StopSound(SoundID sound)
 {
      if (sound == SoundID(-1))
@@ -211,6 +223,8 @@ void AudioDevice::StopSound(SoundID sound)
     SDL_UnlockAudioDevice(device);
     currentNumSounds = 0;
 }
+
+// ***********************************************************************
 
 void AudioDevice::Destroy()
 {

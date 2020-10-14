@@ -32,10 +32,14 @@ namespace Log
 	}
 }
 
+// ***********************************************************************
+
 void Log::SetLogLevel(LogLevel level)
 {
 	globalLevel = level;
 }
+
+// ***********************************************************************
 
 void Log::Crit(const char* text, ...)
 {
@@ -49,6 +53,8 @@ void Log::Crit(const char* text, ...)
 	PushLogMessage(LogLevel::ECrit, message);
 }
 
+// ***********************************************************************
+
 void Log::Warn(const char* text, ...)
 {
 	LogStringStorage message = "[WARN] ";
@@ -60,6 +66,8 @@ void Log::Warn(const char* text, ...)
 
 	PushLogMessage(LogLevel::EWarn, message);
 }
+
+// ***********************************************************************
 
 void Log::Info(const char* text, ...)
 {
@@ -73,6 +81,8 @@ void Log::Info(const char* text, ...)
 	PushLogMessage(LogLevel::EInfo, message);
 }
 
+// ***********************************************************************
+
 void Log::Debug(const char* text, ...)
 {
 	LogStringStorage message = "[DEBUG] ";
@@ -84,6 +94,8 @@ void Log::Debug(const char* text, ...)
 
 	PushLogMessage(LogLevel::EDebug, message);
 }
+
+// ***********************************************************************
 
 const Log::StringHistoryBuffer& Log::GetLogHistory()
 {

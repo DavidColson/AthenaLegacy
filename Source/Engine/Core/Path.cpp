@@ -3,10 +3,14 @@
 #include <EASTL/vector.h>
 #include <EASTL/algorithm.h>
 
+// ***********************************************************************
+
 Path::Path()
 {
     stringPath = "";
 }
+
+// ***********************************************************************
 
 Path::Path(eastl::string pathAsString)
 {
@@ -14,11 +18,15 @@ Path::Path(eastl::string pathAsString)
     Analyze();
 }
 
+// ***********************************************************************
+
 Path::Path(const char* pathAsString)
 {
     stringPath = pathAsString;
     Analyze();
 }
+
+// ***********************************************************************
 
 Path::Path(const Path& path)
 {
@@ -27,12 +35,16 @@ Path::Path(const Path& path)
     hasValidRootname = path.hasValidRootname;
 }
 
+// ***********************************************************************
+
 Path::Path(Path&& path)
 {
     stringPath = eastl::move(path.stringPath);
     pathParts = eastl::move(path.pathParts);
     hasValidRootname = eastl::move(path.hasValidRootname);
 }
+
+// ***********************************************************************
 
 Path& Path::operator=(const Path& path)
 {
@@ -42,6 +54,8 @@ Path& Path::operator=(const Path& path)
     return *this;
 }
 
+// ***********************************************************************
+
 Path& Path::operator=(Path&& path)
 {
     stringPath = eastl::move(path.stringPath);
@@ -50,12 +64,16 @@ Path& Path::operator=(Path&& path)
     return *this;
 }
 
+// ***********************************************************************
+
 Path Path::RootName() const
 {
     if (hasValidRootname)
         return pathParts[0];;
     return "";
 }
+
+// ***********************************************************************
 
 Path Path::RootDirectory() const
 {
@@ -69,10 +87,14 @@ Path Path::RootDirectory() const
     return pathParts[1];
 }
 
+// ***********************************************************************
+
 Path Path::RootPath() const
 {
     return RootName() + RootDirectory();
 }
+
+// ***********************************************************************
 
 Path Path::RelativePath() const
 {
@@ -87,6 +109,8 @@ Path Path::RelativePath() const
     return relativePath;
 }
 
+// ***********************************************************************
+
 Path Path::ParentPath() const
 {
     eastl::string parentPath;
@@ -97,11 +121,15 @@ Path Path::ParentPath() const
     return parentPath;
 }
 
+// ***********************************************************************
+
 Path Path::Filename() const
 {
     size_t numParts = pathParts.size();
     return (numParts > 0) ? pathParts[numParts-1] : "";
 }
+
+// ***********************************************************************
 
 Path Path::Stem() const
 {
@@ -119,6 +147,8 @@ Path Path::Stem() const
 
 }
 
+// ***********************************************************************
+
 Path Path::Extension() const
 {
     eastl::string filename = Filename().AsString();
@@ -134,6 +164,8 @@ Path Path::Extension() const
     }
 }
 
+// ***********************************************************************
+
 Path Path::RemoveTrailingSlash() const
 {
     char c = stringPath[stringPath.length() - 1];
@@ -142,70 +174,98 @@ Path Path::RemoveTrailingSlash() const
     return stringPath;
 }
 
+// ***********************************************************************
+
 bool Path::IsEmpty() const
 {
     return stringPath.empty();
 }
+
+// ***********************************************************************
 
 bool Path::HasRootPath() const
 {
     return !RootPath().IsEmpty();
 }
 
+// ***********************************************************************
+
 bool Path::HasRootName() const
 {
     return hasValidRootname;
 }
+
+// ***********************************************************************
 
 bool Path::HasRootDirectory() const
 {
     return !RootDirectory().IsEmpty();
 }
 
+// ***********************************************************************
+
 bool Path::HasRelativePath() const
 {
     return !RelativePath().IsEmpty();
 }
+
+// ***********************************************************************
 
 bool Path::HasParentPath() const
 {
     return !ParentPath().IsEmpty();
 }
 
+// ***********************************************************************
+
 bool Path::HasFilename() const
 {
     return !Filename().IsEmpty();
 }
+
+// ***********************************************************************
 
 bool Path::HasStem() const
 {
     return !Stem().IsEmpty();
 }
 
+// ***********************************************************************
+
 bool Path::HasExtension() const
 {
     return !Extension().IsEmpty();
 }
+
+// ***********************************************************************
 
 bool Path::IsAbsolute() const
 {
     return hasValidRootname;
 }
 
+// ***********************************************************************
+
 bool Path::IsRelative() const
 {
     return !hasValidRootname;
 }
+
+// ***********************************************************************
 
 eastl::string Path::AsString() const
 {
     return stringPath;
 }
 
+// ***********************************************************************
+
 const char* Path::AsRawString() const
 {
     return stringPath.c_str();
 }
+
+// ***********************************************************************
 
 Path& Path::operator/=(const Path& pathToAppend)
 {
@@ -231,12 +291,16 @@ Path& Path::operator/=(const Path& pathToAppend)
     return *this;
 }
     
+// ***********************************************************************
+
 Path& Path::operator+=(const Path& pathToConcat)
 {
     stringPath += pathToConcat.stringPath;
     Analyze();
     return *this;
 }
+
+// ***********************************************************************
 
 size_t FindNextSeparatorLoc(const eastl::string& path, size_t startPos)
 {
@@ -245,6 +309,8 @@ size_t FindNextSeparatorLoc(const eastl::string& path, size_t startPos)
 
     return nextForward < nextBackward ? nextForward : nextBackward;
 } 
+
+// ***********************************************************************
 
 void Path::Analyze()
 {
@@ -293,29 +359,42 @@ void Path::Analyze()
     }
 }
 
+// ***********************************************************************
+
 const Path::PathIterator Path::begin() const
 {
     return PathIterator(pathParts.begin());
 }
+
+// ***********************************************************************
 
 const Path::PathIterator Path::end() const
 {
     return PathIterator(pathParts.end());
 }
 
+// ***********************************************************************
+
 Path Path::PathIterator::operator*() const 
 { 
     return Path(*pathPartsIter);
 }
 
+// ***********************************************************************
+
 bool Path::PathIterator::operator==(const PathIterator& other) const 
 {
     return pathPartsIter == other.pathPartsIter;
 }
+
+// ***********************************************************************
+
 bool Path::PathIterator::operator!=(const PathIterator& other) const 
 {
     return pathPartsIter != other.pathPartsIter;
 }
+
+// ***********************************************************************
 
 Path::PathIterator& Path::PathIterator::operator++()
 {
@@ -331,12 +410,16 @@ Path::PathIterator& Path::PathIterator::operator++()
     return *this;
 }
 
+// ***********************************************************************
+
 Path operator/(const Path& lhs, const Path& rhs)
 {
     Path newPath = lhs;
     newPath /= rhs;
     return newPath;
 }
+
+// ***********************************************************************
 
 Path operator+(const Path& lhs, const Path& rhs)
 {
@@ -345,10 +428,14 @@ Path operator+(const Path& lhs, const Path& rhs)
     return newPath;
 }
 
+// ***********************************************************************
+
 bool operator==(const Path& lhs, const Path& rhs)
 {
     return lhs.AsString() == rhs.AsString();
 }
+
+// ***********************************************************************
 
 bool operator!=(const Path& lhs, const Path& rhs)
 {

@@ -13,30 +13,42 @@
 
 InputState *pInput;
 
+// ***********************************************************************
+
 void Input::CreateInputState()
 {
 	pInput = new InputState();
 }
+
+// ***********************************************************************
 
 bool Input::GetKeyDown(int keyCode)
 {
 	return pInput->keyDowns[keyCode];
 }
 
+// ***********************************************************************
+
 bool Input::GetKeyUp(int keyCode)
 {
 	return pInput->keyUps[keyCode];
 }
+
+// ***********************************************************************
 
 bool Input::GetKeyHeld(int keyCode)
 {
 	return pInput->keyStates[keyCode];
 }
 
+// ***********************************************************************
+
 Vec2f Input::GetMouseDelta()
 {
 	return Vec2f(pInput->mouseXDelta, pInput->mouseYDelta);
 }
+
+// ***********************************************************************
 
 bool Input::GetMouseInRelativeMode()
 {
@@ -45,6 +57,8 @@ bool Input::GetMouseInRelativeMode()
 	else
 		return false;
 }
+
+// ***********************************************************************
 
 void Input::OnFrame(Scene& scene, float deltaTime)
 {

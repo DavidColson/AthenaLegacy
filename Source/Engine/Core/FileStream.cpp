@@ -4,10 +4,14 @@
 #include <Log.h>
 
 
+// ***********************************************************************
+
 FileStream::FileStream()
 {
 
 }
+
+// ***********************************************************************
 
 FileStream::FileStream(const FileStream & fileStream)
 {
@@ -16,6 +20,8 @@ FileStream::FileStream(const FileStream & fileStream)
     modeString = fileStream.modeString;
     rwops = SDL_RWFromFile(path.c_str(), modeString.c_str());
 }
+
+// ***********************************************************************
 
 FileStream::FileStream(FileStream && fileStream)
 {
@@ -28,6 +34,8 @@ FileStream::FileStream(FileStream && fileStream)
     fileStream.path = "";
     fileStream.modeString = "";
 }
+
+// ***********************************************************************
 
 FileStream::FileStream(eastl::string _path, unsigned int mode)
 {
@@ -64,10 +72,14 @@ FileStream::FileStream(eastl::string _path, unsigned int mode)
     path = _path;
 }
 
+// ***********************************************************************
+
 FileStream::~FileStream()
 {
     Close();
 }
+
+// ***********************************************************************
 
 void FileStream::Close()
 {
@@ -77,6 +89,8 @@ void FileStream::Close()
     SDL_RWclose(rwops);
     rwops = nullptr;
 }
+
+// ***********************************************************************
 
 eastl::string FileStream::Read(size_t length)
 {
@@ -92,6 +106,8 @@ eastl::string FileStream::Read(size_t length)
     return result;
 }
 
+// ***********************************************************************
+
 void FileStream::Read(char* buffer, size_t length)
 {
     if (rwops == nullptr)
@@ -100,6 +116,8 @@ void FileStream::Read(char* buffer, size_t length)
     SDL_RWread(rwops, buffer, length, 1);
 }
 
+// ***********************************************************************
+
 void FileStream::Write(const char* buffer, size_t length)
 {
     if (rwops == nullptr)
@@ -107,6 +125,8 @@ void FileStream::Write(const char* buffer, size_t length)
 
     SDL_RWwrite(rwops, buffer, length, 1);
 }
+
+// ***********************************************************************
 
 size_t FileStream::Seek(size_t offset, SeekFrom from)
 {
@@ -121,6 +141,8 @@ size_t FileStream::Seek(size_t offset, SeekFrom from)
         return SDL_RWseek(rwops, offset, RW_SEEK_CUR);
 }
 
+// ***********************************************************************
+
 size_t FileStream::Tell()
 {
     if (rwops == nullptr)
@@ -129,6 +151,8 @@ size_t FileStream::Tell()
     return SDL_RWtell(rwops);
 }
 
+// ***********************************************************************
+
 size_t FileStream::Size()
 {
     if (rwops == nullptr)
@@ -136,6 +160,8 @@ size_t FileStream::Size()
 
     return SDL_RWsize(rwops);
 }
+
+// ***********************************************************************
 
 bool FileStream::IsValid()
 {

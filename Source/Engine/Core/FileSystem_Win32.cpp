@@ -5,6 +5,8 @@
 
 #include <windows.h>
 
+// ***********************************************************************
+
 bool FileSys::Exists(const Path& path)
 {
     if (path.IsEmpty())
@@ -18,6 +20,8 @@ bool FileSys::Exists(const Path& path)
     return true;
 }
 
+// ***********************************************************************
+
 bool FileSys::IsDirectory(const Path& path)
 {
     WIN32_FILE_ATTRIBUTE_DATA fileInfo;
@@ -30,6 +34,8 @@ bool FileSys::IsDirectory(const Path& path)
     return (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
+// ***********************************************************************
+
 bool FileSys::IsFile(const Path& path)
 {
     WIN32_FILE_ATTRIBUTE_DATA fileInfo;
@@ -41,6 +47,8 @@ bool FileSys::IsFile(const Path& path)
 
     return (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 }
+
+// ***********************************************************************
 
 bool FileSys::IsEmpty(const Path& path)
 {
@@ -75,6 +83,8 @@ bool FileSys::IsEmpty(const Path& path)
     }
 }
 
+// ***********************************************************************
+
 bool FileSys::IsInUse(const Path& path)
 {
     if (Exists(path) && IsFile(path))
@@ -84,6 +94,8 @@ bool FileSys::IsInUse(const Path& path)
     }
     return false;
 }
+
+// ***********************************************************************
 
 uint64_t FileSys::LastWriteTime(const Path& path)
 {
@@ -98,6 +110,8 @@ uint64_t FileSys::LastWriteTime(const Path& path)
     return static_cast<uint64_t>(time.dwHighDateTime) << 32 | static_cast<uint64_t>(time.dwLowDateTime);
 }
 
+// ***********************************************************************
+
 uint64_t FileSys::LastAccessTime(const Path& path)
 {
     WIN32_FILE_ATTRIBUTE_DATA fileInfo;
@@ -110,6 +124,8 @@ uint64_t FileSys::LastAccessTime(const Path& path)
     FILETIME time = fileInfo.ftLastAccessTime;
     return static_cast<uint64_t>(time.dwHighDateTime) << 32 | static_cast<uint64_t>(time.dwLowDateTime);
 }
+
+// ***********************************************************************
 
 uint64_t FileSys::FileSize(const Path& path)
 {
@@ -126,12 +142,16 @@ uint64_t FileSys::FileSize(const Path& path)
     return static_cast<uint64_t>(fileInfo.nFileSizeHigh) << 32 | static_cast<uint64_t>(fileInfo.nFileSizeLow);
 }
 
+// ***********************************************************************
+
 Path FileSys::CurrentDirectory()
 {
     char fileName[MAX_PATH];
     GetCurrentDirectoryA(MAX_PATH, fileName);
     return Path(fileName);
 }
+
+// ***********************************************************************
 
 bool FileSys::Move(const Path& existingPath, const Path& newPath, bool createNecessaryDirs)
 {
@@ -152,12 +172,16 @@ bool FileSys::Move(const Path& existingPath, const Path& newPath, bool createNec
     return false; // Give error
 }
 
+// ***********************************************************************
+
 bool FileSys::NewDirectory(const Path& newPath)
 {
     bool result = CreateDirectoryA(newPath.AsRawString(), NULL);
     // Give appropriate errors in response
     return result;
 }
+
+// ***********************************************************************
 
 bool FileSys::NewDirectories(const Path& newPath)
 {
@@ -174,6 +198,8 @@ bool FileSys::NewDirectories(const Path& newPath)
     return true;
 }
 
+// ***********************************************************************
+
 eastl::vector<Path> FileSys::ListFiles(const Path& path)
 {
     eastl::vector<Path> files;
@@ -184,6 +210,8 @@ eastl::vector<Path> FileSys::ListFiles(const Path& path)
     }
     return files;
 }
+
+// ***********************************************************************
 
 eastl::string FileSys::ReadWholeFile(Path path)
 {
@@ -202,6 +230,8 @@ eastl::string FileSys::ReadWholeFile(Path path)
     return "";
 }
 
+// ***********************************************************************
+
 bool FileSys::WriteWholeFile(Path path, const eastl::string & content)
 {
     // Open output stream
@@ -215,20 +245,28 @@ bool FileSys::WriteWholeFile(Path path, const eastl::string & content)
     return true;
 }
 
+// ***********************************************************************
+
 Path FileSys::DirectoryIterator::Iterator::operator*() const
 {
     return parentPath / currentPath;
 }
+
+// ***********************************************************************
 
 bool FileSys::DirectoryIterator::Iterator::operator==(const Iterator& other) const
 {
     return currentHandle == other.currentHandle;
 }
 
+// ***********************************************************************
+
 bool FileSys::DirectoryIterator::Iterator::operator!=(const Iterator& other) const
 {
     return currentHandle != other.currentHandle;
 }
+
+// ***********************************************************************
 
 FileSys::DirectoryIterator::Iterator& FileSys::DirectoryIterator::Iterator::operator++()
 {
@@ -244,10 +282,14 @@ FileSys::DirectoryIterator::Iterator& FileSys::DirectoryIterator::Iterator::oper
     return *this;
 }
 
+// ***********************************************************************
+
 FileSys::DirectoryIterator::DirectoryIterator(Path directory)
 {
     directoryToIterate = directory;;
 }
+
+// ***********************************************************************
 
 const FileSys::DirectoryIterator::Iterator FileSys::DirectoryIterator::begin() const
 {
@@ -263,10 +305,14 @@ const FileSys::DirectoryIterator::Iterator FileSys::DirectoryIterator::begin() c
     return Iterator((void*)hFile, Path(data.cFileName), directoryToIterate);
 }
 
+// ***********************************************************************
+
 const FileSys::DirectoryIterator::Iterator FileSys::DirectoryIterator::end() const
 {
     return Iterator((void*)INVALID_HANDLE_VALUE, Path(), directoryToIterate);
 }
+
+// ***********************************************************************
 
 Path FileSys::RecursiveDirectoryIterator::Iterator::operator*() const
 {
@@ -278,15 +324,21 @@ Path FileSys::RecursiveDirectoryIterator::Iterator::operator*() const
     return result / currentPath;
 }
 
+// ***********************************************************************
+
 bool FileSys::RecursiveDirectoryIterator::Iterator::operator==(const Iterator& other) const
 {
     return currentHandle == other.currentHandle;
 }
 
+// ***********************************************************************
+
 bool FileSys::RecursiveDirectoryIterator::Iterator::operator!=(const Iterator& other) const
 {
     return currentHandle != other.currentHandle;
 }
+
+// ***********************************************************************
 
 FileSys::RecursiveDirectoryIterator::Iterator& FileSys::RecursiveDirectoryIterator::Iterator::operator++()
 {
@@ -336,10 +388,14 @@ FileSys::RecursiveDirectoryIterator::Iterator& FileSys::RecursiveDirectoryIterat
     return *this;
 }
 
+// ***********************************************************************
+
 FileSys::RecursiveDirectoryIterator::RecursiveDirectoryIterator(Path directory)
 {
     directoryToIterate = directory;
 }
+
+// ***********************************************************************
 
 const FileSys::RecursiveDirectoryIterator::Iterator FileSys::RecursiveDirectoryIterator::begin() const
 {
@@ -354,6 +410,8 @@ const FileSys::RecursiveDirectoryIterator::Iterator FileSys::RecursiveDirectoryI
 
     return Iterator((void*)hFile, Path(data.cFileName), directoryToIterate);
 }
+
+// ***********************************************************************
 
 const FileSys::RecursiveDirectoryIterator::Iterator FileSys::RecursiveDirectoryIterator::end() const
 {

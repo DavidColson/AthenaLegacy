@@ -4,6 +4,9 @@
 
 namespace Packing
 {
+    
+    // ***********************************************************************
+
     struct SortByHeight
     {
         bool operator()(const Rect& a, const Rect& b)
@@ -12,6 +15,8 @@ namespace Packing
         }
     };
 
+    // ***********************************************************************
+
     struct SortToOriginalOrder
     {
         bool operator()(const Rect& a, const Rect& b)
@@ -19,6 +24,8 @@ namespace Packing
             return a.ordering < b.ordering;
         }
     };
+
+    // ***********************************************************************
 
     void Packing::RowPackRects(eastl::vector<Rect>& rects, int width, int height)
     {
@@ -65,6 +72,8 @@ namespace Packing
         eastl::sort(rects.begin(), rects.end(), SortToOriginalOrder());
     }
 
+    // ***********************************************************************
+    
     struct SkylineNode
     {
         int x, y, width;
@@ -99,6 +108,8 @@ namespace Packing
         }
         return y;
     }
+    
+    // ***********************************************************************
 
     void Packing::SkylinePackRects(eastl::vector<Rect>& rects, int width, int height)
     {

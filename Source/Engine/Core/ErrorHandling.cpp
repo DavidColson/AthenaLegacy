@@ -5,6 +5,8 @@
 
 #include "Log.h"
 
+// ***********************************************************************
+
 void Assertion(const char* errorMsg, const char* file, int line)
 {
 	switch (ShowAssertDialog(errorMsg, file, line))
@@ -21,6 +23,8 @@ void Assertion(const char* errorMsg, const char* file, int line)
 	}
 	return;
 }
+
+// ***********************************************************************
 
 int ShowAssertDialog(const char * errorMsg, const char * file, int line)
 {

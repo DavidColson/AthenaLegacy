@@ -1,5 +1,7 @@
 #include "SceneSerializer.h"
 
+// ***********************************************************************
+
 JsonValue SceneSerializer::ToJson(Scene& scene)
 {
     JsonValue json = JsonValue::NewArray();
@@ -33,6 +35,8 @@ JsonValue SceneSerializer::ToJson(Scene& scene)
     }
     return json;
 }
+
+// ***********************************************************************
 
 Scene* SceneSerializer::NewSceneFromJson(JsonValue json)
 {

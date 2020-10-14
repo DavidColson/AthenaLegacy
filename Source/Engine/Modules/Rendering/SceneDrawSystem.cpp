@@ -28,10 +28,14 @@ REFLECT_MEMBER(shaderHandle)
 REFLECT_MEMBER(meshHandle)
 REFLECT_END()
 
+// ***********************************************************************
+
 void SceneDrawSystem::OnSceneCreate(Scene& scene)
 {
 	g_transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "RenderableTransformBuffer");
 }
+
+// ***********************************************************************
 
 void SceneDrawSystem::OnFrame(Scene& scene, float deltaTime)
 {

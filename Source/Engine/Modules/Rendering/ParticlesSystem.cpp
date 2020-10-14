@@ -25,6 +25,8 @@ struct ParticlesTransform
 	Matrixf vp;
 };
 
+// ***********************************************************************
+
 void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 {
 	// Create initial particles
@@ -48,6 +50,8 @@ void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 		pNewParticle->velocity = initialVelocity;
 	}
 }
+
+// ***********************************************************************
 
 void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 {
@@ -78,6 +82,8 @@ void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 	RestartEmitter(emitter, *(scene.Get<CTransform>(entity)));
 }
 
+// ***********************************************************************
+
 void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
 {
 	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
@@ -87,6 +93,8 @@ void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
 	GfxDevice::FreeConstBuffer(emitter.transBuffer);
 	GfxDevice::FreeVertexBuffer(emitter.instanceBuffer);
 }
+
+// ***********************************************************************
 
 void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 {

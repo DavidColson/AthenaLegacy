@@ -40,12 +40,16 @@ namespace
 	FontSystemState* pState = nullptr;
 }
 
+// ***********************************************************************
+
 FT_Library FontSystem::GetFreeType()
 {
 	return pState->freetype;
 }
 
 #define CHARS_PER_DRAW_CALL 500
+
+// ***********************************************************************
 
 void FontSystem::Initialize()
 {
@@ -112,6 +116,8 @@ void FontSystem::Initialize()
 	pState->charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
 }
 
+// ***********************************************************************
+
 void FontSystem::Destroy()
 {
 	GfxDevice::FreeProgram(pState->fontShaderProgram);
@@ -121,6 +127,8 @@ void FontSystem::Destroy()
 	GfxDevice::FreeConstBuffer(pState->constBuffer);
 	GfxDevice::FreeBlendState(pState->blendState);
 }
+
+// ***********************************************************************
 
 void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 {

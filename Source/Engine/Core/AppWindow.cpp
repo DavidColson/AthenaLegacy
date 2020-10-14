@@ -17,20 +17,28 @@ namespace
     ProgramHandle program;
 }
 
+// ***********************************************************************
+
 float AppWindow::GetWidth()
 {
     return appSize.x;
 }
+
+// ***********************************************************************
 
 float AppWindow::GetHeight()
 {
     return appSize.y;
 }
 
+// ***********************************************************************
+
 SDL_Window* AppWindow::GetSDLWindow()
 {
     return pWindow;
 }
+
+// ***********************************************************************
 
 void AppWindow::Create(float initialWidth, float initialHeight)
 {
@@ -89,6 +97,8 @@ void AppWindow::Create(float initialWidth, float initialHeight)
 	program = GfxDevice::CreateProgram(vertShader, pixShader);
 }
 
+// ***********************************************************************
+
 void AppWindow::RenderToWindow(TextureHandle frame)
 {
     //GfxDevice::ClearRenderState();
@@ -110,11 +120,15 @@ void AppWindow::RenderToWindow(TextureHandle frame)
     GfxDevice::PrintQueuedDebugMessages();
 }
 
+// ***********************************************************************
+
 void AppWindow::Resize(float width, float height)
 {
     appSize = Vec2f(width, height);
     GfxDevice::ResizeBackBuffer(width, height);
 }
+
+// ***********************************************************************
 
 void AppWindow::Destroy()
 {

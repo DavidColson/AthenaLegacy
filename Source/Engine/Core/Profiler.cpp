@@ -7,10 +7,14 @@ namespace {
   int inUseSlots = 0;
 }
 
+// ***********************************************************************
+
 void Profiler::ClearFrameData()
 {
   inUseSlots = 0;
 }
+
+// ***********************************************************************
 
 void Profiler::PushProfile(const char* name, double time)
 {
@@ -19,17 +23,23 @@ void Profiler::PushProfile(const char* name, double time)
   inUseSlots++;
 }
 
+// ***********************************************************************
+
 void Profiler::GetFrameData(Profiler::ScopeData** pOutData, int& outNumElements)
 {
   *pOutData = singleFrameData;
   outNumElements = inUseSlots;
 }
 
+// ***********************************************************************
+
 AutoProfile::AutoProfile(const char* _name)
 {
   name = _name;
   start = SDL_GetPerformanceCounter();
 }
+
+// ***********************************************************************
 
 AutoProfile::~AutoProfile()
 {

@@ -9,6 +9,8 @@
 
 // @Improvement, use string_view for more performance and less memory thrashing
 
+// ***********************************************************************
+
 char Scan::Advance(ScanningState& scan)
 {
 	scan.current++;
@@ -20,6 +22,8 @@ char Scan::Advance(ScanningState& scan)
 	return scan.file[scan.current - 1];
 }
 
+// ***********************************************************************
+
 bool Scan::Match(ScanningState& scan, char expected)
 {
 	if (scan.file[scan.current] == expected)
@@ -30,15 +34,21 @@ bool Scan::Match(ScanningState& scan, char expected)
 	return false;
 }
 
+// ***********************************************************************
+
 char Scan::Peek(ScanningState& scan)
 {
 	return scan.file[scan.current];
 }
 
+// ***********************************************************************
+
 char Scan::PeekNext(ScanningState& scan)
 {
 	return scan.file[scan.current + 1];
 }
+
+// ***********************************************************************
 
 bool Scan::IsWhitespace(char c)
 {
@@ -46,6 +56,8 @@ bool Scan::IsWhitespace(char c)
 		return true;
 	return false;
 }
+
+// ***********************************************************************
 
 void Scan::AdvanceOverWhitespace(ScanningState& scan)
 {
@@ -62,6 +74,8 @@ void Scan::AdvanceOverWhitespace(ScanningState& scan)
 	}
 }
 
+// ***********************************************************************
+
 void Scan::AdvanceOverWhitespaceNoNewline(ScanningState& scan)
 {
 	char c = scan.file[scan.current];
@@ -74,35 +88,49 @@ void Scan::AdvanceOverWhitespaceNoNewline(ScanningState& scan)
 	}
 }
 
+// ***********************************************************************
+
 bool Scan::IsAtEnd(ScanningState& scan)
 {
 	return scan.current >= scan.file.size();
 }
+
+// ***********************************************************************
 
 bool Scan::IsPartOfNumber(char c)
 {
 	return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.';
 }
 
+// ***********************************************************************
+
 bool Scan::IsDigit(char c)
 {
 	return (c >= '0' && c <= '9');
 }
+
+// ***********************************************************************
 
 bool Scan::IsHexDigit(char c)
 {
 	return isxdigit(c);
 }
 
+// ***********************************************************************
+
 bool Scan::IsAlpha(char c)
 {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
-    
+
+// ***********************************************************************
+
 bool Scan::IsAlphaNumeric(char c)
 {
 	return IsAlpha(c) || IsDigit(c);
 }
+
+// ***********************************************************************
 
 // TODO: Move into Json tokenizer, and specialize into json strings
 eastl::string Scan::ParseToString(ScanningState& scan, char bound)
@@ -157,6 +185,8 @@ eastl::string Scan::ParseToString(ScanningState& scan, char bound)
 // Error reporting
 //////////////////
 
+// ***********************************************************************
+
 eastl::string Scan::ExtractLineWithError(ScanningState& scan, int errorAt)
 {
 	// We give back the last two lines before the error, in case of cascading errors
@@ -198,6 +228,8 @@ eastl::string Scan::ExtractLineWithError(ScanningState& scan, int errorAt)
 	error += "\n";
 	return error;
 }
+
+// ***********************************************************************
 
 void Scan::HandleError(ScanningState& scan, const char* message, int location)
 {
