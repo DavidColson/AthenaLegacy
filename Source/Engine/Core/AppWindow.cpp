@@ -101,7 +101,6 @@ void AppWindow::Create(float initialWidth, float initialHeight)
 
 void AppWindow::RenderToWindow(TextureHandle frame)
 {
-    //GfxDevice::ClearRenderState();
     GfxDevice::SetBackBufferActive();
     GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });	
     GfxDevice::SetViewport(0.0f, 0.0f, appSize.x, appSize.y);

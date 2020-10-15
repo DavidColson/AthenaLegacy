@@ -8,6 +8,7 @@
 #include "DebugDraw.h"
 #include "ShapesSystem.h"
 #include "SceneDrawSystem.h"
+#include "SpriteDrawSystem.h"
 #include "Editor/Editor.h"
 #include "Vec2.h"
 
@@ -29,6 +30,7 @@ void RenderSystem::Initialize(float width, float height)
     Shapes::Initialize();
 	DebugDraw::Initialize();
 	FontSystem::Initialize();
+    SpriteDrawSystem::Initialize();
 
     gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, 4, "Game Render Target");
 }
@@ -58,6 +60,7 @@ TextureHandle RenderSystem::DrawFrame(Scene& scene, float deltaTime)
     Shapes::OnFrame(scene, deltaTime);
     ParticlesSystem::OnFrame(scene, deltaTime);
     FontSystem::OnFrame(scene, deltaTime);
+    SpriteDrawSystem::OnFrame(scene, deltaTime);
     DebugDraw::OnFrame(scene, deltaTime);
 
     // TODO: This is broken as it copies from the back buffer and not the game frame. Make sure it copies and resolves the game frame
@@ -79,6 +82,7 @@ void RenderSystem::Destroy()
     DebugDraw::Destroy();
 	Shapes::Destroy();
 	FontSystem::Destroy();
+	SpriteDrawSystem::Destroy();
 }
 
 // ***********************************************************************

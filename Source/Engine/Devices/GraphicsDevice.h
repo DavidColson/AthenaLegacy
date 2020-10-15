@@ -125,9 +125,10 @@ enum class AttributeType
 enum class TextureFormat
 {
 	// Should probably fill this out, but this'll do for now
-	RGBA32F,
+	RGBA128F,
 	R8,
-	D24S8
+	D24S8,
+	RGBA8
 };
 
 enum class IndexFormat

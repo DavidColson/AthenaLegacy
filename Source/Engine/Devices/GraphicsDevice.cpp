@@ -144,11 +144,20 @@ static const DXGI_FORMAT indexFormatLookup[2] =
 };
 
 // Should probably expand this to more formats at some point
-static const DXGI_FORMAT formatLookup[3] =
+static const DXGI_FORMAT formatLookup[4] =
 {
 	DXGI_FORMAT_R32G32B32A32_FLOAT,
 	DXGI_FORMAT_R8_UNORM,
-	DXGI_FORMAT_D24_UNORM_S8_UINT
+	DXGI_FORMAT_D24_UNORM_S8_UINT,
+	DXGI_FORMAT_R8G8B8A8_UNORM
+};
+
+static const uint32_t bytesPerPixelLookup[4] =
+{
+	16,
+	1,
+	4,
+	4
 };
 
 static const D3D11_BLEND_OP blendOpLookup[5] =
@@ -667,7 +676,7 @@ TextureHandle GfxDevice::CreateTexture(int width, int height, TextureFormat form
 		D3D11_SUBRESOURCE_DATA textureBufferData;
 		ZeroMemory(&textureBufferData, sizeof(textureBufferData));
 		textureBufferData.pSysMem = data;
-		textureBufferData.SysMemPitch = width;
+		textureBufferData.SysMemPitch = width * bytesPerPixelLookup[static_cast<int>(format)];
 		pCtx->pDevice->CreateTexture2D(&textureDesc, &textureBufferData, &texture.pTexture);
 	}
 

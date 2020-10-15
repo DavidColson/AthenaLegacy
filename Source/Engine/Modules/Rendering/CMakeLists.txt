@@ -16,4 +16,6 @@ target_sources(Engine
         "FontSystem.cpp"
         "RectPacking.h"
         "RectPacking.cpp"
+        "SpriteDrawSystem.h"
+        "SpriteDrawSystem.cpp"
 )
