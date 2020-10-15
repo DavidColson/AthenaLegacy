@@ -1,3 +1,4 @@
 add_subdirectory(Engine)
 add_subdirectory(Asteroids)
 add_subdirectory(RacerGame)
+add_subdirectory(PigeonGame)

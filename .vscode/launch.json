@@ -51,6 +51,30 @@
             "environment": [],
             "externalConsole": false,
             "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+        },
+        {
+            "name": "(Windows) Debug Launch Pigeons",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Build/Source/PigeonGame/Debug/PigeonGame.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+        },
+        {
+            "name": "(Windows) Release Launch Pigeons",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Build/Source/PigeonGame/Release/PigeonGame.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
         }
     ]
 }
