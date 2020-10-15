@@ -14,4 +14,6 @@ target_sources(Engine
         "Shader.cpp"
         "Font.h"
         "Font.cpp"
+        "Image.h"
+        "Image.cpp"
 )

@@ -27,3 +27,10 @@ Exact mirror of upstream repo.
 - Version: 1.79
 
 Have edited imconfig.h for our custom asserts and types. Also changed std to eastl in imgui_stdlib.h/.cpp. Removed the includes from sdl and d3d imp files. Added a custom cmake file for our project.
+
+## stb_image
+
+- Source: https://github.com/nothings/stb/
+- Version: 2.26
+
+Added an implementations cpp file for creating stb single header libs. Plus a CMakeLists file to compile it with the engine

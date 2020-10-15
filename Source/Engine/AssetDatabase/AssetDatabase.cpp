@@ -6,6 +6,7 @@
 #include "Text.h"
 #include "Sound.h"
 #include "Shader.h"
+#include "Image.h"
 #include "Font.h"
 #include "FileSystem.h"
 
@@ -124,6 +125,10 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
         if (fileType == ".txt")
         {
             pAsset = new Text();
+        }
+        else if (fileType == ".png")
+        {
+            pAsset = new Image();
         }
         else if (fileType == ".wav")
         {

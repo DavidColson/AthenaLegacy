@@ -18,12 +18,13 @@ add_subdirectory(ThirdParty/Imgui)
 add_subdirectory(ThirdParty/EASTL)
 add_subdirectory(ThirdParty/EABase)
 add_subdirectory(ThirdParty/FreeType)
+add_subdirectory(ThirdParty/stb)
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_precompile_headers(Engine PRIVATE "Core/PreCompiledHeader.h")
 
-target_link_libraries(Engine ${SDL2_LIBRARIES} freetype Imgui EASTL d3d11 d3d10 d3dcompiler dxguid)
+target_link_libraries(Engine ${SDL2_LIBRARIES} freetype Imgui EASTL d3d11 d3d10 d3dcompiler dxguid stb)
 
 if(MSVC)
   target_compile_options(Engine PRIVATE /W3 /WX)
