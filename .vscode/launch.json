@@ -8,73 +8,73 @@
             "name": "(Windows) Debug Launch Asteroids",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/Asteroids/Debug/AsteroidsGame.exe",
+            "program": "${workspaceFolder}/Build/Games/Asteroids/Source/Debug/AsteroidsGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+            "visualizerFile": "${workspaceFolder}/Engine/Source/ThirdParty/EASTL/doc/EASTL.natvis"
         },
         {
             "name": "(Windows) Release Launch Asteroids",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/Asteroids/Release/AsteroidsGame.exe",
+            "program": "${workspaceFolder}/Build/Games/Asteroids/Source/Release/AsteroidsGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+            "visualizerFile": "${workspaceFolder}/Engine/Source/ThirdParty/EASTL/doc/EASTL.natvis"
         },
         {
             "name": "(Windows) Debug Launch RacerGame",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/RacerGame/Debug/RacerGame.exe",
+            "program": "${workspaceFolder}/Build/Games/RacerGame/Source/Debug/RacerGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+            "visualizerFile": "${workspaceFolder}/Engine/Source/ThirdParty/EASTL/doc/EASTL.natvis"
         },
         {
             "name": "(Windows) Release Launch RacerGame",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/RacerGame/Release/RacerGame.exe",
+            "program": "${workspaceFolder}/Build/Games/RacerGame/Source/Release/RacerGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+            "visualizerFile": "${workspaceFolder}/Engine/Source/ThirdParty/EASTL/doc/EASTL.natvis"
         },
         {
             "name": "(Windows) Debug Launch Pigeons",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/PigeonGame/Debug/PigeonGame.exe",
+            "program": "${workspaceFolder}/Build/Games/PigeonGame/Source/Debug/PigeonGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+            "visualizerFile": "${workspaceFolder}/Engine/Source/ThirdParty/EASTL/doc/EASTL.natvis"
         },
         {
             "name": "(Windows) Release Launch Pigeons",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Source/PigeonGame/Release/PigeonGame.exe",
+            "program": "${workspaceFolder}/Build/Games/PigeonGame/Source/Release/PigeonGame.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "visualizerFile": "${workspaceFolder}/Source/Engine/ThirdParty/EASTL/doc/EASTL.natvis"
+            "visualizerFile": "${workspaceFolder}/Engine/Source/ThirdParty/EASTL/doc/EASTL.natvis"
         }
     ]
 }
