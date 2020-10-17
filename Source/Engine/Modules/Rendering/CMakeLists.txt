@@ -1,7 +1,7 @@
 target_sources(Engine
     PRIVATE
-        "RenderSystem.h"
-        "RenderSystem.cpp"
+        "GameRenderer.h"
+        "GameRenderer.cpp"
         "SceneDrawSystem.h"
         "SceneDrawSystem.cpp"
         "DebugDraw.h"

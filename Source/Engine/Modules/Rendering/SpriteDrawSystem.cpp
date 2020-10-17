@@ -1,7 +1,7 @@
 #include "SpriteDrawSystem.h"
 
 #include "Scene.h"
-#include "RenderSystem.h"
+#include "GameRenderer.h"
 #include "Mesh.h"
 #include "AssetDatabase.h"
 #include "Image.h"
@@ -98,7 +98,7 @@ void SpriteDrawSystem::OnFrame(Scene& scene, float deltaTime)
 	GfxDevice::SetBlending(blendState);
 	GfxDevice::BindSampler(spriteSampler, ShaderType::Pixel, 0);
     
-    Matrixf projection = Matrixf::Orthographic(0, RenderSystem::GetWidth(), 0.0f, RenderSystem::GetHeight(), 0.1f, 10.0f); // transform into screen space
+    Matrixf projection = Matrixf::Orthographic(0, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), 0.1f, 10.0f); // transform into screen space
     Matrixf view = Matrixf::Identity();
 
     for (EntityID ent : SceneView<CSprite, CTransform>(scene))

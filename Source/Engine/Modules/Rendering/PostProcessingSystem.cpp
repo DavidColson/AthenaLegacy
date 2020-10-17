@@ -4,7 +4,7 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include <SDL_timer.h>
-#include "RenderSystem.h"
+#include "GameRenderer.h"
 
 REFLECT_COMPONENT_BEGIN(CPostProcessing)
 REFLECT_END()
@@ -16,7 +16,7 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
     CPostProcessing& pp = *(scene.Get<CPostProcessing>(entity));
 	for (int i = 0; i < 2; ++i)
 	{
-		pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(RenderSystem::GetWidth() / 2.0f, RenderSystem::GetHeight() / 2.0f, 1, eastl::string().sprintf("Blurred frame %i", i));
+		pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(GameRenderer::GetWidth() / 2.0f, GameRenderer::GetHeight() / 2.0f, 1, eastl::string().sprintf("Blurred frame %i", i));
 	}
 
 	// Create constant data buffers
@@ -55,7 +55,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
 {
     PROFILE();
     GFX_SCOPED_EVENT("Doing post processing");	
-    TextureHandle preProcessedFrame = GfxDevice::CopyAndResolveBackBuffer();
+    TextureHandle preProcessedFrame = GameRenderer::NewResolvedBackbuffer();
 
     for (EntityID ent : SceneView<CPostProcessing>(scene))
     {
@@ -63,7 +63,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
 
         GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
         GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, true, true);
-        GfxDevice::SetViewport(0.f, 0.f, RenderSystem::GetWidth() / 2.0f, RenderSystem::GetHeight() / 2.0f);
+        GfxDevice::SetViewport(0.f, 0.f, GameRenderer::GetWidth() / 2.0f, GameRenderer::GetHeight() / 2.0f);
         GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
         // Bind bloom shader data
@@ -102,9 +102,9 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
         }
 
         // Now we'll actually render onto the backbuffer and do our final post process stage
-        GfxDevice::SetBackBufferActive();
-        GfxDevice::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f });
-        GfxDevice::SetViewport(0, 0, RenderSystem::GetWidth(), RenderSystem::GetHeight());
+        GameRenderer::SetBackBufferActive();
+        GameRenderer::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f }, true, true);
+        GfxDevice::SetViewport(0, 0, GameRenderer::GetWidth(), GameRenderer::GetHeight());
 
         Shader* pPPShader = AssetDB::GetAsset<Shader>(pp->postProcessShader);
         GfxDevice::BindProgram(pPPShader->program);
@@ -117,7 +117,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
         GfxDevice::BindSampler(pp->fullScreenTextureSampler, ShaderType::Pixel, 0);
         
         CPostProcessing::PostProcessShaderData ppData;
-        ppData.resolution = Vec2f(RenderSystem::GetWidth(), RenderSystem::GetHeight());
+        ppData.resolution = Vec2f(GameRenderer::GetWidth(), GameRenderer::GetHeight());
         ppData.time = float(SDL_GetTicks()) / 1000.0f;
         GfxDevice::BindConstantBuffer(pp->postProcessDataBuffer, &ppData, ShaderType::Pixel, 0);
 
@@ -138,7 +138,7 @@ void PostProcessingSystem::OnWindowResize(Scene& scene, float newWidth, float ne
         for (int i = 0; i < 2; ++i)
         {
             GfxDevice::FreeRenderTarget(pp.blurredFrame[i]);
-            pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(RenderSystem::GetWidth() / 2.0f, RenderSystem::GetHeight() / 2.0f, 1, eastl::string().sprintf("Blurred frame %i", i));
+            pp.blurredFrame[i] = GfxDevice::CreateRenderTarget(GameRenderer::GetWidth() / 2.0f, GameRenderer::GetHeight() / 2.0f, 1, eastl::string().sprintf("Blurred frame %i", i));
         }
     }
 }

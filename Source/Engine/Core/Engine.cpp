@@ -4,7 +4,7 @@
 
 #include "AppWindow.h"
 #include "GraphicsDevice.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/GameRenderer.h"
 #include "AudioDevice.h"
 #include "Scene.h"
 #include "Input/Input.h"
@@ -50,7 +50,7 @@ void Engine::StartShutdown()
 
 void Engine::NewSceneCreated(Scene& scene)
 {
-	RenderSystem::OnSceneCreate(scene);
+	GameRenderer::OnSceneCreate(scene);
 
 	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, TransformHeirarchy);
@@ -84,7 +84,7 @@ void Engine::Initialize()
 
 	Log::SetLogLevel(Log::EDebug);
 
-	RenderSystem::Initialize(1800.0f, 1000.0f);
+	GameRenderer::Initialize(1800.0f, 1000.0f);
 	AudioDevice::Initialize();
 	Input::CreateInputState();	
 	Editor::Initialize();
@@ -126,7 +126,7 @@ void Engine::Run(Scene *pScene)
 						if (Editor::IsInEditor())
 							Editor::ResizeEditorFrame((float)event.window.data1, (float)event.window.data2);
 						else
-							RenderSystem::ResizeGameFrame(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
+							GameRenderer::ResizeGameFrame(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
 					}
 					break;
 				default:
@@ -147,7 +147,7 @@ void Engine::Run(Scene *pScene)
 		Profiler::ClearFrameData();
 
 		// Render the game
-		TextureHandle gameFrame = RenderSystem::DrawFrame(*pCurrentScene, (float)frameTime);
+		TextureHandle gameFrame = GameRenderer::DrawFrame(*pCurrentScene, (float)frameTime);
 
 		// Render the editor
 		TextureHandle editorFrame = Editor::DrawFrame(*pCurrentScene, (float)frameTime);
@@ -188,7 +188,7 @@ void Engine::Run(Scene *pScene)
 	AssetDB::CollectGarbage();
 
 	// Shutdown everything
-	RenderSystem::Destroy();
+	GameRenderer::Destroy();
 	AudioDevice::Destroy();
 	Editor::Destroy();
 	GfxDevice::Destroy();

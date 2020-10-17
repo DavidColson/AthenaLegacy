@@ -12,7 +12,7 @@
 #include "AssetDatabase.h"
 #include "GraphicsDevice.h"
 #include "AppWindow.h"
-#include "Rendering/RenderSystem.h"
+#include "Rendering/GameRenderer.h"
 
 #include "EntityInspector.h"
 #include "FrameStats.h"
@@ -29,7 +29,7 @@
 
 
 namespace {
-	bool showEditor = true;
+	bool showEditor = false;
 
 	EntityID selectedEntity = EntityID::InvalidID();
 
@@ -105,7 +105,7 @@ void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 
 			// When leaving editor mode, tell the game to resize itself to full screen, otherwise resize ourselves
 			if (!Editor::IsInEditor())
-				RenderSystem::ResizeGameFrame(scene, AppWindow::GetWidth(), AppWindow::GetHeight());
+				GameRenderer::ResizeGameFrame(scene, AppWindow::GetWidth(), AppWindow::GetHeight());
 			else
 				Editor::ResizeEditorFrame(AppWindow::GetWidth(), AppWindow::GetHeight());
 		}

@@ -1,4 +1,4 @@
-#include "RenderSystem.h"
+#include "GameRenderer.h"
 
 #include "Scene.h"
 #include "GraphicsDevice.h"
@@ -25,7 +25,7 @@ namespace
 
 // ***********************************************************************
 
-void RenderSystem::Initialize(float width, float height)
+void GameRenderer::Initialize(float width, float height)
 {
     Shapes::Initialize();
 	DebugDraw::Initialize();
@@ -33,11 +33,13 @@ void RenderSystem::Initialize(float width, float height)
     SpriteDrawSystem::Initialize();
 
     gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, 4, "Game Render Target");
+
+    gameWindowSize = Vec2f(width, height);
 }
 
 // ***********************************************************************
 
-void RenderSystem::OnSceneCreate(Scene& scene)
+void GameRenderer::OnSceneCreate(Scene& scene)
 {
     SceneDrawSystem::OnSceneCreate(scene);
 
@@ -50,7 +52,7 @@ void RenderSystem::OnSceneCreate(Scene& scene)
 
 // ***********************************************************************
 
-TextureHandle RenderSystem::DrawFrame(Scene& scene, float deltaTime)
+TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 {
     GfxDevice::BindRenderTarget(gameRenderTarget);
     GfxDevice::ClearRenderTarget(gameRenderTarget, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
@@ -62,9 +64,7 @@ TextureHandle RenderSystem::DrawFrame(Scene& scene, float deltaTime)
     FontSystem::OnFrame(scene, deltaTime);
     SpriteDrawSystem::OnFrame(scene, deltaTime);
     DebugDraw::OnFrame(scene, deltaTime);
-
-    // TODO: This is broken as it copies from the back buffer and not the game frame. Make sure it copies and resolves the game frame
-    //PostProcessingSystem::OnFrame(scene, deltaTime);
+    PostProcessingSystem::OnFrame(scene, deltaTime);
 
     GfxDevice::UnbindRenderTarget(gameRenderTarget);
 
@@ -77,7 +77,7 @@ TextureHandle RenderSystem::DrawFrame(Scene& scene, float deltaTime)
 
 // ***********************************************************************
 
-void RenderSystem::Destroy()
+void GameRenderer::Destroy()
 {
     DebugDraw::Destroy();
 	Shapes::Destroy();
@@ -87,28 +87,47 @@ void RenderSystem::Destroy()
 
 // ***********************************************************************
 
-float RenderSystem::GetWidth()
+float GameRenderer::GetWidth()
 {
     return gameWindowSize.x;
 }
 
 // ***********************************************************************
 
-float RenderSystem::GetHeight()
+float GameRenderer::GetHeight()
 {
     return gameWindowSize.y;
 }
 
 // ***********************************************************************
 
-TextureHandle RenderSystem::GetCurrentFrame()
+void GameRenderer::SetBackBufferActive()
+{
+     GfxDevice::BindRenderTarget(gameRenderTarget);
+}
+
+void GameRenderer::ClearBackBuffer(eastl::array<float, 4> color, bool clearDepth, bool clearStencil)
+{
+    GfxDevice::ClearRenderTarget(gameRenderTarget, color, clearDepth, clearStencil);
+}
+
+// ***********************************************************************
+
+TextureHandle GameRenderer::NewResolvedBackbuffer()
+{
+    return GfxDevice::MakeResolvedTexture(gameRenderTarget);
+}
+
+// ***********************************************************************
+
+TextureHandle GameRenderer::GetLastRenderedFrame()
 {
     return resolvedGameFrame;
 }
 
 // ***********************************************************************
 
-void RenderSystem::ResizeGameFrame(Scene& scene, float newWidth, float newHeight)
+void GameRenderer::ResizeGameFrame(Scene& scene, float newWidth, float newHeight)
 {
     gameWindowSize = Vec2f(newWidth, newHeight);
 

@@ -1,6 +1,6 @@
 #include "GameView.h"
 
-#include "Rendering/RenderSystem.h"
+#include "Rendering/GameRenderer.h"
 #include "GraphicsDevice.h"
 
 #include <ImGui/imgui.h>
@@ -28,10 +28,10 @@ void GameView::Update(Scene& scene)
 	{
 		windowSizeCache = ImGui::GetContentRegionAvail();
         if (windowSizeCache.x > 0.0f && windowSizeCache.y > 0.0f)
-		    RenderSystem::ResizeGameFrame(scene, windowSizeCache.x, windowSizeCache.y);
+		    GameRenderer::ResizeGameFrame(scene, windowSizeCache.x, windowSizeCache.y);
 	}
 
-	ImGui::Image(GfxDevice::GetImGuiTextureID(RenderSystem::GetCurrentFrame()), ImVec2(windowSizeCache.x, windowSizeCache.y), uv_min, uv_max);
+	ImGui::Image(GfxDevice::GetImGuiTextureID(GameRenderer::GetLastRenderedFrame()), ImVec2(windowSizeCache.x, windowSizeCache.y), uv_min, uv_max);
 
 	if (ImGui::IsItemHovered())
 	{

@@ -8,7 +8,7 @@
 #include <Rendering/FontSystem.h>
 #include <Rendering/ParticlesSystem.h>
 #include <Rendering/ShapesSystem.h>
-#include <Rendering/RenderSystem.h>
+#include <Rendering/GameRenderer.h>
 #include <Input/Input.h>
 #include <Profiler.h>
 #include <Vec4.h>
@@ -131,8 +131,8 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	pPlayerControl->respawnTimer = 5.0f;
 	scene.DestroyEntity(asteroid);
 
-	float w = RenderSystem::GetWidth();
-	float h = RenderSystem::GetHeight();
+	float w = GameRenderer::GetWidth();
+	float h = GameRenderer::GetHeight();
 	CTransform* pTransform = scene.Get<CTransform>(player);
 	pTransform->localPos = Vec3f(w/2.0f, h/2.0f, 0.0f);
 	pTransform->localRot = 0.0f;
@@ -273,16 +273,16 @@ void AsteroidSpawning(Scene& scene, float deltaTime)
 			switch (rand() % 4)
 			{
 				case 0:
-					randomLocation = Vec3f(0.0f, float(rand() % int(RenderSystem::GetHeight())), 0.0f);
+					randomLocation = Vec3f(0.0f, float(rand() % int(GameRenderer::GetHeight())), 0.0f);
 					randomVelocity = Vec3f(randf(), randf() * 2.0f - 1.0f, 0.0f); break;
 				case 1:
-					randomLocation = Vec3f(RenderSystem::GetWidth(), float(rand() % int(RenderSystem::GetHeight())), 0.0f);
+					randomLocation = Vec3f(GameRenderer::GetWidth(), float(rand() % int(GameRenderer::GetHeight())), 0.0f);
 					randomVelocity = Vec3f(-randf(), randf() * 2.0f - 1.0f, 0.0f); break;
 				case 2:
-					randomLocation = Vec3f(float(rand() % int(RenderSystem::GetWidth())), 0.0f, 0.0f);
+					randomLocation = Vec3f(float(rand() % int(GameRenderer::GetWidth())), 0.0f, 0.0f);
 					randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf(), 0.0f); break;
 				case 3:
-					randomLocation = Vec3f(float(rand() % int(RenderSystem::GetWidth())), RenderSystem::GetHeight(), 0.0f);
+					randomLocation = Vec3f(float(rand() % int(GameRenderer::GetWidth())), GameRenderer::GetHeight(), 0.0f);
 					randomVelocity = Vec3f(randf() * 2.0f - 1.0f, -randf(), 0.0f); break;
 				default:
 					break;
@@ -390,10 +390,10 @@ void MovementSystemUpdate(Scene& scene, float deltaTime)
 
 		if (pTransform->localPos.x < 0.0f)
 		{
-			pTransform->localPos.x = RenderSystem::GetWidth();
+			pTransform->localPos.x = GameRenderer::GetWidth();
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
-		else if (pTransform->localPos.x > RenderSystem::GetWidth())
+		else if (pTransform->localPos.x > GameRenderer::GetWidth())
 		{
 			pTransform->localPos.x = 0.0f;
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
@@ -401,10 +401,10 @@ void MovementSystemUpdate(Scene& scene, float deltaTime)
 
 		if (pTransform->localPos.y < 0.0f)
 		{
-			pTransform->localPos.y = RenderSystem::GetHeight();
+			pTransform->localPos.y = GameRenderer::GetHeight();
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
 		}
-		else if (pTransform->localPos.y > RenderSystem::GetHeight())
+		else if (pTransform->localPos.y > GameRenderer::GetHeight())
 		{
 			pTransform->localPos.y = 0.0f;
 			if (scene.Has<CBullet>(id)) scene.DestroyEntity(id);
@@ -481,8 +481,8 @@ void MenuInterationSystem(Scene& scene, float /* deltaTime */)
 		CTransform* pTransform = scene.Get<CTransform>(id);
 		CMenuInteraction* pInteraction = scene.Get<CMenuInteraction>(id);
 
-		const float w = RenderSystem::GetWidth();
-		const float h = RenderSystem::GetHeight();
+		const float w = GameRenderer::GetWidth();
+		const float h = GameRenderer::GetHeight();
 		float validPositions[] = { h / 2.0f + 18.0f, h / 2.0f - 62.0f};
 
 		if (Input::GetKeyDown(SDL_SCANCODE_UP) && pInteraction->currentState == CMenuInteraction::Quit)
