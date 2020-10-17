@@ -16,7 +16,7 @@ struct EditorTool
 
 namespace Editor
 {
-	void Initialize();
+	void Initialize(bool enabled);
 	void PreUpdate();
 	void ProcessEvent(Scene& scene, SDL_Event* event);
 	TextureHandle DrawFrame(Scene& scene, float deltaTime);

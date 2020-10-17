@@ -40,12 +40,12 @@ SDL_Window* AppWindow::GetSDLWindow()
 
 // ***********************************************************************
 
-void AppWindow::Create(float initialWidth, float initialHeight)
+void AppWindow::Create(float initialWidth, float initialHeight, const eastl::string& windowName)
 {
 	Log::Info("App window size W: %.1f H: %.1f", initialWidth, initialHeight);
 
     pWindow = SDL_CreateWindow(
-		"Athena",
+		windowName.c_str(),
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		int(initialWidth),

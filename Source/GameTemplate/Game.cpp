@@ -6,7 +6,9 @@
 
 int main(int argc, char *argv[])
 {
-	Engine::Initialize();
+	EngineConfig config;
+
+	Engine::Initialize(config);
 
 	// Run everything
 	Engine::Run(new Scene());

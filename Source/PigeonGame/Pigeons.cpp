@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[])
 {
-	Engine::Initialize();
+	Engine::Initialize("Pigeons.cfg");
 
 	JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile("Resources/Levels/PigeonScene.lvl"));
 	Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);

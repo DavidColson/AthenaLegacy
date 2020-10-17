@@ -15,6 +15,14 @@
 #include "Maths.h"
 #include "Matrix.h"
 #include "Quat.h"
+#include "FileSystem.h"
+
+REFLECT_BEGIN(EngineConfig)
+REFLECT_MEMBER(windowName)
+REFLECT_MEMBER(windowResolution)
+REFLECT_MEMBER(bootInEditor)
+REFLECT_MEMBER(hotReloadingAssetsEnabled)
+REFLECT_END()
 
 namespace
 {
@@ -23,12 +31,13 @@ namespace
 	double g_realFrameTime;
 
 	bool g_gameRunning{ true };
+	EngineConfig config;
+	eastl::string configFileName;
 
+	// Scene management
 	void (*pSceneCallBack)(Scene& scene);
-
 	Scene* pCurrentScene{ nullptr };
 	Scene* pPendingSceneLoad{ nullptr };
-	SDL_Window* g_pWindow{ nullptr };
 }
 
 // ***********************************************************************
@@ -74,20 +83,62 @@ void Engine::SetSceneCreateCallback(void (*pCallBackFunc)(Scene&))
 
 // ***********************************************************************
 
-void Engine::Initialize()
+const EngineConfig& Engine::GetConfig()
 {
-	Log::Info("Engine starting up");
+	return config;
+}
+
+// ***********************************************************************
+
+void Engine::SaveConfig(const eastl::string& fileName)
+{
+	JsonValue configJson = EngineConfig::typeData.ToJson(config);
+	FileSys::WriteWholeFile(fileName, SerializeJsonValue(configJson));
+	configFileName = fileName;
+}
+
+// ***********************************************************************
+
+void Engine::Initialize(const char* _configFileName)
+{
+	configFileName = _configFileName;
+
+	if (FileSys::Exists(configFileName))
+	{
+		Log::Info("Config file loaded from '%s'", _configFileName);
+
+		JsonValue configJson = ParseJsonFile(FileSys::ReadWholeFile(configFileName));
+		config = EngineConfig::typeData.FromJson(configJson).GetValue<EngineConfig>();
+	}
+	else
+	{
+		Log::Info("No config file found, making new one at '%s'", _configFileName);
+
+		Path pathToFile = Path(configFileName).ParentPath();
+		FileSys::NewDirectories(pathToFile);
+		JsonValue configJson = EngineConfig::typeData.ToJson(config);
+		FileSys::WriteWholeFile(configFileName, SerializeJsonValue(configJson));
+	}
+
+	Initialize(config);
+}
+
+// ***********************************************************************
+
+void Engine::Initialize(const EngineConfig& _config)
+{
+	config = _config;
 	
 	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO);
 
-	AppWindow::Create(1800.f, 1000.f);
+	AppWindow::Create(config.windowResolution.x, config.windowResolution.y, config.windowName);
 
 	Log::SetLogLevel(Log::EDebug);
 
-	GameRenderer::Initialize(1800.0f, 1000.0f);
+	GameRenderer::Initialize(config.windowResolution.x, config.windowResolution.y);
 	AudioDevice::Initialize();
 	Input::CreateInputState();	
-	Editor::Initialize();
+	Editor::Initialize(config.bootInEditor);
 }
 
 // ***********************************************************************
@@ -106,7 +157,8 @@ void Engine::Run(Scene *pScene)
 	{
 		Uint64 frameStart = SDL_GetPerformanceCounter();
 
-		AssetDB::UpdateHotReloading();
+		if (config.hotReloadingAssetsEnabled)
+			AssetDB::UpdateHotReloading();
 
 		// Deal with events
 		SDL_Event event;

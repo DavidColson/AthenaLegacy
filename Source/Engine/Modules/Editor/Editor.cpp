@@ -66,8 +66,10 @@ void Editor::SetSelectedEntity(EntityID entity)
 
 // ***********************************************************************
 
-void Editor::Initialize()
+void Editor::Initialize(bool enabled)
 {
+	showEditor = enabled;
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO &io = ImGui::GetIO();

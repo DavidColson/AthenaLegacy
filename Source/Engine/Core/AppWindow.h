@@ -4,7 +4,7 @@
 
 namespace AppWindow
 {
-    void Create(float initialWidth, float initialHeight);
+    void Create(float initialWidth, float initialHeight, const eastl::string& windowName);
     
     void RenderToWindow(TextureHandle frame);
 

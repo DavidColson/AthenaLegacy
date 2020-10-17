@@ -1,10 +1,23 @@
 #pragma once
 
+#include "Vec2.h"
+
 struct Scene;
+
+struct EngineConfig
+{
+	REFLECT()
+
+	eastl::string windowName{ "Athena" };
+	Vec2f windowResolution{ Vec2f( 1800.f, 1000.f ) };
+	bool bootInEditor{ true };
+	bool hotReloadingAssetsEnabled{ true };
+};
 
 namespace Engine
 {
-	void Initialize();
+	void Initialize(const EngineConfig& config);
+	void Initialize(const char* configFileName);
 	void Run(Scene* pInitialScene);
 	void StartShutdown();
 
@@ -13,4 +26,7 @@ namespace Engine
 	
 	void NewSceneCreated(Scene& scene);
 	void GetFrameRates(double& outReal, double& outLimited);
+
+	const EngineConfig& GetConfig();
+	void SaveConfig(const eastl::string& fileName);
 }

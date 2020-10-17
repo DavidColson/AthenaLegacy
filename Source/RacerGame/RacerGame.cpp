@@ -56,7 +56,10 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 int main(int argc, char *argv[])
 {
-	Engine::Initialize();
+	EngineConfig config;
+	config.windowName = "Racer Game";
+
+	Engine::Initialize(config);
 
 	using namespace FileSys;
 

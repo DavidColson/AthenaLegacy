@@ -202,9 +202,7 @@ void LoadMenu()
 
 int main(int argc, char *argv[])
 {
-	// Unused at the moment
-
-	Engine::Initialize();
+	Engine::Initialize("Asteroids.cfg");
 
 	// Run everything
 	Engine::Run(CreateMainMenuScene());

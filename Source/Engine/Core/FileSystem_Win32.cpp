@@ -185,6 +185,9 @@ bool FileSys::NewDirectory(const Path& newPath)
 
 bool FileSys::NewDirectories(const Path& newPath)
 {
+    if (newPath.IsEmpty())
+        return true;
+
     Path cumulator = newPath.RootPath();
     for (Path path : newPath.RelativePath())  
     {

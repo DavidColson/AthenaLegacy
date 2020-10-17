@@ -200,20 +200,22 @@ void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
     assets[handle.id] = pAsset;
 
     // See if this asset is already in the hot reload watches, if so skip the rest of the function
-    for (const HotReloadingAsset& hot : hotReloadWatches)
+    if (Engine::GetConfig().hotReloadingAssetsEnabled)
     {
-        if (hot.asset.id == handle.id)
-            return;
-    }
-
-    // Don't hot reload audio
-    // @Improvement actually define an asset type enum or something, this is icky
-    if (assetMetas[handle.id].path.Extension() != ".wav")
-    {
-        HotReloadingAsset hot;
-        hot.asset = handle; 
-        hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.asset.id].path);;
-        hotReloadWatches.push_back(hot);
+        for (const HotReloadingAsset& hot : hotReloadWatches)
+        {
+            if (hot.asset.id == handle.id)
+                return;
+        }
+        // Don't hot reload audio
+        // @Improvement actually define an asset type enum or something, this is icky
+        if (assetMetas[handle.id].path.Extension() != ".wav")
+        {
+            HotReloadingAsset hot;
+            hot.asset = handle; 
+            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.asset.id].path);;
+            hotReloadWatches.push_back(hot);
+        }
     }
 }
 
