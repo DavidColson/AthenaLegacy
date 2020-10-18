@@ -193,11 +193,14 @@ struct BaseComponentPool
 
 	~BaseComponentPool();
 
-	inline void* get(size_t index)
+	inline void* GetRaw(size_t index)
 	{
 		ASSERT(index < MAX_ENTITIES, "Entity overrun, delete some entities");
 		return pData + index * elementSize;
 	}
+
+	virtual Variant Get(size_t index) = 0;
+	virtual void Set(size_t index, Variant component) = 0;
 
 	virtual void destroy(size_t index) = 0;
 
@@ -215,11 +218,22 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 {
 	ComponentPool(size_t elementsize) : BaseComponentPool(elementsize) { pTypeData = &TypeDatabase::Get<T>(); }
 
+	virtual Variant Get(size_t index) override
+	{
+		return Variant(*reinterpret_cast<T*>(GetRaw(index)));
+	}
+
+	virtual void Set(size_t index, Variant component) override
+	{
+		T* destination = reinterpret_cast<T*>(GetRaw(index));
+		*destination = component.GetValue<T>();
+	}
+
 	// TODO: This could potentially be moved to be inside TypeData and applied to a variant of the component
 	virtual void destroy(size_t index) override
 	{
 		ASSERT(index < MAX_ENTITIES, "Trying to delete an entity with an ID greater than max allowed entities");
-		static_cast<T*>(get(index))->~T();
+		static_cast<T*>(GetRaw(index))->~T();
 	}
 };
 
@@ -290,7 +304,7 @@ struct Scene
 		ASSERT(Has<T>(id) == false, "You're trying to assign a component to an entity that already has this component");
 		
 		// Looks up the component in the pool, and initializes it with placement new
-		T* pComponent = new (componentPools[componentId]->get(id.Index())) T();
+		T* pComponent = new (componentPools[componentId]->GetRaw(id.Index())) T();
 
 		// Set the bit for this component to true
 		entities[id.Index()].mask.set(componentId);
@@ -335,7 +349,7 @@ struct Scene
 
 		int componentId = GetId<T>();
 		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
-		T* pComponent = static_cast<T*>(componentPools[componentId]->get(id.Index()));
+		T* pComponent = static_cast<T*>(componentPools[componentId]->GetRaw(id.Index()));
 		return pComponent;
 	}
 

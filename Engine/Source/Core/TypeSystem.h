@@ -11,43 +11,52 @@ struct TypeData;
 struct Member
 {
 	const char* name;
-	size_t offset;
-	TypeData* pType;
+	Member(const char* _name) : name(_name) {}
 
 	template<typename T>
 	bool IsType()
 	{
 		// This returns true if you ask if the item is an unknown type, which is real bad
-		return *pType == TypeDatabase::Get<T>(); 
+		return GetType() == TypeDatabase::Get<T>(); 
 	}
 
-	TypeData& GetType()
-	{
-		return *pType;
-	}
-
-	Variant Get(Variant& instance);
-	void Set(Variant& instance, Variant newValue);
-	void Set(void* instance, Variant newValue);
-
-	template<typename T>
-	T& GetAs(Variant& instance)
-	{
-		return *reinterpret_cast<T*>((char*)instance.pData + offset);
-	}
-
-	template<typename T>
-	T* GetAs(void* instance)
-	{
-		return reinterpret_cast<T*>((char*)instance + offset);
-	}
+	virtual TypeData& GetType() = 0;
+	virtual Variant Get(Variant& instance) = 0;
+	virtual void Set(Variant& instance, Variant newValue) = 0;
 };
+
+template<typename MemberType, typename ClassType>
+struct Member_Internal : public Member
+{
+	Member_Internal(const char* _name, MemberType ClassType::*pointer) : Member(_name), memberPointer(pointer) {}
+
+	virtual TypeData& GetType() override
+	{
+		return TypeDatabase::Get<MemberType>();
+	}
+
+	virtual Variant Get(Variant& instance) override
+	{
+		return Variant(instance.GetValue<ClassType>().*memberPointer);
+	}
+
+	// Copy happening on value, consider replacing with argument wrapper
+	virtual void Set(Variant& instance, Variant value) override
+	{
+		instance.GetValue<ClassType>().*memberPointer = value.GetValue<MemberType>();
+	}
+
+	MemberType ClassType::* memberPointer;
+};
+
 
 struct Constructor
 {
 	virtual Variant Invoke() = 0;
 };
 
+// @Improvement Consider replacing this mechanism and component handler with the variant data policy method, 
+// which is similiar, but a bit more robust and doesn't require "new" when creating these constructor objects
 template<typename T>
 struct Constructor_Internal : public Constructor
 {
@@ -66,7 +75,7 @@ struct TypeData
 	size_t size;
 	Constructor* pConstructor{ nullptr };
 	ComponentHandler* pComponentHandler{ nullptr };
-	eastl::map<size_t, Member> members;
+	eastl::map<size_t, Member*> members;
 	eastl::map<eastl::string, size_t> memberOffsets;
 
 	TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 }
@@ -74,7 +83,7 @@ struct TypeData
 		initFunc(this);
 	}
 	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
-	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<size_t, Member>::value_type>& init) : name(_name), size(_size), members( init ) {}
+	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<size_t, Member*>::value_type>& init) : name(_name), size(_size), members( init ) {}
 
 	~TypeData();
 	Variant New();
@@ -97,11 +106,11 @@ struct TypeData
 
 	struct MemberIterator
 	{
-		MemberIterator(eastl::map<size_t, Member>::iterator _it) : it(_it) {}
+		MemberIterator(eastl::map<size_t, Member*>::iterator _it) : it(_it) {}
 
 		Member& operator*() const 
 		{ 
-			return it->second;
+			return *it->second;
 		}
 
 		bool operator==(const MemberIterator& other) const 
@@ -119,7 +128,7 @@ struct TypeData
 			return *this;
 		}
 
-		eastl::map<size_t, Member>::iterator it;
+		eastl::map<size_t, Member*>::iterator it;
 	};
 
 	const MemberIterator begin() 
@@ -229,11 +238,11 @@ namespace TypeDatabase
 		selfTypeData->members = {
 
 #define REFLECT_MEMBER(member)\
-			{offsetof(XX, member), {#member, offsetof(XX, member), &TypeDatabase::Get<decltype(XX::member)>()}},
+			{offsetof(XX, member), new Member_Internal<decltype(XX::member), XX>(#member, &XX::member)},
 
 #define REFLECT_END()\
 		};\
-		for (const eastl::pair<size_t, Member>& mem : selfTypeData->members) { selfTypeData->memberOffsets[mem.second.name] = mem.first; }\
+		for (const eastl::pair<size_t, Member*>& mem : selfTypeData->members) { selfTypeData->memberOffsets[mem.second->name] = mem.first; }\
 	}
 
 

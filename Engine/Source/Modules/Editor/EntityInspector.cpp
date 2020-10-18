@@ -58,79 +58,87 @@ void EntityInspector::Update(Scene& scene)
 			
 		if (mask == (scene.entities[selectedEntity.Index()].mask & mask))
 		{
-			TypeData* pComponentType = scene.componentPools[i]->pTypeData;
-			if (ImGui::CollapsingHeader(pComponentType->name, ImGuiTreeNodeFlags_DefaultOpen))
+			Variant component = scene.componentPools[i]->Get(selectedEntity.Index());
+			TypeData& componentType = component.GetType();
+			if (ImGui::CollapsingHeader(componentType.name, ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				if (strstr(pComponentType->name, "CName") == nullptr && strstr(pComponentType->name, "CChild") == nullptr && strstr(pComponentType->name,"CParent") == nullptr)
+				if (strstr(componentType.name, "CName") == nullptr && strstr(componentType.name, "CChild") == nullptr && strstr(componentType.name,"CParent") == nullptr)
 				{
 					ImGui::PushID(i);
 					if (ImGui::Button("Remove Component", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
 					{
-						pComponentType->pComponentHandler->Remove(scene, selectedEntity);
+						componentType.pComponentHandler->Remove(scene, selectedEntity);
 					}
 					ImGui::PopID();
 				}
 				// #TODO: Ideally systems outside of Scenes shouldn't touch component pools, make something to hide this and ensure safety
 				// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
 
-				// Make a new variant to hide this void*
-				void* pComponentData = scene.componentPools[i]->get(selectedEntity.Index());
-
 				// Loop through all the members of the component, showing the appropriate UI elements
-				for (Member& member : *pComponentType)
+				for (Member& member : componentType)
 				{
 					if (member.IsType<float>())
 					{
-						float* number = member.GetAs<float>(pComponentData);
-						ImGui::DragFloat(member.name, number, 0.1f);
+						Variant number = member.Get(component);
+						ImGui::DragFloat(member.name, &number.GetValue<float>(), 0.1f);
+						member.Set(component, number);
 					}
 					else if (member.IsType<int>())
 					{
-						int* number = member.GetAs<int>(pComponentData);
-						ImGui::DragInt(member.name, number, 0.1f);
+						Variant number = member.Get(component);
+						ImGui::DragInt(member.name, &number.GetValue<int>(), 0.1f);
+						member.Set(component, number);
 					}
 					else if (member.IsType<Vec2f>())
 					{
-						Vec2f& vec = *member.GetAs<Vec2f>(pComponentData);
+						Variant var = member.Get(component);
+						Vec2f& vec = var.GetValue<Vec2f>();
 						float list[2] = { vec.x, vec.y };
 						ImGui::DragFloat2(member.name, list, 0.1f);
 						vec.x = list[0]; vec.y = list[1];
+						member.Set(component, var);
 					}
 					else if (member.IsType<Vec3f>())
 					{
-						Vec3f& vec = *member.GetAs<Vec3f>(pComponentData);
+						Variant var = member.Get(component);
+						Vec3f& vec = var.GetValue<Vec3f>();
 						float list[3] = { vec.x, vec.y, vec.z };
 						ImGui::DragFloat3(member.name, list, 0.1f);
 						vec.x = list[0]; vec.y = list[1]; vec.z = list[2];
+						member.Set(component, var);
 					}
 					else if (member.IsType<bool>())
 					{
-						bool* boolean = member.GetAs<bool>(pComponentData);
-						ImGui::Checkbox(member.name, boolean);
+						Variant boolean = member.Get(component);
+						ImGui::Checkbox(member.name, &boolean.GetValue<bool>());
+						member.Set(component, boolean);
 					}
 					else if (member.IsType<eastl::string>())
 					{
-						eastl::string* str = member.GetAs<eastl::string>(pComponentData);
-						ImGui::InputText(member.name, str);
+						Variant str = member.Get(component);
+						ImGui::InputText(member.name, &str.GetValue<eastl::string>());
+						member.Set(component, str);
 					}
 					else if (member.IsType<EntityID>())
 					{
-						EntityID& entity = *member.GetAs<EntityID>(pComponentData);
-						ImGui::Text("{index: %i version: %i}  %s", entity.Index(), entity.Version(), member.name);
+						Variant entity = member.Get(component);
+						ImGui::Text("{index: %i version: %i}  %s", entity.GetValue<EntityID>().Index(), entity.GetValue<EntityID>().Version(), member.name);
 					}
 					else if (member.IsType<AssetHandle>())
 					{
-						AssetHandle* handle = member.GetAs<AssetHandle>(pComponentData);
-						eastl::string identifier = AssetDB::GetAssetIdentifier(*handle);
+						Variant handle = member.Get(component);
+						eastl::string identifier = AssetDB::GetAssetIdentifier(handle.GetValue<AssetHandle>());
 						identifier.set_capacity(200);
 
 						if (ImGui::InputText(member.name, &identifier, ImGuiInputTextFlags_EnterReturnsTrue))
 						{
-							*handle = AssetHandle(identifier);
+							handle = AssetHandle(identifier);
 						}
+						member.Set(component, handle);
 					}
 				}
 			}
+			scene.componentPools[i]->Set(selectedEntity.Index(), component);
 		}
 	}
 

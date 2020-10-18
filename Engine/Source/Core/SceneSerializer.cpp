@@ -21,14 +21,8 @@ JsonValue SceneSerializer::ToJson(Scene& scene)
                 if (!TypeDatabase::TypeExists(pComponentType->name))
                     continue; // Don't save out components that have no type data
 
-				void* pComponentData = scene.componentPools[i]->get(entity.Index());
-
-                // We'll manually construct this variant, since we don't know have the type
-                Variant var;
-                var.pData = new char[pComponentType->size];
-                var.pTypeData = pComponentType;
-                memcpy(var.pData, pComponentData, pComponentType->size);
-                jsonEntity[pComponentType->name] = pComponentType->ToJson(var);
+				Variant componentData = scene.componentPools[i]->Get(entity.Index());
+                jsonEntity[pComponentType->name] = pComponentType->ToJson(componentData);
             }
         }
         json.Append(jsonEntity);

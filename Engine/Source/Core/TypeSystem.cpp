@@ -10,39 +10,11 @@
 
 // ***********************************************************************
 
-Variant Member::Get(Variant& instance)
-{
-	Variant var;
-	var.pData = new char[pType->size];
-	char* instancePtr = reinterpret_cast<char*>(instance.pData);
-	memcpy(var.pData, instancePtr + offset, pType->size);
-	var.pTypeData = pType;
-	return var;
-}
-
-// ***********************************************************************
-
-void Member::Set(void* instance, Variant newValue)
-{
-	char* location = reinterpret_cast<char*>(instance);
-	memcpy(location + offset, newValue.pData, newValue.pTypeData->size);
-}
-
-// ***********************************************************************
-
-void Member::Set(Variant& instance, Variant newValue)
-{
-	char* location = reinterpret_cast<char*>(instance.pData);
-	memcpy(location + offset, newValue.pData, newValue.pTypeData->size);
-}
-
-
-
-// ***********************************************************************
-
 TypeData::~TypeData()
 {
 	delete pConstructor;
+
+	// TODO: For loop over members and delete them
 }
 
 // ***********************************************************************
@@ -64,7 +36,7 @@ bool TypeData::MemberExists(const char* _name)
 Member& TypeData::GetMember(const char* _name)
 {
 	ASSERT(memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
-	return members[memberOffsets[_name]];
+	return *members[memberOffsets[_name]];
 }
 
 // ***********************************************************************
@@ -74,7 +46,7 @@ JsonValue TypeData::ToJson(Variant value)
     JsonValue result = JsonValue::NewObject();
 
 	// TODO: Order of members is lost using this method. We have our member offsets, see if we can use it somehow
-    for (Member& member : *value.pTypeData)
+    for (Member& member : value.GetType())
     {
         result[member.name] = member.GetType().ToJson(member.Get(value));
     }

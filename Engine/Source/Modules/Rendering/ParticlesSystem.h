@@ -74,7 +74,7 @@ struct CParticleEmitter
   	VertexBufferHandle instanceBuffer;
 	size_t instanceBufferSize{ 0 };
 
-	eastl::unique_ptr<ParticlePool> particlePool;
+	eastl::shared_ptr<ParticlePool> particlePool;
 
 	REFLECT()
 };

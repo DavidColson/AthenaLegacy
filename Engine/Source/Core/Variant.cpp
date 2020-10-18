@@ -2,50 +2,43 @@
 
 #include "Log.h"
 
-Variant::Variant(const Variant& copy)
+Variant::Variant(const Variant& copy) : pInvoke(copy.pInvoke)
 {
-    pTypeData = copy.pTypeData;
-    pData = new char[pTypeData->size];
-    memcpy(pData, copy.pData, pTypeData->size);
+    pInvoke(VariantDataOperation::Clone, copy.pData, pData);
 }
 
-Variant::Variant(Variant&& copy)
+Variant::Variant(Variant&& copy) : pInvoke(copy.pInvoke)
 {
-    pTypeData = copy.pTypeData;
-    copy.pTypeData = nullptr;
-
-    pData = copy.pData;
-    copy.pData = nullptr;
+    pInvoke(VariantDataOperation::Swap, copy.pData, pData);
+    copy.pInvoke = &VariantDataPolicyNull::Invoke;
 }
 
 Variant& Variant::operator=(const Variant& copy)
 {
-    pTypeData = copy.pTypeData;
-    pData = new char[pTypeData->size];
-    memcpy(pData, copy.pData, pTypeData->size);
+    pInvoke(VariantDataOperation::Destroy, pData, ArgWrapper{});
+    copy.pInvoke(VariantDataOperation::Clone, copy.pData, pData);
+    pInvoke = copy.pInvoke;
     return *this;
 }
 
 Variant& Variant::operator=(Variant&& copy)
 {
-    pTypeData = copy.pTypeData;
-    copy.pTypeData = nullptr;
+    pInvoke(VariantDataOperation::Destroy, pData, ArgWrapper{});
+    copy.pInvoke(VariantDataOperation::Swap, copy.pData, pData);
 
-    pData = copy.pData;
-    copy.pData = nullptr;
+    pInvoke = copy.pInvoke;
+    copy.pInvoke = &VariantDataPolicyNull::Invoke;
     return *this;
 }
 
 Variant::~Variant()
 {
-    if (pData)
-    {
-        delete[] reinterpret_cast<char*>(pData);
-        pTypeData = nullptr;
-    }
+    pInvoke(VariantDataOperation::Destroy, pData, ArgWrapper{});
 }
 
 TypeData& Variant::GetType()
 {
+    TypeData* pTypeData;
+    pInvoke(VariantDataOperation::GetType, pData, pTypeData);
     return *pTypeData;
 }
