@@ -8,6 +8,8 @@ JsonValue SceneSerializer::ToJson(Scene& scene)
 
     for (EntityID entity : SceneView<>(scene))
 	{
+        // TODO: Looping the components on an entity shouldnt' be this hard. The mask should give you the component family ids
+        // Direct look them up from that, and save looping all components. Better yet make an iterator of components on an entity
         JsonValue jsonEntity = JsonValue::NewObject();
         for (int i = 0; i < MAX_COMPONENTS; i++)
         {

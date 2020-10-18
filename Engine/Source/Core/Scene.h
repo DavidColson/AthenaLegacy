@@ -244,6 +244,8 @@ struct ComponentHandler
 	virtual void Remove(Scene& scene, EntityID entity) = 0;
 };
 
+// Consider moving this inside Component Pool so it doesn't need to invade the type system
+// Note that you may have to store a map of typedatas to component pools for that to work, see SceneSerializer
 template<typename T>
 struct ComponentHandler_Internal : public ComponentHandler
 {

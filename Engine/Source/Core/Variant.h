@@ -2,6 +2,8 @@
 
 #include "ErrorHandling.h"
 
+#include "EASTL/iterator.h"
+
 struct TypeData;
 
 // For wrapping arbitrary arguments passed into Invoke below
@@ -22,6 +24,41 @@ struct ArgWrapper
 
     void* pData;
 };
+
+
+// Custom Type Traits
+/////////////////////////
+
+
+// Note that eastl::begin returns an iterator to the first element, which we dereference and give to decltype
+template<typename T, typename Enable = void>
+struct ArrayElementType { using type = T; };
+template<typename T>
+struct ArrayElementType<T, eastl::enable_if_t<eastl::is_array<T>::value>>
+{
+    using type = eastl::decay_t<decltype(*eastl::begin(eastl::declval<T&>()))>;
+};
+template<typename T>
+using ArrayElementType_t = typename ArrayElementType<T>::type;
+
+template<typename T>
+using IsCharArray = eastl::integral_constant<bool, eastl::is_same<char, ArrayElementType_t<T>>::value>;
+// using IsCharArray = eastl::integral_constant<bool, eastl::is_array<T>::value && eastl::is_same<char, ArrayElementType<T>>::value && (eastl::rank<T>::value == 1)>;
+
+
+
+template<typename T>
+struct DecayExceptArray
+{
+    using U = eastl::remove_reference_t<T>;
+
+    using type = eastl::conditional_t< 
+            eastl::is_function<U>::value,
+            typename eastl::add_pointer<U>::type,
+            typename eastl::remove_cv<U>::type
+            >;
+};
+
 
 enum class VariantDataOperation
 {
@@ -135,9 +172,31 @@ struct VariantDataPolicyNull
     }
 };
 
+struct VariantDataPolicyString : public VariantDataPolicyNormal<eastl::string>
+{
+    template<typename U>
+    static void Create(U&& rval, VariantData& destination)
+    {
+        reinterpret_cast<eastl::string*&>(destination)  = new eastl::string(eastl::forward<U>(rval));
+    }
+
+    template<size_t N>
+    static void Create(const char (&val)[N], VariantData& destination)
+    {
+        reinterpret_cast<eastl::string*&>(destination)  = new eastl::string(val, N - 1);
+    }
+};
+
+template<typename T>
+using VariantDataPolicy = eastl::conditional_t  <eastl::is_same<T, eastl::string>::value || IsCharArray<T>::value,
+                                                    VariantDataPolicyString,
+                                                    VariantDataPolicyNormal<T>
+                                                >;
+
+
 struct Variant
 {
-    template<typename T, typename Decayed = eastl::decay<T>::type>
+    template<typename T, typename Decayed = DecayExceptArray<T>::type>
     using DecayedIsNotVariant = eastl::enable_if_t<!eastl::is_same<Decayed, Variant>::value, Decayed>;
 
     // @Improvement, consider stack allocating a small amount of chars to use instead of always heap allocating, so small sized objects can use the stack 
@@ -149,9 +208,10 @@ struct Variant
 
 
     template <class T, typename DecayedType = DecayedIsNotVariant<T>>
-    Variant(T&& rval) : pInvoke(&VariantDataPolicyNormal<DecayedType>::Invoke)
+    Variant(T&& rval) : pInvoke(&VariantDataPolicy<DecayedType>::Invoke)
     {
-        VariantDataPolicyNormal<DecayedType>::Create(eastl::forward<T>(rval), pData);
+        //TODO: error if attempting to create a variant from a type not in the type database
+        VariantDataPolicy<DecayedType>::Create(eastl::forward<T>(rval), pData);
     }
 
 	Variant(const Variant& copy);
