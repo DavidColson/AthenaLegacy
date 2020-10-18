@@ -63,6 +63,8 @@ Scene* SceneSerializer::NewSceneFromJson(JsonValue json)
                 }
                 
                 Variant sourceComponentData = componentTypeData.FromJson(val.second);
+
+                //TODO: This should use component pool set
                 memcpy(pDestinationComponentData, sourceComponentData.pData, componentTypeData.size);
             }
         }

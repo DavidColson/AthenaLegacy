@@ -95,7 +95,7 @@ struct EntityID
 };
 
 const int MAX_COMPONENTS = 25;
-const int MAX_ENTITIES = 128;
+const int MAX_ENTITIES = 1024;
 typedef eastl::bitset<MAX_COMPONENTS> ComponentMask;
 typedef void (*ReactiveSystemFunc)(Scene&, EntityID);
 typedef void (*SystemFunc)(Scene&, float);
@@ -202,7 +202,7 @@ struct BaseComponentPool
 	virtual Variant Get(size_t index) = 0;
 	virtual void Set(size_t index, Variant component) = 0;
 
-	virtual void destroy(size_t index) = 0;
+	virtual void Destroy(size_t index) = 0;
 
 	char* pData{ nullptr };
 	size_t elementSize{ 0 };
@@ -229,8 +229,7 @@ struct ComponentPool : public BaseComponentPool // #TODO: Move to detail namespa
 		*destination = component.GetValue<T>();
 	}
 
-	// TODO: This could potentially be moved to be inside TypeData and applied to a variant of the component
-	virtual void destroy(size_t index) override
+	virtual void Destroy(size_t index) override
 	{
 		ASSERT(index < MAX_ENTITIES, "Trying to delete an entity with an ID greater than max allowed entities");
 		static_cast<T*>(GetRaw(index))->~T();
@@ -338,7 +337,7 @@ struct Scene
 		 // Turn off the component bit
 		entities[id.Index()].mask.reset(componentId);
 		// Destroy the component
-		componentPools[componentId]->destroy(id.Index());
+		componentPools[componentId]->Destroy(id.Index());
 	}
 
 	// Retrieves a component for a given entity

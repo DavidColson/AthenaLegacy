@@ -134,14 +134,16 @@ double ParseNumber(Scan::ScanningState& scan)
 	// Normal number
 	else
 	{
-		while(Scan::IsDigit(Scan::Peek(scan)) 
-		|| Scan::Peek(scan) == '+'
-		|| Scan::Peek(scan) == '-'
-		|| Scan::Peek(scan) == '.'
-		|| Scan::Peek(scan) == 'E'
-		|| Scan::Peek(scan) == 'e')
+		char c = Scan::Peek(scan);
+		while(Scan::IsDigit(c) 
+		|| c== '+'
+		|| c == '-'
+		|| c == '.'
+		|| c == 'E'
+		|| c == 'e')
 		{
 			Scan::Advance(scan);
+			c = Scan::Peek(scan);
 		}
 	}
 

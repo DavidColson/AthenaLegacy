@@ -151,7 +151,7 @@ void Scene::DestroyEntity(EntityID id)
             {
                 func(*this, id);
             }
-            componentPools[i]->destroy(id.Index());
+            componentPools[i]->Destroy(id.Index());
         }
     }
     entities[id.Index()].id = EntityID::New(EntityIndex(-1), id.Version() + 1); // set to invalid

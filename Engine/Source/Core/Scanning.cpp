@@ -14,12 +14,13 @@
 char Scan::Advance(ScanningState& scan)
 {
 	scan.current++;
-	if (scan.file[scan.current - 1] == '\n')
+	char c = scan.file[scan.current - 1];
+	if (c == '\n')
 	{
 		scan.line++;
 		scan.currentLineStart = scan.current;
 	}
-	return scan.file[scan.current - 1];
+	return c;
 }
 
 // ***********************************************************************
