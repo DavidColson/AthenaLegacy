@@ -113,6 +113,7 @@ AssetHandle::~AssetHandle()
 Asset* AssetDB::GetAssetRaw(AssetHandle handle)
 {
     // TODO: consider the asset type when someone gets an asset, if they request an asset that exists, but it's a different type, gracefully fail
+    // TODO: Test if the path actually points to a real file, and error if not
     if (assets.count(handle.id) == 0)
     {
         if (assetMetas[handle.id].path.IsEmpty())
@@ -152,14 +153,29 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
             return nullptr;
         }
         
-        pAsset->Load(path);
-
-        // If a subasset was requested, we've just loaded the parent asset, 
-        // so register the parent with a different identifier pointing to just the file
+        // If we're attempting to load a subasset, we're actually calling load on the parent asset, 
+        // so correct the handle to remove the subasset from the identifier
+        AssetHandle handleForThis = handle;
         if (IsSubasset(handle))
-            RegisterAsset(pAsset, assetMetas[handle.id].path.AsString());
+            handleForThis = AssetHandle(assetMetas[handle.id].path.AsString());
+
+        Path fileInGameResources = Path(Engine::GetConfig().gameResourcesPath) / path;
+        Path fileInEngineResources = Path(Engine::GetConfig().engineResourcesPath) / path;
+        if (FileSys::Exists(fileInGameResources))
+        {
+            pAsset->Load(fileInGameResources, handleForThis);
+        }
+        else if (FileSys::Exists(fileInEngineResources))
+        {
+            pAsset->Load(fileInEngineResources, handleForThis);
+        }
         else
-            RegisterAsset(pAsset, assetMetas[handle.id].fullIdentifier);
+        {
+            Log::Crit("Unable to load asset %s from engine (%s) or game (%s) resource folders", path.AsRawString(), Engine::GetConfig().engineResourcesPath.c_str(), Engine::GetConfig().gameResourcesPath.c_str());
+            return nullptr;
+        }
+
+        RegisterAsset(pAsset, assetMetas[handleForThis.id].fullIdentifier);
     }
 
     return assets[handle.id];

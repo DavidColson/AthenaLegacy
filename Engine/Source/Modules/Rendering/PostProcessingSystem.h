@@ -20,8 +20,8 @@ struct CPostProcessing
 		Vec2f resolution;
 	};
 
-	AssetHandle postProcessShader{ AssetHandle("Engine/Resources/Shaders/PostProcessing.hlsl") };
-	AssetHandle bloomShader{ AssetHandle("Engine/Resources/Shaders/Bloom.hlsl") };
+	AssetHandle postProcessShader{ AssetHandle("Shaders/PostProcessing.hlsl") };
+	AssetHandle bloomShader{ AssetHandle("Shaders/Bloom.hlsl") };
 
 	// Graphics system resource handles
 	RenderTargetHandle blurredFrame[2];

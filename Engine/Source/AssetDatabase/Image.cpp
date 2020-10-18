@@ -6,7 +6,7 @@
 
 #include <stb/stb_image.h>
 
-void Image::Load(Path path)
+void Image::Load(Path path, AssetHandle handleForThis)
 {
     imgData = stbi_load(path.AsRawString(), &xSize, &ySize, &nChannels, 0);
 

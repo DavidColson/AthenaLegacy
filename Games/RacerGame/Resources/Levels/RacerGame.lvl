@@ -41,7 +41,7 @@
                 Asset: "cube",
             },
             shaderHandle: {
-                Asset: "Engine/Resources/Shaders/VertColor.hlsl",
+                Asset: "Shaders/VertColor.hlsl",
             },
         },
         CTransform: {
@@ -88,7 +88,7 @@
                 Asset: "cube",
             },
             shaderHandle: {
-                Asset: "Engine/Resources/Shaders/VertColor.hlsl",
+                Asset: "Shaders/VertColor.hlsl",
             },
         },
         CTransform: {
@@ -129,7 +129,7 @@
                 Asset: "cube",
             },
             shaderHandle: {
-                Asset: "Engine/Resources/Shaders/VertColor.hlsl",
+                Asset: "Shaders/VertColor.hlsl",
             },
         },
         CTransform: {
@@ -252,10 +252,10 @@
         },
         CRenderable: {
             meshHandle: {
-                Asset: "Games/RacerGame/Resources/Models/monkey.gltf:mesh_0",
+                Asset: "Models/monkey.gltf:mesh_0",
             },
             shaderHandle: {
-                Asset: "Games/RacerGame/Resources/Shaders/VertColor.hlsl",
+                Asset: "Shaders/VertColor.hlsl",
             },
         },
         CTransform: {
@@ -285,7 +285,7 @@
                 Asset: "cube",
             },
             shaderHandle: {
-                Asset: "Engine/Resources/Shaders/VertColor.hlsl",
+                Asset: "Shaders/VertColor.hlsl",
             },
         },
         CTransform: {

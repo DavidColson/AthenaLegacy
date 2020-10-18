@@ -5,7 +5,7 @@
 
 struct Image : Asset
 {
-    virtual void Load(Path path) override;
+    virtual void Load(Path path, AssetHandle handleForThis) override;
 
     ~Image();
 

@@ -12,6 +12,8 @@ struct EngineConfig
 	Vec2f windowResolution{ Vec2f( 1800.f, 1000.f ) };
 	bool bootInEditor{ true };
 	bool hotReloadingAssetsEnabled{ true };
+	eastl::string gameResourcesPath{ "" };
+	eastl::string engineResourcesPath{ "Engine/Resources/" };
 };
 
 namespace Engine

@@ -64,9 +64,9 @@ Scene* CreateMainAsteroidsScene()
 	scene.Assign<CPolyShape>(ship)->points.assign(verts, verts + 5);
 
 	CSounds* pSounds = scene.Assign<CSounds>(ship);
-	pSounds->engineSound = AssetHandle("Games/Asteroids/Resources/Audio/Engine.wav");
-	pSounds->shootSound = AssetHandle("Games/Asteroids/Resources/Audio/Shoot.wav");
-	pSounds->explosionSound = AssetHandle("Games/Asteroids/Resources/Audio/Explosion.wav");
+	pSounds->engineSound = AssetHandle("Audio/Engine.wav");
+	pSounds->shootSound = AssetHandle("Audio/Shoot.wav");
+	pSounds->explosionSound = AssetHandle("Audio/Explosion.wav");
 
 	pPlayer->enginePlayingSound = AudioDevice::PlaySound(pSounds->engineSound, 0.3f, true);
 	AudioDevice::PauseSound(pPlayer->enginePlayingSound);
@@ -119,13 +119,13 @@ Scene* CreateMainAsteroidsScene()
 		scene.Assign<CPlayerScore>(currentScoreEnt);
 		CText* pCurrScoreText = scene.Assign<CText>(currentScoreEnt);
 		pCurrScoreText->text = "0";
-		pCurrScoreText->fontAsset = AssetHandle("Games/Asteroids/Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
+		pCurrScoreText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 
 		EntityID highScoreEnt = scene.NewEntity("High Score");
 		scene.Assign<CTransform>(highScoreEnt)->localPos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
 		CText* pHiScoreText = scene.Assign<CText>(highScoreEnt);
 		pHiScoreText->text = "0";
-		pHiScoreText->fontAsset = AssetHandle("Games/Asteroids/Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
+		pHiScoreText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 	}
 
 	// Create game over text
@@ -137,7 +137,7 @@ Scene* CreateMainAsteroidsScene()
 		scene.Assign<CVisibility>(gameOver)->visible = false;
 		CText* pText = scene.Assign<CText>(gameOver);
 		pText->text = "Game Over";
-		pText->fontAsset = AssetHandle("Games/Asteroids/Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
+		pText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 	}
 	return &scene;
 }
@@ -158,19 +158,19 @@ Scene* CreateMainMenuScene()
 	scene.Assign<CPostProcessing>(titleText);
 	CText* pTitleText = scene.Assign<CText>(titleText);
 	pTitleText->text = "Asteroids!";
-	pTitleText->fontAsset = AssetHandle("Games/Asteroids/Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
+	pTitleText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 
 	EntityID startOption =scene.NewEntity("Start Option");
 	scene.Assign<CTransform>(startOption)->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
 	CText* pStartText = scene.Assign<CText>(startOption);
 	pStartText->text = "Start";
-	pStartText->fontAsset = AssetHandle("Games/Asteroids/Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
+	pStartText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 
 	EntityID quitOption = scene.NewEntity("Quit Option");
 	scene.Assign<CTransform>(quitOption)->localPos = Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f);
 	CText* pQuitText = scene.Assign<CText>(quitOption);
 	pQuitText->text = "Quit";
-	pQuitText->fontAsset = AssetHandle("Games/Asteroids/Resources/Fonts/Hyperspace/Hyperspace Bold.otf");
+	pQuitText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 
 	EntityID buttonSelector =scene.NewEntity("Button Selector");
 	scene.Assign<CVisibility>(buttonSelector);

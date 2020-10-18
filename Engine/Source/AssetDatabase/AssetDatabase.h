@@ -31,7 +31,7 @@ struct AssetHandle
 
 struct Asset
 {
-    virtual void Load(Path path) = 0;
+    virtual void Load(Path loadPath, AssetHandle handleForThis) = 0;
     virtual ~Asset() {};
 };
 

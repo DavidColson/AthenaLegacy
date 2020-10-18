@@ -8,7 +8,7 @@
 
 struct Font : Asset
 {
-    virtual void Load(Path path) override;
+    virtual void Load(Path path, AssetHandle handleForThis) override;
     ~Font();
 
 	TextureHandle fontTexture;

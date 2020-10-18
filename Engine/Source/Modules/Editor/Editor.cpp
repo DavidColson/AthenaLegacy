@@ -216,10 +216,11 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 
 		if (ImGui::Button("Save", ImVec2(120, 0))) 
 		{
+			Path basePath(Engine::GetConfig().gameResourcesPath);
 			eastl::string filePath;
-			filePath.sprintf("Resources/Levels/%s.lvl", levelSaveModalFilename.c_str());
+			filePath.sprintf("Levels/%s.lvl", levelSaveModalFilename.c_str());
 			JsonValue jsonScene = SceneSerializer::ToJson(scene);
-			FileSys::WriteWholeFile(filePath, SerializeJsonValue(jsonScene));
+			FileSys::WriteWholeFile(basePath / filePath, SerializeJsonValue(jsonScene));
 			ImGui::CloseCurrentPopup(); 
 		}
 		ImGui::SetItemDefaultFocus();
@@ -232,8 +233,9 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 	{
 		ImGui::OpenPopup("Open Level");
 
+		Path basePath(Engine::GetConfig().gameResourcesPath);
 		levelOpenModalFiles.clear();
-		eastl::vector<Path> levels = FileSys::ListFiles("Resources/Levels/");
+		eastl::vector<Path> levels = FileSys::ListFiles(basePath / "Levels/");
 		for (Path& levelName : levels)
 		{
 			levelOpenModalFiles.push_back(levelName.AsString());
@@ -247,7 +249,7 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 		ImGui::BeginChild("Levels", ImVec2(0.0f, 200.0f), true);
 		for (int i = 0; i < levelOpenModalFiles.size(); i++)
 		{
-			if (ImGui::Selectable(levelOpenModalFiles[i].c_str(), i == selectedLevelFile))
+			if (ImGui::Selectable(Path(levelOpenModalFiles[i]).Filename().AsRawString(), i == selectedLevelFile))
 				selectedLevelFile = i;
 		}
 		ImGui::EndChild();

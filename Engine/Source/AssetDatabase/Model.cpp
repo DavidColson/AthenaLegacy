@@ -62,7 +62,7 @@ struct Accessor
     Type type;
 };
 
-void Model::Load(Path path)
+void Model::Load(Path path, AssetHandle handleForThis)
 {
     // Load file
     eastl::string file = FileSys::ReadWholeFile(path);
@@ -199,12 +199,12 @@ void Model::Load(Path path)
         meshes.push_back(mesh);
 
         // We'll manually register the mesh asset, since we created it rather than the asset database
-        eastl::string meshAssetIdentifier = path.AsString();
+        eastl::string meshAssetIdentifier = AssetDB::GetAssetIdentifier(handleForThis);
         meshAssetIdentifier.append_sprintf(":mesh_%i", i);
-        meshes.back().Load(meshAssetIdentifier);
+        meshes.back().Load(meshAssetIdentifier, AssetHandle(meshAssetIdentifier));
         AssetDB::RegisterAsset(&(meshes.back()), meshAssetIdentifier);
 
-        // TODO: I don't like this, to error prone
+        // TODO: I don't like this, too error prone
         subAssets.push_back(AssetHandle(meshAssetIdentifier)); // Store an asset handle to the subasset, which keeps it's refcount above 0 so it doesn't get garbage collected
     }
 

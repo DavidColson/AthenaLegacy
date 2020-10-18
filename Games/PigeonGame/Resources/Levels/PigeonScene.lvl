@@ -5,7 +5,7 @@
         },
         CSprite: {
             spriteHandle: {
-                Asset: "Games/PigeonGame/Resources/Images/pigeon.png",
+                Asset: "Images/pigeon.png",
             },
         },
         CTransform: {

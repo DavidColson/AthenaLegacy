@@ -22,6 +22,8 @@ REFLECT_MEMBER(windowName)
 REFLECT_MEMBER(windowResolution)
 REFLECT_MEMBER(bootInEditor)
 REFLECT_MEMBER(hotReloadingAssetsEnabled)
+REFLECT_MEMBER(gameResourcesPath)
+REFLECT_MEMBER(engineResourcesPath)
 REFLECT_END()
 
 namespace

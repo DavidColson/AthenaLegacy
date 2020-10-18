@@ -2,7 +2,7 @@
 
 #include "Rendering/RectPacking.h"
 
-void Font::Load(Path path)
+void Font::Load(Path path, AssetHandle handleForThis)
 {   
     FT_Face face;
 

@@ -2,7 +2,7 @@
 
 #include "AssetDatabase.h"
 
-void Mesh::Load(Path path)
+void Mesh::Load(Path path, AssetHandle handleForThis)
 {
     // Doesn't actually load anything from disk since this would be a subasset of a model
     // If (AssetDB::IsSubasset(handle))

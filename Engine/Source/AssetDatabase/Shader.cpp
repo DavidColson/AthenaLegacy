@@ -5,7 +5,7 @@
 #include "FileSystem.h"
 
 
-void Shader::Load(Path path)
+void Shader::Load(Path path, AssetHandle handleForThis)
 {
     eastl::string contents = FileSys::ReadWholeFile(path);
 

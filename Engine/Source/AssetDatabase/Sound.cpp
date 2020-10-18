@@ -2,7 +2,7 @@
 
 #include "Log.h"
 
-void Sound::Load(Path path)
+void Sound::Load(Path path, AssetHandle handleForThis)
 {
     if (SDL_LoadWAV(path.AsRawString(), &spec, &buffer, &length) == nullptr)
     {
