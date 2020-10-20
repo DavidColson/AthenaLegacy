@@ -21,7 +21,7 @@ TypeData::~TypeData()
 
 Variant TypeData::New()
 {
-	return pConstructor->Invoke();
+	return pConstructor->New();
 }
 
 // ***********************************************************************
@@ -104,6 +104,7 @@ struct TypeData_Int : TypeData
 	TypeData_Int() : TypeData{"int", sizeof(int)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("int", this);
+		id = "int"_hash;
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -134,6 +135,7 @@ struct TypeData_Float : TypeData
 	TypeData_Float() : TypeData{"float", sizeof(float)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("float", this);
+		id = "float"_hash;
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -164,6 +166,7 @@ struct TypeData_Double : TypeData
 	TypeData_Double() : TypeData{"double", sizeof(double)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("double", this);
+		id = "double"_hash;
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -194,6 +197,7 @@ struct TypeData_String : TypeData
 	TypeData_String() : TypeData{"eastl::string", sizeof(eastl::string)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("eastl::string", this);
+		id = "eastl::string"_hash;
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -224,6 +228,7 @@ struct TypeData_Bool : TypeData
 	TypeData_Bool() : TypeData{"bool", sizeof(bool)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("bool", this);
+		id = "bool"_hash;
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -254,6 +259,7 @@ struct TypeData_EntityID : TypeData
 	TypeData_EntityID() : TypeData{"EntityID", sizeof(EntityID)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("EntityID", this);
+		id = "EntityID"_hash;
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -286,6 +292,7 @@ struct TypeData_AssetHandle: TypeData
 	TypeData_AssetHandle() : TypeData{"AssetHandle", sizeof(AssetHandle)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("AssetHandle", this);
+		id = "AssetHandle"_hash;
 	}
 
 	virtual JsonValue ToJson(Variant var) override

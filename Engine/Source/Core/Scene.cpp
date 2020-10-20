@@ -1,5 +1,6 @@
 #include "Scene.h"
 int s_componentCounter = 0;
+eastl::map<uint32_t, uint32_t> s_componentTypeIdMap;
 
 REFLECT_COMPONENT_BEGIN(CName)
 REFLECT_MEMBER(name)
@@ -25,6 +26,21 @@ REFLECT_MEMBER(parent)
 REFLECT_MEMBER(prev)
 REFLECT_MEMBER(next)
 REFLECT_END()
+
+// ***********************************************************************
+
+int ComponentId(TypeData& type)
+{
+    if (type.id == 0)
+        Log::Debug("Ducks");
+
+	if (s_componentTypeIdMap.count(type.id) == 0)
+	{
+		s_componentTypeIdMap[type.id] = s_componentCounter++;
+		ASSERT(s_componentCounter < MAX_COMPONENTS, "Too many component types, above supported amount");
+	}
+	return s_componentTypeIdMap[type.id];
+}
 
 // ***********************************************************************
 
@@ -81,15 +97,17 @@ void TransformHeirarchy(Scene& scene, float deltaTime)
 
 // ***********************************************************************
 
-BaseComponentPool::BaseComponentPool(size_t elementsize)
+ComponentPool::ComponentPool(size_t elementsize, TypeData& typeData, void(*_pDestructor)(void*, TypeData*))
 {
     elementSize = elementsize;
     pData = new char[elementSize * MAX_ENTITIES];
+    pDestructor = _pDestructor;
+    pTypeData = &typeData;
 }
 
 // ***********************************************************************
 
-BaseComponentPool::~BaseComponentPool()
+ComponentPool::~ComponentPool()
 {
     delete[] pData;
 }
@@ -109,7 +127,7 @@ Scene::~Scene()
     {
         DestroyEntity(desc.id);
     }
-    for (BaseComponentPool* pPool : componentPools)
+    for (ComponentPool* pPool : componentPools)
     {
         delete pPool;
     }
@@ -140,18 +158,15 @@ void Scene::DestroyEntity(EntityID id)
     if (!id.IsValid())
         return;
 
-    for (int i = 0; i < MAX_COMPONENTS; i++)
+    for (ComponentPool* pPool : componentPools)
     {
-        // For each component ID, check the bitmask, if no, continue, if yes, destroy the component
-        eastl::bitset<MAX_COMPONENTS> mask;
-        mask.set(i, true);
-        if (mask == (entities[id.Index()].mask & mask))
+        if (pPool != nullptr && pPool->pTypeData->IsValid() && Has(id, *(pPool->pTypeData)))
         {
-            for (ReactiveSystemFunc func : componentPools[i]->onRemovedCallbacks)
+            for (ReactiveSystemFunc func : pPool->onRemovedCallbacks)
             {
                 func(*this, id);
             }
-            componentPools[i]->Destroy(id.Index());
+            pPool->Erase(id.Index());
         }
     }
     entities[id.Index()].id = EntityID::New(EntityIndex(-1), id.Version() + 1); // set to invalid

@@ -29,12 +29,12 @@ void EntityInspector::Update(Scene& scene)
 
 		for (eastl::pair<eastl::string, TypeData*> type : TypeDatabase::Data::Get().typeNames)
 		{
-			if (type.second->pComponentHandler)
+			if (type.second->isComponent)
 			{
 				if (ImGui::Selectable(type.first.c_str()))
 				{
 					Log::Info("Create component of type %s", type.first.c_str());
-					type.second->pComponentHandler->Assign(scene, selectedEntity);
+					scene.Assign(selectedEntity, *type.second);
 				}
 			}
 		}
@@ -50,24 +50,20 @@ void EntityInspector::Update(Scene& scene)
 		return;
 	}
 	// We have the entity Id
-	for (int i = 0; i < MAX_COMPONENTS; i++)
+	for (ComponentPool* pPool : scene.componentPools)
 	{
-		// For each component ID, check the bitmask, if no, continue, if yes, save the ID and proceed to access that components data
-		eastl::bitset<MAX_COMPONENTS> mask;
-		mask.set(i, true);
-			
-		if (mask == (scene.entities[selectedEntity.Index()].mask & mask))
+		if (pPool != nullptr && pPool->pTypeData->IsValid() && scene.Has(selectedEntity, *(pPool->pTypeData)))
 		{
-			Variant component = scene.componentPools[i]->Get(selectedEntity.Index());
+			Variant component = scene.Get(selectedEntity, *pPool->pTypeData);
 			TypeData& componentType = component.GetType();
 			if (ImGui::CollapsingHeader(componentType.name, ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				if (strstr(componentType.name, "CName") == nullptr && strstr(componentType.name, "CChild") == nullptr && strstr(componentType.name,"CParent") == nullptr)
 				{
-					ImGui::PushID(i);
+					ImGui::PushID(componentType.id);
 					if (ImGui::Button("Remove Component", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
 					{
-						componentType.pComponentHandler->Remove(scene, selectedEntity);
+						scene.Remove(selectedEntity, componentType);
 					}
 					ImGui::PopID();
 				}
@@ -138,7 +134,7 @@ void EntityInspector::Update(Scene& scene)
 					}
 				}
 			}
-			scene.componentPools[i]->Set(selectedEntity.Index(), component);
+			scene.Set(selectedEntity, component);
 		}
 	}
 

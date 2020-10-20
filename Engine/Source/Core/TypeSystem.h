@@ -5,6 +5,7 @@
 
 #include "Variant.h"
 #include "Json.h"
+#include "StringHash.h"
 
 struct TypeData;
 
@@ -50,19 +51,44 @@ struct Member_Internal : public Member
 };
 
 
-struct Constructor
+struct TypeDataOps
 {
-	virtual Variant Invoke() = 0;
+	virtual Variant New() = 0;
+	virtual Variant CopyToVariant(void* pObject) = 0;
+	virtual void PlacementNew(void* location) = 0;
+	virtual void Destruct(void* pObject) = 0;
+	virtual void Free(void* pObject) = 0;
 };
 
 // @Improvement Consider replacing this mechanism and component handler with the variant data policy method, 
 // which is similiar, but a bit more robust and doesn't require "new" when creating these constructor objects
 template<typename T>
-struct Constructor_Internal : public Constructor
+struct TypeDataOps_Internal : public TypeDataOps
 {
-	virtual Variant Invoke() override
+	virtual Variant New() override
 	{
 		return Variant(T());
+	}
+
+	virtual Variant CopyToVariant(void* pObject) override
+	{
+		return Variant(*reinterpret_cast<T*>(pObject));
+	}
+
+	virtual void PlacementNew(void* location) override
+	{
+		new (location) T();
+	}
+
+	virtual void Destruct(void* pObject) override
+	{
+		static_cast<T*>(pObject)->~T();
+	}
+
+	virtual void Free(void* pObject) override
+	{
+		T* pData = static_cast<T*>(pObject);
+		delete pData;
 	}
 };
 
@@ -71,12 +97,15 @@ struct ComponentHandler;
 // Actual Type data
 struct TypeData
 {
+	uint32_t id{ 0 };
 	const char* name;
 	size_t size;
-	Constructor* pConstructor{ nullptr };
-	ComponentHandler* pComponentHandler{ nullptr };
+	TypeDataOps* pConstructor{ nullptr };
 	eastl::map<size_t, Member*> members;
 	eastl::map<eastl::string, size_t> memberOffsets;
+
+	// temp until we have type attributes
+	bool isComponent{ false };
 
 	TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 }
 	{
@@ -94,11 +123,16 @@ struct TypeData
 	// Since type data is globally stored in the type database, equality checks can check the pointer addresses
 	bool operator==(const TypeData& other)
 	{
-		return &other == this;
+		return other.id == this->id;
 	}
 	bool operator!=(const TypeData& other)
 	{
-		return &other != this;
+		return other.id != this->id;
+	}
+
+	bool IsValid()
+	{
+		return id != 0;
 	}
 
 	bool MemberExists(const char* _name);
@@ -213,6 +247,14 @@ namespace TypeDatabase
 	bool TypeExists(const char* name);
 	TypeData& GetFromString(const char* name);
 
+	template<typename T>
+	bool TypeExists()
+	{
+		if (DefaultTypeResolver::Get<T>() == TypeData("UnknownType", 0))
+			return false;
+		return true;
+	}
+
 	// Generic typedata return
 	template<typename T>
 	TypeData& Get()
@@ -232,9 +274,10 @@ namespace TypeDatabase
 	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->id = Fnv1a::Hash(#Struct);\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
-		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
+		selfTypeData->pConstructor = new TypeDataOps_Internal<XX>;\
 		selfTypeData->members = {
 
 #define REFLECT_MEMBER(member)\
@@ -253,9 +296,10 @@ namespace TypeDatabase
 	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->id = Fnv1a::Hash(#Struct);\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
-		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
+		selfTypeData->pConstructor = new TypeDataOps_Internal<XX>;\
 		selfTypeData->members = {
 
 // Special version of reflection function used for components. Allows for storing specialized component handler object
@@ -264,8 +308,9 @@ namespace TypeDatabase
 	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->id = Fnv1a::Hash(#Struct);\
+		selfTypeData->isComponent = true;\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
-		selfTypeData->pConstructor = new Constructor_Internal<XX>;\
-		selfTypeData->pComponentHandler = new ComponentHandler_Internal<XX>;\
+		selfTypeData->pConstructor = new TypeDataOps_Internal<XX>;\
 		selfTypeData->members = {
