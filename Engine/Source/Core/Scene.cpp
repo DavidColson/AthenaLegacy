@@ -1,5 +1,4 @@
 #include "Scene.h"
-int s_componentCounter = 0;
 eastl::map<uint32_t, uint32_t> s_componentTypeIdMap;
 
 REFLECT_COMPONENT_BEGIN(CName)
@@ -26,21 +25,6 @@ REFLECT_MEMBER(parent)
 REFLECT_MEMBER(prev)
 REFLECT_MEMBER(next)
 REFLECT_END()
-
-// ***********************************************************************
-
-int ComponentId(TypeData& type)
-{
-    if (type.id == 0)
-        Log::Debug("Ducks");
-
-	if (s_componentTypeIdMap.count(type.id) == 0)
-	{
-		s_componentTypeIdMap[type.id] = s_componentCounter++;
-		ASSERT(s_componentCounter < MAX_COMPONENTS, "Too many component types, above supported amount");
-	}
-	return s_componentTypeIdMap[type.id];
-}
 
 // ***********************************************************************
 

@@ -459,9 +459,9 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		pDynamics->accel = accel - pDynamics->vel * pControl->dampening;
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_LEFT))
-			pTransform->localRot += pControl->rotateSpeed;
+			pTransform->localRot += pControl->rotateSpeed * deltaTime;
 		if (Input::GetKeyHeld(SDL_SCANCODE_RIGHT))
-			pTransform->localRot -= pControl->rotateSpeed;
+			pTransform->localRot -= pControl->rotateSpeed * deltaTime;
 
 		// Shoot a bullet
 		if (Input::GetKeyDown(SDL_SCANCODE_SPACE))

@@ -47,7 +47,7 @@ struct CAsteroidSpawner
 struct CPlayerControl
 {
 	float thrust{ 160.f };
-	float rotateSpeed{ 0.1f };
+	float rotateSpeed{ 5.0f };
 	float dampening{ 0.f };
 	float respawnTimer{ 0.0f };
 	int 	lives = 3;

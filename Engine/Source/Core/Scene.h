@@ -94,7 +94,7 @@ struct EntityID
 	uint64_t value;
 };
 
-const int MAX_COMPONENTS = 25;
+const int MAX_COMPONENTS = 50;
 const int MAX_ENTITIES = 1024;
 typedef eastl::bitset<MAX_COMPONENTS> ComponentMask;
 typedef void (*ReactiveSystemFunc)(Scene&, EntityID);
@@ -167,24 +167,6 @@ struct CChild
 void TransformHeirarchy(Scene &scene, float deltaTime);
 
 
-
-// Gives you the id within this world for a given component type
-extern int s_componentCounter;
-extern eastl::map<uint32_t, uint32_t> s_componentTypeIdMap;
-int ComponentId(TypeData &type);
-
-template <typename Type, eastl::enable_if_t<DefaultTypeResolver::IsReflected<Type>::value, int> = 0>
-uint32_t ComponentId()
-{
-	return ComponentId(TypeDatabase::Get<Type>());
-}
-template <typename Type, eastl::enable_if_t<!DefaultTypeResolver::IsReflected<Type>::value, int> = 0>
-uint32_t ComponentId()
-{
-	static int s_componentId = s_componentCounter++;
-	ASSERT(s_componentId < MAX_COMPONENTS, "Too many component types, above supported amount");
-	return s_componentId;
-}
 
 // ********************************************
 // All components are stored in component pools
@@ -259,7 +241,7 @@ struct Scene
 		T *pComponent = new (pPool->GetRaw(id.Index())) T();
 
 		// Set the bit for this component to true
-		int componentId = ComponentId<T>();
+		int componentId = Type::Index<T>();
 		entities[id.Index()].mask.set(componentId);
 
 		// Send OnAdd events
@@ -281,8 +263,7 @@ struct Scene
 
 		componentType.pConstructor->PlacementNew(pPool->GetRaw(id.Index()));
 
-		int componentId = ComponentId(componentType);
-		entities[id.Index()].mask.set(componentId);
+		entities[id.Index()].mask.set(componentType.id);
 
 		for (ReactiveSystemFunc func : pPool->onAddedCallbacks)
 		{
@@ -296,7 +277,7 @@ struct Scene
 		if (entities[id.Index()].id != id) 
 			return;
 
-		int componentId = ComponentId<T>();
+		int componentId = Type::Index<T>();
 		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
 
 		for (ReactiveSystemFunc func : componentPools[componentId]->onRemovedCallbacks)
@@ -314,7 +295,7 @@ struct Scene
 
 		ASSERT(Has(id, componentType), "The component you're trying to access is not assigned to this entity");
 
-		int componentId = ComponentId(componentType);
+		int componentId = componentType.id;
 		for (ReactiveSystemFunc func : componentPools[componentId]->onRemovedCallbacks)
 		{
 			func(*this, id);
@@ -331,7 +312,7 @@ struct Scene
 		if (entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
 			return nullptr;
 
-		int componentId = ComponentId<T>();
+		int componentId = Type::Index<T>();
 
 		ASSERT(Has<T>(id), "The component you're trying to access is not assigned to this entity");
 		T *pComponent = static_cast<T *>(componentPools[componentId]->GetRaw(id.Index()));
@@ -342,12 +323,10 @@ struct Scene
 	{
 		if (entities[id.Index()].id != id)
 			return nullptr;
-		
-		int componentId = ComponentId(componentType);
 
 		ASSERT(Has(id, componentType), "The component you're trying to access is not assigned to this entity");
 
-		void* pData = componentPools[componentId]->GetRaw(id.Index());
+		void* pData = componentPools[componentType.id]->GetRaw(id.Index());
 		return componentType.pConstructor->CopyToVariant(pData);
 	}
 
@@ -356,7 +335,7 @@ struct Scene
 		if (entities[id.Index()].id != id)
 			return;
 		
-		int componentId = ComponentId(componentToSet.GetType());
+		int componentId = componentToSet.GetType().id;
 
 		ASSERT(Has(id, componentToSet.GetType()), "The component you're trying to set data on is not assigned to this entity");
 
@@ -371,7 +350,7 @@ struct Scene
 		if (!id.IsValid() || entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
 			return false;
 
-		return entities[id.Index()].mask.test(ComponentId<T>());
+		return entities[id.Index()].mask.test(Type::Index<T>());
 	}
 
 	bool Has(EntityID id, TypeData &type)
@@ -379,7 +358,7 @@ struct Scene
 		if (!id.IsValid() || entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
 			return false;
 
-		return entities[id.Index()].mask.test(ComponentId(type));
+		return entities[id.Index()].mask.test(type.id);
 	}
 
 	eastl::string GetEntityName(EntityID entity);
@@ -422,7 +401,7 @@ struct Scene
 	template <typename T>
 	ComponentPool* GetOrCreateComponentPool()
 	{
-		uint32_t componentId = ComponentId<T>();
+		uint32_t componentId = Type::Index<T>();
 		if (componentPools.size() <= componentId) // Not enough component pool
 			componentPools.resize(componentId + 1, nullptr);
 
@@ -437,7 +416,7 @@ struct Scene
 
 	ComponentPool* GetOrCreateComponentPool(TypeData& type)
 	{
-		uint32_t componentId = ComponentId(type);
+		uint32_t componentId = type.id;
 		if (componentPools.size() <= componentId) // Not enough component pool
 			componentPools.resize(componentId + 1, nullptr);
 
@@ -484,7 +463,7 @@ struct SceneView
 	template <size_t comps = sizeof...(ComponentTypes), eastl::enable_if_t<comps != 0, int> = 0>
 	SceneView(Scene &scene) : pScene(&scene)
 	{
-		uint32_t componentIndexes[] = {0, ComponentId<ComponentTypes>()...};
+		uint32_t componentIndexes[] = {0, Type::Index<ComponentTypes>()...};
 		for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)
 			componentMask.set(componentIndexes[i]);
 	}

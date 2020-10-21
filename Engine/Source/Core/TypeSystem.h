@@ -9,6 +9,15 @@
 
 struct TypeData;
 
+struct Type {
+    template<typename Type>
+    inline static uint32_t Index()
+	{
+		static uint32_t typeIndex = TypeDatabase::Data::Get().typeCounter++;
+		return typeIndex;
+	}
+};
+
 struct Member
 {
 	const char* name;
@@ -91,8 +100,6 @@ struct TypeDataOps_Internal : public TypeDataOps
 		delete pData;
 	}
 };
-
-struct ComponentHandler;
 
 // Actual Type data
 struct TypeData
@@ -242,6 +249,7 @@ namespace TypeDatabase
 		static Data* pInstance;
 
 		eastl::map<eastl::string, TypeData*> typeNames;
+		uint32_t typeCounter{ 0 };
 	};
 
 	bool TypeExists(const char* name);
@@ -274,7 +282,7 @@ namespace TypeDatabase
 	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
-		selfTypeData->id = Fnv1a::Hash(#Struct);\
+		selfTypeData->id = Type::Index<XX>();\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pConstructor = new TypeDataOps_Internal<XX>;\
@@ -296,7 +304,7 @@ namespace TypeDatabase
 	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
-		selfTypeData->id = Fnv1a::Hash(#Struct);\
+		selfTypeData->id = Type::Index<XX>();\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pConstructor = new TypeDataOps_Internal<XX>;\
@@ -308,7 +316,7 @@ namespace TypeDatabase
 	void Struct::initReflection(TypeData* selfTypeData) {\
 		using XX = Struct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
-		selfTypeData->id = Fnv1a::Hash(#Struct);\
+		selfTypeData->id = Type::Index<XX>();\
 		selfTypeData->isComponent = true;\
 		selfTypeData->name = #Struct;\
 		selfTypeData->size = sizeof(XX);\
