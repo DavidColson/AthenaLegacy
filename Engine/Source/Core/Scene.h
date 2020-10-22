@@ -439,7 +439,7 @@ struct Scene
 
 	void RenderScene(float deltaTime);
 
-	eastl::vector<ComponentPool *> componentPools;
+	eastl::vector<ComponentPool*> componentPools;
 
 	int nActiveEntities{0};
 	eastl::vector<EntityDesc> entities;
@@ -526,4 +526,68 @@ struct SceneView
 	Scene *pScene{nullptr};
 	ComponentMask componentMask;
 	bool all{false};
+};
+
+struct ComponentsOnEntity
+{
+	ComponentsOnEntity(Scene& _scene, EntityID _entity) : pScene(&_scene), entity(_entity) {}
+
+	struct Iterator
+	{
+		Iterator(Scene* _pScene, EntityID _entity, eastl::vector<ComponentPool*>::iterator _it) : pScene(_pScene), entity(_entity), it(_it) {}
+
+		Variant operator*() const 
+		{
+			return pScene->Get(entity, *(*it)->pTypeData);
+		}
+
+		bool operator==(const Iterator &other) const
+		{
+			return it == other.it;
+		}
+		bool operator!=(const Iterator &other) const
+		{
+			return it != other.it;
+		}
+
+		bool IsValidIter()
+		{
+			return *it == nullptr || !(*it)->pTypeData->IsValid() || !pScene->Has(entity, *((*it)->pTypeData));
+		}
+
+		Iterator &operator++()
+		{
+			do
+			{
+				it++;
+			}
+			while (it != pScene->componentPools.end() && IsValidIter());
+			return *this;
+		}
+
+		eastl::vector<ComponentPool*>::iterator it;
+		Scene* pScene{ nullptr };
+		EntityID entity{ EntityID::InvalidID() };
+	};
+
+	const Iterator begin() const
+	{
+		size_t start = 0;
+		for (; start < pScene->componentPools.size(); start++)
+		{
+			ComponentPool* pPool = pScene->componentPools[start];
+			if (pPool != nullptr && pPool->pTypeData->IsValid() && pScene->Has(entity, *pPool->pTypeData))
+				break;
+		}
+		
+		return Iterator(pScene, entity, pScene->componentPools.begin() + start);
+	}
+
+	const Iterator end() const
+	{
+		return Iterator(pScene, entity, pScene->componentPools.end());
+	}
+
+	Scene* pScene{ nullptr };
+	EntityID entity{ EntityID::InvalidID() };
 };

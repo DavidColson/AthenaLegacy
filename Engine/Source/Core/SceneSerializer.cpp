@@ -8,21 +8,10 @@ JsonValue SceneSerializer::ToJson(Scene& scene)
 
     for (EntityID entity : SceneView<>(scene))
 	{
-        // TODO: Looping the components on an entity shouldnt' be this hard. The mask should give you the component family ids
-        // Direct look them up from that, and save looping all components. Better yet make an iterator of components on an entity
         JsonValue jsonEntity = JsonValue::NewObject();
-        for (ComponentPool* pPool : scene.componentPools)
-        {
-            if (pPool != nullptr && pPool->pTypeData->IsValid() && scene.Has(entity, *(pPool->pTypeData)))
-            {
-			    TypeData* pComponentType = pPool->pTypeData;
-
-                if (!TypeDatabase::TypeExists(pComponentType->name))
-                    continue; // Don't save out components that have no type data
-
-				Variant componentData = scene.Get(entity, *pComponentType);
-                jsonEntity[pComponentType->name] = pComponentType->ToJson(componentData);
-            }
+        for (Variant component : ComponentsOnEntity(scene, entity))
+	    {
+            jsonEntity[component.GetType().name] = component.GetType().ToJson(component);
         }
         json.Append(jsonEntity);
     }
