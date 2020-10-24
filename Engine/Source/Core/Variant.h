@@ -6,6 +6,107 @@
 
 struct TypeData;
 
+// -----------------------------------
+// --------CUSTOM TYPE TRAITS---------
+// -----------------------------------
+
+template<typename T, typename Enable = void>
+struct ArrayElementType { using type = T; };
+template<typename T>
+struct ArrayElementType<T, eastl::enable_if_t<eastl::is_array<T>::value>>
+{
+    // Note that eastl::begin returns an iterator to the first element, which we dereference and give to decltype
+    using type = eastl::decay_t<decltype(*eastl::begin(eastl::declval<T&>()))>;
+};
+template<typename T>
+using ArrayElementType_t = typename ArrayElementType<T>::type;
+template<typename T>
+using IsCharArray = eastl::integral_constant<bool, eastl::is_same<char, ArrayElementType_t<T>>::value>;
+
+template<typename T>
+struct DecayExceptArray
+{
+    using U = eastl::remove_reference_t<T>;
+
+    using type = eastl::conditional_t< 
+            eastl::is_function<U>::value,
+            typename eastl::add_pointer<U>::type,
+            typename eastl::remove_cv<U>::type
+            >;
+};
+
+struct ArgWrapper;
+enum class VariantDataOperation;
+typedef void* VariantData;
+
+// -----------------------------------
+// -------------VARIANT---------------
+// -----------------------------------
+
+struct Variant
+{
+    template<typename T, typename Decayed = DecayExceptArray<T>::type>
+    using DecayedIsNotVariant = eastl::enable_if_t<!eastl::is_same<Decayed, Variant>::value, Decayed>;
+
+    /**
+     * Plain null variant constructor
+     **/
+    Variant();
+
+    /**
+     * Destructor
+     **/
+    ~Variant();
+
+    /**
+     * Main rvalue constructor, can be given any type T and it will construct a variant from it
+     **/
+    template <class T, typename DecayedType = DecayedIsNotVariant<T>>
+    Variant(T&& rval);
+
+    /**
+     * Copy constructor
+     **/
+	Variant(const Variant& copy);
+
+    /**
+     * Move constructor
+     **/
+    Variant(Variant&& copy);
+	
+    /**
+     * Assignment copy
+     **/
+    Variant& operator=(const Variant& copy);
+	
+    /**
+     * Assignment move
+     **/
+    Variant& operator=(Variant&& copy);
+
+    /**
+     * Retrieves the held value of type T from the variant
+     * Note this is a reference to the data OWNED by the variant
+     **/
+    template<typename T>
+    T& GetValue();
+
+    /**
+     * Get the type of the data held by this variant
+     **/
+    TypeData& GetType();
+
+    using VariantDataPolicyFunc = bool (*)(VariantDataOperation, const VariantData&, ArgWrapper);
+    VariantDataPolicyFunc pInvoke;
+    void* pData{ nullptr };
+};
+
+
+// -----------------------------------
+// ------------INTERNAL---------------
+// -----------------------------------
+
+
 // For wrapping arbitrary arguments passed into Invoke below
 // It just takes the address of whatever you gave it, and saves a void* pointer of it
 struct ArgWrapper
@@ -25,41 +126,6 @@ struct ArgWrapper
     void* pData;
 };
 
-
-// Custom Type Traits
-/////////////////////////
-
-
-// Note that eastl::begin returns an iterator to the first element, which we dereference and give to decltype
-template<typename T, typename Enable = void>
-struct ArrayElementType { using type = T; };
-template<typename T>
-struct ArrayElementType<T, eastl::enable_if_t<eastl::is_array<T>::value>>
-{
-    using type = eastl::decay_t<decltype(*eastl::begin(eastl::declval<T&>()))>;
-};
-template<typename T>
-using ArrayElementType_t = typename ArrayElementType<T>::type;
-
-template<typename T>
-using IsCharArray = eastl::integral_constant<bool, eastl::is_same<char, ArrayElementType_t<T>>::value>;
-// using IsCharArray = eastl::integral_constant<bool, eastl::is_array<T>::value && eastl::is_same<char, ArrayElementType<T>>::value && (eastl::rank<T>::value == 1)>;
-
-
-
-template<typename T>
-struct DecayExceptArray
-{
-    using U = eastl::remove_reference_t<T>;
-
-    using type = eastl::conditional_t< 
-            eastl::is_function<U>::value,
-            typename eastl::add_pointer<U>::type,
-            typename eastl::remove_cv<U>::type
-            >;
-};
-
-
 enum class VariantDataOperation
 {
     Destroy,
@@ -68,8 +134,6 @@ enum class VariantDataOperation
     GetValue,
     GetType
 };
-
-typedef void* VariantData;
 
 template<typename T, typename DerivedPolicy>
 struct VariantDataPolicyBase
@@ -109,8 +173,6 @@ struct VariantDataPolicyBase
         return true;
     }
 };
-
-using VariantDataPolicyFunc = bool (*)(VariantDataOperation, const VariantData&, ArgWrapper);
 
 template<typename T>
 struct VariantDataPolicyNormal : VariantDataPolicyBase<T, VariantDataPolicyNormal<T>>
@@ -188,46 +250,30 @@ struct VariantDataPolicyString : public VariantDataPolicyNormal<eastl::string>
 };
 
 template<typename T>
+struct VariantDataPolicyNormal;
+struct VariantDataPolicyNull;
+struct VariantDataPolicyString;
+
+template<typename T>
 using VariantDataPolicy = eastl::conditional_t  <eastl::is_same<T, eastl::string>::value || IsCharArray<T>::value,
                                                     VariantDataPolicyString,
                                                     VariantDataPolicyNormal<T>
                                                 >;
 
 
-struct Variant
+
+
+template <class T, typename DecayedType>
+Variant::Variant(T&& rval) : pInvoke(&VariantDataPolicy<DecayedType>::Invoke)
 {
-    template<typename T, typename Decayed = DecayExceptArray<T>::type>
-    using DecayedIsNotVariant = eastl::enable_if_t<!eastl::is_same<Decayed, Variant>::value, Decayed>;
+    //TODO: error if attempting to create a variant from a type not in the type database
+    VariantDataPolicy<DecayedType>::Create(eastl::forward<T>(rval), pData);
+}
 
-    // @Improvement, consider stack allocating a small amount of chars to use instead of always heap allocating, so small sized objects can use the stack 
-    // Constructors and destructor
-    Variant() : pInvoke(&VariantDataPolicyNull::Invoke) {}
-	Variant& operator=(const Variant& copy);
-	Variant& operator=(Variant&& copy);
-    ~Variant();
-
-
-    template <class T, typename DecayedType = DecayedIsNotVariant<T>>
-    Variant(T&& rval) : pInvoke(&VariantDataPolicy<DecayedType>::Invoke)
-    {
-        //TODO: error if attempting to create a variant from a type not in the type database
-        VariantDataPolicy<DecayedType>::Create(eastl::forward<T>(rval), pData);
-    }
-
-	Variant(const Variant& copy);
-    Variant(Variant&& copy);
-
-    // Getters
-    template<typename T>
-    T& GetValue()
-    {
-        const void* value;
-        pInvoke(VariantDataOperation::GetValue, pData, value);
-        return *reinterpret_cast<T*>(const_cast<void*>(value));
-    }
-
-    TypeData& GetType();
-
-    VariantDataPolicyFunc pInvoke;
-    void* pData{ nullptr };
-};
+template<typename T>
+T& Variant::GetValue()
+{
+    const void* value;
+    pInvoke(VariantDataOperation::GetValue, pData, value);
+    return *reinterpret_cast<T*>(const_cast<void*>(value));
+}

@@ -2,6 +2,10 @@
 
 #include "Log.h"
 
+Variant::Variant() : pInvoke(&VariantDataPolicyNull::Invoke) 
+{
+}
+
 Variant::Variant(const Variant& copy) : pInvoke(copy.pInvoke)
 {
     pInvoke(VariantDataOperation::Clone, copy.pData, pData);

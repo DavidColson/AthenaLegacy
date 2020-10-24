@@ -273,3 +273,115 @@ void Scene::RenderScene(float deltaTime)
         func(*this, deltaTime);
     }
 }
+
+// ***********************************************************************
+
+void Scene::Assign(EntityID id, TypeData& componentType)
+{
+    if (entities[id.Index()].id != id)
+        return;
+
+    ComponentPool *pPool = GetOrCreateComponentPool(componentType);
+    ASSERT(Has(id, componentType) == false, "You're trying to assign a component to an entity that already has this component");
+
+    componentType.pTypeOps->PlacementNew(pPool->GetRaw(id.Index()));
+
+    entities[id.Index()].mask.set(componentType.id);
+
+    for (ReactiveSystemFunc func : pPool->onAddedCallbacks)
+    {
+        func(*this, id);
+    }
+}
+
+// ***********************************************************************
+
+void Scene::Remove(EntityID id, TypeData& componentType)
+{
+    if (entities[id.Index()].id != id)
+        return;
+
+    ASSERT(Has(id, componentType), "The component you're trying to access is not assigned to this entity");
+
+    int componentId = componentType.id;
+    for (ReactiveSystemFunc func : componentPools[componentId]->onRemovedCallbacks)
+    {
+        func(*this, id);
+    }
+    entities[id.Index()].mask.reset(componentId);
+    componentPools[componentId]->Erase(id.Index());
+}
+
+// ***********************************************************************
+
+Variant Scene::Get(EntityID id, TypeData& componentType)
+{
+    if (entities[id.Index()].id != id)
+        return nullptr;
+
+    ASSERT(Has(id, componentType), "The component you're trying to access is not assigned to this entity");
+
+    void* pData = componentPools[componentType.id]->GetRaw(id.Index());
+    return componentType.pTypeOps->CopyToVariant(pData);
+}
+
+// ***********************************************************************
+
+void Scene::Set(EntityID id, Variant componentToSet)
+{
+    if (entities[id.Index()].id != id)
+        return;
+    
+    int componentId = componentToSet.GetType().id;
+
+    ASSERT(Has(id, componentToSet.GetType()), "The component you're trying to set data on is not assigned to this entity");
+
+    void* pData = componentPools[componentId]->GetRaw(id.Index());
+    memcpy(pData, componentToSet.pData, componentToSet.GetType().size);
+}
+
+// ***********************************************************************
+
+bool Scene::Has(EntityID id, TypeData &type)
+{
+    if (!id.IsValid() || entities[id.Index()].id != id) // ensures you're not accessing an entity that has been deleted
+        return false;
+
+    return entities[id.Index()].mask.test(type.id);
+}
+
+// ***********************************************************************
+
+void Scene::RegisterReactiveSystem(Reaction reaction, ReactiveSystemFunc func, TypeData& type)
+{
+    ComponentPool *pPool = GetOrCreateComponentPool(type);
+
+    switch (reaction)
+    {
+    case Reaction::OnAdd:
+        pPool->onAddedCallbacks.push_back(func);
+        break;
+    case Reaction::OnRemove:
+        pPool->onRemovedCallbacks.push_back(func);
+        break;
+    default:
+        break;
+    }
+}
+
+// ***********************************************************************
+
+ComponentPool* Scene::GetOrCreateComponentPool(TypeData& type)
+{
+    uint32_t componentId = type.id;
+    if (componentPools.size() <= componentId) // Not enough component pool
+        componentPools.resize(componentId + 1, nullptr);
+
+    if (componentPools[componentId] == nullptr) // New component, make a new pool
+    {	
+        componentPools[componentId] = new ComponentPool(type.size, type, [](void *pComponent, TypeData* pTypeData) {
+            pTypeData->pTypeOps->Destruct(pComponent);
+        });
+    }
+    return componentPools[componentId];
+}

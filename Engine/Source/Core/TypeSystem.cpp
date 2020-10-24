@@ -12,7 +12,7 @@
 
 TypeData::~TypeData()
 {
-	delete pConstructor;
+	delete pTypeOps;
 
 	// TODO: For loop over members and delete them
 }
@@ -21,7 +21,7 @@ TypeData::~TypeData()
 
 Variant TypeData::New()
 {
-	return pConstructor->New();
+	return pTypeOps->New();
 }
 
 // ***********************************************************************
@@ -74,6 +74,70 @@ Variant TypeData::FromJson(const JsonValue& json)
     return var;
 }
 
+// ***********************************************************************
+
+bool TypeData::operator==(const TypeData& other)
+{
+	return other.id == this->id;
+}
+
+// ***********************************************************************
+
+bool TypeData::operator!=(const TypeData& other)
+{
+	return other.id != this->id;
+}
+
+// ***********************************************************************
+
+bool TypeData::IsValid()
+{
+	return id != 0;
+}
+
+// ***********************************************************************
+
+Member& TypeData::MemberIterator::operator*() const 
+{ 
+	return *it->second;
+}
+
+// ***********************************************************************
+
+bool TypeData::MemberIterator::operator==(const MemberIterator& other) const 
+{
+	return it == other.it;
+}
+
+// ***********************************************************************
+
+bool TypeData::MemberIterator::operator!=(const MemberIterator& other) const 
+{
+	return it != other.it;
+}
+
+// ***********************************************************************
+
+TypeData::MemberIterator& TypeData::MemberIterator::operator++()
+{
+	++it;
+	return *this;
+}
+
+// ***********************************************************************
+
+const TypeData::MemberIterator TypeData::begin() 
+{
+	return MemberIterator(members.begin());
+}
+
+// ***********************************************************************
+
+const TypeData::MemberIterator TypeData::end()
+{
+	return MemberIterator(members.end());
+}
+
 
 
 namespace TypeDatabase
@@ -97,14 +161,14 @@ namespace TypeDatabase
 // Primitive Types
 //////////////////
 
-// @TODO: Set constructors!
+// @TODO: Set typeDataops!
 
 struct TypeData_Int : TypeData
 {
 	TypeData_Int() : TypeData{"int", sizeof(int)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("int", this);
-		id = "int"_hash;
+		id = Type::Index<int>();
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -135,7 +199,7 @@ struct TypeData_Float : TypeData
 	TypeData_Float() : TypeData{"float", sizeof(float)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("float", this);
-		id = "float"_hash;
+		id = Type::Index<float>();
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -166,7 +230,7 @@ struct TypeData_Double : TypeData
 	TypeData_Double() : TypeData{"double", sizeof(double)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("double", this);
-		id = "double"_hash;
+		id = Type::Index<double>();
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -197,7 +261,7 @@ struct TypeData_String : TypeData
 	TypeData_String() : TypeData{"eastl::string", sizeof(eastl::string)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("eastl::string", this);
-		id = "eastl::string"_hash;
+		id = Type::Index<eastl::string>();
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -228,7 +292,7 @@ struct TypeData_Bool : TypeData
 	TypeData_Bool() : TypeData{"bool", sizeof(bool)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("bool", this);
-		id = "bool"_hash;
+		id = Type::Index<bool>();
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -259,7 +323,7 @@ struct TypeData_EntityID : TypeData
 	TypeData_EntityID() : TypeData{"EntityID", sizeof(EntityID)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("EntityID", this);
-		id = "EntityID"_hash;
+		id = Type::Index<EntityID>();
 	}
 
 	virtual JsonValue ToJson(Variant var) override
@@ -292,7 +356,7 @@ struct TypeData_AssetHandle: TypeData
 	TypeData_AssetHandle() : TypeData{"AssetHandle", sizeof(AssetHandle)} 
 	{
 		TypeDatabase::Data::Get().typeNames.emplace("AssetHandle", this);
-		id = "AssetHandle"_hash;
+		id = Type::Index<AssetHandle>();
 	}
 
 	virtual JsonValue ToJson(Variant var) override
