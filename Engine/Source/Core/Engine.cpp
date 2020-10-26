@@ -20,6 +20,9 @@
 REFLECT_BEGIN(EngineConfig)
 REFLECT_MEMBER(windowName)
 REFLECT_MEMBER(windowResolution)
+REFLECT_MEMBER(baseGameResolution)
+REFLECT_MEMBER(gameFramePointFilter)
+REFLECT_MEMBER(resolutionStretchMode)
 REFLECT_MEMBER(bootInEditor)
 REFLECT_MEMBER(hotReloadingAssetsEnabled)
 REFLECT_MEMBER(gameResourcesPath)
@@ -92,6 +95,13 @@ const EngineConfig& Engine::GetConfig()
 
 // ***********************************************************************
 
+bool Engine::IsInEditor()
+{
+	return Editor::IsActive();
+}
+
+// ***********************************************************************
+
 void Engine::SaveConfig(const eastl::string& fileName)
 {
 	JsonValue configJson = EngineConfig::typeData.ToJson(config);
@@ -137,7 +147,8 @@ void Engine::Initialize(const EngineConfig& _config)
 
 	Log::SetLogLevel(Log::EDebug);
 
-	GameRenderer::Initialize(config.windowResolution.x, config.windowResolution.y);
+	Vec2f ideal = GameRenderer::GetIdealFrameSize(AppWindow::GetWidth(), AppWindow::GetHeight());
+	GameRenderer::Initialize(ideal.x, ideal.y);
 	AudioDevice::Initialize();
 	Input::CreateInputState();	
 	Editor::Initialize(config.bootInEditor);
@@ -172,15 +183,18 @@ void Engine::Run(Scene *pScene)
 			case SDL_WINDOWEVENT:
 				switch (event.window.event)
 				{
-				case SDL_WINDOWEVENT_SIZE_CHANGED:
+				case SDL_WINDOWEVENT_RESIZED:
 					if (event.window.windowID == SDL_GetWindowID(AppWindow::GetSDLWindow()))
 					{
 						AppWindow::Resize((float)event.window.data1, (float)event.window.data2);
 
-						if (Editor::IsInEditor())
+						if (IsInEditor())
 							Editor::ResizeEditorFrame((float)event.window.data1, (float)event.window.data2);
 						else
-							GameRenderer::ResizeGameFrame(*pCurrentScene, (float)event.window.data1, (float)event.window.data2);
+						{
+							Vec2f ideal = GameRenderer::GetIdealFrameSize(AppWindow::GetWidth(), AppWindow::GetHeight());
+							GameRenderer::ResizeGameFrame(*pCurrentScene, ideal.x, ideal.y);
+						}
 					}
 					break;
 				default:
@@ -206,7 +220,7 @@ void Engine::Run(Scene *pScene)
 		// Render the editor
 		TextureHandle editorFrame = Editor::DrawFrame(*pCurrentScene, (float)frameTime);
 		
-		if (Editor::IsInEditor())
+		if (IsInEditor())
 			AppWindow::RenderToWindow(editorFrame);
 		else
 			AppWindow::RenderToWindow(gameFrame);

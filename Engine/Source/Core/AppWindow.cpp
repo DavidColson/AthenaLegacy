@@ -1,6 +1,8 @@
 #include "AppWindow.h"
 
 #include <SDL.h>
+
+#include "Engine.h"
 #include "Mesh.h"
 #include "Log.h"
 
@@ -40,6 +42,51 @@ SDL_Window* AppWindow::GetSDLWindow()
 
 // ***********************************************************************
 
+VertexBufferHandle BuildFrameVertexBuffer(float windowAspectRatio, float gameAspectRatio)
+{
+    float x = 1.0f, y = x;
+
+    if (!Engine::IsInEditor())
+    {
+        switch (Engine::GetConfig().resolutionStretchMode)
+        {
+        case 2:
+        {
+            if (windowAspectRatio < gameAspectRatio)
+                y = (1 / gameAspectRatio) * windowAspectRatio;
+            else
+                x = gameAspectRatio * (1 / windowAspectRatio);
+            break;
+        }
+        case 3:
+        {
+            if (windowAspectRatio > gameAspectRatio)
+                x = gameAspectRatio * (1 / windowAspectRatio);
+            break;
+        }
+        case 4:
+        {
+            if (windowAspectRatio < gameAspectRatio)
+                y = (1 / gameAspectRatio) * windowAspectRatio;
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+    GfxDevice::FreeVertexBuffer(vertBuffer);
+    eastl::vector<Vert_PosTex> quadVertices = {
+        Vert_PosTex{Vec3f(-x, -y, 0.0f), Vec2f(0.0f, 1.0f)},
+        Vert_PosTex{Vec3f(x, -y, 0.0f), Vec2f(1.0f, 1.0f)},
+        Vert_PosTex{Vec3f(-x, y, 0.0f), Vec2f(0.0f, 0.0f)},
+        Vert_PosTex{Vec3f(x, y, 0.0f), Vec2f(1.0f, 0.0f)}
+    };
+    return GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTex), quadVertices.data(), "AppWindow quad");
+}
+
+// ***********************************************************************
+
 void AppWindow::Create(float initialWidth, float initialHeight, const eastl::string& windowName)
 {
 	Log::Info("App window size W: %.1f H: %.1f", initialWidth, initialHeight);
@@ -58,15 +105,12 @@ void AppWindow::Create(float initialWidth, float initialHeight, const eastl::str
 	GfxDevice::Initialize(pWindow, initialWidth, initialHeight);
 
     // Setup rendering for full screen quad
-    eastl::vector<Vert_PosTex> quadVertices = {
-        Vert_PosTex{Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f)},
-        Vert_PosTex{Vec3f(1.f, -1.f, 0.0f), Vec2f(1.0f, 1.0f)},
-        Vert_PosTex{Vec3f(-1.f, 1.f, 0.0f), Vec2f(0.0f, 0.0f)},
-        Vert_PosTex{Vec3f(1.f, 1.f, 0.0f), Vec2f(1.0f, 0.0f)}
-    };
-    vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTex), quadVertices.data(), "AppWindow quad");
+    vertBuffer =  BuildFrameVertexBuffer(initialWidth / initialHeight, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y);
 
-    textureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "AppWindow sampler");
+    if (Engine::GetConfig().gameFramePointFilter)
+        textureSampler = GfxDevice::CreateSampler(Filter::Point, WrapMode::Wrap, "AppWindow sampler");
+    else
+        textureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "AppWindow sampler");
 
     eastl::string drawTexturedQuadShader = "\
 	struct VS_OUTPUT\
@@ -125,6 +169,7 @@ void AppWindow::Resize(float width, float height)
 {
     appSize = Vec2f(width, height);
     GfxDevice::ResizeBackBuffer(width, height);
+    vertBuffer = BuildFrameVertexBuffer(width / height, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y);
 }
 
 // ***********************************************************************

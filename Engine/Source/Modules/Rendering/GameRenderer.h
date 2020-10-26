@@ -20,6 +20,7 @@ namespace GameRenderer
 
     float GetWidth();
     float GetHeight();
-
+    
+    Vec2f GetIdealFrameSize(float parentWidth, float parentHeight);
     void ResizeGameFrame(Scene& scene, float newWidth, float newHeight);
 }

@@ -1,5 +1,6 @@
 #include "GameRenderer.h"
 
+#include "Engine.h"
 #include "Scene.h"
 #include "GraphicsDevice.h"
 #include "ParticlesSystem.h"
@@ -11,6 +12,7 @@
 #include "SpriteDrawSystem.h"
 #include "Editor/Editor.h"
 #include "Vec2.h"
+#include "Maths.h"
 
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
@@ -127,12 +129,45 @@ TextureHandle GameRenderer::GetLastRenderedFrame()
 
 // ***********************************************************************
 
+Vec2f GameRenderer::GetIdealFrameSize(float parentWidth, float parentHeight)
+{
+    const EngineConfig& config = Engine::GetConfig();
+    float baseGameAspectRatio = config.baseGameResolution.x / config.baseGameResolution.y;
+    float windowAspectRatio = parentWidth / parentHeight;
+
+    Vec2f idealFrameSize;
+    switch (config.resolutionStretchMode)
+	{
+	case 0: 
+		idealFrameSize = Vec2f(parentWidth, parentHeight);
+		break;
+	case 1:
+	case 2:
+		idealFrameSize = Vec2f(config.baseGameResolution.x, config.baseGameResolution.y);
+		break;
+	case 3:
+		idealFrameSize = Vec2f(config.baseGameResolution.x, config.baseGameResolution.y / clamp(windowAspectRatio / baseGameAspectRatio, 0.0f, 1.0f));
+		break;
+	case 4:
+		idealFrameSize = Vec2f(config.baseGameResolution.x / clamp(baseGameAspectRatio / windowAspectRatio, 0.0f, 1.0f), config.baseGameResolution.y);
+        break;
+    case 5:
+		idealFrameSize = Vec2f(config.baseGameResolution.x / clamp(baseGameAspectRatio / windowAspectRatio, 0.0f, 1.0f), config.baseGameResolution.y / clamp(windowAspectRatio / baseGameAspectRatio, 0.0f, 1.0f));
+        break;
+	default:
+		break;
+	}
+
+    return idealFrameSize;
+}
+
+// ***********************************************************************
+
 void GameRenderer::ResizeGameFrame(Scene& scene, float newWidth, float newHeight)
 {
     gameWindowSize = Vec2f(newWidth, newHeight);
-
     GfxDevice::FreeRenderTarget(gameRenderTarget);
-    gameRenderTarget = GfxDevice::CreateRenderTarget(newWidth, newHeight, 4, "Game Render Target");
+    gameRenderTarget = GfxDevice::CreateRenderTarget(gameWindowSize.x, gameWindowSize.y, 4, "Game Render Target");
 
-    PostProcessingSystem::OnWindowResize(scene, newWidth, newHeight);
+    PostProcessingSystem::OnWindowResize(scene, gameWindowSize.x, gameWindowSize.y);
 }

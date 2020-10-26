@@ -105,8 +105,9 @@ void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 		{
 			Editor::ToggleEditor();
 
+			AppWindow::Resize(AppWindow::GetWidth(), AppWindow::GetHeight());
 			// When leaving editor mode, tell the game to resize itself to full screen, otherwise resize ourselves
-			if (!Editor::IsInEditor())
+			if (!Editor::IsActive())
 				GameRenderer::ResizeGameFrame(scene, AppWindow::GetWidth(), AppWindow::GetHeight());
 			else
 				Editor::ResizeEditorFrame(AppWindow::GetWidth(), AppWindow::GetHeight());
@@ -321,7 +322,7 @@ void Editor::ResizeEditorFrame(float width, float height)
 
 // ***********************************************************************
 
-bool Editor::IsInEditor()
+bool Editor::IsActive()
 {
 	return showEditor;
 }

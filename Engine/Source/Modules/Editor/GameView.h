@@ -5,8 +5,6 @@
 
 struct GameView : public EditorTool
 {
-    Vec2f windowSizeCache{ Vec2f(100.0f, 100.0f)};
-
 	GameView();
 
 	virtual void Update(Scene& scene) override;

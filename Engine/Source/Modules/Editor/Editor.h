@@ -24,7 +24,7 @@ namespace Editor
 	
 	void ResizeEditorFrame(float width, float height);
 	
-	bool IsInEditor();
+	bool IsActive();
 	void ToggleEditor();
 
 	EntityID GetSelectedEntity();
