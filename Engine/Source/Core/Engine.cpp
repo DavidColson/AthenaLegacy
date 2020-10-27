@@ -17,6 +17,15 @@
 #include "Quat.h"
 #include "FileSystem.h"
 
+REFLECT_ENUM_BEGIN(ResolutionStretchMode)
+REFLECT_ENUMERATOR(NoStretch)
+REFLECT_ENUMERATOR(IgnoreAspect)
+REFLECT_ENUMERATOR(KeepAspect)
+REFLECT_ENUMERATOR(KeepWidth)
+REFLECT_ENUMERATOR(KeepHeight)
+REFLECT_ENUMERATOR(Expand)
+REFLECT_ENUM_END()
+
 REFLECT_BEGIN(EngineConfig)
 REFLECT_MEMBER(windowName)
 REFLECT_MEMBER(windowResolution)

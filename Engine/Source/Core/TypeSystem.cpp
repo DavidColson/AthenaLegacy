@@ -26,56 +26,6 @@ Variant TypeData::New()
 
 // ***********************************************************************
 
-bool TypeData::MemberExists(const char* _name)
-{
-	return memberOffsets.count(_name) == 1;
-}
-
-// ***********************************************************************
-
-Member& TypeData::GetMember(const char* _name)
-{
-	ASSERT(memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
-	return *members[memberOffsets[_name]];
-}
-
-// ***********************************************************************
-
-JsonValue TypeData::ToJson(Variant value)
-{
-    JsonValue result = JsonValue::NewObject();
-
-	// TODO: Order of members is lost using this method. We have our member offsets, see if we can use it somehow
-    for (Member& member : value.GetType())
-    {
-        result[member.name] = member.GetType().ToJson(member.Get(value));
-    }
-
-    return result;
-}
-
-// ***********************************************************************
-
-Variant TypeData::FromJson(const JsonValue& json)
-{
-    Variant var = New();
-
-    for (const eastl::pair<eastl::string, JsonValue>& val : *json.internalData.pObject)
-	{
-		if (MemberExists(val.first.c_str()))
-		{
-			Member& mem = GetMember(val.first.c_str());
-
-			Variant parsed = mem.GetType().FromJson(val.second);
-			mem.Set(var, parsed);   
-		}
-    }
-
-    return var;
-}
-
-// ***********************************************************************
-
 bool TypeData::operator==(const TypeData& other)
 {
 	return other.id == this->id;
@@ -97,28 +47,95 @@ bool TypeData::IsValid()
 
 // ***********************************************************************
 
-Member& TypeData::MemberIterator::operator*() const 
+TypeData_Struct& TypeData::AsStruct()
+{
+	return *static_cast<TypeData_Struct*>(this);
+}
+
+// ***********************************************************************
+
+TypeData_Enum& TypeData::AsEnum()
+{
+	return *static_cast<TypeData_Enum*>(this);
+}
+
+
+
+
+// ***********************************************************************
+
+JsonValue TypeData_Struct::ToJson(Variant value)
+{
+    JsonValue result = JsonValue::NewObject();
+
+	// TODO: Order of members is lost using this method. We have our member offsets, see if we can use it somehow
+    for (Member& member : value.GetType().AsStruct())
+    {
+        result[member.name] = member.GetType().ToJson(member.Get(value));
+    }
+
+    return result;
+}
+
+// ***********************************************************************
+
+Variant TypeData_Struct::FromJson(const JsonValue& json)
+{
+    Variant var = New();
+
+    for (const eastl::pair<eastl::string, JsonValue>& val : *json.internalData.pObject)
+	{
+		if (MemberExists(val.first.c_str()))
+		{
+			Member& mem = GetMember(val.first.c_str());
+
+			Variant parsed = mem.GetType().FromJson(val.second);
+			mem.Set(var, parsed);   
+		}
+    }
+
+    return var;
+}
+
+// ***********************************************************************
+
+bool TypeData_Struct::MemberExists(const char* _name)
+{
+	return memberOffsets.count(_name) == 1;
+}
+
+// ***********************************************************************
+
+Member& TypeData_Struct::GetMember(const char* _name)
+{
+	ASSERT(memberOffsets.count(_name) == 1, "The member you're trying to access doesn't exist");
+	return *members[memberOffsets[_name]];
+}
+
+// ***********************************************************************
+
+Member& TypeData_Struct::MemberIterator::operator*() const 
 { 
 	return *it->second;
 }
 
 // ***********************************************************************
 
-bool TypeData::MemberIterator::operator==(const MemberIterator& other) const 
+bool TypeData_Struct::MemberIterator::operator==(const MemberIterator& other) const 
 {
 	return it == other.it;
 }
 
 // ***********************************************************************
 
-bool TypeData::MemberIterator::operator!=(const MemberIterator& other) const 
+bool TypeData_Struct::MemberIterator::operator!=(const MemberIterator& other) const 
 {
 	return it != other.it;
 }
 
 // ***********************************************************************
 
-TypeData::MemberIterator& TypeData::MemberIterator::operator++()
+TypeData_Struct::MemberIterator& TypeData_Struct::MemberIterator::operator++()
 {
 	++it;
 	return *this;
@@ -126,16 +143,53 @@ TypeData::MemberIterator& TypeData::MemberIterator::operator++()
 
 // ***********************************************************************
 
-const TypeData::MemberIterator TypeData::begin() 
+const TypeData_Struct::MemberIterator TypeData_Struct::begin() 
 {
 	return MemberIterator(members.begin());
 }
 
 // ***********************************************************************
 
-const TypeData::MemberIterator TypeData::end()
+const TypeData_Struct::MemberIterator TypeData_Struct::end()
 {
 	return MemberIterator(members.end());
+}
+
+
+
+
+// ***********************************************************************
+
+TypeData_Enum::TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, std::initializer_list<Enumerator> cats) : TypeData(_id, _name, _size, _pTypeOps), categories(cats)
+{
+	TypeDatabase::Data::Get().typeNames.emplace(name, static_cast<TypeData*>(this));
+}
+
+// ***********************************************************************
+
+JsonValue TypeData_Enum::ToJson(Variant var)
+{
+	// This will perform a reinterpret cast to int, probably enforce enums to be ints somehow
+	int value = var.GetValue<int>();
+	return JsonValue(categories[value].identifier);
+}
+
+// ***********************************************************************
+
+Variant TypeData_Enum::FromJson(const JsonValue& val)
+{
+
+	eastl::vector<Enumerator>::iterator it = eastl::find_if(categories.begin(), categories.end(), [&val](Enumerator& enumerator) 
+	{
+		return enumerator.identifier == val.ToString();
+	});
+
+	if (it == categories.end())
+		Log::Crit("Attempting to create an enum from an invalid jsonValue: %s", val.ToString().c_str());
+
+	Variant result = New();
+	result.GetValue<int>() = (int)eastl::distance(categories.begin(), it);
+	return result;
 }
 
 

@@ -68,7 +68,7 @@ void EntityInspector::Update(Scene& scene)
 			// #TODO: Create a component iterator which gives you variants on each iteration all setup for you
 
 			// Loop through all the members of the component, showing the appropriate UI elements
-			for (Member& member : componentType)
+			for (Member& member : componentType.AsStruct())
 			{
 				if (member.IsType<float>())
 				{

@@ -2,6 +2,8 @@
 
 #include "EASTL/array.h"
 
+#include "Vec2.h"
+
 struct Scene;
 struct TextureHandle;
 

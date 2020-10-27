@@ -6,10 +6,16 @@
 #include "Variant.h"
 #include "Json.h"
 #include "StringHash.h"
+#include "Log.h"
+
+
+// *************************************
+// BASE TYPE DATA
+// *************************************
 
 struct TypeDataOps;
-struct Member;
-
+struct TypeData_Struct;
+struct TypeData_Enum;
 struct TypeData
 {
 	/**
@@ -20,12 +26,12 @@ struct TypeData
 	/**
 	 * Turns an instance of this type into a JsonValue structure for serialization to Json
 	 **/
-	virtual JsonValue ToJson(Variant var);
+	virtual JsonValue ToJson(Variant var) { return JsonValue(); }
 
 	/**
 	 * Converts a Json structure into an instance of this type, returned as a variant
 	 **/
-	virtual Variant FromJson(const JsonValue& val);
+	virtual Variant FromJson(const JsonValue& val) { return Variant(); }
 
 	/**
 	 * Checks for equality with another TypeData
@@ -41,6 +47,52 @@ struct TypeData
 	 * Returns false if this is an unknown, invalid typedata
 	 **/
 	bool IsValid();
+
+	/**
+	 * 	Convenience function that casts this typedata to a TypeData_Struct
+	 **/
+	TypeData_Struct& AsStruct();
+
+	/**
+	 * 	Convenience function that casts this typedata to a TypeData_Enum
+	 **/
+	TypeData_Enum& AsEnum();
+
+	/**
+	 * Constructors used for building typedatas, not for use outside of REFLECT macros
+	 **/
+	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
+	TypeData(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps) : id(_id), name(_name), size(_size), pTypeOps(_pTypeOps) {}
+	~TypeData();
+
+	uint32_t id{ 0 };
+	const char* name;
+	size_t size;
+	TypeDataOps* pTypeOps{ nullptr };
+
+	// temp until we have type attributes
+	bool isComponent{ false };
+};
+
+
+
+
+// *************************************
+// TYPE DATA STRUCT
+// *************************************
+
+struct Member;
+struct TypeData_Struct : public TypeData
+{
+	/**
+	 * Turns an instance of this type into a JsonValue structure for serialization to Json
+	 **/
+	virtual JsonValue ToJson(Variant var);
+
+	/**
+	 * Converts a Json structure into an instance of this type, returned as a variant
+	 **/
+	virtual Variant FromJson(const JsonValue& val);
 
 	/**
 	 * Checks for existence of a member by name
@@ -82,24 +134,14 @@ struct TypeData
 	 * Iterator to last member
 	 **/
 	const MemberIterator end();
-
+	
 	/**
-	 * Constructors used for building typedatas, not for use outside of REFLECT macros
+	 * Constructor used for building typedatas, not for use outside of REFLECT macros
 	 **/
-	TypeData(void(*initFunc)(TypeData*)) : TypeData{ nullptr, 0 } { initFunc(this); }
-	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
-	TypeData(const char* _name, size_t _size, const std::initializer_list<eastl::map<size_t, Member*>::value_type>& init) : name(_name), size(_size), members( init ) {}
-	~TypeData();
+	TypeData_Struct(void(*initFunc)(TypeData_Struct*)) : TypeData( nullptr, 0 ) { initFunc(this); }
 
-	uint32_t id{ 0 };
-	const char* name;
-	size_t size;
-	TypeDataOps* pTypeOps{ nullptr };
 	eastl::map<size_t, Member*> members;
 	eastl::map<eastl::string, size_t> memberOffsets;
-
-	// temp until we have type attributes
-	bool isComponent{ false };
 };
 
 struct Member
@@ -136,6 +178,145 @@ struct Member
 	 **/
 	Member(const char* _name) : name(_name) {}
 };
+
+/**
+ * Used to define a type as reflectable struct during type declaration 
+ **/
+#define REFLECT()                               \
+	static TypeData_Struct typeData;                \
+	static void initReflection(TypeData_Struct* type);
+
+/**
+ * Used to specify the structure of a type, use in cpp files
+ **/
+#define REFLECT_BEGIN(Struct)\
+	TypeData_Struct Struct::typeData{Struct::initReflection};\
+	void Struct::initReflection(TypeData_Struct* selfTypeData) {\
+		using XX = Struct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->id = Type::Index<XX>();\
+		selfTypeData->name = #Struct;\
+		selfTypeData->size = sizeof(XX);\
+		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
+		selfTypeData->members = {
+
+/**
+ * Used to specify a member inside a REFLECT_BEGIN/END pair
+ **/
+#define REFLECT_MEMBER(member)\
+			{offsetof(XX, member), new Member_Internal<decltype(XX::member), XX>(#member, &XX::member)},
+
+/**
+ * Complete a type structure definition
+ **/
+#define REFLECT_END()\
+		};\
+		for (const eastl::pair<size_t, Member*>& mem : selfTypeData->members) { selfTypeData->memberOffsets[mem.second->name] = mem.first; }\
+	}
+
+
+/**
+ *  Special version of the begin macro for types that are template specializations, such as Vec<float>
+ **/
+#define REFLECT_TEMPLATED_BEGIN(Struct)\
+	TypeData_Struct Struct::typeData{Struct::initReflection};\
+	template<>\
+	void Struct::initReflection(TypeData_Struct* selfTypeData) {\
+		using XX = Struct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->id = Type::Index<XX>();\
+		selfTypeData->name = #Struct;\
+		selfTypeData->size = sizeof(XX);\
+		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
+		selfTypeData->members = {
+
+/**
+ * Special version of reflection function used for components. Just stores a member that tells you this type is a component
+ * Intend to replace with proper type attributes at some point
+ **/
+#define REFLECT_COMPONENT_BEGIN(Struct)\
+	TypeData_Struct Struct::typeData{Struct::initReflection};\
+	void Struct::initReflection(TypeData_Struct* selfTypeData) {\
+		using XX = Struct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+		selfTypeData->id = Type::Index<XX>();\
+		selfTypeData->isComponent = true;\
+		selfTypeData->name = #Struct;\
+		selfTypeData->size = sizeof(XX);\
+		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
+		selfTypeData->members = {
+
+
+
+
+
+// *************************************
+// TYPE DATA ENUM
+// *************************************
+
+struct Enumerator
+{
+	eastl::string identifier;
+	int value;
+};
+struct TypeData_Enum : public TypeData
+{
+	/**
+	 * Turns an instance of this type into a JsonValue structure for serialization to Json
+	 **/
+	virtual JsonValue ToJson(Variant var);
+
+	/**
+	 * Converts a Json structure into an instance of this type, returned as a variant
+	 **/
+	virtual Variant FromJson(const JsonValue& val);
+
+	eastl::vector<Enumerator> categories;
+	
+	/**
+	 * Constructor used for building typedatas, not for use outside of REFLECT macros
+	 **/
+	TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, std::initializer_list<Enumerator> cats);
+};
+
+/**
+ * Used to define a type as reflectable struct during type declaration 
+ **/
+#define REFLECT_ENUM(EnumType)\
+	template<> \
+	TypeData& getPrimitiveTypeData<EnumType>();\
+
+/**
+ * Used to specify the structure of a type, use in cpp files
+ **/
+#define REFLECT_ENUM_BEGIN(EnumType)				\
+	template <>										\
+	TypeData& getPrimitiveTypeData<EnumType>() {	\
+	using XX = EnumType;							\
+	static TypeData_Enum selfTypeData(				\
+		Type::Index<XX>(),							\
+		#EnumType,									\
+		sizeof(XX),									\
+		new TypeDataOps_Internal<XX>, {				\
+
+/**
+ * Used to specify an enumerator inside a REFLECT_ENUM_BEGIN/END pair
+ **/
+#define REFLECT_ENUMERATOR(enumerator)\
+			{ #enumerator, (int)XX::enumerator },
+
+/**
+ * Complete a type structure definition
+ **/
+#define REFLECT_ENUM_END()		\
+			});				\
+		return selfTypeData;\
+	}
+
+
+
+
+
 
 namespace TypeDatabase
 {
@@ -176,76 +357,6 @@ struct Type {
 	}
 };
 
-// *************************************
-// REFLECTION MACROS
-// **************************************
-
-/**
- * Used to define a type as reflectable during type declaration 
- **/
-#define REFLECT()                               \
-	static TypeData typeData;                \
-	static void initReflection(TypeData* type);
-
-/**
- * Used to specify the structure of a type, use in cpp files
- **/
-#define REFLECT_BEGIN(Struct)\
-	TypeData Struct::typeData{Struct::initReflection};\
-	void Struct::initReflection(TypeData* selfTypeData) {\
-		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
-		selfTypeData->id = Type::Index<XX>();\
-		selfTypeData->name = #Struct;\
-		selfTypeData->size = sizeof(XX);\
-		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
-		selfTypeData->members = {
-
-/**
- * Used to specify a member inside a REFLECT_BEGIN/END pair
- **/
-#define REFLECT_MEMBER(member)\
-			{offsetof(XX, member), new Member_Internal<decltype(XX::member), XX>(#member, &XX::member)},
-
-/**
- * Complete a type structure definition
- **/
-#define REFLECT_END()\
-		};\
-		for (const eastl::pair<size_t, Member*>& mem : selfTypeData->members) { selfTypeData->memberOffsets[mem.second->name] = mem.first; }\
-	}
-
-
-/**
- *  Special version of the begin macro for types that are template specializations, such as Vec<float>
- **/
-#define REFLECT_TEMPLATED_BEGIN(Struct)\
-	TypeData Struct::typeData{Struct::initReflection};\
-	template<>\
-	void Struct::initReflection(TypeData* selfTypeData) {\
-		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
-		selfTypeData->id = Type::Index<XX>();\
-		selfTypeData->name = #Struct;\
-		selfTypeData->size = sizeof(XX);\
-		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
-		selfTypeData->members = {
-
-/**
- * Special version of reflection function used for components. Just stores a member that tells you this type is a component
- * Intend to replace with proper type attributes at some point
- **/
-#define REFLECT_COMPONENT_BEGIN(Struct)\
-	TypeData Struct::typeData{Struct::initReflection};\
-	void Struct::initReflection(TypeData* selfTypeData) {\
-		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
-		selfTypeData->id = Type::Index<XX>();\
-		selfTypeData->isComponent = true;\
-		selfTypeData->name = #Struct;\
-		selfTypeData->size = sizeof(XX);\
-		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
-		selfTypeData->members = {
 
 
 // -----------------------------------
