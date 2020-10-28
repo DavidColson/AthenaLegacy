@@ -683,7 +683,7 @@ eastl::string SerializeJsonValue(JsonValue json, eastl::string indentation)
 
 		for (const JsonValue& val : *json.internalData.pArray)
 		{
-			result.append_sprintf("    %s%s,\n", indentation.c_str(), SerializeJsonValue(val, indentation + "    ").c_str());
+			result.append_sprintf("    %s%s, \n", indentation.c_str(), SerializeJsonValue(val, indentation + "    ").c_str());
 		}
 
 		if (json.Count() > 0)
@@ -698,7 +698,7 @@ eastl::string SerializeJsonValue(JsonValue json, eastl::string indentation)
 
 		for (const eastl::pair<eastl::string, JsonValue>& val : *json.internalData.pObject)
 		{
-			result.append_sprintf("    %s%s: %s,\n", indentation.c_str(), val.first.c_str(), SerializeJsonValue(val.second, indentation + "    ").c_str());
+			result.append_sprintf("    %s%s: %s, \n", indentation.c_str(), val.first.c_str(), SerializeJsonValue(val.second, indentation + "    ").c_str());
 		}
 
 		if (json.Count() > 0)
@@ -725,6 +725,23 @@ eastl::string SerializeJsonValue(JsonValue json, eastl::string indentation)
 	default:
 		result.append("CANT SERIALIZE YET");
 		break;
+	}
+
+	// Kinda hacky thing that makes small jsonValues serialize as collapsed, easier to read files imo
+	if (result.size() < 100)
+	{
+		size_t index = 0;
+		while (true) {
+			index = result.find("\n", index);
+
+			int count = 1;
+			while((index+count) != eastl::string::npos && result[index+count] == ' ')
+				count++;
+
+			if (index == eastl::string::npos) break;
+			result.replace(index, count, "");
+			index += 1;
+		}
 	}
 	return result;
 }
