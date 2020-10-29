@@ -337,7 +337,7 @@ void Scene::Set(EntityID id, Variant componentToSet)
     ASSERT(Has(id, componentToSet.GetType()), "The component you're trying to set data on is not assigned to this entity");
 
     void* pData = componentPools[componentId]->GetRaw(id.Index());
-    memcpy(pData, componentToSet.pData, componentToSet.GetType().size);
+    componentToSet.GetType().pTypeOps->Copy(pData, componentToSet.pData);
 }
 
 // ***********************************************************************

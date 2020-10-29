@@ -483,6 +483,7 @@ struct TypeDataOps
 {
 	virtual Variant New() = 0;
 	virtual Variant CopyToVariant(void* pObject) = 0;
+	virtual void Copy(void* destination, void* pObject) = 0;
 	virtual void PlacementNew(void* location) = 0;
 	virtual void Destruct(void* pObject) = 0;
 	virtual void Free(void* pObject) = 0;
@@ -499,6 +500,11 @@ struct TypeDataOps_Internal : public TypeDataOps
 	virtual Variant CopyToVariant(void* pObject) override
 	{
 		return Variant(*reinterpret_cast<T*>(pObject));
+	}
+
+	virtual void Copy(void* destination, void* pObject) override
+	{
+		*reinterpret_cast<T*>(destination) = *reinterpret_cast<T*>(pObject);
 	}
 
 	virtual void PlacementNew(void* location) override
