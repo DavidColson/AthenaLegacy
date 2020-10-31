@@ -187,6 +187,10 @@ void Engine::Run(Scene *pScene)
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
+			// If editor handles this event, don't give it to game input
+			if (!Editor::ProcessEvent(*pCurrentScene, &event))
+				Input::ProcessEvent(&event);
+
 			switch (event.type)
 			{
 			case SDL_WINDOWEVENT:
@@ -206,6 +210,9 @@ void Engine::Run(Scene *pScene)
 						}
 					}
 					break;
+				case SDL_WINDOWEVENT_CLOSE:
+					Engine::StartShutdown();
+					break;
 				default:
 					break;
 				}
@@ -214,10 +221,6 @@ void Engine::Run(Scene *pScene)
 				Engine::StartShutdown();
 				break;
 			}
-			
-			// If editor handles this event, don't give it to game input
-			if (!Editor::ProcessEvent(*pCurrentScene, &event))
-				Input::ProcessEvent(&event);
 		}
 
 		// Preparing editor code now allows game code to define it's own editors 
