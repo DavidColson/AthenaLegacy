@@ -7,7 +7,7 @@
 #include <Matrix.h>
 #include <SDL.h>
 #include <Input/Input.h>
-#include <Rendering/SceneDrawSystem.h>
+#include <Rendering/GameRenderer.h>
 #include <AssetDatabase.h>
 #include <SceneSerializer.h>
 #include <Json.h>

@@ -3,6 +3,7 @@
         CCamera: {
             fov: 70, 
             horizontalAngle: 0.97623974084854126, 
+            projection: "Perspective", 
             verticalAngle: -0.2244398295879364, 
         }, 
         CName: {name: "Camera", }, 

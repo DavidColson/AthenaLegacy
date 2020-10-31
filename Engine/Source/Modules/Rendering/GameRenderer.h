@@ -9,6 +9,23 @@
 struct Scene;
 struct TextureHandle;
 
+enum class ProjectionMode
+{
+    Orthographic,
+    Perspective
+};
+REFLECT_ENUM(ProjectionMode)
+
+struct CCamera
+{
+    float fov{ 60.0f };
+    float horizontalAngle{ 0.0f };
+    float verticalAngle{ 0.0f };
+    ProjectionMode projection{ ProjectionMode::Orthographic };
+
+    REFLECT()
+};
+
 struct FrameContext
 {
     RenderTargetHandle backBuffer;

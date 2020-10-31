@@ -160,7 +160,7 @@ const TypeData_Struct::MemberIterator TypeData_Struct::end()
 
 // ***********************************************************************
 
-TypeData_Enum::TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, std::initializer_list<Enumerator> cats) : TypeData(_id, _name, _size, _pTypeOps), categories(cats)
+TypeData_Enum::TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, TypeData::CastableTo _castableTo, std::initializer_list<Enumerator> cats) : TypeData(_id, _name, _size, _pTypeOps, _castableTo), categories(cats)
 {
 	TypeDatabase::Data::Get().typeNames.emplace(name, static_cast<TypeData*>(this));
 }

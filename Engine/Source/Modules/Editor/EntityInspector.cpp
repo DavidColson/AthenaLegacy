@@ -129,6 +129,26 @@ void EntityInspector::Update(Scene& scene)
 					}
 					member.Set(component, handle);
 				}
+				else if (member.GetType().castableTo == TypeData::Enum)
+				{
+					Variant _enum = member.Get(component);
+					TypeData_Enum& type = member.GetType().AsEnum();
+					int& value = _enum.GetValue<int>();
+
+					if (ImGui::BeginCombo(member.name, type.categories[value].identifier.c_str()))
+					{
+						for (int i = 0; i < type.categories.size(); i++)
+						{
+							const Enumerator& enumerator = type.categories[i];
+							if (ImGui::Selectable(enumerator.identifier.c_str()))
+							{
+								value = i;
+							}
+						}
+						ImGui::EndCombo();
+					}
+					member.Set(component, _enum);
+				}
 			}
 		}
 		scene.Set(selectedEntity, component);

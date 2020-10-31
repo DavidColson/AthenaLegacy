@@ -18,6 +18,18 @@
 #include <Imgui/examples/imgui_impl_sdl.h>
 #include <Imgui/examples/imgui_impl_dx11.h>
 
+REFLECT_ENUM_BEGIN(ProjectionMode)
+REFLECT_ENUMERATOR(Orthographic)
+REFLECT_ENUMERATOR(Perspective)
+REFLECT_ENUM_END()
+
+REFLECT_COMPONENT_BEGIN(CCamera)
+REFLECT_MEMBER(fov)
+REFLECT_MEMBER(horizontalAngle)
+REFLECT_MEMBER(verticalAngle)
+REFLECT_MEMBER(projection)
+REFLECT_END()
+
 namespace
 {
     TextureHandle resolvedGameFrame;
@@ -63,7 +75,7 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
     FrameContext context;
     context.backBuffer = gameRenderTarget;
     context.view = Matrixf::Identity();
-    context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 10.0f);
+    context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 200.0f);
 
 	for (EntityID cams : SceneView<CCamera, CTransform>(scene))
 	{
@@ -72,7 +84,11 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 		Matrixf translate = Matrixf::MakeTranslation(-pTrans->localPos);
 		Quatf rotation = Quatf::MakeFromEuler(pTrans->localRot);
 		context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
-		context.projection = Matrixf::Perspective(GameRenderer::GetWidth(), GameRenderer::GetHeight(), 0.1f, 100.0f, pCam->fov);
+
+        if (pCam->projection == ProjectionMode::Perspective)
+		    context.projection = Matrixf::Perspective(GameRenderer::GetWidth(), GameRenderer::GetHeight(), 0.1f, 100.0f, pCam->fov);
+        else if (pCam->projection == ProjectionMode::Orthographic)
+		    context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 200.0f);
 	}
 
     SceneDrawSystem::OnFrame(scene, context, deltaTime);

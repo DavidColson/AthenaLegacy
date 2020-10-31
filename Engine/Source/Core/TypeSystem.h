@@ -58,17 +58,26 @@ struct TypeData
 	 **/
 	TypeData_Enum& AsEnum();
 
+
+	enum CastableTo
+	{
+		Enum,
+		Struct,
+		None
+	};
+
 	/**
 	 * Constructors used for building typedatas, not for use outside of REFLECT macros
 	 **/
 	TypeData(const char* _name, size_t _size) : name(_name), size(_size) {}
-	TypeData(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps) : id(_id), name(_name), size(_size), pTypeOps(_pTypeOps) {}
+	TypeData(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, CastableTo _castableTo) : id(_id), name(_name), size(_size), pTypeOps(_pTypeOps), castableTo(_castableTo) {}
 	~TypeData();
 
 	uint32_t id{ 0 };
 	const char* name;
 	size_t size;
 	TypeDataOps* pTypeOps{ nullptr };
+	CastableTo castableTo{ CastableTo::None };
 
 	// temp until we have type attributes
 	bool isComponent{ false };
@@ -189,15 +198,16 @@ struct Member
 /**
  * Used to specify the structure of a type, use in cpp files
  **/
-#define REFLECT_BEGIN(Struct)\
-	TypeData_Struct Struct::typeData{Struct::initReflection};\
-	void Struct::initReflection(TypeData_Struct* selfTypeData) {\
-		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+#define REFLECT_BEGIN(ReflectedStruct)\
+	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
+	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
+		using XX = ReflectedStruct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
 		selfTypeData->id = Type::Index<XX>();\
-		selfTypeData->name = #Struct;\
+		selfTypeData->name = #ReflectedStruct;\
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
+		selfTypeData->castableTo = TypeData::Struct;\
 		selfTypeData->members = {
 
 /**
@@ -218,32 +228,34 @@ struct Member
 /**
  *  Special version of the begin macro for types that are template specializations, such as Vec<float>
  **/
-#define REFLECT_TEMPLATED_BEGIN(Struct)\
-	TypeData_Struct Struct::typeData{Struct::initReflection};\
+#define REFLECT_TEMPLATED_BEGIN(ReflectedStruct)\
+	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
 	template<>\
-	void Struct::initReflection(TypeData_Struct* selfTypeData) {\
-		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
+		using XX = ReflectedStruct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
 		selfTypeData->id = Type::Index<XX>();\
-		selfTypeData->name = #Struct;\
+		selfTypeData->name = #ReflectedStruct;\
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
+		selfTypeData->castableTo = TypeData::Struct;\
 		selfTypeData->members = {
 
 /**
  * Special version of reflection function used for components. Just stores a member that tells you this type is a component
  * Intend to replace with proper type attributes at some point
  **/
-#define REFLECT_COMPONENT_BEGIN(Struct)\
-	TypeData_Struct Struct::typeData{Struct::initReflection};\
-	void Struct::initReflection(TypeData_Struct* selfTypeData) {\
-		using XX = Struct;\
-		TypeDatabase::Data::Get().typeNames.emplace(#Struct, selfTypeData);\
+#define REFLECT_COMPONENT_BEGIN(ReflectedStruct)\
+	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
+	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
+		using XX = ReflectedStruct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
 		selfTypeData->id = Type::Index<XX>();\
 		selfTypeData->isComponent = true;\
-		selfTypeData->name = #Struct;\
+		selfTypeData->name = #ReflectedStruct;\
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
+		selfTypeData->castableTo = TypeData::Struct;\
 		selfTypeData->members = {
 
 
@@ -276,7 +288,7 @@ struct TypeData_Enum : public TypeData
 	/**
 	 * Constructor used for building typedatas, not for use outside of REFLECT macros
 	 **/
-	TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, std::initializer_list<Enumerator> cats);
+	TypeData_Enum(uint32_t _id, const char* _name, size_t _size, TypeDataOps* _pTypeOps, TypeData::CastableTo _castableTo, std::initializer_list<Enumerator> cats);
 };
 
 /**
@@ -297,7 +309,8 @@ struct TypeData_Enum : public TypeData
 		Type::Index<XX>(),							\
 		#EnumType,									\
 		sizeof(XX),									\
-		new TypeDataOps_Internal<XX>, {				\
+		new TypeDataOps_Internal<XX>,				\
+		TypeData::Enum, {							\
 
 /**
  * Used to specify an enumerator inside a REFLECT_ENUM_BEGIN/END pair
