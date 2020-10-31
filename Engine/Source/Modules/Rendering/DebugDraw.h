@@ -6,6 +6,8 @@
 #include "GraphicsDevice.h"
 #include "Scene.h"
 
+struct FrameContext;
+
 namespace DebugDraw
 {	
 	void Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color);
@@ -13,5 +15,5 @@ namespace DebugDraw
 
 	void Initialize();
 	void Destroy();
-	void OnFrame(Scene& scene, float deltaTime);
+	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
 }

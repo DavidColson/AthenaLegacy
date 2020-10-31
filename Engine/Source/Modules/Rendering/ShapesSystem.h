@@ -7,6 +7,7 @@
 #include "Scene.h"
 
 typedef eastl::fixed_vector<Vec2f, 50> VertsVector;
+struct FrameContext;
 
 namespace Shapes
 {	
@@ -14,5 +15,5 @@ namespace Shapes
 
 	void Initialize();
 	void Destroy();
-	void OnFrame(Scene& scene, float deltaTime);
+	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
 }

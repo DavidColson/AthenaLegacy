@@ -9,6 +9,8 @@
 
 #define MAX_PARTICLES_PER_EMITTER 1000
 
+struct FrameContext;
+
 struct Particle
 {
 	bool isAlive{ false };
@@ -83,5 +85,5 @@ namespace ParticlesSystem
 {
 	void OnAddEmitter(Scene& scene, EntityID entity);
 	void OnRemoveEmitter(Scene& scene, EntityID entity);
-	void OnFrame(Scene& scene, float deltaTime);
+	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
 }

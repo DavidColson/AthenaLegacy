@@ -130,7 +130,7 @@ void FontSystem::Destroy()
 
 // ***********************************************************************
 
-void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
+void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
 	PROFILE();
 	
@@ -205,8 +205,7 @@ void FontSystem::OnFrame(Scene& scene, float /* deltaTime */)
 		
 		GfxDevice::BindTexture(pFont->fontTexture, ShaderType::Pixel, 0);
 
-		Matrixf projection = Matrixf::Orthographic(0, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), 0.1f, 10.0f); // transform into screen space
-		FontSystemState::FontUniforms uniformData{ projection, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
+		FontSystemState::FontUniforms uniformData{ ctx.projection * ctx.view, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
 		GfxDevice::BindConstantBuffer(pState->constBuffer, &uniformData, ShaderType::Vertex, 0);
 		GfxDevice::BindConstantBuffer(pState->constBuffer, &uniformData, ShaderType::Pixel, 0);
 		

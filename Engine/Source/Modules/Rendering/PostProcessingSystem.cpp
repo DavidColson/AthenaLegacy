@@ -51,11 +51,11 @@ void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
 
 // ***********************************************************************
 
-void PostProcessingSystem::OnFrame(Scene& scene, float deltaTime)
+void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
     PROFILE();
     GFX_SCOPED_EVENT("Doing post processing");	
-    TextureHandle preProcessedFrame = GameRenderer::NewResolvedBackbuffer();
+    TextureHandle preProcessedFrame = GfxDevice::MakeResolvedTexture(ctx.backBuffer);
 
     for (EntityID ent : SceneView<CPostProcessing>(scene))
     {

@@ -60,13 +60,28 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
     GfxDevice::ClearRenderTarget(gameRenderTarget, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
     GfxDevice::SetViewport(0.0f, 0.0f, gameWindowSize.x, gameWindowSize.y);
 
-    SceneDrawSystem::OnFrame(scene, deltaTime);
-    Shapes::OnFrame(scene, deltaTime);
-    ParticlesSystem::OnFrame(scene, deltaTime);
-    FontSystem::OnFrame(scene, deltaTime);
-    SpriteDrawSystem::OnFrame(scene, deltaTime);
-    DebugDraw::OnFrame(scene, deltaTime);
-    PostProcessingSystem::OnFrame(scene, deltaTime);
+    FrameContext context;
+    context.backBuffer = gameRenderTarget;
+    context.view = Matrixf::Identity();
+    context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 10.0f);
+
+	for (EntityID cams : SceneView<CCamera, CTransform>(scene))
+	{
+		CCamera* pCam = scene.Get<CCamera>(cams);
+		CTransform* pTrans = scene.Get<CTransform>(cams);
+		Matrixf translate = Matrixf::MakeTranslation(-pTrans->localPos);
+		Quatf rotation = Quatf::MakeFromEuler(pTrans->localRot);
+		context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
+		context.projection = Matrixf::Perspective(GameRenderer::GetWidth(), GameRenderer::GetHeight(), 0.1f, 100.0f, pCam->fov);
+	}
+
+    SceneDrawSystem::OnFrame(scene, context, deltaTime);
+    Shapes::OnFrame(scene, context, deltaTime);
+    ParticlesSystem::OnFrame(scene, context, deltaTime);
+    FontSystem::OnFrame(scene, context, deltaTime);
+    SpriteDrawSystem::OnFrame(scene, context, deltaTime);
+    DebugDraw::OnFrame(scene, context, deltaTime);
+    PostProcessingSystem::OnFrame(scene, context, deltaTime);
 
     GfxDevice::UnbindRenderTarget(gameRenderTarget);
 
@@ -111,13 +126,6 @@ void GameRenderer::SetBackBufferActive()
 void GameRenderer::ClearBackBuffer(eastl::array<float, 4> color, bool clearDepth, bool clearStencil)
 {
     GfxDevice::ClearRenderTarget(gameRenderTarget, color, clearDepth, clearStencil);
-}
-
-// ***********************************************************************
-
-TextureHandle GameRenderer::NewResolvedBackbuffer()
-{
-    return GfxDevice::MakeResolvedTexture(gameRenderTarget);
 }
 
 // ***********************************************************************

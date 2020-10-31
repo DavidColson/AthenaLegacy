@@ -122,7 +122,7 @@ void DebugDraw::Destroy()
 
 // ***********************************************************************
 
-void DebugDraw::OnFrame(Scene& scene, float /* deltaTime */)
+void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing debug");
@@ -150,7 +150,7 @@ void DebugDraw::OnFrame(Scene& scene, float /* deltaTime */)
 	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
-	TransformData trans{ Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), 0.1f, 10.0f) };
+	TransformData trans{ ctx.projection * ctx.view };
 	GfxDevice::BindConstantBuffer(pState->transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders

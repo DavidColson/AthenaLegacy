@@ -5,6 +5,7 @@
 
 struct Scene;
 struct Mesh;
+struct FrameContext;
 
 struct CSprite
 {
@@ -16,6 +17,6 @@ struct CSprite
 namespace SpriteDrawSystem
 {	
     void Initialize();
-	void OnFrame(Scene& scene, float deltaTime);
+	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
 	void Destroy();
 }

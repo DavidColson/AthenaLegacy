@@ -3,9 +3,18 @@
 #include "EASTL/array.h"
 
 #include "Vec2.h"
+#include "Matrix.h"
+#include "GraphicsDevice.h"
 
 struct Scene;
 struct TextureHandle;
+
+struct FrameContext
+{
+    RenderTargetHandle backBuffer;
+    Matrixf projection;
+    Matrixf view;
+};
 
 namespace GameRenderer
 {
@@ -14,8 +23,6 @@ namespace GameRenderer
     TextureHandle DrawFrame(Scene& scene, float deltaTime);
     void Destroy();
 
-    // Game screen back buffer manipulation. Useful for post processing the game screen but not the whole screen
-    TextureHandle NewResolvedBackbuffer();
     void SetBackBufferActive();
     void ClearBackBuffer(eastl::array<float, 4> color, bool clearDepth, bool clearStencil);
     TextureHandle GetLastRenderedFrame();

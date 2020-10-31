@@ -86,7 +86,7 @@ void SpriteDrawSystem::Initialize()
 
 // ***********************************************************************
 
-void SpriteDrawSystem::OnFrame(Scene& scene, float deltaTime)
+void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
     PROFILE();
 	
@@ -98,9 +98,6 @@ void SpriteDrawSystem::OnFrame(Scene& scene, float deltaTime)
 	GfxDevice::SetBlending(blendState);
 	GfxDevice::BindSampler(spriteSampler, ShaderType::Pixel, 0);
     
-    Matrixf projection = Matrixf::Orthographic(0, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), 0.1f, 10.0f); // transform into screen space
-    Matrixf view = Matrixf::Identity();
-
     for (EntityID ent : SceneView<CSprite, CTransform>(scene))
     {
         CSprite* pSprite = scene.Get<CSprite>(ent);
@@ -109,7 +106,7 @@ void SpriteDrawSystem::OnFrame(Scene& scene, float deltaTime)
             continue;
 
         CTransform* pTrans = scene.Get<CTransform>(ent);
-        Matrixf wvp = projection * view * pTrans->globalTransform;
+        Matrixf wvp = ctx.projection * ctx.view * pTrans->globalTransform;
 		SpriteUniforms uniformData{ wvp };
 		GfxDevice::BindConstantBuffer(transformBufferHandle, &uniformData, ShaderType::Vertex, 0);
 

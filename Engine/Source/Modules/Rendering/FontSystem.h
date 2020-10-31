@@ -12,6 +12,7 @@
 #include FT_FREETYPE_H
 
 struct Scene;
+struct FrameContext;
 
 // **********
 // Components
@@ -38,7 +39,7 @@ namespace FontSystem
 {
 	void Initialize();
 	void Destroy();
-	void OnFrame(Scene& scene, float deltaTime);
+	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
 
 	FT_Library GetFreeType();
 }

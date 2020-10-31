@@ -5,6 +5,7 @@
 
 struct Scene;
 struct Mesh;
+struct FrameContext;
 
 struct CRenderable
 {
@@ -26,5 +27,5 @@ struct CCamera
 namespace SceneDrawSystem
 {	
     void OnSceneCreate(Scene& scene);
-	void OnFrame(Scene& scene, float deltaTime);
+	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
 }

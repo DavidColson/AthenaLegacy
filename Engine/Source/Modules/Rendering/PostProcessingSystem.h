@@ -4,6 +4,8 @@
 #include "Scene.h"
 #include "AssetDatabase.h"
 
+struct FrameContext;
+
 struct CPostProcessing
 {
 	// Shader constants
@@ -38,6 +40,6 @@ namespace PostProcessingSystem
 	void OnAddPostProcessing(Scene& scene, EntityID entity);
 	void OnRemovePostProcessing(Scene& scene, EntityID entity);
 
-	void OnFrame(Scene& scene, float deltaTime);
+	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
 	void OnWindowResize(Scene& scene, float newWidth, float newHeight);
 }

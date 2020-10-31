@@ -96,7 +96,7 @@ void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
 
 // ***********************************************************************
 
-void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
+void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
 	PROFILE();
 
@@ -172,9 +172,7 @@ void ParticlesSystem::OnFrame(Scene& scene, float deltaTime)
 		buffers[1] = pEmitter->instanceBuffer;
 		GfxDevice::BindVertexBuffers(2, buffers);
 
-		Matrixf view = Matrixf::MakeTranslation(Vec3f(0.0f, 0.0f, 0.0f));
-		Matrixf projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 10.0f);
-		Matrixf vp = projection * view;
+		Matrixf vp = ctx.projection * ctx.view;
 		ParticlesTransform trans{ vp };
 		GfxDevice::BindConstantBuffer(pEmitter->transBuffer, &trans, ShaderType::Vertex, 0);
 
