@@ -4,6 +4,7 @@
 #include <Vec2.h>
 
 struct Scene;
+union SDL_Event;
 
 struct InputState
 {
@@ -11,6 +12,10 @@ struct InputState
 	eastl::bitset<NKEYS> keyDowns;
 	eastl::bitset<NKEYS> keyUps;
 	eastl::bitset<NKEYS> keyStates;
+
+	eastl::bitset<5> mouseDowns;
+	eastl::bitset<5> mouseUps;
+	eastl::bitset<5> mouseStates;
 
 	float mouseXPos{ 0.0f };
 	float mouseYPos{ 0.0f };
@@ -26,8 +31,14 @@ namespace Input
 	bool GetKeyUp(int keyCode);
 	bool GetKeyHeld(int keyCode);
 
+	bool GetMouseDown(int buttonCode);
+	bool GetMouseUp(int buttonCode);
+	bool GetMouseHeld(int buttonCode);
+
 	Vec2f GetMouseDelta();
 	bool GetMouseInRelativeMode();
 
-	void OnFrame(Scene& scene, float deltaTime);
+	void ClearState();
+	void ClearHeldState();
+	void ProcessEvent(SDL_Event* event);
 };

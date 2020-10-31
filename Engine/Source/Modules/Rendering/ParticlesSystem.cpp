@@ -7,6 +7,7 @@
 #include "Mesh.h"
 #include "Vec4.h"
 #include "GameRenderer.h"
+#include "Shader.h"
 
 REFLECT_COMPONENT_BEGIN(CParticleEmitter)
 REFLECT_MEMBER(looping)
@@ -56,18 +57,7 @@ void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 {
 	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
-
-	// @TODO: debug names should be derivative of the entity name
-	eastl::vector<VertexInputElement> particleLayout;
-	particleLayout.push_back({"POSITION", AttributeType::Float3, 0 });
-	particleLayout.push_back({"TEXCOORD", AttributeType::Float2, 0 });
-	particleLayout.push_back({"COLOR", AttributeType::Float4, 0 });
-	particleLayout.push_back({"INSTANCE_TRANSFORM", AttributeType::InstanceTransform, 1 });
-
-	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(L"Shaders/Particles.hlsl", "VSMain", particleLayout, "Particles");
-	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(L"Shaders/Particles.hlsl", "PSMain", "Particles");
-	emitter.shaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
-
+	
 	eastl::vector<Vert_PosTexCol> quadVertices = {
         Vert_PosTexCol{ Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) },
         Vert_PosTexCol{ Vec3f(1.f, -1.f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f)  },
@@ -88,7 +78,6 @@ void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
 {
 	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
 
-	GfxDevice::FreeProgram(emitter.shaderProgram);
 	GfxDevice::FreeVertexBuffer(emitter.vertBuffer);
 	GfxDevice::FreeConstBuffer(emitter.transBuffer);
 	GfxDevice::FreeVertexBuffer(emitter.instanceBuffer);
@@ -162,7 +151,9 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 			pEmitter->instanceBuffer = GfxDevice::CreateDynamicVertexBuffer(particleTransforms.size(), sizeof(Matrixf), "Particles Instance Buffer");
 		}
 		GfxDevice::UpdateDynamicVertexBuffer(pEmitter->instanceBuffer, particleTransforms.data(), particleTransforms.size() * sizeof(Matrixf));
-		GfxDevice::BindProgram(pEmitter->shaderProgram);
+		
+		Shader* pShader = AssetDB::GetAsset<Shader>(pEmitter->shader);
+        GfxDevice::BindProgram(pShader->program);
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Set vertex buffer as active

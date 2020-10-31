@@ -75,7 +75,6 @@ void Engine::NewSceneCreated(Scene& scene)
 {
 	GameRenderer::OnSceneCreate(scene);
 
-	scene.RegisterSystem(SystemPhase::Update, Input::OnFrame);
 	scene.RegisterSystem(SystemPhase::Update, TransformHeirarchy);
 
 	// @Improvement consider allowing engine config files to change the update order of systems
@@ -181,12 +180,13 @@ void Engine::Run(Scene *pScene)
 
 		if (config.hotReloadingAssetsEnabled)
 			AssetDB::UpdateHotReloading();
+		
+		Input::ClearState();
 
 		// Deal with events
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
-			Editor::ProcessEvent(*pCurrentScene, &event);
 			switch (event.type)
 			{
 			case SDL_WINDOWEVENT:
@@ -214,6 +214,10 @@ void Engine::Run(Scene *pScene)
 				Engine::StartShutdown();
 				break;
 			}
+			
+			// If editor handles this event, don't give it to game input
+			if (!Editor::ProcessEvent(*pCurrentScene, &event))
+				Input::ProcessEvent(&event);
 		}
 
 		// Preparing editor code now allows game code to define it's own editors 
@@ -233,6 +237,8 @@ void Engine::Run(Scene *pScene)
 			AppWindow::RenderToWindow(editorFrame);
 		else
 			AppWindow::RenderToWindow(gameFrame);
+
+		GameRenderer::OnFrameEnd(*pCurrentScene, (float)frameTime);
 
 		// Deal with scene loading
 		if (pPendingSceneLoad)

@@ -5,6 +5,8 @@
 #include "GraphicsDevice.h"
 #include "Log.h"
 #include "Scene.h"
+#include "AssetDatabase.h"
+
 #include <EASTL/unique_ptr.h>
 
 #define MAX_PARTICLES_PER_EMITTER 1000
@@ -70,7 +72,8 @@ struct CParticleEmitter
 	float initialScaleMin{ 2.0f };
 	float initialScaleMax{ 4.5f };
 
-	ProgramHandle shaderProgram;
+	AssetHandle shader{ AssetHandle("Shaders/Particles.hlsl") };
+	
   	VertexBufferHandle vertBuffer;
   	ConstBufferHandle transBuffer;
   	VertexBufferHandle instanceBuffer;

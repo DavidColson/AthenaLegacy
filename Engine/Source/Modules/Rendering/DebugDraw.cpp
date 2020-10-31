@@ -169,7 +169,12 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		vertOffset += draw.vertexCount;
 		indexOffset += draw.indexCount;
 	}
+}
 
+// ***********************************************************************
+
+void DebugDraw::OnFrameEnd(Scene& scene, float deltaTime)
+{
 	pState->drawQueue.clear();
 	pState->vertexList.clear();
 	pState->indexList.clear();

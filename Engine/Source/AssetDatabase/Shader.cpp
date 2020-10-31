@@ -46,9 +46,20 @@ void Shader::Load(Path path, AssetHandle handleForThis)
         eastl::vector<VertexInputElement> layout;
         layout.push_back({"POSITION", AttributeType::Float3});
         layout.push_back({"TEXCOORD", AttributeType::Float2});
-        vertShader = GfxDevice::CreateVertexShader(contents, "VSMain", layout, "Post processing");
-        pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", "Post processing");
+        vertShader = GfxDevice::CreateVertexShader(contents, "VSMain", layout, path.AsRawString());
+        pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", path.AsRawString());
         program = GfxDevice::CreateProgram(vertShader, pixelShader);
+    }
+    else if (typeString == "particles2D")
+    {
+        eastl::vector<VertexInputElement> layout;
+        layout.push_back({"POSITION", AttributeType::Float3, 0 });
+        layout.push_back({"TEXCOORD", AttributeType::Float2, 0 });
+        layout.push_back({"COLOR", AttributeType::Float4, 0 });
+        layout.push_back({"INSTANCE_TRANSFORM", AttributeType::InstanceTransform, 1 });
+        vertShader = GfxDevice::CreateVertexShader(contents, "VSMain", layout, path.AsRawString());
+	    pixelShader = GfxDevice::CreatePixelShader(contents, "PSMain", path.AsRawString());
+	    program = GfxDevice::CreateProgram(vertShader, pixelShader);
     }
 }
 

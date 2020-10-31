@@ -12,13 +12,14 @@ struct EditorTool
 	eastl::string menuName{ "unnamed tool" };
 	virtual void Update(Scene& scene, float deltaTime) = 0;
 	virtual void OnEditorResize(Vec2f newSize) {}
+	virtual bool OnEvent(SDL_Event* event) { return false; }
 };
 
 namespace Editor
 {
 	void Initialize(bool enabled);
 	void PreUpdate();
-	void ProcessEvent(Scene& scene, SDL_Event* event);
+	bool ProcessEvent(Scene& scene, SDL_Event* event);
 	TextureHandle DrawFrame(Scene& scene, float deltaTime);
 	void Destroy();
 	

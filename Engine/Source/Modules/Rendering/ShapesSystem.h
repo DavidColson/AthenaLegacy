@@ -16,4 +16,5 @@ namespace Shapes
 	void Initialize();
 	void Destroy();
 	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
+	void OnFrameEnd(Scene& scene, float deltaTime);
 }

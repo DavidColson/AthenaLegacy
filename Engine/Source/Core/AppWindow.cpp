@@ -42,15 +42,15 @@ SDL_Window* AppWindow::GetSDLWindow()
 
 // ***********************************************************************
 
-VertexBufferHandle BuildFrameVertexBuffer(float windowAspectRatio, float gameAspectRatio)
+VertexBufferHandle BuildFrameVertexBuffer(float windowAspectRatio, float gameAspectRatio, bool forceFullFrame = false)
 {
     float x = 1.0f, y = x;
 
-    if (!Engine::IsInEditor())
+    if (!forceFullFrame)
     {
         switch (Engine::GetConfig().resolutionStretchMode)
         {
-        case 2:
+        case ResolutionStretchMode::KeepAspect:
         {
             if (windowAspectRatio < gameAspectRatio)
                 y = (1 / gameAspectRatio) * windowAspectRatio;
@@ -58,13 +58,13 @@ VertexBufferHandle BuildFrameVertexBuffer(float windowAspectRatio, float gameAsp
                 x = gameAspectRatio * (1 / windowAspectRatio);
             break;
         }
-        case 3:
+        case ResolutionStretchMode::KeepWidth:
         {
             if (windowAspectRatio > gameAspectRatio)
                 x = gameAspectRatio * (1 / windowAspectRatio);
             break;
         }
-        case 4:
+        case ResolutionStretchMode::KeepHeight:
         {
             if (windowAspectRatio < gameAspectRatio)
                 y = (1 / gameAspectRatio) * windowAspectRatio;
@@ -105,7 +105,7 @@ void AppWindow::Create(float initialWidth, float initialHeight, const eastl::str
 	GfxDevice::Initialize(pWindow, initialWidth, initialHeight);
 
     // Setup rendering for full screen quad
-    vertBuffer =  BuildFrameVertexBuffer(initialWidth / initialHeight, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y);
+    vertBuffer =  BuildFrameVertexBuffer(initialWidth / initialHeight, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y, Engine::GetConfig().bootInEditor);
 
     if (Engine::GetConfig().gameFramePointFilter)
         textureSampler = GfxDevice::CreateSampler(Filter::Point, WrapMode::Wrap, "AppWindow sampler");
@@ -169,7 +169,7 @@ void AppWindow::Resize(float width, float height)
 {
     appSize = Vec2f(width, height);
     GfxDevice::ResizeBackBuffer(width, height);
-    vertBuffer = BuildFrameVertexBuffer(width / height, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y);
+    vertBuffer = BuildFrameVertexBuffer(width / height, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y, Engine::IsInEditor());
 }
 
 // ***********************************************************************

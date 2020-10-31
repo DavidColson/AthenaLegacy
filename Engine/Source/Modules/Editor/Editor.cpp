@@ -97,9 +97,8 @@ void Editor::Initialize(bool enabled)
 
 // ***********************************************************************
 
-void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
+bool Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 {
-	ImGui_ImplSDL2_ProcessEvent(event);
 	switch (event->type)
 	{
 	case SDL_KEYDOWN:
@@ -118,6 +117,26 @@ void Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 	default:
 		break;
 	}
+
+	if (!IsActive())
+		return false;
+
+	bool handled = false;
+	for (eastl::unique_ptr<EditorTool>& tool : tools)
+	{
+		if (tool->open)
+		{
+			if (tool->OnEvent(event))
+				handled = true;
+		}
+	}
+	if (handled)
+		return true;
+
+	if (ImGui_ImplSDL2_ProcessEvent(event))
+		return true;
+
+	return false;
 }
 
 // ***********************************************************************

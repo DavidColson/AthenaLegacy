@@ -42,7 +42,7 @@ void RecurseDrawEntityTree(Scene& scene, EntityID parent)
 
 void SceneHeirarchy::Update(Scene& scene, float deltaTime)
 {
-	ImGui::Begin("Entity Editor", &open);
+	ImGui::Begin("Scene Heirarchy", &open);
 
 	if (ImGui::Button("Add Entity", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
 	{

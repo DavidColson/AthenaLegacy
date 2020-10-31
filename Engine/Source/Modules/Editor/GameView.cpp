@@ -3,14 +3,20 @@
 #include "Rendering/GameRenderer.h"
 #include "GraphicsDevice.h"
 #include "Engine.h"
+#include "Input/Input.h"
 
 #include <ImGui/imgui.h>
-
+#include <SDL.h>
 
 namespace
 {
 	Vec2f windowSizeCache{ Vec2f(100.0f, 100.0f) };
 	Vec2f gameSizeCache{ Vec2f(100.0f, 100.0f) };
+
+	bool isHovered{ false };
+
+	bool isCapturingMouse{ false };
+    Vec2i relativeMouseStartLocation{ Vec2i(0, 0) };
 }
 
 // ***********************************************************************
@@ -22,10 +28,41 @@ GameView::GameView()
 
 // ***********************************************************************
 
+bool GameView::OnEvent(SDL_Event* event)
+{
+	if (isHovered)
+	{
+		if (event->type == SDL_KEYDOWN)
+		{
+		if (event->key.keysym.scancode == SDL_SCANCODE_TAB && event->key.keysym.mod & KMOD_LSHIFT)
+			{
+				isCapturingMouse = !isCapturingMouse;
+				if (isCapturingMouse)
+				{
+					SDL_GetGlobalMouseState(&relativeMouseStartLocation.x, &relativeMouseStartLocation.y);
+                	SDL_SetRelativeMouseMode(SDL_TRUE);
+				}
+				else
+				{
+					SDL_SetRelativeMouseMode(SDL_FALSE);
+                	SDL_WarpMouseGlobal(relativeMouseStartLocation.x, relativeMouseStartLocation.y);
+				}
+			}
+		}
+		Input::ProcessEvent(event);
+		return true;
+	}
+	return false;
+}
+
+// ***********************************************************************
+
 void GameView::Update(Scene& scene, float deltaTime)
 {
 	if (!ImGui::Begin("Game", &open))
 	{
+        isHovered = false;
+		Input::ClearHeldState();
 		ImGui::End();
 		return;
 	}
@@ -54,7 +91,7 @@ void GameView::Update(Scene& scene, float deltaTime)
 	float x = 1.0f, y = x;
     switch (Engine::GetConfig().resolutionStretchMode)
     {
-    case 2:
+    case ResolutionStretchMode::KeepAspect:
     {
         if (parentAspectRatio < gameAspectRatio)
 			y = (1 / gameAspectRatio) * parentAspectRatio;
@@ -62,13 +99,13 @@ void GameView::Update(Scene& scene, float deltaTime)
 			x = gameAspectRatio * (1 / parentAspectRatio);
         break;
     }
-    case 3:
+    case ResolutionStretchMode::KeepWidth:
     {
          if (parentAspectRatio > gameAspectRatio)
             x = gameAspectRatio * (1 / parentAspectRatio);
         break;
     }
-    case 4:
+    case ResolutionStretchMode::KeepHeight:
     {
         if (parentAspectRatio < gameAspectRatio)
             y = (1 / gameAspectRatio) * parentAspectRatio;
@@ -85,9 +122,11 @@ void GameView::Update(Scene& scene, float deltaTime)
 	ImGui::Image(GfxDevice::GetImGuiTextureID(GameRenderer::GetLastRenderedFrame()), imageDrawSize, uv_min, uv_max);
 
 	if (ImGui::IsItemHovered())
+		isHovered = true;
+	else
 	{
-		ImGui::CaptureMouseFromApp(false);
-		ImGui::CaptureKeyboardFromApp(false);
+		Input::ClearHeldState();
+		isHovered = false;
 	}
 
 	ImGui::End(); // Ending Game

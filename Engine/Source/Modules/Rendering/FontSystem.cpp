@@ -102,6 +102,8 @@ void FontSystem::Initialize()
 	blender.enabled = true;
 	blender.source = Blend::SrcAlpha;
 	blender.destination = Blend::InverseSrcAlpha;
+	blender.sourceAlpha = Blend::InverseSrcAlpha;
+	blender.destinationAlpha = Blend::One;
 	pState->blendState = GfxDevice::CreateBlendState(blender);
 
 	// Create vertex buffer

@@ -38,6 +38,7 @@ namespace GameRenderer
     void Initialize(float width, float height);
     void OnSceneCreate(Scene& scene);
     TextureHandle DrawFrame(Scene& scene, float deltaTime);
+    void OnFrameEnd(Scene& scene, float deltaTime);
     void Destroy();
 
     void SetBackBufferActive();

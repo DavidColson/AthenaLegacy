@@ -1,4 +1,4 @@
-#pragma type particles3D
+#pragma type particles2D
 
 cbuffer cbPerObject
 {

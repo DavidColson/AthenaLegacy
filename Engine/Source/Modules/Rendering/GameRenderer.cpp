@@ -110,6 +110,14 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 
 // ***********************************************************************
 
+void GameRenderer::OnFrameEnd(Scene& scene, float deltaTime)
+{
+    Shapes::OnFrameEnd(scene, deltaTime);
+    DebugDraw::OnFrameEnd(scene, deltaTime);
+}
+
+// ***********************************************************************
+
 void GameRenderer::Destroy()
 {
     DebugDraw::Destroy();
@@ -162,20 +170,20 @@ Vec2f GameRenderer::GetIdealFrameSize(float parentWidth, float parentHeight)
     Vec2f idealFrameSize;
     switch (config.resolutionStretchMode)
 	{
-	case 0: 
+	case ResolutionStretchMode::NoStretch: 
 		idealFrameSize = Vec2f(parentWidth, parentHeight);
 		break;
-	case 1:
-	case 2:
+	case ResolutionStretchMode::IgnoreAspect:
+	case ResolutionStretchMode::KeepAspect:
 		idealFrameSize = Vec2f(config.baseGameResolution.x, config.baseGameResolution.y);
 		break;
-	case 3:
+	case ResolutionStretchMode::KeepWidth:
 		idealFrameSize = Vec2f(config.baseGameResolution.x, config.baseGameResolution.y / clamp(windowAspectRatio / baseGameAspectRatio, 0.0f, 1.0f));
 		break;
-	case 4:
+	case ResolutionStretchMode::KeepHeight:
 		idealFrameSize = Vec2f(config.baseGameResolution.x / clamp(baseGameAspectRatio / windowAspectRatio, 0.0f, 1.0f), config.baseGameResolution.y);
         break;
-    case 5:
+    case ResolutionStretchMode::Expand:
 		idealFrameSize = Vec2f(config.baseGameResolution.x / clamp(baseGameAspectRatio / windowAspectRatio, 0.0f, 1.0f), config.baseGameResolution.y / clamp(windowAspectRatio / baseGameAspectRatio, 0.0f, 1.0f));
         break;
 	default:

@@ -43,6 +43,27 @@ bool Input::GetKeyHeld(int keyCode)
 
 // ***********************************************************************
 
+bool Input::GetMouseDown(int buttonCode)
+{
+	return pInput->mouseDowns[buttonCode-1];
+}
+
+// ***********************************************************************
+
+bool Input::GetMouseUp(int buttonCode)
+{
+	return pInput->mouseUps[buttonCode-1];
+}
+
+// ***********************************************************************
+
+bool Input::GetMouseHeld(int buttonCode)
+{
+	return pInput->mouseStates[buttonCode];
+}
+
+// ***********************************************************************
+
 Vec2f Input::GetMouseDelta()
 {
 	return Vec2f(pInput->mouseXDelta, pInput->mouseYDelta);
@@ -58,50 +79,55 @@ bool Input::GetMouseInRelativeMode()
 		return false;
 }
 
+void Input::ClearState()
+{	
+	pInput->keyDowns.reset();
+	pInput->keyUps.reset();
+	pInput->mouseDowns.reset();
+	pInput->mouseUps.reset();
+	pInput->mouseXDelta = 0.0f;
+	pInput->mouseYDelta = 0.0f;
+}
+
 // ***********************************************************************
 
-void Input::OnFrame(Scene& scene, float deltaTime)
+void Input::ClearHeldState()
 {
-	eastl::bitset<NKEYS> prevKeyStates = pInput->keyStates;
+	pInput->keyStates.reset();
+	pInput->mouseStates.reset();
+}
 
-	if (!ImGui::GetIO().WantCaptureKeyboard)
+// ***********************************************************************
+
+void Input::ProcessEvent(SDL_Event* event)
+{	
+	switch (event->type)
 	{
-		// Copy the SDL keystate into our own bitset
-		const Uint8 *pSdlKeyState = SDL_GetKeyboardState(nullptr);
-		for (int i = 0; i < SDL_NUM_SCANCODES; i++)
-		{
-			pInput->keyStates[i] = bool(pSdlKeyState[i]);
-		}
-
-		// exclusive or, if state changed, then keychanges bit will be 1
-		eastl::bitset<NKEYS> keyChanges = pInput->keyStates ^ prevKeyStates;
-
-		// and, if key is down and it changed this frame, key went down
-		pInput->keyDowns = keyChanges & pInput->keyStates;
-
-		// and not, if key is not down and it changed this frame, key went up
-		pInput->keyUps = keyChanges & ~pInput->keyStates;
-
-		// Purely an engine editor feature for locking and unlocking the mouse. Should be removed from release builds
-		if (GetKeyHeld(SDL_SCANCODE_LSHIFT) && GetKeyDown(SDL_SCANCODE_TAB))
-		{
-			if (GetMouseInRelativeMode())
-				SDL_SetRelativeMouseMode(SDL_FALSE);
-			else
-				SDL_SetRelativeMouseMode(SDL_TRUE);
-		}
-	}
-
-	if (!ImGui::GetIO().WantCaptureMouse)
-	{
-		int x = 0;
-		int y = 0;
-		uint32_t mouseButtonState = SDL_GetMouseState(&x, &y);
-		pInput->mouseXPos = (float)x;
-		pInput->mouseYPos = (float)y;
-		
-		SDL_GetRelativeMouseState(&x, &y);
-		pInput->mouseXDelta = (float)x;
-		pInput->mouseYDelta = (float)y;
+	case SDL_KEYDOWN:
+		pInput->keyDowns[event->key.keysym.scancode] = true;
+		pInput->keyStates[event->key.keysym.scancode] = true;
+		break;
+	case SDL_KEYUP:
+		pInput->keyUps[event->key.keysym.scancode] = true;
+		pInput->keyStates[event->key.keysym.scancode] = false;
+		break;
+	case SDL_MOUSEMOTION:
+		pInput->mouseXPos = (float)event->motion.x;
+		pInput->mouseYPos = (float)event->motion.y;
+		pInput->mouseXDelta = (float)event->motion.xrel;
+		pInput->mouseYDelta = (float)event->motion.yrel;
+		break;
+	case SDL_MOUSEBUTTONDOWN:
+		pInput->mouseDowns[event->button.button] = true;
+		pInput->mouseStates[event->button.button] = true;
+		break;
+	case SDL_MOUSEBUTTONUP:
+		pInput->mouseUps[event->button.button] = true;
+		pInput->mouseStates[event->button.button] = false;
+		break;
+	case SDL_MOUSEWHEEL:
+		break;
+	default:
+		break;
 	}
 }
