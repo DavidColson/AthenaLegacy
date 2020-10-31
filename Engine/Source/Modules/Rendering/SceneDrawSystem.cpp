@@ -36,7 +36,7 @@ void SceneDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     GFX_SCOPED_EVENT("Scene Draw");
     PROFILE();
 
-	for (EntityID ent : SceneView<CRenderable, CTransform>(scene))
+	for (EntityID ent : SceneIterator<CRenderable, CTransform>(scene))
     {
 		CRenderable* pRenderable = scene.Get<CRenderable>(ent);
 		CTransform* pTrans = scene.Get<CTransform>(ent);

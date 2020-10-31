@@ -218,7 +218,7 @@ void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 
-	for (EntityID shape : SceneView<CPolyShape, CTransform, CVisibility>(scene))
+	for (EntityID shape : SceneIterator<CPolyShape, CTransform, CVisibility>(scene))
 	{
 		if (scene.Get<CVisibility>(shape)->visible == false)
 			continue;
@@ -242,7 +242,7 @@ void AsteroidSpawning(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	for (EntityID spawnerEnt : SceneView<CAsteroidSpawner>(scene))
+	for (EntityID spawnerEnt : SceneIterator<CAsteroidSpawner>(scene))
 	{
 		CAsteroidSpawner& spawner = *(scene.Get<CAsteroidSpawner>(spawnerEnt));
 
@@ -309,14 +309,14 @@ void CollisionSystemUpdate(Scene& scene, float /* deltaTime */)
 	PROFILE();
 
 	bool bContinueOuter = false;
-	for (EntityID asteroid : SceneView<CAsteroid>(scene))
+	for (EntityID asteroid : SceneIterator<CAsteroid>(scene))
 	{
 		float asteroidRad = scene.Get<CCollidable>(asteroid)->radius;
 
 		// CTransform* pTrans = scene.Get<CTransform>(asteroid);
 		// DebugDraw::Draw2DCircle(scene, Vec2f(pTrans->localPos.x, pTrans->localPos.y), asteroidRad + 10.0f, Vec3f(1.0f, 0.0f, 0.0f));
 
-		for (EntityID bullet : SceneView<CBullet>(scene))
+		for (EntityID bullet : SceneIterator<CBullet>(scene))
 		{
 			float bulletRad = scene.Get<CCollidable>(bullet)->radius;
 
@@ -380,7 +380,7 @@ void MovementSystemUpdate(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	for (EntityID id : SceneView<CTransform, CDynamics>(scene))
+	for (EntityID id : SceneIterator<CTransform, CDynamics>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
 		CDynamics* pDynamics = scene.Get<CDynamics>(id);
@@ -416,7 +416,7 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	for (EntityID id : SceneView<CTransform, CPlayerControl, CDynamics>(scene))
+	for (EntityID id : SceneIterator<CTransform, CPlayerControl, CDynamics>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
 		CDynamics* pDynamics = scene.Get<CDynamics>(id);
@@ -476,7 +476,7 @@ void MenuInterationSystem(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 
-	for (EntityID id : SceneView<CTransform, CMenuInteraction>(scene))
+	for (EntityID id : SceneIterator<CTransform, CMenuInteraction>(scene))
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
 		CMenuInteraction* pInteraction = scene.Get<CMenuInteraction>(id);

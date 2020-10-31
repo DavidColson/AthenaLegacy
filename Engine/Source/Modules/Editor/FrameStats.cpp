@@ -11,7 +11,7 @@ FrameStats::FrameStats()
 
 // ***********************************************************************
 
-void FrameStats::Update(Scene& scene)
+void FrameStats::Update(Scene& scene, float deltaTime)
 {
     double realFrameTime;
     double observedFrameTime;

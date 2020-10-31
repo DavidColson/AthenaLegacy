@@ -4,9 +4,9 @@
 
 struct Console : public EditorTool
 {
-    bool                scrollToBottom{ true };
+    bool scrollToBottom{ true };
 
 	Console();
     
-	virtual void Update(Scene& scene) override;
+	virtual void Update(Scene& scene, float deltaTime) override;
 };

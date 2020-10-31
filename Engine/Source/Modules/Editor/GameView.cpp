@@ -22,9 +22,13 @@ GameView::GameView()
 
 // ***********************************************************************
 
-void GameView::Update(Scene& scene)
+void GameView::Update(Scene& scene, float deltaTime)
 {
-	ImGui::Begin("Game", &open);
+	if (!ImGui::Begin("Game", &open))
+	{
+		ImGui::End();
+		return;
+	}
 
 	ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 	ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right

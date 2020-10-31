@@ -12,4 +12,6 @@ target_sources(Engine
         "GameView.cpp"
         "Console.h"
         "Console.cpp"
+        "SceneView.h"
+        "SceneView.cpp"
 )

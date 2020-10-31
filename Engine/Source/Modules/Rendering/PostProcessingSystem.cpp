@@ -57,7 +57,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
     GFX_SCOPED_EVENT("Doing post processing");	
     TextureHandle preProcessedFrame = GfxDevice::MakeResolvedTexture(ctx.backBuffer);
 
-    for (EntityID ent : SceneView<CPostProcessing>(scene))
+    for (EntityID ent : SceneIterator<CPostProcessing>(scene))
     {
         CPostProcessing* pp = scene.Get<CPostProcessing>(ent);
 
@@ -132,7 +132,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
 
 void PostProcessingSystem::OnWindowResize(Scene& scene, float newWidth, float newHeight)
 {
-    for (EntityID ent : SceneView<CPostProcessing>(scene))
+    for (EntityID ent : SceneIterator<CPostProcessing>(scene))
     {
         CPostProcessing& pp = *(scene.Get<CPostProcessing>(ent));
         for (int i = 0; i < 2; ++i)

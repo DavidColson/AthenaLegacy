@@ -98,7 +98,7 @@ void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	GfxDevice::SetBlending(blendState);
 	GfxDevice::BindSampler(spriteSampler, ShaderType::Pixel, 0);
     
-    for (EntityID ent : SceneView<CSprite, CTransform>(scene))
+    for (EntityID ent : SceneIterator<CSprite, CTransform>(scene))
     {
         CSprite* pSprite = scene.Get<CSprite>(ent);
         Image* pImage = AssetDB::GetAsset<Image>(pSprite->spriteHandle);

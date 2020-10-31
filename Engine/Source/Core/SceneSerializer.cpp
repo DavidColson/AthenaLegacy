@@ -6,7 +6,7 @@ JsonValue SceneSerializer::ToJson(Scene& scene)
 {
     JsonValue json = JsonValue::NewArray();
 
-    for (EntityID entity : SceneView<>(scene))
+    for (EntityID entity : SceneIterator<>(scene))
 	{
         JsonValue jsonEntity = JsonValue::NewObject();
         for (Variant component : ComponentsOnEntity(scene, entity))

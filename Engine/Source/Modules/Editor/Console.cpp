@@ -18,7 +18,7 @@ Console::Console()
 
 // ***********************************************************************
 
-void Console::Update(Scene& scene)
+void Console::Update(Scene& scene, float deltaTime)
 {
 	ImGui::Begin("Log", &open);
 

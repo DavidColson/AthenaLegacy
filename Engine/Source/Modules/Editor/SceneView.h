@@ -3,9 +3,9 @@
 #include "Editor.h"
 #include "Vec2.h"
 
-struct GameView : public EditorTool
+struct SceneView : public EditorTool
 {
-	GameView();
+	SceneView();
 
 	virtual void Update(Scene& scene, float deltaTime) override;
 

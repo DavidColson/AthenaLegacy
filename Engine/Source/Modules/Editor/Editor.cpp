@@ -19,6 +19,7 @@
 #include "SceneHeirarchy.h"
 #include "GameView.h"
 #include "Console.h"
+#include "SceneView.h"
 
 #include <SDL.h>
 #include <Imgui/imgui.h>
@@ -47,7 +48,7 @@ namespace {
 struct ImGuiDemoTool : public EditorTool
 {
 	ImGuiDemoTool() { menuName = "Imgui Demo"; open = false; }
-	virtual void Update(Scene& scene) override { ImGui::ShowDemoWindow(&open); }
+	virtual void Update(Scene& scene, float deltaTime) override { ImGui::ShowDemoWindow(&open); }
 };
 
 // ***********************************************************************
@@ -89,6 +90,7 @@ void Editor::Initialize(bool enabled)
 	tools.push_back(eastl::make_unique<EntityInspector>());
 	tools.push_back(eastl::make_unique<SceneHeirarchy>());
 	tools.push_back(eastl::make_unique<GameView>());
+	tools.push_back(eastl::make_unique<SceneView>());
 	tools.push_back(eastl::make_unique<Console>());
 	tools.push_back(eastl::make_unique<ImGuiDemoTool>());
 }
@@ -274,7 +276,7 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 	for (eastl::unique_ptr<EditorTool>& tool : tools)
 	{
 		if (tool->open)
-			tool->Update(scene);
+			tool->Update(scene, deltaTime);
 	}
 
 	// Render editor to our render target

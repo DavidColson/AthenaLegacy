@@ -19,7 +19,7 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	for (EntityID cams : SceneView<CCamera, CTransform>(scene))
+	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
 		CCamera* pCam = scene.Get<CCamera>(cams);
 		CTransform* pTrans = scene.Get<CTransform>(cams);

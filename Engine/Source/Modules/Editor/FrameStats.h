@@ -10,5 +10,5 @@ struct FrameStats : public EditorTool
 
 	FrameStats();
 
-	virtual void Update(Scene& scene) override;
+	virtual void Update(Scene& scene, float deltaTime) override;
 };

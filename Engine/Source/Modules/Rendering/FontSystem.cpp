@@ -142,7 +142,7 @@ void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	GfxDevice::SetBlending(pState->blendState);
 	GfxDevice::BindSampler(pState->charTextureSampler, ShaderType::Pixel, 0);
 
-	for (EntityID ent : SceneView<CText, CTransform>(scene))
+	for (EntityID ent : SceneIterator<CText, CTransform>(scene))
 	{
 		// Skip if these entity has a visiblity component set to false
 		if (scene.Has<CVisibility>(ent))

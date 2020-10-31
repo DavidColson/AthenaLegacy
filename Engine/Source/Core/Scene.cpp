@@ -59,7 +59,7 @@ void TransformHeirarchy(Scene& scene, float deltaTime)
     // Not doing this as we don't store the render matrix
     eastl::vector<EntityID> roots;
 
-    for (EntityID ent : SceneView<CTransform>(scene))
+    for (EntityID ent : SceneIterator<CTransform>(scene))
     {   
         // We only want root entities here, so ignoring children, they'll come later
         if (!scene.Has<CChild>(ent))

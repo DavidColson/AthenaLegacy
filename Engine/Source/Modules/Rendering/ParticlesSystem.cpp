@@ -100,7 +100,7 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
 	PROFILE();
 
-	for (EntityID ent : SceneView<CParticleEmitter, CTransform>(scene))
+	for (EntityID ent : SceneIterator<CParticleEmitter, CTransform>(scene))
 	{
 		// Skip if this entity has a visibility component that is false
 		if (scene.Has<CVisibility>(ent))

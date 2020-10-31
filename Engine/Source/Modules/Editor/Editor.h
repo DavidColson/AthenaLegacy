@@ -10,7 +10,7 @@ struct EditorTool
 {
 	bool open { true };
 	eastl::string menuName{ "unnamed tool" };
-	virtual void Update(Scene& scene) = 0;
+	virtual void Update(Scene& scene, float deltaTime) = 0;
 	virtual void OnEditorResize(Vec2f newSize) {}
 };
 

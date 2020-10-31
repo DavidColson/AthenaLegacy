@@ -40,7 +40,7 @@ void RecurseDrawEntityTree(Scene& scene, EntityID parent)
 
 // ***********************************************************************
 
-void SceneHeirarchy::Update(Scene& scene)
+void SceneHeirarchy::Update(Scene& scene, float deltaTime)
 {
 	ImGui::Begin("Entity Editor", &open);
 
@@ -49,7 +49,7 @@ void SceneHeirarchy::Update(Scene& scene)
 		scene.NewEntity("Entity");
 	}
 
-	for (EntityID entity : SceneView<>(scene))
+	for (EntityID entity : SceneIterator<>(scene))
 	{
 		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 

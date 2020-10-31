@@ -270,16 +270,16 @@ struct ComponentPool
 
 // View into the Scene for a given set of components
 template <typename... ComponentTypes>
-struct SceneView
+struct SceneIterator
 {
 	template <size_t comps = sizeof...(ComponentTypes), eastl::enable_if_t<comps == 0, int> = 0>
-	SceneView(Scene &scene) : pScene(&scene)
+	SceneIterator(Scene &scene) : pScene(&scene)
 	{
 		all = true;
 	}
 
 	template <size_t comps = sizeof...(ComponentTypes), eastl::enable_if_t<comps != 0, int> = 0>
-	SceneView(Scene &scene) : pScene(&scene)
+	SceneIterator(Scene &scene) : pScene(&scene)
 	{
 		uint32_t componentIndexes[] = {0, Type::Index<ComponentTypes>()...};
 		for (int i = 1; i < (sizeof...(ComponentTypes) + 1); i++)

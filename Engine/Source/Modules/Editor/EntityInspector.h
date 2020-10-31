@@ -6,5 +6,5 @@ struct EntityInspector : public EditorTool
 {
 	EntityInspector();
 
-	virtual void Update(Scene& scene) override;
+	virtual void Update(Scene& scene, float deltaTime) override;
 };

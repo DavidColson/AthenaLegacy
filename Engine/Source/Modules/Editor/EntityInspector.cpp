@@ -14,7 +14,7 @@ EntityInspector::EntityInspector()
 
 // ***********************************************************************
 
-void EntityInspector::Update(Scene& scene)
+void EntityInspector::Update(Scene& scene, float deltaTime)
 {
     EntityID selectedEntity = Editor::GetSelectedEntity();
 

@@ -77,7 +77,7 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
     context.view = Matrixf::Identity();
     context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 200.0f);
 
-	for (EntityID cams : SceneView<CCamera, CTransform>(scene))
+	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
 		CCamera* pCam = scene.Get<CCamera>(cams);
 		CTransform* pTrans = scene.Get<CTransform>(cams);
