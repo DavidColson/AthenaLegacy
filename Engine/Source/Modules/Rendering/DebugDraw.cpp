@@ -2,17 +2,12 @@
 
 #include "Profiler.h"
 #include "GameRenderer.h"
+#include "Mesh.h"
 
 struct DrawCall
 {
 	int vertexCount{ 0 };
 	int indexCount{ 0 };
-};
-
-struct DebugVertex
-{
-	Vec3f pos{ Vec3f(0.0f, 0.0f, 0.0f) };
-	Vec3f col{ Vec3f(0.0f, 0.0f, 0.0f) };
 };
 
 struct TransformData
@@ -24,7 +19,7 @@ struct TransformData
 struct CDebugDrawingState
 {
 	eastl::vector<DrawCall> drawQueue;
-	eastl::vector<DebugVertex> vertexList;
+	eastl::vector<Vert_PosCol> vertexList;
 	eastl::vector<uint32_t> indexList;
 
 	ProgramHandle debugShaderProgram;
@@ -43,14 +38,14 @@ namespace
 
 // ***********************************************************************
 
-void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)
+void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec4f color)
 {
 	float div = 6.282f / 20.f;
 	for (int i = 0; i < 20; i++)
 	{
 		float x = div * (float)i;
 		Vec3f point = Vec3f(radius*cosf(x), radius*sinf(x), 0.0f) + Vec3f(pos.x, pos.y, 0.5f);
-		pState->vertexList.emplace_back(DebugVertex{ point, color });
+		pState->vertexList.emplace_back(Vert_PosCol{ point, color });
 		pState->indexList.push_back(i);
 	}
 	pState->indexList.push_back(0);
@@ -59,10 +54,22 @@ void DebugDraw::Draw2DCircle(Scene& scene, Vec2f pos, float radius, Vec3f color)
 
 // ***********************************************************************
 
-void DebugDraw::Draw2DLine(Scene& scene, Vec2f start, Vec2f end, Vec3f color)
+void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec4f color)
 {
-	pState->vertexList.emplace_back(DebugVertex{ Vec3f(start.x, start.y, 0.5f), color });
-	pState->vertexList.emplace_back(DebugVertex{ Vec3f(end.x, end.y, 0.5f), color });
+	pState->vertexList.emplace_back(Vert_PosCol{ Vec3f(start.x, start.y, 0.5f), color });
+	pState->vertexList.emplace_back(Vert_PosCol{ Vec3f(end.x, end.y, 0.5f), color });
+	pState->indexList.push_back(0);
+	pState->indexList.push_back(1);
+
+	pState->drawQueue.emplace_back(DrawCall{ 2, 2 });
+}
+
+// ***********************************************************************
+
+void DebugDraw::DrawLine(Vec3f start, Vec3f end, Vec4f color)
+{
+	pState->vertexList.emplace_back(Vert_PosCol{ start, color });
+	pState->vertexList.emplace_back(Vert_PosCol{ end, color });
 	pState->indexList.push_back(0);
 	pState->indexList.push_back(1);
 
@@ -135,7 +142,7 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	{
 		if (GfxDevice::IsValid(pState->vertexBuffer)) { GfxDevice::FreeVertexBuffer(pState->vertexBuffer); }
 		pState->vertBufferSize = (int)pState->vertexList.size() + 1000;
-		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(DebugVertex), "Debug Drawer");
+		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(Vert_PosCol), "Debug Drawer");
 	}
 
 	if (!GfxDevice::IsValid(pState->indexBuffer) || pState->indexBufferSize < pState->indexList.size())
@@ -146,7 +153,7 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	}
 
 	// Update vert and index buffer data
-	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(DebugVertex));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(Vert_PosCol));
 	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data

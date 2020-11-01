@@ -91,12 +91,17 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 		    context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 200.0f);
 	}
 
+    // Opaque things
     SceneDrawSystem::OnFrame(scene, context, deltaTime);
     Shapes::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
+    DebugDraw::OnFrame(scene, context, deltaTime);
+
+    // Things that have transparency
     FontSystem::OnFrame(scene, context, deltaTime);
     SpriteDrawSystem::OnFrame(scene, context, deltaTime);
-    DebugDraw::OnFrame(scene, context, deltaTime);
+    
+    // Post processing, always last
     PostProcessingSystem::OnFrame(scene, context, deltaTime);
 
     GfxDevice::UnbindRenderTarget(gameRenderTarget);

@@ -23,6 +23,9 @@ namespace
     TextureHandle lastFrame;
     Vec2f windowSize{ Vec2f(0.0f, 0.0f) };
     bool isIn2DMode = false;
+    bool drawGridLines = true;
+    bool drawOrigin = true;
+    bool drawFrame = true;
 
     // Scene view camera
     float cameraSpeed = 5.0f;
@@ -194,6 +197,75 @@ void UpdateCameraControls(float deltaTime)
     controls.mouseYRel = 0.0f;
 }
 
+void DrawSceneViewHelpers3D()
+{
+    if (drawGridLines)
+    {
+        for (int i = 0; i < 100; i++)
+        {   
+            float staticStart = -50.0f;
+            float staticEnd = 50.0f;
+            float iterate = i * 1.0f - 50.0f;
+
+            Vec4f color = Vec4f(0.32f, 0.32f, 0.32f, 1.0f);
+            if (i % 10 == 0)
+                color = Vec4f(0.45f, 0.45f, 0.45f, 1.0f);
+
+            if (iterate == 0.0f)
+                continue;
+
+            DebugDraw::DrawLine(Vec3f(staticStart, 0.0f, iterate), Vec3f(staticEnd, 0.0f, iterate), color);
+            DebugDraw::DrawLine(Vec3f(iterate, 0.0f, staticStart), Vec3f(iterate, 0.0f, staticEnd), color);
+        }
+    }
+
+    if (drawOrigin)
+    {
+        DebugDraw::DrawLine(Vec3f(-50.0f, 0.0f, 0.0f), Vec3f(50.0f, 0.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, -50.0f, 0.0f), Vec3f(0.0f, 50.0f, 0.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, 0.0f, -50.0f), Vec3f(0.0f, 0.0f, 50.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
+    }
+}
+
+void DrawSceneViewHelpers2D()
+{
+    if (drawFrame)
+    {
+        float width = GameRenderer::GetWidth();
+        float height = GameRenderer::GetHeight();
+        // Top and bottom
+        DebugDraw::DrawLine(Vec3f(0.0f, height, -1000.0f), Vec3f(width, height, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, 0.0f, -1000.0f), Vec3f(width, 0.0f, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+
+         // left and right
+        DebugDraw::DrawLine(Vec3f(0.0f, 0.0f, -1000.0f), Vec3f(0.0f, height, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(width, 0.0f, -1000.0f), Vec3f(width, height, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    }
+
+    if (drawOrigin)
+    {
+        DebugDraw::DrawLine(Vec3f(-5000.0f, 0.0f, -1000.0f), Vec3f(5000.0f, 0.0f, -1000.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, -5000.0f, -1000.0f), Vec3f(0.0f, 5000.0f, -1000.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+    }
+    
+    if (drawGridLines)
+    {
+        for (int i = 0; i < 60; i++)
+        {   
+            float staticStart = -2000.0f;
+            float staticEnd = 4000.0f;
+            float iterate = i * 100.0f - 2000.0f;
+
+            Vec4f color = Vec4f(0.32f, 0.32f, 0.32f, 1.0f);
+            if (i % 10 == 0)
+                color = Vec4f(0.45f, 0.45f, 0.45f, 1.0f);
+
+            DebugDraw::DrawLine(Vec3f(staticStart, iterate, -1000.0f), Vec3f(staticEnd, iterate, -1000.0f), color);
+            DebugDraw::DrawLine(Vec3f(iterate, staticStart, -1000.0f), Vec3f(iterate, staticEnd, -1000.0f), color);
+        }
+    }
+}
+
 void SceneView::Update(Scene& scene, float deltaTime)
 {
     if (!ImGui::Begin("Scene", &open))
@@ -229,12 +301,15 @@ void SceneView::Update(Scene& scene, float deltaTime)
     }
 
     ImGui::SameLine();
-
-    bool gridLines = true;
-    ImGui::Checkbox("Display Grid Lines", &gridLines);
-
+    ImGui::Checkbox("Display Grid Lines", &drawGridLines);
     ImGui::SameLine();
-
+    ImGui::Checkbox("Display Origin", &drawOrigin);
+    ImGui::SameLine();
+    if (isIn2DMode)
+    {
+        ImGui::Checkbox("Display Frame", &drawFrame);
+        ImGui::SameLine();
+    }
     ImGui::PushItemWidth(150);
     ImGui::DragFloat("Camera Fly Speed", &cameraSpeed, deltaTime, 0.0f, 100.0f);
 
@@ -262,7 +337,7 @@ void SceneView::Update(Scene& scene, float deltaTime)
     if (isIn2DMode)
     {
         activeCamTransform = cameraTransform2D;
-        context.projection = Matrixf::Orthographic(0.f, windowSize.x * pixelZoomLevel, 0.0f, windowSize.y * pixelZoomLevel, -1.0f, 200.0f);
+        context.projection = Matrixf::Orthographic(0.f, windowSize.x * pixelZoomLevel, 0.0f, windowSize.y * pixelZoomLevel, -1.0f, 2000.0f);
     }
     else
     {
@@ -274,12 +349,17 @@ void SceneView::Update(Scene& scene, float deltaTime)
     Quatf rotation = Quatf::MakeFromEuler(activeCamTransform.localRot);
     context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
 
+    if (isIn2DMode)
+        DrawSceneViewHelpers2D();
+    else
+        DrawSceneViewHelpers3D();
+    
     SceneDrawSystem::OnFrame(scene, context, deltaTime);
     Shapes::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
+    DebugDraw::OnFrame(scene, context, deltaTime);
     FontSystem::OnFrame(scene, context, deltaTime);
     SpriteDrawSystem::OnFrame(scene, context, deltaTime);
-    DebugDraw::OnFrame(scene, context, deltaTime);
 
     GfxDevice::UnbindRenderTarget(renderTarget);
     
