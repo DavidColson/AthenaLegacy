@@ -121,7 +121,7 @@ void GameView::Update(Scene& scene, float deltaTime)
 	ImGui::SetCursorPos(imageDrawLocation);
 	ImGui::Image(GfxDevice::GetImGuiTextureID(GameRenderer::GetLastRenderedFrame()), imageDrawSize, uv_min, uv_max);
 
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered() || isCapturingMouse)
 		isHovered = true;
 	else
 	{
