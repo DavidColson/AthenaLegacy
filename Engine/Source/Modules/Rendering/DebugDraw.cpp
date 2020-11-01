@@ -172,6 +172,8 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	int indexOffset = 0;
 	for (DrawCall& draw : pState->drawQueue)
 	{
+		// Ideally we want to instance like elements here. For example the scene view is a bit slow drawing all it's grid lines.
+		// They can be automatically instanced here.
 		GfxDevice::DrawIndexed(draw.indexCount, indexOffset, vertOffset);
 		vertOffset += draw.vertexCount;
 		indexOffset += draw.indexCount;

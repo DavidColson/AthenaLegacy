@@ -393,14 +393,6 @@ JsonValue::JsonValue()
 
 JsonValue::JsonValue(const JsonValue& copy)
 {
-	// Clear out internal stuff
-	if (type == Type::Array)
-		delete internalData.pArray;	
-	else if (type == Type::Object)
-		delete internalData.pObject;
-	else if (type == Type::String)
-		delete internalData.pString;
-
 	// Copy data from the other value
 	switch (copy.type)
 	{
