@@ -76,7 +76,7 @@ struct CParticleEmitter
 	
   	VertexBufferHandle vertBuffer;
   	ConstBufferHandle transBuffer;
-  	VertexBufferHandle instanceBuffer;
+  	ConstBufferHandle instanceDataBuffer;
 	size_t instanceBufferSize{ 0 };
 
 	eastl::shared_ptr<ParticlePool> particlePool;

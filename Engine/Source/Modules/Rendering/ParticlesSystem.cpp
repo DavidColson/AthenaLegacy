@@ -68,6 +68,9 @@ void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 	emitter.vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTexCol), quadVertices.data(), "Particles Vert Buffer");
 	emitter.transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
 
+	uint32_t bufferSize = sizeof(Matrixf) * 64;
+	emitter.instanceDataBuffer = GfxDevice::CreateConstantBuffer(bufferSize, "Particles instance data buffer");
+
 	emitter.particlePool = eastl::make_unique<ParticlePool>();
 	RestartEmitter(emitter, *(scene.Get<CTransform>(entity)));
 }
@@ -80,7 +83,7 @@ void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
 
 	GfxDevice::FreeVertexBuffer(emitter.vertBuffer);
 	GfxDevice::FreeConstBuffer(emitter.transBuffer);
-	GfxDevice::FreeVertexBuffer(emitter.instanceBuffer);
+	GfxDevice::FreeConstBuffer(emitter.instanceDataBuffer);
 }
 
 // ***********************************************************************
@@ -106,6 +109,7 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		// Simulate particles and update transforms
 		// ****************************************
 		eastl::vector<Matrixf> particleTransforms;
+		particleTransforms.reserve(64);
 		for(int i = 0; i < pEmitter->particlePool->currentMaxParticleIndex; i++)
 		{
 			Particle* pParticle = &(pEmitter->particlePool->pPool[i]);
@@ -143,30 +147,17 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		// Render particles
 		// ****************
 
-		// Update instance data
-		if (!GfxDevice::IsValid(pEmitter->instanceBuffer) || pEmitter->instanceBufferSize < particleTransforms.size())
-		{
-			// TODO: release buffer before creating
-			pEmitter->instanceBufferSize = (int)particleTransforms.size() + 10;
-			pEmitter->instanceBuffer = GfxDevice::CreateDynamicVertexBuffer(particleTransforms.size(), sizeof(Matrixf), "Particles Instance Buffer");
-		}
-		GfxDevice::UpdateDynamicVertexBuffer(pEmitter->instanceBuffer, particleTransforms.data(), particleTransforms.size() * sizeof(Matrixf));
-		
+		Matrixf vp = ctx.projection * ctx.view;
+		ParticlesTransform trans{ vp };
+		GfxDevice::BindConstantBuffer(pEmitter->transBuffer, &trans, ShaderType::Vertex, 0);
+		GfxDevice::BindConstantBuffer(pEmitter->instanceDataBuffer, particleTransforms.data(), ShaderType::Vertex, 1);
+
 		Shader* pShader = AssetDB::GetAsset<Shader>(pEmitter->shader);
         GfxDevice::BindProgram(pShader->program);
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Set vertex buffer as active
-		// Binding two buffers Here
-		VertexBufferHandle buffers[2];
-		buffers[0] = pEmitter->vertBuffer;
-		buffers[1] = pEmitter->instanceBuffer;
-		GfxDevice::BindVertexBuffers(2, buffers);
-
-		Matrixf vp = ctx.projection * ctx.view;
-		ParticlesTransform trans{ vp };
-		GfxDevice::BindConstantBuffer(pEmitter->transBuffer, &trans, ShaderType::Vertex, 0);
-
+		GfxDevice::BindVertexBuffers(1, &pEmitter->vertBuffer);
 		GfxDevice::DrawInstanced(4, (int)particleTransforms.size(), 0, 0);
 	}
 }

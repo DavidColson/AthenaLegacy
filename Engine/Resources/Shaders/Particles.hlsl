@@ -5,6 +5,13 @@ cbuffer cbPerObject
 	float4x4 VP;
 };
 
+cbuffer InstanceData
+{
+	struct {
+		column_major float4x4 transform;
+	} array[64];
+};
+
 struct VS_OUTPUT
 {
 	float4 Pos : SV_POSITION;
@@ -12,11 +19,11 @@ struct VS_OUTPUT
 	float4 Col: COLOR0;
 };
 
-VS_OUTPUT VSMain(float4 inPos : POSITION, float2 inTex : TEXCOORD0, float4 inCol : COLOR0, uint instanceId : SV_InstanceID, column_major float4x4 instanceTrans : INSTANCE_TRANSFORM)
+VS_OUTPUT VSMain(float4 inPos : POSITION, float2 inTex : TEXCOORD0, float4 inCol : COLOR0, uint instanceId : SV_InstanceID)
 {
 	VS_OUTPUT output;
 
-    float4x4 wvp = mul(instanceTrans, VP);
+    float4x4 wvp = mul(array[instanceId].transform, VP);
 	output.Pos = mul(inPos, wvp);
 	output.Col = float4(1, 1, 1, 1);
 	output.Tex = inTex;
