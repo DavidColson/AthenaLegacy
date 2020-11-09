@@ -3,6 +3,7 @@
 #include <SDL_video.h>
 #include <SDL_syswm.h>
 #include <D3DCompiler.h>
+#include <D3DCompiler.inl>
 #include <d3d11.h>
 #include <d3d11_1.h>
 
@@ -42,8 +43,9 @@ struct VertexBuffer
 
 struct VertexShader
 {
-	ID3D11InputLayout *pVertLayout{nullptr};
+	ID3D11InputLayout *pInputLayout{nullptr};
 	ID3D11VertexShader *pShader{nullptr};
+	eastl::vector<VertexInputElement> inputLayoutDescription;
 };
 
 struct PixelShader
@@ -1058,9 +1060,10 @@ eastl::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const eastl::vect
 {
 	eastl::vector<D3D11_INPUT_ELEMENT_DESC> d3d11Layout;
 
-	for (const VertexInputElement &elem : layout)
+	for (size_t i = 0; i < layout.size(); i++)
 	{
-		// Todo: might want to replace with a lookup
+		const VertexInputElement &elem = layout[i];
+
 		switch (elem.type)
 		{
 		case AttributeType::Float4:
@@ -1072,11 +1075,14 @@ eastl::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const eastl::vect
 		case AttributeType::Float2:
 			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
-		case AttributeType::InstanceTransform:
-			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
-			d3d11Layout.push_back({elem.name, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
-			d3d11Layout.push_back({elem.name, 2, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
-			d3d11Layout.push_back({elem.name, 3, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1});
+		case AttributeType::Float:
+			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			break;
+		case AttributeType::Float4x4:
+			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.name, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.name, 2, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.name, 3, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
 		default:
 			break;
@@ -1087,21 +1093,78 @@ eastl::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const eastl::vect
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const char *entry, const eastl::vector<VertexInputElement> &inputLayout, const eastl::string &debugName)
+eastl::vector<VertexInputElement> ReflectInputLayout(ID3DBlob* pShaderBlob)
+{
+	eastl::vector<VertexInputElement> layout;
+
+	// Reflect the input layout and construct it on the fly
+	ID3D11ShaderReflection* pReflection = NULL;
+	D3DReflect(pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflection);
+
+	D3D11_SHADER_DESC desc;
+	pReflection->GetDesc(&desc);
+	
+	eastl::array<eastl::string, 2> ignoredSemanticNames = { "SV_InstanceID", "SV_VertexID" };
+
+	for ( unsigned int i=0; i< desc.InputParameters; ++i )
+    {
+		D3D11_SIGNATURE_PARAMETER_DESC paramDesc;      
+        pReflection->GetInputParameterDesc(i, &paramDesc);
+
+		// Ignore included semantics such as SV_InstanceID/SV_VertexID etc
+		if (eastl::find(ignoredSemanticNames.begin(), ignoredSemanticNames.end(), paramDesc.SemanticName) != ignoredSemanticNames.end())
+			continue;
+		
+		// We force position to be float3 rather than default float4
+		if (strcmp(paramDesc.SemanticName, "SV_POSITION") == 0 || strcmp(paramDesc.SemanticName, "POSITION") == 0 || strcmp(paramDesc.SemanticName, "SV_Position") == 0)
+		{
+			layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float3, i);
+			continue;
+		}
+
+		uint32_t byteOffset = 0;
+		if ( paramDesc.Mask == 1 )
+        {
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float, i);
+            byteOffset += 4;
+        }
+        else if ( paramDesc.Mask <= 3 )
+        {
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float2, i);
+            byteOffset += 8;
+        }
+        else if ( paramDesc.Mask <= 7 )
+        {
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float3, i);
+            byteOffset += 12;
+        }
+        else if ( paramDesc.Mask <= 15 )
+        {
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float4, i);
+            byteOffset += 16;
+        }
+	}
+	return layout;
+}
+
+// ***********************************************************************
+
+VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const char *entry, const eastl::string &debugName)
 {
 	VertexShader shader;
-
-	eastl::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompileFromFile(fileName, entry, "vs_5_0", &pBlob);
 	if (pBlob == nullptr)
 		return INVALID_HANDLE;
 
+	shader.inputLayoutDescription = ReflectInputLayout(pBlob);
+	eastl::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(shader.inputLayoutDescription);
+
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
-	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pInputLayout);
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
-	SetDebugName(shader.pVertLayout, "[INPUT_LAYOUT] " + debugName);
+	SetDebugName(shader.pInputLayout, "[INPUT_LAYOUT] " + debugName);
 	pBlob->Release();
 
 	VertexShaderHandle handle = pCtx->allocVertexShaderHandle.NewHandle();
@@ -1111,19 +1174,20 @@ VertexShaderHandle GfxDevice::CreateVertexShader(const wchar_t *fileName, const 
 
 // ***********************************************************************
 
-VertexShaderHandle GfxDevice::CreateVertexShader(eastl::string &fileContents, const char *entry, const eastl::vector<VertexInputElement> &inputLayout, const eastl::string &debugName)
+VertexShaderHandle GfxDevice::CreateVertexShader(eastl::string &fileContents, const char *entry, const eastl::string &debugName)
 {
 	VertexShader shader;
-
-	eastl::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(inputLayout);
 
 	ID3DBlob *pBlob = nullptr;
 	ShaderCompile(fileContents, entry, "vs_5_0", &pBlob);
 	if (pBlob == nullptr)
 		return INVALID_HANDLE;
 
+	shader.inputLayoutDescription = ReflectInputLayout(pBlob);
+	eastl::vector<D3D11_INPUT_ELEMENT_DESC> layout = CreateD3D11InputLayout(shader.inputLayoutDescription);
+
 	pCtx->pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &shader.pShader);
-	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pVertLayout);
+	pCtx->pDevice->CreateInputLayout(layout.data(), UINT(layout.size()), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &shader.pInputLayout);
 	SetDebugName(shader.pShader, "[SHADER_VERTEX] " + debugName);
 	pBlob->Release();
 
@@ -1143,8 +1207,8 @@ void GfxDevice::FreeVertexShader(VertexShaderHandle handle)
 
 	if (shader.pShader)
 		shader.pShader->Release();
-	if (shader.pVertLayout)
-		shader.pVertLayout->Release();
+	if (shader.pInputLayout)
+		shader.pInputLayout->Release();
 	pCtx->allocVertexShaderHandle.FreeHandle(handle);
 }
 
@@ -1310,8 +1374,10 @@ void GfxDevice::BindProgram(ProgramHandle handle)
 	pCtx->pDeviceContext->VSSetShader(p.vertShader.pShader, 0, 0);
 	pCtx->pDeviceContext->PSSetShader(p.pixelShader.pShader, 0, 0);
 	pCtx->pDeviceContext->GSSetShader(p.geomShader.pShader, 0, 0);
-	pCtx->pDeviceContext->IASetInputLayout(p.vertShader.pVertLayout);
+	pCtx->pDeviceContext->IASetInputLayout(p.vertShader.pInputLayout);
 }
+
+// ***********************************************************************
 
 void GfxDevice::FreeProgram(ProgramHandle handle, bool freeBoundShaders)
 {
@@ -1500,7 +1566,7 @@ void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void *data,
 
 // ***********************************************************************
 
-void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle *handles)
+void GfxDevice::BindVertexBuffers(size_t startSlot, size_t nBuffers, VertexBufferHandle *handles)
 {
 	// Improvement: good opportunity for single frame allocator, or stack allocation here
 	eastl::vector<ID3D11Buffer *> pBuffers;
@@ -1520,7 +1586,7 @@ void GfxDevice::BindVertexBuffers(size_t nBuffers, VertexBufferHandle *handles)
 		offsets.push_back(0);
 		strides.push_back(buffer.elementSize);
 	}
-	pCtx->pDeviceContext->IASetVertexBuffers(0, (UINT)nBuffers, pBuffers.data(), strides.data(), offsets.data());
+	pCtx->pDeviceContext->IASetVertexBuffers((UINT)startSlot, (UINT)nBuffers, pBuffers.data(), strides.data(), offsets.data());
 }
 
 // ***********************************************************************

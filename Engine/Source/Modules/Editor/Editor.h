@@ -13,6 +13,8 @@ struct EditorTool
 	virtual void Update(Scene& scene, float deltaTime) = 0;
 	virtual void OnEditorResize(Vec2f newSize) {}
 	virtual bool OnEvent(SDL_Event* event) { return false; }
+
+	virtual ~EditorTool() {}
 };
 
 namespace Editor

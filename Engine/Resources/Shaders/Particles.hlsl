@@ -1,5 +1,3 @@
-#pragma type particles2D
-
 cbuffer cbPerObject
 {
 	float4x4 VP;

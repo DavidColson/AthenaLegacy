@@ -169,30 +169,23 @@ void Model::Load(Path path, AssetHandle handleForThis)
             }
 
             int nVerts = accessors[jsonPrimitive["attributes"]["POSITION"].ToInt()].count;
-            prim.vertBuffer.reserve(nVerts);
 
             JsonValue& jsonAttr = jsonPrimitive["attributes"];
             Vec3f* vertPositionBuffer = (Vec3f*)accessors[jsonAttr["POSITION"].ToInt()].pBuffer;
+            prim.vertices = eastl::vector<Vec3f>(vertPositionBuffer, vertPositionBuffer + nVerts);
+            
             Vec3f* vertNormBuffer = jsonAttr.HasKey("NORMAL") ? (Vec3f*)accessors[jsonAttr["NORMAL"].ToInt()].pBuffer : nullptr;
-            Vec2f* vertTexCoordBuffer = jsonAttr.HasKey("TEXCOORD_0") ? (Vec2f*)accessors[jsonAttr["TEXCOORD_0"].ToInt()].pBuffer : nullptr;
-            Vec4f* vertColBuffer = jsonAttr.HasKey("COLOR_0") ? (Vec4f*)accessors[jsonAttr["COLOR_0"].ToInt()].pBuffer : nullptr;
+            prim.normals = eastl::vector<Vec3f>(vertNormBuffer, vertNormBuffer + nVerts);
 
-            // We're interleaving the vertex data here, which has pros and cons. Maybe one day consider allowing the option of whether to interleave or not
-            for (int i = 0; i < nVerts; i++)
-            {
-                Vert_PosNormTexCol v;
-                v.position = vertPositionBuffer[i];
-                v.norm = vertNormBuffer != nullptr ? vertNormBuffer[i] : Vec3f();
-                v.texCoord = vertTexCoordBuffer != nullptr ? vertTexCoordBuffer[i] : Vec2f();
-                v.color = vertColBuffer != nullptr ? vertColBuffer[i] : Vec4f();
-                prim.vertBuffer.push_back(v);
-            }
+            Vec2f* vertTexCoordBuffer = jsonAttr.HasKey("TEXCOORD_0") ? (Vec2f*)accessors[jsonAttr["TEXCOORD_0"].ToInt()].pBuffer : nullptr;
+            prim.texcoords = eastl::vector<Vec2f>(vertTexCoordBuffer, vertTexCoordBuffer + nVerts);
+
+            Vec4f* vertColBuffer = jsonAttr.HasKey("COLOR_0") ? (Vec4f*)accessors[jsonAttr["COLOR_0"].ToInt()].pBuffer : nullptr;
+            prim.colors = eastl::vector<Vec4f>(vertColBuffer, vertColBuffer + nVerts);
 
             int nIndices = accessors[jsonPrimitive["indices"].ToInt()].count;
-            prim.indexBuffer.reserve(nIndices);
             uint16_t* indexBuffer = (uint16_t*)accessors[jsonPrimitive["indices"].ToInt()].pBuffer;
-            for (int i = 0; i < nIndices; i++)
-                prim.indexBuffer.push_back(indexBuffer[i]);
+            prim.indices = eastl::vector<uint16_t>(indexBuffer, indexBuffer + nIndices);
 
             mesh.primitives.push_back(prim);
         }

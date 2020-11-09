@@ -3,6 +3,7 @@
 #include "GraphicsDevice.h"
 #include "Scene.h"
 #include "AssetDatabase.h"
+#include "Mesh.h"
 
 struct FrameContext;
 
@@ -29,8 +30,9 @@ struct CPostProcessing
 	RenderTargetHandle blurredFrame[2];
 	ConstBufferHandle postProcessDataBuffer;
 	ConstBufferHandle bloomDataBuffer;
-	VertexBufferHandle fullScreenQuad;
 	SamplerHandle fullScreenTextureSampler;
+	
+	Primitive fullScreenQuad{ Primitive::NewPlainQuad() };
 
 	REFLECT()
 };

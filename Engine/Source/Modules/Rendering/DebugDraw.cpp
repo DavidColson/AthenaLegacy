@@ -19,12 +19,15 @@ struct TransformData
 struct CDebugDrawingState
 {
 	eastl::vector<DrawCall> drawQueue;
-	eastl::vector<Vert_PosCol> vertexList;
+	eastl::vector<Vec3f> vertexList;
+	eastl::vector<Vec4f> colorsList;
 	eastl::vector<uint32_t> indexList;
 
 	ProgramHandle debugShaderProgram;
 	VertexBufferHandle vertexBuffer;
 	int vertBufferSize = 0;
+	VertexBufferHandle colorsBuffer;
+	int colorsBufferSize = 0;
 	IndexBufferHandle indexBuffer;
 	int indexBufferSize = 0;
 
@@ -45,7 +48,8 @@ void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec4f color)
 	{
 		float x = div * (float)i;
 		Vec3f point = Vec3f(radius*cosf(x), radius*sinf(x), 0.0f) + Vec3f(pos.x, pos.y, 0.5f);
-		pState->vertexList.emplace_back(Vert_PosCol{ point, color });
+		pState->vertexList.emplace_back(point);
+		pState->colorsList.emplace_back(color);
 		pState->indexList.push_back(i);
 	}
 	pState->indexList.push_back(0);
@@ -56,8 +60,12 @@ void DebugDraw::Draw2DCircle(Vec2f pos, float radius, Vec4f color)
 
 void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec4f color)
 {
-	pState->vertexList.emplace_back(Vert_PosCol{ Vec3f(start.x, start.y, 0.5f), color });
-	pState->vertexList.emplace_back(Vert_PosCol{ Vec3f(end.x, end.y, 0.5f), color });
+	pState->vertexList.emplace_back(Vec3f(start.x, start.y, 0.5f));
+	pState->colorsList.emplace_back(color);
+
+	pState->vertexList.emplace_back(Vec3f(end.x, end.y, 0.5f));
+	pState->colorsList.emplace_back(color);
+	
 	pState->indexList.push_back(0);
 	pState->indexList.push_back(1);
 
@@ -68,8 +76,12 @@ void DebugDraw::Draw2DLine(Vec2f start, Vec2f end, Vec4f color)
 
 void DebugDraw::DrawLine(Vec3f start, Vec3f end, Vec4f color)
 {
-	pState->vertexList.emplace_back(Vert_PosCol{ start, color });
-	pState->vertexList.emplace_back(Vert_PosCol{ end, color });
+	pState->vertexList.emplace_back(start);
+	pState->colorsList.emplace_back(color);
+
+	pState->vertexList.emplace_back(end);
+	pState->colorsList.emplace_back(color);
+
 	pState->indexList.push_back(0);
 	pState->indexList.push_back(1);
 
@@ -104,11 +116,7 @@ void DebugDraw::Initialize()
 		return input.Col;\
 	}";
 
-	eastl::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION",AttributeType::Float3});
-	layout.push_back({"COLOR", AttributeType::Float3});
-
-	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Debug Draw");
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", "Debug Draw");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Debug Draw");
 
 	pState->debugShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
@@ -123,6 +131,7 @@ void DebugDraw::Destroy()
 {
 	GfxDevice::FreeProgram(pState->debugShaderProgram);
 	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);
+	GfxDevice::FreeVertexBuffer(pState->colorsBuffer);
 	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
 	GfxDevice::FreeConstBuffer(pState->transformDataBuffer);
 }
@@ -137,12 +146,18 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	if (pState->drawQueue.empty())
 		return;
 
-	// TODO: MEMORY LEAK HERE Release the old buffer when you create new one
 	if (!GfxDevice::IsValid(pState->vertexBuffer) || pState->vertBufferSize < pState->vertexList.size())
 	{
 		if (GfxDevice::IsValid(pState->vertexBuffer)) { GfxDevice::FreeVertexBuffer(pState->vertexBuffer); }
 		pState->vertBufferSize = (int)pState->vertexList.size() + 1000;
-		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(Vert_PosCol), "Debug Drawer");
+		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(Vec3f), "Debug Drawer");
+	}
+
+	if (!GfxDevice::IsValid(pState->colorsBuffer) || pState->colorsBufferSize < pState->colorsList.size())
+	{
+		if (GfxDevice::IsValid(pState->colorsBuffer)) { GfxDevice::FreeVertexBuffer(pState->colorsBuffer); }
+		pState->colorsBufferSize = (int)pState->colorsList.size() + 1000;
+		pState->colorsBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->colorsBufferSize, sizeof(Vec4f), "Debug Drawer");
 	}
 
 	if (!GfxDevice::IsValid(pState->indexBuffer) || pState->indexBufferSize < pState->indexList.size())
@@ -153,7 +168,8 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	}
 
 	// Update vert and index buffer data
-	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(Vert_PosCol));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(Vec3f));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->colorsBuffer, pState->colorsList.data(), pState->colorsList.size() * sizeof(Vec4f));
 	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
@@ -165,7 +181,8 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 	GfxDevice::SetTopologyType(TopologyType::LineStrip);
 
-	GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
+	GfxDevice::BindVertexBuffers(0, 1, &pState->vertexBuffer);
+	GfxDevice::BindVertexBuffers(1, 1, &pState->colorsBuffer);
 	GfxDevice::BindIndexBuffer(pState->indexBuffer);
 
 	int vertOffset = 0;
@@ -186,5 +203,6 @@ void DebugDraw::OnFrameEnd(Scene& scene, float deltaTime)
 {
 	pState->drawQueue.clear();
 	pState->vertexList.clear();
+	pState->colorsList.clear();
 	pState->indexList.clear();
 }

@@ -12,7 +12,9 @@ namespace
 
     Vec2f appSize;
     
-    VertexBufferHandle vertBuffer;
+    VertexBufferHandle verticesBuffer;
+    VertexBufferHandle vertTexCoordsBuffer;
+
     SamplerHandle textureSampler;
     VertexShaderHandle vertShader;
     PixelShaderHandle pixelShader;
@@ -42,7 +44,7 @@ SDL_Window* AppWindow::GetSDLWindow()
 
 // ***********************************************************************
 
-VertexBufferHandle BuildFrameVertexBuffer(float windowAspectRatio, float gameAspectRatio, bool forceFullFrame = false)
+void BuildFrameVertexBuffer(float windowAspectRatio, float gameAspectRatio, bool forceFullFrame = false)
 {
     float x = 1.0f, y = x;
 
@@ -75,14 +77,24 @@ VertexBufferHandle BuildFrameVertexBuffer(float windowAspectRatio, float gameAsp
         }
     }
 
-    GfxDevice::FreeVertexBuffer(vertBuffer);
-    eastl::vector<Vert_PosTex> quadVertices = {
-        Vert_PosTex{Vec3f(-x, -y, 0.0f), Vec2f(0.0f, 1.0f)},
-        Vert_PosTex{Vec3f(x, -y, 0.0f), Vec2f(1.0f, 1.0f)},
-        Vert_PosTex{Vec3f(-x, y, 0.0f), Vec2f(0.0f, 0.0f)},
-        Vert_PosTex{Vec3f(x, y, 0.0f), Vec2f(1.0f, 0.0f)}
+
+    GfxDevice::FreeVertexBuffer(verticesBuffer);
+    eastl::vector<Vec3f> quadVertices = {
+        Vec3f(-x, -y, 0.0f),
+        Vec3f(x, -y, 0.0f),
+        Vec3f(-x, y, 0.0f),
+        Vec3f(x, y, 0.0f)
     };
-    return GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTex), quadVertices.data(), "AppWindow quad");
+    verticesBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vec3f), quadVertices.data(), "AppWindow quad verts");
+
+    GfxDevice::FreeVertexBuffer(vertTexCoordsBuffer);
+    eastl::vector<Vec2f> quadTexCoords = {
+        Vec2f(0.0f, 1.0f),
+        Vec2f(1.0f, 1.0f),
+        Vec2f(0.0f, 0.0f),
+        Vec2f(1.0f, 0.0f)
+    };
+    vertTexCoordsBuffer = GfxDevice::CreateVertexBuffer(quadTexCoords.size(), sizeof(Vec2f), quadTexCoords.data(), "AppWindow quad texcoords");
 }
 
 // ***********************************************************************
@@ -105,7 +117,7 @@ void AppWindow::Create(float initialWidth, float initialHeight, const eastl::str
 	GfxDevice::Initialize(pWindow, initialWidth, initialHeight);
 
     // Setup rendering for full screen quad
-    vertBuffer =  BuildFrameVertexBuffer(initialWidth / initialHeight, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y, Engine::GetConfig().bootInEditor);
+    BuildFrameVertexBuffer(initialWidth / initialHeight, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y, Engine::GetConfig().bootInEditor);
 
     if (Engine::GetConfig().gameFramePointFilter)
         textureSampler = GfxDevice::CreateSampler(Filter::Point, WrapMode::Wrap, "AppWindow sampler");
@@ -132,11 +144,7 @@ void AppWindow::Create(float initialWidth, float initialHeight, const eastl::str
 		return shaderTexture.Sample(textureSampler, input.Tex);\
 	}";
 
-    eastl::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION", AttributeType::Float3});
-	layout.push_back({"TEXCOORD", AttributeType::Float2});
-
-	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(drawTexturedQuadShader, "VSMain", layout, "AppWindow");
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(drawTexturedQuadShader, "VSMain", "AppWindow");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(drawTexturedQuadShader, "PSMain", "AppWindow");
 	program = GfxDevice::CreateProgram(vertShader, pixShader);
 }
@@ -151,7 +159,8 @@ void AppWindow::RenderToWindow(TextureHandle frame)
 
     GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
     GfxDevice::BindProgram(program);
-    GfxDevice::BindVertexBuffers(1, &vertBuffer);
+    GfxDevice::BindVertexBuffers(0, 1, &verticesBuffer);
+    GfxDevice::BindVertexBuffers(1, 1, &vertTexCoordsBuffer);
 
     GfxDevice::BindTexture(frame, ShaderType::Pixel, 0);
     GfxDevice::BindSampler(textureSampler, ShaderType::Pixel, 0);
@@ -169,14 +178,15 @@ void AppWindow::Resize(float width, float height)
 {
     appSize = Vec2f(width, height);
     GfxDevice::ResizeBackBuffer(width, height);
-    vertBuffer = BuildFrameVertexBuffer(width / height, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y, Engine::IsInEditor());
+    BuildFrameVertexBuffer(width / height, Engine::GetConfig().baseGameResolution.x / Engine::GetConfig().baseGameResolution.y, Engine::IsInEditor());
 }
 
 // ***********************************************************************
 
 void AppWindow::Destroy()
 {
-    GfxDevice::FreeVertexBuffer(vertBuffer);
+    GfxDevice::FreeVertexBuffer(verticesBuffer);
+    GfxDevice::FreeVertexBuffer(vertTexCoordsBuffer);
 	GfxDevice::FreeSampler(textureSampler);
 	GfxDevice::FreeVertexShader(vertShader);
 	GfxDevice::FreePixelShader(pixelShader);

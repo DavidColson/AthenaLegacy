@@ -125,6 +125,8 @@ void GameRenderer::OnFrameEnd(Scene& scene, float deltaTime)
 
 void GameRenderer::Destroy()
 {
+    GfxDevice::FreeRenderTarget(gameRenderTarget);
+    GfxDevice::FreeTexture(resolvedGameFrame);
     DebugDraw::Destroy();
 	Shapes::Destroy();
 	FontSystem::Destroy();

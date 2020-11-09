@@ -15,12 +15,13 @@ struct SpriteUniforms
 namespace
 {
     ConstBufferHandle transformBufferHandle;
-    VertexBufferHandle vertBuffer;
     SamplerHandle spriteSampler;
     VertexShaderHandle vertShader;
     PixelShaderHandle pixelShader;
     ProgramHandle program;
     BlendStateHandle blendState;
+
+    Primitive quadPrim;
 }
 
 REFLECT_COMPONENT_BEGIN(CSprite)
@@ -31,16 +32,8 @@ REFLECT_END()
 
 void SpriteDrawSystem::Initialize()
 {
+    quadPrim = Primitive::NewPlainQuad();
 	transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(SpriteUniforms), "Sprite Transform Buffer");
-
-    eastl::vector<Vert_PosTex> quadVertices = {
-        Vert_PosTex{Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f)},
-        Vert_PosTex{Vec3f(1.f, -1.f, 0.0f), Vec2f(1.0f, 1.0f)},
-        Vert_PosTex{Vec3f(-1.f, 1.f, 0.0f), Vec2f(0.0f, 0.0f)},
-        Vert_PosTex{Vec3f(1.f, 1.f, 0.0f), Vec2f(1.0f, 0.0f)}
-    };
-    vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTex), quadVertices.data(), "Sprite quad");
-
     spriteSampler = GfxDevice::CreateSampler(Filter::Point, WrapMode::Wrap, "Sprite sampler");
 
     eastl::string basicSpriteShader = "\
@@ -67,11 +60,7 @@ void SpriteDrawSystem::Initialize()
 		return shaderTexture.Sample(textureSampler, input.Tex);\
 	}";
 
-    eastl::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION", AttributeType::Float3});
-	layout.push_back({"TEXCOORD", AttributeType::Float2});
-
-	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(basicSpriteShader, "VSMain", layout, "Sprite Vert Shader");
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(basicSpriteShader, "VSMain", "Sprite Vert Shader");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(basicSpriteShader, "PSMain", "Sprite Pixel Shader");
 	program = GfxDevice::CreateProgram(vertShader, pixShader);
 
@@ -94,7 +83,8 @@ void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
     GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
     GfxDevice::BindProgram(program);
-    GfxDevice::BindVertexBuffers(1, &vertBuffer);
+    GfxDevice::BindVertexBuffers(0, 1, &quadPrim.gfxVerticesBuffer);
+    GfxDevice::BindVertexBuffers(1, 1, &quadPrim.gfxTexcoordsBuffer);
 	GfxDevice::SetBlending(blendState);
 	GfxDevice::BindSampler(spriteSampler, ShaderType::Pixel, 0);
     
@@ -121,7 +111,6 @@ void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 void SpriteDrawSystem::Destroy()
 {
     GfxDevice::FreeBlendState(blendState);
-    GfxDevice::FreeVertexBuffer(vertBuffer);
     GfxDevice::FreeConstBuffer(transformBufferHandle);
     GfxDevice::FreeSampler(spriteSampler);
     GfxDevice::FreeVertexShader(vertShader);

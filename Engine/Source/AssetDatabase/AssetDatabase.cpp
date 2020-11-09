@@ -28,7 +28,7 @@ namespace
 
     struct HotReloadingAsset
     {
-        AssetHandle asset;
+        uint64_t assetID;
         uint64_t cacheLastModificationTime;
     };
     eastl::vector<HotReloadingAsset> hotReloadWatches;
@@ -69,6 +69,14 @@ AssetHandle::AssetHandle(eastl::string identifier)
         assetMetas[id] = meta;
     }
     assetMetas[id].refCount += 1;
+}
+
+AssetHandle::AssetHandle(uint64_t id)
+{
+    if (assetMetas.count(id) >= 0)
+    {
+        assetMetas[id].refCount += 1;
+    }
 }
 
 AssetHandle::AssetHandle(const AssetHandle& copy)
@@ -220,7 +228,7 @@ void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
     {
         for (const HotReloadingAsset& hot : hotReloadWatches)
         {
-            if (hot.asset.id == handle.id)
+            if (hot.assetID == handle.id)
                 return;
         }
         // Don't hot reload audio
@@ -228,8 +236,8 @@ void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
         if (assetMetas[handle.id].path.Extension() != ".wav")
         {
             HotReloadingAsset hot;
-            hot.asset = handle; 
-            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.asset.id].path);;
+            hot.assetID = handle.id; 
+            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].path);;
             hotReloadWatches.push_back(hot);
         }
     }
@@ -239,20 +247,20 @@ void AssetDB::UpdateHotReloading()
 {
     for (HotReloadingAsset& hot : hotReloadWatches)
     {
-        if (hot.cacheLastModificationTime != FileSys::LastWriteTime(assetMetas[hot.asset.id].path))
+        if (hot.cacheLastModificationTime != FileSys::LastWriteTime(assetMetas[hot.assetID].path))
         {
-            if (assetMetas[hot.asset.id].refCount == 0)
+            if (assetMetas[hot.assetID].refCount == 0)
                 continue; // Don't hot reload an asset no one is referencing
 
-            if (FileSys::IsInUse(assetMetas[hot.asset.id].path))
+            if (FileSys::IsInUse(assetMetas[hot.assetID].path))
                 continue;
 
-            Asset* pAsset = assets[hot.asset.id];
-            assets.erase(hot.asset.id);
+            Asset* pAsset = assets[hot.assetID];
+            assets.erase(hot.assetID);
             delete pAsset;
 
-            pAsset = GetAssetRaw(hot.asset);
-            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.asset.id].path);
+            pAsset = GetAssetRaw(AssetHandle(hot.assetID));
+            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].path);
         }
     }
 }

@@ -6,8 +6,9 @@
 #include "Log.h"
 #include "Scene.h"
 #include "AssetDatabase.h"
+#include "Mesh.h"
 
-#include <EASTL/unique_ptr.h>
+#include <EASTL/shared_ptr.h>
 
 #define MAX_PARTICLES_PER_EMITTER 1000
 
@@ -74,7 +75,7 @@ struct CParticleEmitter
 
 	AssetHandle shader{ AssetHandle("Shaders/Particles.hlsl") };
 	
-  	VertexBufferHandle vertBuffer;
+  	Primitive quadPrim{ Primitive::NewPlainQuad() };
   	ConstBufferHandle transBuffer;
   	ConstBufferHandle instanceDataBuffer;
 	size_t instanceBufferSize{ 0 };

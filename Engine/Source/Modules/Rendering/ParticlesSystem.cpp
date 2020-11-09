@@ -57,17 +57,8 @@ void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 {
 	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
-	
-	eastl::vector<Vert_PosTexCol> quadVertices = {
-        Vert_PosTexCol{ Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) },
-        Vert_PosTexCol{ Vec3f(1.f, -1.f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f)  },
-        Vert_PosTexCol{ Vec3f(-1.f, 1.f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f)  },
-        Vert_PosTexCol{ Vec3f(1.f, 1.f, 0.0f), Vec2f(0.0f, 1.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f)  }
-    };
-	
-	emitter.vertBuffer = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTexCol), quadVertices.data(), "Particles Vert Buffer");
-	emitter.transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
 
+	emitter.transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
 	uint32_t bufferSize = sizeof(Matrixf) * 64;
 	emitter.instanceDataBuffer = GfxDevice::CreateConstantBuffer(bufferSize, "Particles instance data buffer");
 
@@ -80,8 +71,6 @@ void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
 void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
 {
 	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
-
-	GfxDevice::FreeVertexBuffer(emitter.vertBuffer);
 	GfxDevice::FreeConstBuffer(emitter.transBuffer);
 	GfxDevice::FreeConstBuffer(emitter.instanceDataBuffer);
 }
@@ -157,7 +146,9 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Set vertex buffer as active
-		GfxDevice::BindVertexBuffers(1, &pEmitter->vertBuffer);
+		GfxDevice::BindVertexBuffers(0, 1, &pEmitter->quadPrim.gfxVerticesBuffer);
+		GfxDevice::BindVertexBuffers(1, 1, &pEmitter->quadPrim.gfxTexcoordsBuffer);
+		GfxDevice::BindVertexBuffers(2, 1, &pEmitter->quadPrim.gfxColorsBuffer);
 		GfxDevice::DrawInstanced(4, (int)particleTransforms.size(), 0, 0);
 	}
 }

@@ -24,12 +24,15 @@ struct TransformData
 struct CShapesSystemState
 {
 	eastl::vector<DrawCall> drawQueue;
-	eastl::vector<Vert_PosCol> vertexList;
+	eastl::vector<Vec3f> vertexList;
+	eastl::vector<Vec4f> colorsList;
 	eastl::vector<uint32_t> indexList;
 
 	ProgramHandle shaderProgram;
 	VertexBufferHandle vertexBuffer;
 	int vertBufferSize = 0;
+	VertexBufferHandle colorsBuffer;
+	int colorsBufferSize = 0;
 	IndexBufferHandle indexBuffer;
 	int indexBufferSize = 0;
 
@@ -75,8 +78,11 @@ void Shapes::DrawPolyLine(Scene& scene, const VertsVector& verts, float thicknes
 
         // New vertices
         float offset = thickness * 0.2f;
-        pState->vertexList.push_back(Vert_PosCol { Vec3f::Embed2D(verts[mod_floor(i, verts.size())] - cornerBisector * offset), color });
-        pState->vertexList.push_back(Vert_PosCol { Vec3f::Embed2D(verts[mod_floor(i, verts.size())] + cornerBisector * offset), color });
+        pState->vertexList.push_back(Vec3f::Embed2D(verts[mod_floor(i, verts.size())] - cornerBisector * offset));
+        pState->colorsList.push_back(color);
+
+        pState->vertexList.push_back(Vec3f::Embed2D(verts[mod_floor(i, verts.size())] + cornerBisector * offset));
+        pState->colorsList.push_back(color);
         
         // Indices
         pState->indexList.push_back(vertCount + 0);
@@ -93,9 +99,11 @@ void Shapes::Initialize()
 	pState = new CShapesSystemState();
 
 	pState->vertexList.get_allocator().set_name("CShapeSystemState/vertexList");
+	pState->colorsList.get_allocator().set_name("CShapeSystemState/colorsList");
 	pState->drawQueue.get_allocator().set_name("CShapeSystemState/drawQueue");
 	pState->indexList.get_allocator().set_name("CShapeSystemState/indexList");
 	pState->vertexList.reserve(20480);
+	pState->colorsList.reserve(20480);
 	pState->drawQueue.reserve(256);
 	pState->indexList.reserve(4096);
 
@@ -121,11 +129,7 @@ void Shapes::Initialize()
 		return input.Col;\
 	}";
 
-	eastl::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION",AttributeType::Float3});
-	layout.push_back({"COLOR", AttributeType::Float4});
-
-	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", layout, "Shapes");
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(shaderSrc, "VSMain", "Shapes");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(shaderSrc, "PSMain", "Shapes");
 
 	pState->shaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
@@ -138,6 +142,7 @@ void Shapes::Destroy()
 {
 	GfxDevice::FreeProgram(pState->shaderProgram);
 	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);
+	GfxDevice::FreeVertexBuffer(pState->colorsBuffer);
 	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
 	GfxDevice::FreeConstBuffer(pState->transformDataBuffer);
 }
@@ -156,7 +161,14 @@ void Shapes::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	{
 		if (GfxDevice::IsValid(pState->vertexBuffer)) { GfxDevice::FreeVertexBuffer(pState->vertexBuffer); }
 		pState->vertBufferSize = (int)pState->vertexList.size() + 1000;
-		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(Vert_PosCol), "Shapes System");
+		pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->vertBufferSize, sizeof(Vec3f), "Shapes System");
+	}
+
+	if (!GfxDevice::IsValid(pState->colorsBuffer) || pState->colorsBufferSize < pState->colorsList.size())
+	{
+		if (GfxDevice::IsValid(pState->colorsBuffer)) { GfxDevice::FreeVertexBuffer(pState->colorsBuffer); }
+		pState->colorsBufferSize = (int)pState->colorsList.size() + 1000;
+		pState->colorsBuffer = GfxDevice::CreateDynamicVertexBuffer(pState->colorsBufferSize, sizeof(Vec2f), "Shapes System");
 	}
 
 	if (!GfxDevice::IsValid(pState->indexBuffer) || pState->indexBufferSize < pState->indexList.size())
@@ -167,7 +179,8 @@ void Shapes::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	}
 
 	// Update vert and index buffer data
-	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(Vert_PosCol));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, pState->vertexList.data(), pState->vertexList.size() * sizeof(Vec3f));
+	GfxDevice::UpdateDynamicVertexBuffer(pState->colorsBuffer, pState->colorsList.data(), pState->colorsList.size() * sizeof(Vec2f));
 	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
@@ -179,7 +192,8 @@ void Shapes::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 	GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
-	GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
+	GfxDevice::BindVertexBuffers(0, 1, &pState->vertexBuffer);
+	GfxDevice::BindVertexBuffers(1, 1, &pState->colorsBuffer);
 	GfxDevice::BindIndexBuffer(pState->indexBuffer);
 
 	int vertOffset = 0;
@@ -198,5 +212,6 @@ void Shapes::OnFrameEnd(Scene& scene, float deltaTime)
 {
 	pState->drawQueue.clear();
 	pState->vertexList.clear();
+	pState->colorsList.clear();
 	pState->indexList.clear();
 }

@@ -1,9 +1,15 @@
-#pragma type scene3D
-
+// Constant buffer for transform info
 cbuffer cbTransform
 {
     float4x4 WVP;
 };
+
+// Constant buffer for shader properties (i.e. line thickness) 
+
+
+// struct for vert input data
+// Struct for vertex output data
+
 struct VS_OUTPUT
 {
     float4 Pos : SV_POSITION;

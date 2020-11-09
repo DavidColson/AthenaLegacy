@@ -115,11 +115,12 @@ enum class ShaderType
 
 enum class AttributeType
 {
-	// Need to fill this out
+	// TODO: Missing int types from here
+	Float4x4,
 	Float4,
 	Float3,
 	Float2,
-	InstanceTransform,
+	Float
 };
 
 enum class TextureFormat
@@ -166,7 +167,9 @@ struct VertexInputElement
 {
 	const char* name;
 	AttributeType type;
-	unsigned int slot{ 0 };
+	uint32_t slot{ 0 };
+
+	VertexInputElement(const char* _name, AttributeType _type, uint32_t _slot) : name(_name), type(_type), slot(_slot) {}
 };
 
 struct BlendingInfo
@@ -229,7 +232,7 @@ namespace GfxDevice
 
 	void UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize);
 
-	void BindVertexBuffers(size_t nBuffers, VertexBufferHandle* handles);
+	void BindVertexBuffers(size_t startSlot, size_t nBuffers, VertexBufferHandle* handles);
 
 	void FreeVertexBuffer(VertexBufferHandle handle);
 
@@ -249,9 +252,9 @@ namespace GfxDevice
 
 	// Shaders And Programs
 
-	VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const eastl::vector<VertexInputElement>& inputLayout, const eastl::string& debugName = "");
+	VertexShaderHandle CreateVertexShader(const wchar_t* fileName, const char* entry, const eastl::string& debugName = "");
 
-	VertexShaderHandle CreateVertexShader(eastl::string& fileContents, const char* entry, const eastl::vector<VertexInputElement>& inputLayout, const eastl::string& debugName = "");
+	VertexShaderHandle CreateVertexShader(eastl::string& fileContents, const char* entry, const eastl::string& debugName = "");
 
 	void FreeVertexShader(VertexShaderHandle handle);
 

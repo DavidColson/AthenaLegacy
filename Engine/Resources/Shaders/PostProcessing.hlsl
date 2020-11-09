@@ -1,5 +1,3 @@
-#pragma type postprocess
-
 struct VS_OUTPUT
 {
 	float4 Pos : SV_POSITION;

@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
 	EngineConfig config;
 	config.windowName = "Racer Game";
 	config.gameResourcesPath = "Games/RacerGame/Resources/";
+	config.bootInEditor = false;
 
 	Engine::Initialize(config);
 
@@ -67,24 +68,7 @@ int main(int argc, char *argv[])
 	// Custom mesh asset
 	Mesh* pCubeMesh = new Mesh();
 	pCubeMesh->name = "Cube";
-	Primitive cubePrimitive;
-	cubePrimitive.vertBuffer = {
-		Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Front bottom left
-        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Front bottom right
-        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Front top left
-        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f,  1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }, // Front top right
-
-        Vert_PosNormTexCol{ Vec3f(-1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 0.0f, 1.0f) }, // Back bottom left
-        Vert_PosNormTexCol{ Vec3f( 1.0f, -1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(0.0f, 1.0f, 0.0f, 1.0f) }, // Back bottom right
-        Vert_PosNormTexCol{ Vec3f(-1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 0.0f, 1.0f, 1.0f) }, // Back top left
-        Vert_PosNormTexCol{ Vec3f( 1.0f,  1.0f, -1.0f), Vec3f(), Vec2f(), Vec4f(1.0f, 1.0f, 1.0f, 1.0f) }  // Back top right
-    };
-	cubePrimitive.indexBuffer = {
-		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
-	};
-	cubePrimitive.topologyType = TopologyType::TriangleStrip;
-	pCubeMesh->primitives.push_back(cubePrimitive);
-	pCubeMesh->CreateGfxDeviceBuffers();
+	pCubeMesh->primitives.push_back(Primitive::NewCube());
 	AssetDB::RegisterAsset(pCubeMesh, "cube");
 
 	

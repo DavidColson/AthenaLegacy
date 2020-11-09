@@ -22,16 +22,6 @@ void PostProcessingSystem::OnAddPostProcessing(Scene& scene, EntityID entity)
 	// Create constant data buffers
 	pp.postProcessDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::PostProcessShaderData), "Post process shader data");
 	pp.bloomDataBuffer = GfxDevice::CreateConstantBuffer(sizeof(CPostProcessing::BloomShaderData), "Bloom shader data");
-
-    // Vertex Buffer for fullscreen quad
-    eastl::vector<Vert_PosTex> quadVertices = {
-        Vert_PosTex{Vec3f(-1.0f, -1.0f, 0.0f), Vec2f(0.0f, 1.0f)},
-        Vert_PosTex{Vec3f(1.f, -1.f, 0.0f), Vec2f(1.0f, 1.0f)},
-        Vert_PosTex{Vec3f(-1.f, 1.f, 0.0f), Vec2f(0.0f, 0.0f)},
-        Vert_PosTex{Vec3f(1.f, 1.f, 0.0f), Vec2f(1.0f, 0.0f)}
-    };
-    pp.fullScreenQuad = GfxDevice::CreateVertexBuffer(quadVertices.size(), sizeof(Vert_PosTex), quadVertices.data(), "Fullscreen quad");
-
     pp.fullScreenTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Wrap, "Fullscreen texture");
 }
 
@@ -43,7 +33,6 @@ void PostProcessingSystem::OnRemovePostProcessing(Scene& scene, EntityID entity)
 
 	GfxDevice::FreeConstBuffer(pp.postProcessDataBuffer);
 	GfxDevice::FreeConstBuffer(pp.bloomDataBuffer);
-	GfxDevice::FreeVertexBuffer(pp.fullScreenQuad);
 	GfxDevice::FreeSampler(pp.fullScreenTextureSampler);
 	GfxDevice::FreeRenderTarget(pp.blurredFrame[0]);
 	GfxDevice::FreeRenderTarget(pp.blurredFrame[1]);
@@ -69,7 +58,8 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
         // Bind bloom shader data
         Shader* pShader = AssetDB::GetAsset<Shader>(pp->bloomShader);
         GfxDevice::BindProgram(pShader->program);
-        GfxDevice::BindVertexBuffers(1, &pp->fullScreenQuad);
+        GfxDevice::BindVertexBuffers(0, 1, &pp->fullScreenQuad.gfxVerticesBuffer);
+        GfxDevice::BindVertexBuffers(1, 1, &pp->fullScreenQuad.gfxTexcoordsBuffer);
         GfxDevice::BindSampler(pp->fullScreenTextureSampler, ShaderType::Pixel, 0);
 
         CPostProcessing::BloomShaderData bloomData;
@@ -108,7 +98,6 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
 
         Shader* pPPShader = AssetDB::GetAsset<Shader>(pp->postProcessShader);
         GfxDevice::BindProgram(pPPShader->program);
-        GfxDevice::BindVertexBuffers(1, &pp->fullScreenQuad);
 
         GfxDevice::BindTexture(preProcessedFrame, ShaderType::Pixel, 0);
         TextureHandle blurFrameTex = GfxDevice::GetTexture(pp->blurredFrame[1]);

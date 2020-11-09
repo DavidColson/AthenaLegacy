@@ -323,6 +323,15 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 
 void Editor::Destroy()
 {
+	GfxDevice::FreeRenderTarget(editorRenderTarget);
+
+	for (eastl::unique_ptr<EditorTool>& toolPtr : tools)
+	{
+		EditorTool* tool = toolPtr.release();
+		delete tool;
+	}
+	tools.clear();
+
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 }

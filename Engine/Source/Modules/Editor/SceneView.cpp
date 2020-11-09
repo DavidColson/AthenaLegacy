@@ -1,8 +1,5 @@
 #include "SceneView.h"
 
-#include "GraphicsDevice.h"
-#include "Rendering/GameRenderer.h"
-#include "Scene.h"
 #include "Input/Input.h"
 #include "AppWindow.h"
 
@@ -16,51 +13,6 @@
 #include <ImGui/imgui.h>
 #include <SDL.h>
 
-namespace
-{
-    // General Scene view info
-    RenderTargetHandle renderTarget;
-    TextureHandle lastFrame;
-    Vec2f windowSize{ Vec2f(0.0f, 0.0f) };
-    bool isIn2DMode = false;
-    bool drawGridLines = true;
-    bool drawOrigin = true;
-    bool drawFrame = true;
-
-    // Scene view camera
-    float cameraSpeed = 5.0f;
-    float pixelZoomLevel = 1.0f;
-    CCamera camera;
-    CTransform cameraTransform2D;
-    CTransform cameraTransform3D;
-
-
-    // Scene view control information
-    struct Controls
-    {
-        bool left{ false };
-        bool right{ false };
-        bool forward{ false };
-        bool backward{ false };
-        bool up{ false };
-        bool down{ false };
-        bool rightMouse{ false };
-        float mouseXRel{ 0.0f };
-        float mouseYRel{ 0.0f };
-        float mouseX{ 0.0f };
-        float mouseY{ 0.0f };
-        float localMouseX{ 0.0f };
-        float localMouseY{ 0.0f };
-    };
-    Controls controls;
-    bool isHovered{ false };
-    Vec2i relativeMouseStartLocation{ Vec2i(0, 0) };
-
-    // When dragging to move camera we use this data
-    Vec2i mouseDragStart{ Vec2i(0, 0) };
-    Vec3f cameraPositionStart{ Vec3f(0.0f, 0.0f, 0.0f) };
-}
-
 SceneView::SceneView()
 {
     menuName = "Scene View";
@@ -68,6 +20,12 @@ SceneView::SceneView()
         camera.projection = ProjectionMode::Orthographic;
     else
         camera.projection = ProjectionMode::Perspective;
+}
+
+SceneView::~SceneView()
+{
+    GfxDevice::FreeRenderTarget(renderTarget);
+    GfxDevice::FreeTexture(lastFrame);
 }
 
 bool SceneView::OnEvent(SDL_Event* event)
@@ -157,7 +115,7 @@ bool SceneView::OnEvent(SDL_Event* event)
     return false;
 }
 
-void UpdateCameraControls(float deltaTime)
+void SceneView::UpdateCameraControls(float deltaTime)
 {
     if (controls.rightMouse)
     {
@@ -197,7 +155,7 @@ void UpdateCameraControls(float deltaTime)
     controls.mouseYRel = 0.0f;
 }
 
-void DrawSceneViewHelpers3D()
+void SceneView::DrawSceneViewHelpers3D()
 {
     if (drawGridLines)
     {
@@ -227,7 +185,7 @@ void DrawSceneViewHelpers3D()
     }
 }
 
-void DrawSceneViewHelpers2D()
+void SceneView::DrawSceneViewHelpers2D()
 {
     if (drawFrame)
     {

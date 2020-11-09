@@ -23,6 +23,7 @@ struct FontSystemState
 	ConstBufferHandle constBuffer;
 	BlendStateHandle blendState;
 	VertexBufferHandle vertexBuffer;
+	VertexBufferHandle texcoordsBuffer;
 	IndexBufferHandle indexBuffer;
 	SamplerHandle charTextureSampler;
 
@@ -90,11 +91,7 @@ void FontSystem::Initialize()
 		return textureColor * color;\
 	}";
 
-	eastl::vector<VertexInputElement> layout;
-	layout.push_back({"POSITION", AttributeType::Float3});
-	layout.push_back({"TEXCOORD", AttributeType::Float2});
-
-	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", layout, "Fonts");
+	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", "Fonts");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
 	pState->fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
@@ -106,9 +103,11 @@ void FontSystem::Initialize()
 	blender.destinationAlpha = Blend::One;
 	pState->blendState = GfxDevice::CreateBlendState(blender);
 
-	// Create vertex buffer
+	// Create vertex buffers
 	// ********************
-	pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vert_PosTex), "Font Render Vert Buffer");
+
+	pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vec3f), "Font Render Vert Buffer");
+	pState->texcoordsBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vec2f), "Font Render Texcoords Buffer");
 	pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, IndexFormat::UInt, "Font Render Index Buffer");
 
 	// Create a constant buffer for the WVP
@@ -124,6 +123,7 @@ void FontSystem::Destroy()
 {
 	GfxDevice::FreeProgram(pState->fontShaderProgram);
 	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);
+	GfxDevice::FreeVertexBuffer(pState->texcoordsBuffer);
 	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
 	GfxDevice::FreeSampler(pState->charTextureSampler);
 	GfxDevice::FreeConstBuffer(pState->constBuffer);
@@ -167,7 +167,8 @@ void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 			textWidth += ch.advance * pTransform->localSca.x;
 		}
 
-		eastl::fixed_vector<Vert_PosTex, CHARS_PER_DRAW_CALL * 4> vertexList;
+		eastl::fixed_vector<Vec3f, CHARS_PER_DRAW_CALL * 4> vertexList;
+		eastl::fixed_vector<Vec2f, CHARS_PER_DRAW_CALL * 4> texcoordsList;
 		eastl::fixed_vector<uint32_t, CHARS_PER_DRAW_CALL * 6> indexList;
 		int currentIndex = 0;
 
@@ -179,10 +180,17 @@ void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 			float w = (float)ch.size.x * pTransform->localSca.x;
 			float h = (float)ch.size.y * pTransform->localSca.y;
 	
-			vertexList.push_back( Vert_PosTex{ Vec3f( xpos, ypos, 0.0f), Vec2f(ch.UV0.x, ch.UV1.y) });
-			vertexList.push_back( Vert_PosTex{ Vec3f( xpos + w, ypos + h, 0.0f), Vec2f(ch.UV1.x, ch.UV0.y) });
-			vertexList.push_back( Vert_PosTex{ Vec3f( xpos, ypos + h, 0.0f), Vec2f(ch.UV0.x, ch.UV0.y) });
-			vertexList.push_back( Vert_PosTex{ Vec3f( xpos + w, ypos, 0.0f), Vec2f(ch.UV1.x, ch.UV1.y) });
+			vertexList.push_back( Vec3f( xpos, ypos, 0.0f));
+			texcoordsList.push_back( Vec2f(ch.UV0.x, ch.UV1.y));
+
+			vertexList.push_back( Vec3f( xpos + w, ypos + h, 0.0f));
+			texcoordsList.push_back( Vec2f(ch.UV1.x, ch.UV0.y));
+
+			vertexList.push_back( Vec3f( xpos, ypos + h, 0.0f));
+			texcoordsList.push_back( Vec2f(ch.UV0.x, ch.UV0.y));
+
+			vertexList.push_back( Vec3f( xpos + w, ypos, 0.0f));
+			texcoordsList.push_back( Vec2f(ch.UV1.x, ch.UV1.y));
 			
 			// First triangle
 			indexList.push_back(currentIndex);
@@ -199,10 +207,12 @@ void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		}
 	
 		// Update buffers
-		GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vert_PosTex));
+		GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vec3f));
+		GfxDevice::UpdateDynamicVertexBuffer(pState->texcoordsBuffer, texcoordsList.data(), texcoordsList.size() * sizeof(Vec2f));
 		GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, indexList.data(), indexList.size() * sizeof(uint32_t));
 
-		GfxDevice::BindVertexBuffers(1, &pState->vertexBuffer);
+		GfxDevice::BindVertexBuffers(0, 1, &pState->vertexBuffer);
+		GfxDevice::BindVertexBuffers(1, 1, &pState->texcoordsBuffer);
 		GfxDevice::BindIndexBuffer(pState->indexBuffer);
 		
 		GfxDevice::BindTexture(pFont->fontTexture, ShaderType::Pixel, 0);

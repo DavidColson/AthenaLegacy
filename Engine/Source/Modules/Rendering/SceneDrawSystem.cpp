@@ -55,9 +55,13 @@ void SceneDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		for (Primitive& prim : pMesh->primitives)
 		{
 			GfxDevice::SetTopologyType(prim.topologyType);
-			GfxDevice::BindVertexBuffers(1, &prim.gfxVertBuffer);
+			GfxDevice::BindVertexBuffers(0, 1, &prim.gfxVerticesBuffer);
+			GfxDevice::BindVertexBuffers(1, 1, &prim.gfxNormalsBuffer);
+			GfxDevice::BindVertexBuffers(2, 1, &prim.gfxTexcoordsBuffer);
+			GfxDevice::BindVertexBuffers(3, 1, &prim.gfxColorsBuffer);
+
 			GfxDevice::BindIndexBuffer(prim.gfxIndexBuffer);
-			GfxDevice::DrawIndexed((int)prim.indexBuffer.size(), 0, 0);
+			GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);
 		}
 	}
 }

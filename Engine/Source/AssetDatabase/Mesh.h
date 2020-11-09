@@ -8,47 +8,37 @@
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 
-struct Vert_PosNormTexCol
-{
-    Vec3f position;
-    Vec3f norm;
-    Vec2f texCoord;
-    Vec4f color;
-};
-
-struct Vert_PosTex
-{
-    Vec3f position;
-    Vec2f texCoord;
-};
-
-struct Vert_PosCol
-{
-    Vec3f position;
-    Vec4f color;
-};
-
-struct Vert_PosTexCol
-{
-    Vec3f position;
-    Vec2f texCoord;
-    Vec4f color;
-};
-
 struct Primitive
 {
-    ~Primitive()
-    {
-        GfxDevice::FreeVertexBuffer(gfxVertBuffer);
-        GfxDevice::FreeIndexBuffer(gfxIndexBuffer);
-    }
+    Primitive() {}
+    Primitive(const Primitive& copy);
+	Primitive(Primitive&& copy);
+	Primitive& operator=(const Primitive& copy);
+	Primitive& operator=(Primitive&& copy);
 
-    eastl::vector<Vert_PosNormTexCol> vertBuffer{ nullptr };
-    eastl::vector<uint16_t> indexBuffer{ nullptr };
+    ~Primitive();
+
+    eastl::string name{"Primitive"};
+
+    eastl::vector<Vec3f> vertices{ nullptr };
+    eastl::vector<Vec3f> normals{ nullptr };
+    eastl::vector<Vec2f> texcoords{ nullptr };
+    eastl::vector<Vec4f> colors{ nullptr };
+
+    eastl::vector<uint16_t> indices{ nullptr };
 
     TopologyType topologyType{TopologyType::TriangleList};
-    VertexBufferHandle gfxVertBuffer;
+    VertexBufferHandle gfxVerticesBuffer;
+    VertexBufferHandle gfxNormalsBuffer;
+    VertexBufferHandle gfxTexcoordsBuffer;
+    VertexBufferHandle gfxColorsBuffer;
     IndexBufferHandle gfxIndexBuffer;
+
+    void CreateGfxBuffers();
+
+    // Primitive Mesh Creation
+    static Primitive NewPlainQuad();
+    static Primitive NewCube();
 };
 
 struct Mesh : public Asset
@@ -58,5 +48,7 @@ struct Mesh : public Asset
     eastl::string name;
     eastl::vector<Primitive> primitives;
 
-    void CreateGfxDeviceBuffers();
+    void CreateGfxBuffers();
 };
+
+Primitive MakePlainQuad();
