@@ -136,6 +136,7 @@ Primitive Primitive::NewPlainQuad()
     };
     prim.indices = {0, 1, 2, 3};
 
+    prim.topologyType = TopologyType::TriangleStrip;
     prim.CreateGfxBuffers();
     return prim;
 }

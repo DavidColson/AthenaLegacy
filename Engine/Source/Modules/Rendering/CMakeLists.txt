@@ -18,4 +18,6 @@ target_sources(Engine
         "RectPacking.cpp"
         "SpriteDrawSystem.h"
         "SpriteDrawSystem.cpp"
+        "GfxDraw.h"
+        "GfxDraw.cpp"
 )

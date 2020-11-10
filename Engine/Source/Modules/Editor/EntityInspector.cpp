@@ -52,6 +52,7 @@ void EntityInspector::Update(Scene& scene, float deltaTime)
 
 	for (Variant component : ComponentsOnEntity(scene, selectedEntity))
 	{
+		bool removedComponent = false;
 		TypeData& componentType = component.GetType();
 		if (ImGui::CollapsingHeader(componentType.name, ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -61,6 +62,7 @@ void EntityInspector::Update(Scene& scene, float deltaTime)
 				if (ImGui::Button("Remove Component", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
 				{
 					scene.Remove(selectedEntity, componentType);
+					removedComponent = true;
 				}
 				ImGui::PopID();
 			}
@@ -151,7 +153,8 @@ void EntityInspector::Update(Scene& scene, float deltaTime)
 				}
 			}
 		}
-		scene.Set(selectedEntity, component);
+		if (!removedComponent)
+			scene.Set(selectedEntity, component);
 	}
 
 	ImGui::End();

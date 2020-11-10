@@ -10,6 +10,7 @@
 #include "ShapesSystem.h"
 #include "SceneDrawSystem.h"
 #include "SpriteDrawSystem.h"
+#include "GfxDraw.h"
 #include "Editor/Editor.h"
 #include "Vec2.h"
 #include "Maths.h"
@@ -45,6 +46,7 @@ void GameRenderer::Initialize(float width, float height)
 	DebugDraw::Initialize();
 	FontSystem::Initialize();
     SpriteDrawSystem::Initialize();
+    GfxDraw::Initialize();
 
     gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, 4, "Game Render Target");
 
@@ -99,6 +101,7 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 
     // Things that have transparency
     FontSystem::OnFrame(scene, context, deltaTime);
+    GfxDraw::OnFrame(scene, context, deltaTime);
     SpriteDrawSystem::OnFrame(scene, context, deltaTime);
     
     // Post processing, always last
@@ -119,6 +122,7 @@ void GameRenderer::OnFrameEnd(Scene& scene, float deltaTime)
 {
     Shapes::OnFrameEnd(scene, deltaTime);
     DebugDraw::OnFrameEnd(scene, deltaTime);
+    GfxDraw::OnFrameEnd(scene, deltaTime);
 }
 
 // ***********************************************************************

@@ -9,6 +9,7 @@
 #include "Rendering/ShapesSystem.h"
 #include "Rendering/SceneDrawSystem.h"
 #include "Rendering/SpriteDrawSystem.h"
+#include "Rendering/GfxDraw.h"
 
 #include <ImGui/imgui.h>
 #include <SDL.h>
@@ -317,6 +318,7 @@ void SceneView::Update(Scene& scene, float deltaTime)
     ParticlesSystem::OnFrame(scene, context, deltaTime);
     DebugDraw::OnFrame(scene, context, deltaTime);
     FontSystem::OnFrame(scene, context, deltaTime);
+    GfxDraw::OnFrame(scene, context, deltaTime);
     SpriteDrawSystem::OnFrame(scene, context, deltaTime);
 
     GfxDevice::UnbindRenderTarget(renderTarget);

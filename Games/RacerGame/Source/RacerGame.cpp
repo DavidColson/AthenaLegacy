@@ -13,11 +13,17 @@
 #include <Json.h>
 #include <Path.h>
 
+#include <Rendering/GfxDraw.h>
+
 #include <FileSystem.h>
 
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
+
+	GfxDraw::Line(Vec3f(0.0f, 0.0f, 2.0f), Vec3f(0.0f, 0.0f, 5.0f), 1.0f);
+	GfxDraw::Line(Vec3f(0.0f, 2.0f, 3.0f), Vec3f(0.0f, 0.0f, 5.0f), 1.0f);
+	GfxDraw::Line(Vec3f(2.0f, 0.0f, 4.0f), Vec3f(0.0f, 0.0f, 5.0f), 1.0f);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
@@ -59,7 +65,6 @@ int main(int argc, char *argv[])
 	EngineConfig config;
 	config.windowName = "Racer Game";
 	config.gameResourcesPath = "Games/RacerGame/Resources/";
-	config.bootInEditor = false;
 
 	Engine::Initialize(config);
 
