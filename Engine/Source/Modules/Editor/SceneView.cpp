@@ -304,9 +304,11 @@ void SceneView::Update(Scene& scene, float deltaTime)
         context.projection = Matrixf::Perspective(windowSize.x, windowSize.y, 0.1f, 100.0f, camera.fov);
     }
 
+    // BUG: Not correct if camera parented to something
     Matrixf translate = Matrixf::MakeTranslation(-activeCamTransform.localPos);
     Quatf rotation = Quatf::MakeFromEuler(activeCamTransform.localRot);
     context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
+    context.camWorldPosition = Vec3f(activeCamTransform.localPos);
 
     if (isIn2DMode)
         DrawSceneViewHelpers2D();

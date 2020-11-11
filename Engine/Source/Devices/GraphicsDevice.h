@@ -216,6 +216,8 @@ namespace GfxDevice
 
 	void DrawInstanced(int numVerts, int numInstances, int startVertex, int startInstance);
 
+	void DrawIndexedInstanced(int indexCountPerInstance, int numInstances, int startIndex, int startVertex, int startInstance);
+
 	// Blend States
 
 	BlendStateHandle CreateBlendState(const BlendingInfo& info);

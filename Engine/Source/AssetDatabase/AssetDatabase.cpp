@@ -265,7 +265,7 @@ void AssetDB::UpdateHotReloading()
             pAsset = GetAssetRaw(AssetHandle(hot.assetID));
             hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].realPath);
 
-            Log::Info("Hot reloading asset %s..", assetMetas[hot.assetID].realPath.AsRawString());
+            Log::Info("Successfully reloaded asset %s..", assetMetas[hot.assetID].realPath.AsRawString());
         }
     }
 }

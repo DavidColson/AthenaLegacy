@@ -31,6 +31,7 @@ struct FrameContext
     RenderTargetHandle backBuffer;
     Matrixf projection;
     Matrixf view;
+    Vec3f camWorldPosition;
 };
 
 namespace GameRenderer

@@ -12,12 +12,21 @@ namespace
 {
     struct PerObject
     {
-        Matrixf wvp;
+        Matrixf worldToClipTransform;
+    };
+
+    struct PerScene
+    {
+        Vec3f camWorldPosition;
+        float padding;
     };
 
     struct LineShape
     {
+        // This structure maps to a structure in shaders in which variables are 16 byte aligned, so we need padding to make it work properly
+
         Vec3f start;
+        float padding;
         Vec3f end;
         float thickness;
 
@@ -29,7 +38,9 @@ namespace
     Primitive lineMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
 
-    ConstBufferHandle lineShaderPerObject; 
+    ConstBufferHandle lineShaderPerObjectData; 
+    ConstBufferHandle lineShaderPerSceneData; 
+    ConstBufferHandle lineShaderInstanceData;
 }
 
 void GfxDraw::Line(Vec3f start, Vec3f end, float thickness)
@@ -39,37 +50,45 @@ void GfxDraw::Line(Vec3f start, Vec3f end, float thickness)
 
 void GfxDraw::Initialize()
 {
+    lines.reserve(16);
     lineMesh = Primitive::NewPlainQuad();
-    lineShaderPerObject = GfxDevice::CreateConstantBuffer(sizeof(PerObject), "Line Renderer Per Object Buffer");
+
+    lineShaderPerObjectData = GfxDevice::CreateConstantBuffer(sizeof(PerObject), "Line Renderer Per Object data");
+    lineShaderPerSceneData = GfxDevice::CreateConstantBuffer(sizeof(PerScene), "Line Renderer Per Scene data");
+
+    uint32_t bufferSize = sizeof(LineShape) * 16;
+	lineShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Line Renderer Instance Data");
 }
 
 void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
     // Go through list of primitives and render them all
-    for (LineShape& line : lines)
-    {
-		Shader* pShader = AssetDB::GetAsset<Shader>(lineDrawShader);
-		if (pShader == nullptr)
-			return;
+    Shader* pShader = AssetDB::GetAsset<Shader>(lineDrawShader);
+    if (pShader == nullptr)
+        return;
 
-        Matrixf transform = Matrixf::MakeTRS(line.start, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0));
+    ctx.view.GetForwardVector();
+    PerScene data{ctx.camWorldPosition};
+    GfxDevice::BindConstantBuffer(lineShaderPerSceneData, &data, ShaderType::Vertex, 0);
+    
+    Matrixf worldToClipTransform = ctx.projection * ctx.view;
+    PerObject trans{ worldToClipTransform };
+    GfxDevice::BindConstantBuffer(lineShaderPerObjectData, &trans, ShaderType::Vertex, 1);
+    
+    GfxDevice::BindConstantBuffer(lineShaderInstanceData, lines.data(), ShaderType::Vertex, 2);
 
-		Matrixf wvp = ctx.projection * ctx.view * transform;
-		PerObject trans{ wvp };
-		GfxDevice::BindConstantBuffer(lineShaderPerObject, &trans, ShaderType::Vertex, 0);
+    GfxDevice::BindProgram(pShader->program);
 
-		GfxDevice::BindProgram(pShader->program);
+    GfxDevice::SetTopologyType(lineMesh.topologyType);
+    GfxDevice::BindVertexBuffers(0, 1, &lineMesh.gfxVerticesBuffer);
+    GfxDevice::BindVertexBuffers(1, 1, &lineMesh.gfxColorsBuffer);
 
-        GfxDevice::SetTopologyType(lineMesh.topologyType);
-        GfxDevice::BindVertexBuffers(0, 1, &lineMesh.gfxVerticesBuffer);
-        GfxDevice::BindVertexBuffers(1, 1, &lineMesh.gfxColorsBuffer);
-
-        GfxDevice::BindIndexBuffer(lineMesh.gfxIndexBuffer);
-        GfxDevice::DrawIndexed((int)lineMesh.indices.size(), 0, 0);
-    } 
+    GfxDevice::BindIndexBuffer(lineMesh.gfxIndexBuffer);
+    GfxDevice::DrawIndexedInstanced((int)lineMesh.indices.size(), (int)lines.size(), 0, 0, 0);
 }
 
 void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
 {
-    lines.clear();    
+    lines.clear();
+    lines.reserve(16);
 }

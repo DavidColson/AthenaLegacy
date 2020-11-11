@@ -78,14 +78,17 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
     context.backBuffer = gameRenderTarget;
     context.view = Matrixf::Identity();
     context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 200.0f);
+    context.camWorldPosition = Vec3f(0.0f);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
+        // NOTE This is wrong, use global transform for camera, local may not be correct if parented to something
 		CCamera* pCam = scene.Get<CCamera>(cams);
 		CTransform* pTrans = scene.Get<CTransform>(cams);
 		Matrixf translate = Matrixf::MakeTranslation(-pTrans->localPos);
 		Quatf rotation = Quatf::MakeFromEuler(pTrans->localRot);
 		context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
+        context.camWorldPosition = Vec3f(pTrans->localPos);
 
         if (pCam->projection == ProjectionMode::Perspective)
 		    context.projection = Matrixf::Perspective(GameRenderer::GetWidth(), GameRenderer::GetHeight(), 0.1f, 100.0f, pCam->fov);

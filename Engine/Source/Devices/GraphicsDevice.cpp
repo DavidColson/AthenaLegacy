@@ -510,9 +510,18 @@ void GfxDevice::Draw(int numVerts, int startVertex)
 	pCtx->pDeviceContext->Draw(numVerts, startVertex);
 }
 
+// ***********************************************************************
+
 void GfxDevice::DrawInstanced(int numVerts, int numInstances, int startVertex, int startInstance)
 {
 	pCtx->pDeviceContext->DrawInstanced(numVerts, numInstances, startVertex, startInstance);
+}
+
+// ***********************************************************************
+
+void GfxDevice::DrawIndexedInstanced(int indexCountPerInstance, int numInstances, int startIndex, int startVertex, int startInstance)
+{
+	pCtx->pDeviceContext->DrawIndexedInstanced(indexCountPerInstance, numInstances, startIndex, startVertex, startInstance);
 }
 
 // ***********************************************************************
