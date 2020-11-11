@@ -22,6 +22,7 @@ namespace
         eastl::string fullIdentifier;
         eastl::string subAssetName;
         Path path;
+        Path realPath;
         uint32_t refCount{ 0 };
     };
     eastl::map<uint64_t, AssetMeta> assetMetas;
@@ -171,10 +172,12 @@ Asset* AssetDB::GetAssetRaw(AssetHandle handle)
         Path fileInEngineResources = Path(Engine::GetConfig().engineResourcesPath) / path;
         if (FileSys::Exists(fileInGameResources))
         {
+            assetMetas[handle.id].realPath = fileInGameResources;
             pAsset->Load(fileInGameResources, handleForThis);
         }
         else if (FileSys::Exists(fileInEngineResources))
         {
+            assetMetas[handle.id].realPath = fileInEngineResources;
             pAsset->Load(fileInEngineResources, handleForThis);
         }
         else
@@ -237,7 +240,7 @@ void AssetDB::RegisterAsset(Asset* pAsset, eastl::string identifier)
         {
             HotReloadingAsset hot;
             hot.assetID = handle.id; 
-            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].path);;
+            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].realPath);
             hotReloadWatches.push_back(hot);
         }
     }
@@ -247,12 +250,12 @@ void AssetDB::UpdateHotReloading()
 {
     for (HotReloadingAsset& hot : hotReloadWatches)
     {
-        if (hot.cacheLastModificationTime != FileSys::LastWriteTime(assetMetas[hot.assetID].path))
+        if (hot.cacheLastModificationTime != FileSys::LastWriteTime(assetMetas[hot.assetID].realPath))
         {
             if (assetMetas[hot.assetID].refCount == 0)
                 continue; // Don't hot reload an asset no one is referencing
 
-            if (FileSys::IsInUse(assetMetas[hot.assetID].path))
+            if (FileSys::IsInUse(assetMetas[hot.assetID].realPath))
                 continue;
 
             Asset* pAsset = assets[hot.assetID];
@@ -260,7 +263,9 @@ void AssetDB::UpdateHotReloading()
             delete pAsset;
 
             pAsset = GetAssetRaw(AssetHandle(hot.assetID));
-            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].path);
+            hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].realPath);
+
+            Log::Info("Hot reloading asset %s..", assetMetas[hot.assetID].realPath.AsRawString());
         }
     }
 }
