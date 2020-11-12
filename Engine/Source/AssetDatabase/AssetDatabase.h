@@ -32,7 +32,10 @@ struct AssetHandle
 struct Asset
 {
     virtual void Load(Path loadPath, AssetHandle handleForThis) = 0;
+    virtual void Reload(Path loadPath, AssetHandle handleForThis) {};
     virtual ~Asset() {};
+
+    bool bOverrideReload{ false };
 };
 
 // Some notes:

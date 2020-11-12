@@ -259,13 +259,20 @@ void AssetDB::UpdateHotReloading()
                 continue;
 
             Asset* pAsset = assets[hot.assetID];
-            assets.erase(hot.assetID);
-            delete pAsset;
+            if (pAsset->bOverrideReload)
+            {
+                pAsset->Reload(assetMetas[hot.assetID].realPath, AssetHandle(hot.assetID));
+            }
+            else
+            {
+                assets.erase(hot.assetID);
+                delete pAsset;
 
-            pAsset = GetAssetRaw(AssetHandle(hot.assetID));
+                pAsset = GetAssetRaw(AssetHandle(hot.assetID));
+            }
+
             hot.cacheLastModificationTime = FileSys::LastWriteTime(assetMetas[hot.assetID].realPath);
-
-            Log::Info("Successfully reloaded asset %s..", assetMetas[hot.assetID].realPath.AsRawString());
+            Log::Info("Reloaded asset %s..", assetMetas[hot.assetID].realPath.AsRawString());
         }
     }
 }
