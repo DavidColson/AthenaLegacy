@@ -28,7 +28,8 @@ struct VertInput
 };
 
 struct VertOutput
-{
+{   
+    float4 modelPos : POSITION;
     float4 pos : SV_POSITION;
     float4 col: COLOR;
 };
@@ -42,7 +43,7 @@ VertOutput VSMain(VertInput vertIn)
     // take distance between vertex and vertex + normal and convert to screen space by going to clip space then perspective divide and multipling by screen size.
     // This gives you 1 unit in world space in pixels. You have effectively pixels per meter.
     // Multiply thickness by pixels per meter, then clamp to 1, then divide by pixels per meter to get back to thickness in meters
-    float thickness = array[vertIn.instanceId].thickness;
+    float thickness = array[vertIn.instanceId].thickness * 0.5;
 
     float4 lineStart = float4(array[vertIn.instanceId].lineStart, 1.0);
     float4 lineEnd = float4(array[vertIn.instanceId].lineEnd, 1.0);
@@ -53,22 +54,22 @@ VertOutput VSMain(VertInput vertIn)
     float4 diff = lineEnd - lineStart;
     float4 norm = normalize(float4(cross(diff, float4(-invDirectionToCam, 1.0)), 0.0));
 
-    // Can we do this with UVs instead?
-    if (vertIn.vertexId == 0)
-        thisVert += norm * thickness;
-    else if (vertIn.vertexId == 1)
-        thisVert += norm * thickness;
-    else if (vertIn.vertexId == 2)
-        thisVert -= norm * thickness;
-    else if (vertIn.vertexId == 3)
-        thisVert -= norm * thickness;
-
+    thisVert -= vertIn.pos.y * norm * thickness;
     output.pos = mul(thisVert, worldToClipTransform);
     output.col = vertIn.col;
+    output.modelPos = vertIn.pos;
     return output;
 }
 
 float4 PSMain(VertOutput pixelIn) : SV_TARGET
 {
-    return pixelIn.col;
+    float4 result = pixelIn.col;
+
+    float distanceToEdge = (1.0 - abs(pixelIn.modelPos.y));
+
+    float aliasingTune = 2.0;
+    float gradientSize = aliasingTune * fwidth(distanceToEdge);
+    result.a *= smoothstep(0.0, 1.0, distanceToEdge / gradientSize);
+
+    return result;
 }

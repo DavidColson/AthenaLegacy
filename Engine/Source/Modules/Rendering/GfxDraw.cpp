@@ -41,6 +41,7 @@ namespace
     ConstBufferHandle lineShaderPerObjectData; 
     ConstBufferHandle lineShaderPerSceneData; 
     ConstBufferHandle lineShaderInstanceData;
+    BlendStateHandle blendState;
 }
 
 void GfxDraw::Line(Vec3f start, Vec3f end, float thickness)
@@ -58,6 +59,14 @@ void GfxDraw::Initialize()
 
     uint32_t bufferSize = sizeof(LineShape) * 16;
 	lineShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Line Renderer Instance Data");
+
+    BlendingInfo blender;
+	blender.enabled = true;
+	blender.source = Blend::SrcAlpha;
+	blender.destination = Blend::InverseSrcAlpha;
+	blender.sourceAlpha = Blend::InverseSrcAlpha;
+	blender.destinationAlpha = Blend::One;
+	blendState = GfxDevice::CreateBlendState(blender);
 }
 
 void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
@@ -67,6 +76,9 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     if (pShader == nullptr)
         return;
 
+	GfxDevice::SetBlending(blendState);
+
+	GfxDevice::SetBlending(blendState);
     ctx.view.GetForwardVector();
     PerScene data{ctx.camWorldPosition};
     GfxDevice::BindConstantBuffer(lineShaderPerSceneData, &data, ShaderType::Vertex, 0);
