@@ -48,7 +48,7 @@ void GameRenderer::Initialize(float width, float height)
     SpriteDrawSystem::Initialize();
     GfxDraw::Initialize();
 
-    gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, 4, "Game Render Target");
+    gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, Engine::GetConfig().multiSamples, "Game Render Target");
 
     gameWindowSize = Vec2f(width, height);
 }
@@ -213,7 +213,7 @@ void GameRenderer::ResizeGameFrame(Scene& scene, float newWidth, float newHeight
 {
     gameWindowSize = Vec2f(newWidth, newHeight);
     GfxDevice::FreeRenderTarget(gameRenderTarget);
-    gameRenderTarget = GfxDevice::CreateRenderTarget(gameWindowSize.x, gameWindowSize.y, 4, "Game Render Target");
+    gameRenderTarget = GfxDevice::CreateRenderTarget(gameWindowSize.x, gameWindowSize.y, Engine::GetConfig().multiSamples, "Game Render Target");
 
     PostProcessingSystem::OnWindowResize(scene, gameWindowSize.x, gameWindowSize.y);
 }

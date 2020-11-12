@@ -1,5 +1,7 @@
 #include "GraphicsDevice.h"
 
+#include "Engine.h"
+
 #include <SDL_video.h>
 #include <SDL_syswm.h>
 #include <D3DCompiler.h>
@@ -216,7 +218,7 @@ void GfxDevice::Initialize(SDL_Window *pWindow, float width, float height)
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // use 32-bit color
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;  // how swap chain is to be used
 	scd.OutputWindow = hwnd;							// the window to be used
-	scd.SampleDesc.Count = multisampleCount;			// how many multisamples
+	scd.SampleDesc.Count = Engine::GetConfig().multiSamples;// how many multisamples
 	scd.SampleDesc.Quality = 0;
 	scd.Windowed = TRUE; // windowed/full-screen mode
 
@@ -263,7 +265,7 @@ void GfxDevice::Initialize(SDL_Window *pWindow, float width, float height)
 			textureDesc.Height = UINT(height);
 			textureDesc.MipLevels = textureDesc.ArraySize = 1;
 			textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			textureDesc.SampleDesc.Count = multisampleCount;
+			textureDesc.SampleDesc.Count = Engine::GetConfig().multiSamples;
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
 			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 			textureDesc.CPUAccessFlags = 0;
@@ -389,7 +391,7 @@ void GfxDevice::ResizeBackBuffer(float width, float height)
 			textureDesc.Height = UINT(height);
 			textureDesc.MipLevels = textureDesc.ArraySize = 1;
 			textureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-			textureDesc.SampleDesc.Count = 4;
+			textureDesc.SampleDesc.Count = Engine::GetConfig().multiSamples;
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
 			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 			textureDesc.CPUAccessFlags = 0;

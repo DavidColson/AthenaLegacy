@@ -20,11 +20,18 @@ struct EngineConfig
 	REFLECT()
 
 	eastl::string windowName{ "Athena" };
+	
+	// Rendering
 	Vec2f windowResolution{ Vec2f( 1800.f, 1000.f ) };
 	Vec2f baseGameResolution{ Vec2f( 1800.f, 1000.f ) };
 	bool gameFramePointFilter{ true };
 	ResolutionStretchMode resolutionStretchMode{ ResolutionStretchMode::NoStretch };
+	int multiSamples{ 4 };
+	
+	// Editor
 	bool bootInEditor{ true };
+
+	// Assets
 	bool hotReloadingAssetsEnabled{ true };
 	eastl::string gameResourcesPath{ "" };
 	eastl::string engineResourcesPath{ "Engine/Resources/" };

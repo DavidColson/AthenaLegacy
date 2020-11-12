@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
 	EngineConfig config;
 	config.windowName = "Racer Game";
 	config.gameResourcesPath = "Games/RacerGame/Resources/";
+	config.multiSamples = 1;
 
 	Engine::Initialize(config);
 

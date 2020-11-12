@@ -281,7 +281,7 @@ void SceneView::Update(Scene& scene, float deltaTime)
 	{
 		windowSize = ImGui::GetContentRegionAvail();
         GfxDevice::FreeRenderTarget(renderTarget);
-        renderTarget = GfxDevice::CreateRenderTarget(windowSize.x, windowSize.y, 4, "SceneView Render Target");
+        renderTarget = GfxDevice::CreateRenderTarget(windowSize.x, windowSize.y, Engine::GetConfig().multiSamples, "SceneView Render Target");
     }
 
     GfxDevice::BindRenderTarget(renderTarget);
