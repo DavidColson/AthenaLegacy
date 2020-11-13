@@ -2,6 +2,7 @@
 cbuffer PerSceneData : register(b0)
 {
     float3 camWorldPosition;
+    float2 screenDimensions;
 }
 
 cbuffer PerObjectData : register(b1)
@@ -29,20 +30,36 @@ struct VertInput
 
 struct VertOutput
 {   
-    float4 modelPos : POSITION;
+    float2 uv : TEXCOORD;
     float4 pos : SV_POSITION;
     float4 col: COLOR;
+    float capLengthRatio : CAPLENGTHRATIO;
 };
+
+float2 WorldToScreenSpaceNormalized(float3 pos)
+{
+    float4 clipSpace = mul(float4(pos, 1.0), worldToClipTransform);
+    return clipSpace.xy / clipSpace.w;
+}
+
+float WorldDistanceInPixels(float3 pos1, float3 pos2)
+{
+    float2 screenSpace1 = WorldToScreenSpaceNormalized(pos1);
+    float2 screenSpace2 = WorldToScreenSpaceNormalized(pos2);
+    float2 distance = (screenSpace1 - screenSpace2) * screenDimensions.xy;
+    return length(distance) * 0.5;
+}
+
+#define ROUND_CAPS
+#define ANTI_ALIASING
 
 VertOutput VSMain(VertInput vertIn)
 {
-    // When you get vertex start point from instance data, just set vertex to that, and then do world to clip.
     VertOutput output;
 
-    // If edge to edge distance is less than 1 pixel, then clamp it. But how the fuck do we work that out? 
-    // take distance between vertex and vertex + normal and convert to screen space by going to clip space then perspective divide and multipling by screen size.
-    // This gives you 1 unit in world space in pixels. You have effectively pixels per meter.
-    // Multiply thickness by pixels per meter, then clamp to 1, then divide by pixels per meter to get back to thickness in meters
+    // Implement ability to set thickness as a pixels unit
+
+    // We divide by half since we extrude in both directions by thickness
     float thickness = array[vertIn.instanceId].thickness * 0.5;
 
     float4 lineStart = float4(array[vertIn.instanceId].lineStart, 1.0);
@@ -50,26 +67,66 @@ VertOutput VSMain(VertInput vertIn)
     float4 thisVert = (vertIn.vertexId % 2 == 0) ? lineStart : lineEnd;
 
     float3 invDirectionToCam = thisVert.xyz - camWorldPosition;
-
     float4 diff = lineEnd - lineStart;
+    // if you want z aligned just use Z world axis instead of invDirectionToCam
     float4 norm = normalize(float4(cross(diff, float4(-invDirectionToCam, 1.0)), 0.0));
 
-    thisVert -= vertIn.pos.y * norm * thickness;
+    // This will set the thickness such that it's never less than 1 pixel on the screen
+    float pixelsPerMeter = WorldDistanceInPixels(thisVert, thisVert + norm);
+    float thicknessPixels = thickness * pixelsPerMeter;
+    #if defined(ANTI_ALIASING)
+        thicknessPixels = max(0.5, thicknessPixels + 1.0);
+    #else
+        thicknessPixels = max(0.5, thicknessPixels);
+    #endif
+    thickness = thicknessPixels / pixelsPerMeter;
+
+
+    thisVert -= vertIn.pos.y * norm * thickness; // Extrude width
+    #if defined(ROUND_CAPS)
+        thisVert += vertIn.pos.x * normalize(diff) * thickness; // Extrude ends
+    #endif
+
     output.pos = mul(thisVert, worldToClipTransform);
     output.col = vertIn.col;
-    output.modelPos = vertIn.pos;
+    output.uv = vertIn.pos.xy;
+    output.capLengthRatio = 2.0 * thickness / length(diff);
+
     return output;
+}
+
+float FWidthFancy(float value)
+{
+    float2 pd = float2(ddx(value), ddy(value));
+	return sqrt( dot( pd, pd ) );
 }
 
 float4 PSMain(VertOutput pixelIn) : SV_TARGET
 {
     float4 result = pixelIn.col;
 
-    float distanceToEdge = (1.0 - abs(pixelIn.modelPos.y));
-
+#if defined(ANTI_ALIASING)
     float aliasingTune = 2.0;
-    float gradientSize = aliasingTune * fwidth(distanceToEdge);
-    result.a *= smoothstep(0.0, 1.0, distanceToEdge / gradientSize);
+    float2 distanceToLine = 1.0 - abs(pixelIn.uv);
+    
+    // Blur line edges
+    float mask = 1.0;
+    float gradientSize = aliasingTune * FWidthFancy(pixelIn.uv.y);
+    mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.y / gradientSize));
 
+    #if defined(ROUND_CAPS)
+        float2 uv = abs(pixelIn.uv);
+        uv.x = (uv.x - 1) / pixelIn.capLengthRatio + 1;
+        float distanceToCap = 1.0 - length(max(0, uv));
+        mask = min(mask, smoothstep(0.0, 1.0, distanceToCap / gradientSize));
+    #else
+        float gradSize = aliasingTune * FWidthFancy(pixelIn.uv.x);
+        mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.x / gradSize));
+    #endif
+
+    result.a *= mask;
+#endif
+
+    // Can do distance blend by multipling mask by clamped (how wide is this line in pixels)
     return result;
 }

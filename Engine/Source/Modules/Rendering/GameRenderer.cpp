@@ -77,7 +77,8 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
     FrameContext context;
     context.backBuffer = gameRenderTarget;
     context.view = Matrixf::Identity();
-    context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 200.0f);
+    context.screenDimensions = gameWindowSize;
+    context.projection = Matrixf::Orthographic(0.f, gameWindowSize.x, 0.0f, gameWindowSize.y, -1.0f, 200.0f);
     context.camWorldPosition = Vec3f(0.0f);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
@@ -91,9 +92,9 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
         context.camWorldPosition = Vec3f(pTrans->localPos);
 
         if (pCam->projection == ProjectionMode::Perspective)
-		    context.projection = Matrixf::Perspective(GameRenderer::GetWidth(), GameRenderer::GetHeight(), 0.1f, 100.0f, pCam->fov);
+		    context.projection = Matrixf::Perspective(gameWindowSize.x, gameWindowSize.y, 0.1f, 100.0f, pCam->fov);
         else if (pCam->projection == ProjectionMode::Orthographic)
-		    context.projection = Matrixf::Orthographic(0.f, GameRenderer::GetWidth(), 0.0f, GameRenderer::GetHeight(), -1.0f, 200.0f);
+		    context.projection = Matrixf::Orthographic(0.f, gameWindowSize.x, 0.0f, gameWindowSize.y, -1.0f, 200.0f);
 	}
 
     // Opaque things

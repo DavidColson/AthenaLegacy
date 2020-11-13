@@ -19,6 +19,9 @@ namespace
     {
         Vec3f camWorldPosition;
         float padding;
+        Vec2f screenDimensions;
+        float padding1;
+        float padding2;
     };
 
     struct LineShape
@@ -80,7 +83,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 	GfxDevice::SetBlending(blendState);
     ctx.view.GetForwardVector();
-    PerScene data{ctx.camWorldPosition};
+    PerScene data{ctx.camWorldPosition, 0.0f, Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y)};
     GfxDevice::BindConstantBuffer(lineShaderPerSceneData, &data, ShaderType::Vertex, 0);
     
     Matrixf worldToClipTransform = ctx.projection * ctx.view;

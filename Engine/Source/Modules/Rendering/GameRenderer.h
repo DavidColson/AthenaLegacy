@@ -32,6 +32,7 @@ struct FrameContext
     Matrixf projection;
     Matrixf view;
     Vec3f camWorldPosition;
+    Vec2f screenDimensions;
 };
 
 namespace GameRenderer

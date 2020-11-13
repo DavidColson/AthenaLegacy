@@ -291,6 +291,7 @@ void SceneView::Update(Scene& scene, float deltaTime)
     FrameContext context;
     context.backBuffer = renderTarget;
     context.view = Matrixf::Identity();
+    context.screenDimensions = windowSize;
 
     CTransform activeCamTransform;
     if (isIn2DMode)

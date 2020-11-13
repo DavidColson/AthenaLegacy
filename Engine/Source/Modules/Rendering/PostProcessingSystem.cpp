@@ -52,7 +52,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
 
         GfxDevice::BindRenderTarget(pp->blurredFrame[0]);
         GfxDevice::ClearRenderTarget(pp->blurredFrame[0], { 0.0f, 0.f, 0.f, 1.0f }, true, true);
-        GfxDevice::SetViewport(0.f, 0.f, GameRenderer::GetWidth() / 2.0f, GameRenderer::GetHeight() / 2.0f);
+        GfxDevice::SetViewport(0.f, 0.f, ctx.screenDimensions.x / 2.0f, ctx.screenDimensions.y / 2.0f);
         GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
         // Bind bloom shader data
@@ -94,7 +94,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
         // Now we'll actually render onto the backbuffer and do our final post process stage
         GameRenderer::SetBackBufferActive();
         GameRenderer::ClearBackBuffer({ 0.0f, 0.f, 0.f, 1.0f }, true, true);
-        GfxDevice::SetViewport(0, 0, GameRenderer::GetWidth(), GameRenderer::GetHeight());
+        GfxDevice::SetViewport(0, 0, ctx.screenDimensions.x, ctx.screenDimensions.y);
 
         Shader* pPPShader = AssetDB::GetAsset<Shader>(pp->postProcessShader);
         GfxDevice::BindProgram(pPPShader->program);
@@ -106,7 +106,7 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
         GfxDevice::BindSampler(pp->fullScreenTextureSampler, ShaderType::Pixel, 0);
         
         CPostProcessing::PostProcessShaderData ppData;
-        ppData.resolution = Vec2f(GameRenderer::GetWidth(), GameRenderer::GetHeight());
+        ppData.resolution = Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y);
         ppData.time = float(SDL_GetTicks()) / 1000.0f;
         GfxDevice::BindConstantBuffer(pp->postProcessDataBuffer, &ppData, ShaderType::Pixel, 0);
 
