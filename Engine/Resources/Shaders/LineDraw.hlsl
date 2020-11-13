@@ -13,9 +13,10 @@ cbuffer PerObjectData : register(b1)
 cbuffer InstanceData : register(b2)
 {
 	struct {
+		float4 color;
 		float3 lineStart;
-		float3 lineEnd;
 		float thickness;
+		float3 lineEnd;
 	} array[16];
 };
 
@@ -23,7 +24,6 @@ cbuffer InstanceData : register(b2)
 struct VertInput
 {
     float4 pos : SV_POSITION;
-    float4 col : COLOR;
     uint instanceId : SV_InstanceID;
     uint vertexId : SV_VertexID;
 };
@@ -88,7 +88,7 @@ VertOutput VSMain(VertInput vertIn)
     #endif
 
     output.pos = mul(thisVert, worldToClipTransform);
-    output.col = vertIn.col;
+    output.col = array[vertIn.instanceId].color;
     output.uv = vertIn.pos.xy;
     output.capLengthRatio = 2.0 * thickness / length(diff);
 

@@ -28,12 +28,13 @@ namespace
     {
         // This structure maps to a structure in shaders in which variables are 16 byte aligned, so we need padding to make it work properly
 
+        Vec4f color;
         Vec3f start;
-        float padding;
-        Vec3f end;
         float thickness;
+        Vec3f end;
+        float padding;
 
-        LineShape(Vec3f _start, Vec3f _end, float _thickness) : start(_start), end(_end), thickness(_thickness) {}
+        LineShape(Vec3f _start, Vec3f _end, Vec4f _color, float _thickness) : start(_start), end(_end), color(_color), thickness(_thickness) {}
     };
 
     eastl::vector<LineShape> lines;
@@ -47,9 +48,9 @@ namespace
     BlendStateHandle blendState;
 }
 
-void GfxDraw::Line(Vec3f start, Vec3f end, float thickness)
+void GfxDraw::Line(Vec3f start, Vec3f end, Vec4f color, float thickness)
 {
-    lines.emplace_back(start, end, thickness);
+    lines.emplace_back(start, end, color, thickness);
 }
 
 void GfxDraw::Initialize()
@@ -96,7 +97,6 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
     GfxDevice::SetTopologyType(lineMesh.topologyType);
     GfxDevice::BindVertexBuffers(0, 1, &lineMesh.gfxVerticesBuffer);
-    GfxDevice::BindVertexBuffers(1, 1, &lineMesh.gfxColorsBuffer);
 
     GfxDevice::BindIndexBuffer(lineMesh.gfxIndexBuffer);
     GfxDevice::DrawIndexedInstanced((int)lineMesh.indices.size(), (int)lines.size(), 0, 0, 0);

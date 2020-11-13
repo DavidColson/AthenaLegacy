@@ -21,9 +21,9 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	GfxDraw::Line(Vec3f(0.0f, 0.0f, 2.0f), Vec3f(0.0f, 1.0f, 5.0f), 0.01f);
-	GfxDraw::Line(Vec3f(2.0f, 0.0f, -1.0f), Vec3f(0.0f, 0.0f, 5.0f), 0.02f);
-	GfxDraw::Line(Vec3f(2.0f, 0.0f, 4.0f), Vec3f(0.0f, 2.0f, 5.0f), 0.03f);
+	GfxDraw::Line(Vec3f(0.0f, 0.0f, 2.0f), Vec3f(0.0f, 1.0f, 5.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.01f);
+	GfxDraw::Line(Vec3f(2.0f, 0.0f, -1.0f), Vec3f(0.0f, 0.0f, 5.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.02f);
+	GfxDraw::Line(Vec3f(2.0f, 0.0f, 4.0f), Vec3f(0.0f, 2.0f, 5.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.03f);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
