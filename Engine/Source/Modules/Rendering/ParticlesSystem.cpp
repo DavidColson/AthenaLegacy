@@ -146,9 +146,9 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
 
 		// Set vertex buffer as active
-		GfxDevice::BindVertexBuffers(0, 1, &pEmitter->quadPrim.gfxVerticesBuffer);
-		GfxDevice::BindVertexBuffers(1, 1, &pEmitter->quadPrim.gfxTexcoordsBuffer);
-		GfxDevice::BindVertexBuffers(2, 1, &pEmitter->quadPrim.gfxColorsBuffer);
+		GfxDevice::BindVertexBuffers(0, 1, &pEmitter->quadPrim.bufferHandle_vertices);
+		GfxDevice::BindVertexBuffers(1, 1, &pEmitter->quadPrim.bufferHandle_uv0);
+		GfxDevice::BindVertexBuffers(2, 1, &pEmitter->quadPrim.bufferHandle_colors);
 		GfxDevice::DrawInstanced(4, (int)particleTransforms.size(), 0, 0);
 	}
 }

@@ -178,7 +178,7 @@ void Model::Load(Path path, AssetHandle handleForThis)
             prim.normals = eastl::vector<Vec3f>(vertNormBuffer, vertNormBuffer + nVerts);
 
             Vec2f* vertTexCoordBuffer = jsonAttr.HasKey("TEXCOORD_0") ? (Vec2f*)accessors[jsonAttr["TEXCOORD_0"].ToInt()].pBuffer : nullptr;
-            prim.texcoords = eastl::vector<Vec2f>(vertTexCoordBuffer, vertTexCoordBuffer + nVerts);
+            prim.uv0 = eastl::vector<Vec2f>(vertTexCoordBuffer, vertTexCoordBuffer + nVerts);
 
             Vec4f* vertColBuffer = jsonAttr.HasKey("COLOR_0") ? (Vec4f*)accessors[jsonAttr["COLOR_0"].ToInt()].pBuffer : nullptr;
             prim.colors = eastl::vector<Vec4f>(vertColBuffer, vertColBuffer + nVerts);

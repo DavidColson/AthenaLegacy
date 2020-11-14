@@ -22,7 +22,10 @@ Primitive::Primitive(const Primitive& copy)
 {
     vertices = eastl::vector<Vec3f>(copy.vertices);
     normals = eastl::vector<Vec3f>(copy.normals);
-    texcoords = eastl::vector<Vec2f>(copy.texcoords);
+    uv0 = eastl::vector<Vec2f>(copy.uv0);
+    uvz0 = eastl::vector<Vec3f>(copy.uvz0);
+    uvz1 = eastl::vector<Vec3f>(copy.uvz1);
+    uvzw0 = eastl::vector<Vec4f>(copy.uvzw0);
     colors = eastl::vector<Vec4f>(copy.colors);
     indices = eastl::vector<uint16_t>(copy.indices);
     topologyType = copy.topologyType;
@@ -34,35 +37,50 @@ Primitive::Primitive(Primitive&& copy)
 {
     vertices = copy.vertices;
     normals = copy.normals;
-    texcoords = copy.texcoords;
+    uv0 = copy.uv0;
+    uvz0 = copy.uvz0;
+    uvz1 = copy.uvz1;
+    uvzw0 = copy.uvzw0;
     colors = copy.colors;
     indices = copy.indices;
     topologyType = copy.topologyType;
 
-    gfxVerticesBuffer = copy.gfxVerticesBuffer;
-    gfxNormalsBuffer = copy.gfxNormalsBuffer;
-    gfxTexcoordsBuffer = copy.gfxTexcoordsBuffer;
-    gfxColorsBuffer = copy.gfxColorsBuffer;
-    gfxIndexBuffer = copy.gfxIndexBuffer;
+    bufferHandle_vertices = copy.bufferHandle_vertices;
+    bufferHandle_normals = copy.bufferHandle_normals;
+    bufferHandle_uv0 = copy.bufferHandle_uv0;
+    bufferHandle_uvz0 = copy.bufferHandle_uvz0;
+    bufferHandle_uvz1 = copy.bufferHandle_uvz1;
+    bufferHandle_uvzw0 = copy.bufferHandle_uvzw0;
+    bufferHandle_colors = copy.bufferHandle_colors;
+    bufferHandle_indices = copy.bufferHandle_indices;
 
-    copy.gfxVerticesBuffer = INVALID_HANDLE;
-    copy.gfxNormalsBuffer = INVALID_HANDLE;
-    copy.gfxTexcoordsBuffer = INVALID_HANDLE;
-    copy.gfxColorsBuffer = INVALID_HANDLE;
-    copy.gfxIndexBuffer = INVALID_HANDLE;
+    copy.bufferHandle_vertices = INVALID_HANDLE;
+    copy.bufferHandle_normals = INVALID_HANDLE;
+    copy.bufferHandle_uv0 = INVALID_HANDLE;
+    copy.bufferHandle_uvz0 = INVALID_HANDLE;
+    copy.bufferHandle_uvz1 = INVALID_HANDLE;
+    copy.bufferHandle_uvzw0 = INVALID_HANDLE;
+    copy.bufferHandle_colors = INVALID_HANDLE;
+    copy.bufferHandle_indices = INVALID_HANDLE;
 }
 
 Primitive& Primitive::operator=(const Primitive& copy)
 {
-    GfxDevice::FreeVertexBuffer(gfxVerticesBuffer);
-    GfxDevice::FreeVertexBuffer(gfxNormalsBuffer);
-    GfxDevice::FreeVertexBuffer(gfxTexcoordsBuffer);
-    GfxDevice::FreeVertexBuffer(gfxColorsBuffer);
-    GfxDevice::FreeIndexBuffer(gfxIndexBuffer);
+    GfxDevice::FreeVertexBuffer(bufferHandle_vertices);
+    GfxDevice::FreeVertexBuffer(bufferHandle_normals);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uv0);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uvz0);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uvz1);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uvzw0);
+    GfxDevice::FreeVertexBuffer(bufferHandle_colors);
+    GfxDevice::FreeIndexBuffer(bufferHandle_indices);
 
     vertices = eastl::vector<Vec3f>(copy.vertices);
     normals = eastl::vector<Vec3f>(copy.normals);
-    texcoords = eastl::vector<Vec2f>(copy.texcoords);
+    uv0 = eastl::vector<Vec2f>(copy.uv0);
+    uvz0 = eastl::vector<Vec3f>(copy.uvz0);
+    uvz1 = eastl::vector<Vec3f>(copy.uvz1);
+    uvzw0 = eastl::vector<Vec4f>(copy.uvzw0);
     colors = eastl::vector<Vec4f>(copy.colors);
     indices = eastl::vector<uint16_t>(copy.indices);
     topologyType = copy.topologyType;
@@ -75,42 +93,57 @@ Primitive& Primitive::operator=(Primitive&& copy)
 {
     vertices = copy.vertices;
     normals = copy.normals;
-    texcoords = copy.texcoords;
+    uv0 = copy.uv0;
+    uvz0 = copy.uvz0;
+    uvz1 = copy.uvz1;
+    uvzw0 = copy.uvzw0;
     colors = copy.colors;
     indices = copy.indices;
     topologyType = copy.topologyType;
 
-    gfxVerticesBuffer = copy.gfxVerticesBuffer;
-    gfxNormalsBuffer = copy.gfxNormalsBuffer;
-    gfxTexcoordsBuffer = copy.gfxTexcoordsBuffer;
-    gfxColorsBuffer = copy.gfxColorsBuffer;
-    gfxIndexBuffer = copy.gfxIndexBuffer;
+    bufferHandle_vertices = copy.bufferHandle_vertices;
+    bufferHandle_normals = copy.bufferHandle_normals;
+    bufferHandle_uv0 = copy.bufferHandle_uv0;
+    bufferHandle_uvz0 = copy.bufferHandle_uvz0;
+    bufferHandle_uvz1 = copy.bufferHandle_uvz1;
+    bufferHandle_uvzw0 = copy.bufferHandle_uvzw0;
+    bufferHandle_colors = copy.bufferHandle_colors;
+    bufferHandle_indices = copy.bufferHandle_indices;
 
-    copy.gfxVerticesBuffer = INVALID_HANDLE;
-    copy.gfxNormalsBuffer = INVALID_HANDLE;
-    copy.gfxTexcoordsBuffer = INVALID_HANDLE;
-    copy.gfxColorsBuffer = INVALID_HANDLE;
-    copy.gfxIndexBuffer = INVALID_HANDLE;
+    copy.bufferHandle_vertices = INVALID_HANDLE;
+    copy.bufferHandle_normals = INVALID_HANDLE;
+    copy.bufferHandle_uv0 = INVALID_HANDLE;
+    copy.bufferHandle_uvz0 = INVALID_HANDLE;
+    copy.bufferHandle_uvz1 = INVALID_HANDLE;
+    copy.bufferHandle_uvzw0 = INVALID_HANDLE;
+    copy.bufferHandle_colors = INVALID_HANDLE;
+    copy.bufferHandle_indices = INVALID_HANDLE;
 
     return *this;
 }
 
 Primitive::~Primitive()
 {
-    GfxDevice::FreeVertexBuffer(gfxVerticesBuffer);
-    GfxDevice::FreeVertexBuffer(gfxNormalsBuffer);
-    GfxDevice::FreeVertexBuffer(gfxTexcoordsBuffer);
-    GfxDevice::FreeVertexBuffer(gfxColorsBuffer);
-    GfxDevice::FreeIndexBuffer(gfxIndexBuffer);
+    GfxDevice::FreeVertexBuffer(bufferHandle_vertices);
+    GfxDevice::FreeVertexBuffer(bufferHandle_normals);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uv0);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uvz0);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uvz1);
+    GfxDevice::FreeVertexBuffer(bufferHandle_uvzw0);
+    GfxDevice::FreeVertexBuffer(bufferHandle_colors);
+    GfxDevice::FreeIndexBuffer(bufferHandle_indices);
 }
 
 void Primitive::CreateGfxBuffers()
 {
-    if (!vertices.empty()) gfxVerticesBuffer = GfxDevice::CreateVertexBuffer(vertices.size(), sizeof(Vec3f), vertices.data(), name + " vertex position buffer");
-    if (!normals.empty()) gfxNormalsBuffer = GfxDevice::CreateVertexBuffer(normals.size(), sizeof(Vec3f), normals.data(), name + " vertex norms buffer");
-    if (!texcoords.empty())  gfxTexcoordsBuffer = GfxDevice::CreateVertexBuffer(texcoords.size(), sizeof(Vec2f), texcoords.data(), name + " vertex texcoords buffer");
-    if (!colors.empty())  gfxColorsBuffer = GfxDevice::CreateVertexBuffer(colors.size(), sizeof(Vec4f), colors.data(), name + " vertex colors buffer");
-    if (!indices.empty())  gfxIndexBuffer = GfxDevice::CreateIndexBuffer(indices.size(), IndexFormat::UShort, indices.data(), name + " iBuffer");
+    if (!vertices.empty()) bufferHandle_vertices = GfxDevice::CreateVertexBuffer(vertices.size(), sizeof(Vec3f), vertices.data(), name + " vertex position buffer");
+    if (!normals.empty()) bufferHandle_normals = GfxDevice::CreateVertexBuffer(normals.size(), sizeof(Vec3f), normals.data(), name + " vertex norms buffer");
+    if (!uv0.empty())  bufferHandle_uv0 = GfxDevice::CreateVertexBuffer(uv0.size(), sizeof(Vec2f), uv0.data(), name + " vertex uv0 buffer");
+    if (!uvz0.empty())  bufferHandle_uvz0 = GfxDevice::CreateVertexBuffer(uvz0.size(), sizeof(Vec3f), uvz0.data(), name + " vertex uvz0 buffer");
+    if (!uvz1.empty())  bufferHandle_uvz1 = GfxDevice::CreateVertexBuffer(uvz1.size(), sizeof(Vec3f), uvz1.data(), name + " vertex uvz1 buffer");
+    if (!uvzw0.empty())  bufferHandle_uvzw0 = GfxDevice::CreateVertexBuffer(uvzw0.size(), sizeof(Vec4f), uvzw0.data(), name + " vertex uvzw0 buffer");
+    if (!colors.empty())  bufferHandle_colors = GfxDevice::CreateVertexBuffer(colors.size(), sizeof(Vec4f), colors.data(), name + " vertex colors buffer");
+    if (!indices.empty())  bufferHandle_indices = GfxDevice::CreateIndexBuffer(indices.size(), IndexFormat::UShort, indices.data(), name + " iBuffer");
 }
 
 Primitive Primitive::NewPlainQuad()
@@ -122,7 +155,7 @@ Primitive Primitive::NewPlainQuad()
         Vec3f(-1.f, 1.f, 0.0f),
         Vec3f(1.f, 1.f, 0.0f)
     };
-    prim.texcoords = {
+    prim.uv0 = {
         Vec2f(0.0f, 1.0f),
         Vec2f(1.0f, 1.0f),
         Vec2f(0.0f, 0.0f),
@@ -158,7 +191,7 @@ Primitive Primitive::NewCube()
 	prim.normals = {
 		Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f(), Vec3f()
     };
-	prim.texcoords = {
+	prim.uv0 = {
 		Vec2f(), Vec2f(), Vec2f(), Vec2f(), Vec2f(), Vec2f(), Vec2f(), Vec2f(),
     };
 	prim.colors = {

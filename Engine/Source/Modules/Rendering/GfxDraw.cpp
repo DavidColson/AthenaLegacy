@@ -96,9 +96,9 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     GfxDevice::BindProgram(pShader->program);
 
     GfxDevice::SetTopologyType(lineMesh.topologyType);
-    GfxDevice::BindVertexBuffers(0, 1, &lineMesh.gfxVerticesBuffer);
+    GfxDevice::BindVertexBuffers(0, 1, &lineMesh.bufferHandle_vertices);
 
-    GfxDevice::BindIndexBuffer(lineMesh.gfxIndexBuffer);
+    GfxDevice::BindIndexBuffer(lineMesh.bufferHandle_indices);
     GfxDevice::DrawIndexedInstanced((int)lineMesh.indices.size(), (int)lines.size(), 0, 0, 0);
 }
 

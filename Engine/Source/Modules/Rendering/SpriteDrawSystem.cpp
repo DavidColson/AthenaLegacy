@@ -83,8 +83,8 @@ void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
     GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
     GfxDevice::BindProgram(program);
-    GfxDevice::BindVertexBuffers(0, 1, &quadPrim.gfxVerticesBuffer);
-    GfxDevice::BindVertexBuffers(1, 1, &quadPrim.gfxTexcoordsBuffer);
+    GfxDevice::BindVertexBuffers(0, 1, &quadPrim.bufferHandle_vertices);
+    GfxDevice::BindVertexBuffers(1, 1, &quadPrim.bufferHandle_uv0);
 	GfxDevice::SetBlending(blendState);
 	GfxDevice::BindSampler(spriteSampler, ShaderType::Pixel, 0);
     

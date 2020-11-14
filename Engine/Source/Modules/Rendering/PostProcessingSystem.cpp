@@ -58,8 +58,8 @@ void PostProcessingSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaT
         // Bind bloom shader data
         Shader* pShader = AssetDB::GetAsset<Shader>(pp->bloomShader);
         GfxDevice::BindProgram(pShader->program);
-        GfxDevice::BindVertexBuffers(0, 1, &pp->fullScreenQuad.gfxVerticesBuffer);
-        GfxDevice::BindVertexBuffers(1, 1, &pp->fullScreenQuad.gfxTexcoordsBuffer);
+        GfxDevice::BindVertexBuffers(0, 1, &pp->fullScreenQuad.bufferHandle_vertices);
+        GfxDevice::BindVertexBuffers(1, 1, &pp->fullScreenQuad.bufferHandle_uv0);
         GfxDevice::BindSampler(pp->fullScreenTextureSampler, ShaderType::Pixel, 0);
 
         CPostProcessing::BloomShaderData bloomData;
