@@ -34,6 +34,7 @@ struct VertOutput
     float4 pos : SV_POSITION;
     float4 col: COLOR;
     float capLengthRatio : CAPLENGTHRATIO;
+    float thicknessPixels : THICKPIXELS;
 };
 
 float2 WorldToScreenSpaceNormalized(float3 pos)
@@ -73,14 +74,16 @@ VertOutput VSMain(VertInput vertIn)
 
     // This will set the thickness such that it's never less than 1 pixel on the screen
     float pixelsPerMeter = WorldDistanceInPixels(thisVert, thisVert + norm);
-    float thicknessPixels = thickness * pixelsPerMeter;
+    float thicknessPixelsDesired = thickness * pixelsPerMeter;
     #if defined(ANTI_ALIASING)
-        thicknessPixels = max(0.5, thicknessPixels + 1.0);
+        float thicknessPixels = max(0.5, thicknessPixelsDesired + 1.0);
     #else
-        thicknessPixels = max(0.5, thicknessPixels);
+        float thicknessPixels = max(0.5, thicknessPixelsDesired);
     #endif
     thickness = thicknessPixels / pixelsPerMeter;
-
+    float2 uvScale = float2(1.0, 1.0);
+    uvScale.y = thicknessPixels / max(0.00001, thicknessPixelsDesired);
+    uvScale.x = (length(diff) + 1.0 / pixelsPerMeter) / length(diff);
 
     thisVert -= vertIn.pos.y * norm * thickness; // Extrude width
     #if defined(ROUND_CAPS)
@@ -89,8 +92,11 @@ VertOutput VSMain(VertInput vertIn)
 
     output.pos = mul(thisVert, worldToClipTransform);
     output.col = array[vertIn.instanceId].color;
-    output.uv = vertIn.pos.xy;
+    output.uv = vertIn.pos.xy * uvScale;
     output.capLengthRatio = 2.0 * thickness / length(diff);
+
+    // If you want distance fade, then pass in the desired pixel thickness here instead
+    output.thicknessPixels = thicknessPixels;
 
     return output;
 }
@@ -112,21 +118,20 @@ float4 PSMain(VertOutput pixelIn) : SV_TARGET
     // Blur line edges
     float mask = 1.0;
     float gradientSize = aliasingTune * FWidthFancy(pixelIn.uv.y);
-    mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.y / gradientSize));
+    mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.y / gradientSize + saturate(pixelIn.thicknessPixels) * 0.5));
 
     #if defined(ROUND_CAPS)
         float2 uv = abs(pixelIn.uv);
         uv.x = (uv.x - 1) / pixelIn.capLengthRatio + 1;
         float distanceToCap = 1.0 - length(max(0, uv));
-        mask = min(mask, smoothstep(0.0, 1.0, distanceToCap / gradientSize));
+        mask = min(mask, smoothstep(0.0, 1.0, distanceToCap / gradientSize + saturate(pixelIn.thicknessPixels) * 0.5));
     #else
         float gradSize = aliasingTune * FWidthFancy(pixelIn.uv.x);
-        mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.x / gradSize));
+        mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.x / gradSize + saturate(pixelIn.thicknessPixels) * 0.5));
     #endif
 
     result.a *= mask;
 #endif
 
-    // Can do distance blend by multipling mask by clamped (how wide is this line in pixels)
     return result;
 }
