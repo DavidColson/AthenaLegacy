@@ -74,6 +74,25 @@ void GfxDraw::PolylineShape::GenerateMesh()
         prim.uvzw0.push_back(Vec4f(1.0f, -1.0, thickness, 0.0)); // inner
         prim.uvzw0.push_back(Vec4f(1.0f, 1.0, thickness, 0.0)); // inner
 
+        // Previous and next points
+        if (i == 0)
+        {
+            prim.uvz0.push_back(pointPos * 2.0f - Vec3f::Project4D(points[1]));
+            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1]));
+        }
+        else if (i == points.size() - 1)
+        {
+            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1]));
+            prim.uvz1.push_back(pointPos * 2.0f - Vec3f::Project4D(points[points.size() - 2]));
+        }
+        else
+        {
+            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1]));
+            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1]));
+        }
+        prim.uvz0.push_back(prim.uvz0.back());
+        prim.uvz1.push_back(prim.uvz1.back());
+
         if (i < points.size() - 1)
         {
             // First triangle
@@ -158,6 +177,8 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
             GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
             GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_uvzw0);
+            GfxDevice::BindVertexBuffers(2, 1, &prim.bufferHandle_uvz0);
+            GfxDevice::BindVertexBuffers(3, 1, &prim.bufferHandle_uvz1);
             GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
             
             GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);
