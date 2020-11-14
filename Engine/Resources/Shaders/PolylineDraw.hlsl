@@ -32,16 +32,18 @@ VertOutput VSMain(VertInput vertIn)
 	VertOutput output;
 
     float3 invDirectionToCam = vertIn.pos.xyz - camWorldPosition;
-    
+
+    // Note that you're getting perspective projection on far away poly line widths? Do we want that?
     float4 tanPrev = float4(vertIn.prev, 1.0) - vertIn.pos;
     float4 tanNext = vertIn.pos - float4(vertIn.next, 1.0);;
 
     float4 normPrev = normalize(float4(cross(tanPrev, float4(-invDirectionToCam, 1.0)), 0.0));
     float4 normNext = normalize(float4(cross(tanNext, float4(-invDirectionToCam, 1.0)), 0.0));
 
-    float4 normAverage = (normPrev + normNext) / 2.0;
+    float4 cornerBisector = (normPrev + normNext) / 2.0;
+    cornerBisector = cornerBisector / dot(cornerBisector, normNext);
 
-    float4 vertPos = vertIn.pos + normAverage * vertIn.uv.y * 0.1;
+    float4 vertPos = vertIn.pos + cornerBisector * vertIn.uv.y * 0.1;
 	output.pos = mul(vertPos, worldToClipTransform);
 	output.color = float4(1.0, 1.0, 1.0, 1.0);
 	output.uv = vertIn.uv.xy;
