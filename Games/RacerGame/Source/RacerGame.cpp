@@ -25,6 +25,16 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	GfxDraw::Line(Vec3f(2.0f, 0.0f, -1.0f), Vec3f(0.0f, 0.0f, 5.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.02f);
 	GfxDraw::Line(Vec3f(2.0f, 0.0f, 4.0f), Vec3f(0.0f, 2.0f, 5.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.03f);
 
+	GfxDraw::PolylineShape poly;
+
+	poly.AddPoint(Vec3f(0.0f, 0.0f, 0.0f), 0.1f);
+	poly.AddPoint(Vec3f(1.0f, 1.0f, 0.0f), 0.1f);
+	poly.AddPoint(Vec3f(2.0f, 0.0f, 0.0f), 0.1f);
+	poly.AddPoint(Vec3f(3.0f, 1.0f, 0.0f), 0.1f);
+	poly.GenerateMesh();
+
+	GfxDraw::Polyline(poly);
+
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
 		CCamera* pCam = scene.Get<CCamera>(cams);
@@ -79,8 +89,10 @@ int main(int argc, char *argv[])
 
 	
 	// Open the level we want to play
-	JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile("Games/RacerGame/Resources/Levels/RacerGame.lvl"));
-	Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
+	// JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile("Games/RacerGame/Resources/Levels/RacerGame.lvl"));
+	// Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
+
+	Scene* pScene = new Scene();
 
 	// Register systems
 	Engine::SetSceneCreateCallback([](Scene& newScene) {

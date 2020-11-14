@@ -1078,22 +1078,22 @@ eastl::vector<D3D11_INPUT_ELEMENT_DESC> CreateD3D11InputLayout(const eastl::vect
 		switch (elem.type)
 		{
 		case AttributeType::Float4:
-			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
 		case AttributeType::Float3:
-			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex, DXGI_FORMAT_R32G32B32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
 		case AttributeType::Float2:
-			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex, DXGI_FORMAT_R32G32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
 		case AttributeType::Float:
-			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex, DXGI_FORMAT_R32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
 		case AttributeType::Float4x4:
-			d3d11Layout.push_back({elem.name, 0, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
-			d3d11Layout.push_back({elem.name, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
-			d3d11Layout.push_back({elem.name, 2, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
-			d3d11Layout.push_back({elem.name, 3, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex + 1, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex + 2, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
+			d3d11Layout.push_back({elem.semanticName, elem.semanticIndex + 3, DXGI_FORMAT_R32G32B32A32_FLOAT, elem.slot, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0});
 			break;
 		default:
 			break;
@@ -1129,29 +1129,31 @@ eastl::vector<VertexInputElement> ReflectInputLayout(ID3DBlob* pShaderBlob)
 		// We force position to be float3 rather than default float4
 		if (strcmp(paramDesc.SemanticName, "SV_POSITION") == 0 || strcmp(paramDesc.SemanticName, "POSITION") == 0 || strcmp(paramDesc.SemanticName, "SV_Position") == 0)
 		{
-			layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float3, i);
+			layout.emplace_back((const char*)paramDesc.SemanticName, paramDesc.SemanticIndex, AttributeType::Float3, i);
 			continue;
 		}
+
+
 
 		uint32_t byteOffset = 0;
 		if ( paramDesc.Mask == 1 )
         {
-            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float, i);
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, paramDesc.SemanticIndex, AttributeType::Float, i);
             byteOffset += 4;
         }
         else if ( paramDesc.Mask <= 3 )
         {
-            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float2, i);
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, paramDesc.SemanticIndex, AttributeType::Float2, i);
             byteOffset += 8;
         }
         else if ( paramDesc.Mask <= 7 )
         {
-            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float3, i);
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, paramDesc.SemanticIndex, AttributeType::Float3, i);
             byteOffset += 12;
         }
         else if ( paramDesc.Mask <= 15 )
         {
-            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, AttributeType::Float4, i);
+            if ( paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32 ) layout.emplace_back((const char*)paramDesc.SemanticName, paramDesc.SemanticIndex, AttributeType::Float4, i);
             byteOffset += 16;
         }
 	}
@@ -1577,7 +1579,7 @@ void GfxDevice::UpdateDynamicVertexBuffer(VertexBufferHandle handle, void *data,
 
 // ***********************************************************************
 
-void GfxDevice::BindVertexBuffers(size_t startSlot, size_t nBuffers, VertexBufferHandle *handles)
+void GfxDevice::BindVertexBuffers(size_t startSlot, size_t nBuffers, const VertexBufferHandle *handles)
 {
 	// Improvement: good opportunity for single frame allocator, or stack allocation here
 	eastl::vector<ID3D11Buffer *> pBuffers;

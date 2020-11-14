@@ -6,6 +6,7 @@
 	],
 	"settings": {
 		"files.associations": {
+			"*.lvl": "json5",
 			"algorithm": "cpp",
 			"array": "cpp",
 			"bitset": "cpp",
@@ -92,7 +93,8 @@
 			"hash_map": "cpp",
 			"hash_set": "cpp",
 			"compare": "cpp",
-			"concepts": "cpp"
+			"concepts": "cpp",
+			"*.rh": "cpp"
 		}
 	}
 }

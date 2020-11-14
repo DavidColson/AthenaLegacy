@@ -165,11 +165,12 @@ enum class Blend
 
 struct VertexInputElement
 {
-	const char* name;
+	const char* semanticName;
+	uint32_t semanticIndex;
 	AttributeType type;
 	uint32_t slot{ 0 };
 
-	VertexInputElement(const char* _name, AttributeType _type, uint32_t _slot) : name(_name), type(_type), slot(_slot) {}
+	VertexInputElement(const char* _semanticName, uint32_t _semanticIndex, AttributeType _type, uint32_t _slot) : semanticName(_semanticName), semanticIndex(_semanticIndex), type(_type), slot(_slot) {}
 };
 
 struct BlendingInfo
@@ -234,7 +235,7 @@ namespace GfxDevice
 
 	void UpdateDynamicVertexBuffer(VertexBufferHandle handle, void* data, size_t dataSize);
 
-	void BindVertexBuffers(size_t startSlot, size_t nBuffers, VertexBufferHandle* handles);
+	void BindVertexBuffers(size_t startSlot, size_t nBuffers, const VertexBufferHandle* handles);
 
 	void FreeVertexBuffer(VertexBufferHandle handle);
 
