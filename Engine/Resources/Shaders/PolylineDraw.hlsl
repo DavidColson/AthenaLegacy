@@ -43,7 +43,7 @@ VertOutput VSMain(VertInput vertIn)
     float4 cornerBisector = (normPrev + normNext) / 2.0;
     cornerBisector = cornerBisector / dot(cornerBisector, normNext);
 
-    float4 vertPos = vertIn.pos + cornerBisector * vertIn.uv.y * 0.1;
+    float4 vertPos = vertIn.pos + cornerBisector * vertIn.uv.y * vertIn.uv.z;
 	output.pos = mul(vertPos, worldToClipTransform);
 	output.color = float4(1.0, 1.0, 1.0, 1.0);
 	output.uv = vertIn.uv.xy;
@@ -51,7 +51,25 @@ VertOutput VSMain(VertInput vertIn)
     return output;
 }
 
+float FWidthFancy(float value)
+{
+    float2 pd = float2(ddx(value), ddy(value));
+	return sqrt( dot( pd, pd ) );
+}
+
 float4 PSMain(VertOutput pixelIn) : SV_TARGET
 {
-    return pixelIn.color;
+    float4 result = pixelIn.color;
+
+    // TODO: need thickness padding data
+
+    float aliasingTune = 2.0;
+    float2 distanceToLine = 1.0 - abs(pixelIn.uv);
+
+    float mask = 1.0;
+    float gradientSize = aliasingTune * FWidthFancy(pixelIn.uv.y);
+    mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.y / gradientSize));
+
+    result.a *= mask;
+    return result;
 }

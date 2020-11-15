@@ -66,7 +66,7 @@ void GfxDraw::PolylineShape::GenerateMesh()
     for (size_t i = 0; i < points.size(); i++)
     {
         Vec3f pointPos = Vec3f::Project4D(points[i]);
-        float thickness = points[i].z;
+        float thickness = points[i].w;
 
         prim.vertices.push_back(pointPos); uint16_t index1 = (uint16_t)i * 2;      // inner
         prim.vertices.push_back(pointPos); uint16_t index2 = (uint16_t)i * 2 + 1;  // outer
