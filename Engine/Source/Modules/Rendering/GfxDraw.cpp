@@ -70,9 +70,15 @@ void GfxDraw::PolylineShape::GenerateMesh()
 
         prim.vertices.push_back(pointPos); uint16_t index1 = (uint16_t)i * 2;      // inner
         prim.vertices.push_back(pointPos); uint16_t index2 = (uint16_t)i * 2 + 1;  // outer
+        
+        float endPointUV = 0.0f;
+        if (i == 0)
+            endPointUV = -1.f;
+        else if(i == (points.size() - 1))
+            endPointUV = 1.0f;
 
-        prim.uvzw0.push_back(Vec4f(1.0f, -1.0, thickness, 0.0)); // inner
-        prim.uvzw0.push_back(Vec4f(1.0f, 1.0, thickness, 0.0)); // inner
+        prim.uvzw0.push_back(Vec4f(endPointUV, -1.0, thickness, float(i))); // inner
+        prim.uvzw0.push_back(Vec4f(endPointUV, 1.0, thickness, float(i))); // inner
 
         // Previous and next points
         if (i == 0)
@@ -154,34 +160,42 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     
 
     // Render Lines
+    
+    if (Shader* pLineShader = AssetDB::GetAsset<Shader>(lineDrawShader))
     {
-        Shader* pShader = AssetDB::GetAsset<Shader>(lineDrawShader);
-        GfxDevice::BindConstantBuffer(lineShaderInstanceData, lines.data(), ShaderType::Vertex, 2);
-        GfxDevice::BindProgram(pShader->program);
-        GfxDevice::SetTopologyType(lineMesh.topologyType);
-        GfxDevice::BindVertexBuffers(0, 1, &lineMesh.bufferHandle_vertices);
-        GfxDevice::BindIndexBuffer(lineMesh.bufferHandle_indices);
+        if (GfxDevice::IsValid(pLineShader->program))
+        {
+            GfxDevice::BindConstantBuffer(lineShaderInstanceData, lines.data(), ShaderType::Vertex, 2);
+            GfxDevice::BindProgram(pLineShader->program);
+            GfxDevice::SetTopologyType(lineMesh.topologyType);
+            GfxDevice::BindVertexBuffers(0, 1, &lineMesh.bufferHandle_vertices);
+            GfxDevice::BindIndexBuffer(lineMesh.bufferHandle_indices);
 
-        GfxDevice::DrawIndexedInstanced((int)lineMesh.indices.size(), (int)lines.size(), 0, 0, 0);
+            GfxDevice::DrawIndexedInstanced((int)lineMesh.indices.size(), (int)lines.size(), 0, 0, 0);
+        }
     }
 
     // Render polylines
-    {
-        Shader* pShader = AssetDB::GetAsset<Shader>(polyLineDrawShader);
-        GfxDevice::BindProgram(pShader->program);
-        GfxDevice::SetTopologyType(TopologyType::TriangleList);
-        for (size_t i = 0; i < polylines.size(); i++)
-        {
-            const PolylineShape& polyline = polylines[i];
-            const Primitive& prim = polyline.mesh.primitives[0];
 
-            GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
-            GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_uvzw0);
-            GfxDevice::BindVertexBuffers(2, 1, &prim.bufferHandle_uvz0);
-            GfxDevice::BindVertexBuffers(3, 1, &prim.bufferHandle_uvz1);
-            GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
-            
-            GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);
+    if (Shader* pPolyLineShader = AssetDB::GetAsset<Shader>(polyLineDrawShader))
+    {
+        if (GfxDevice::IsValid(pPolyLineShader->program))
+        {
+            GfxDevice::BindProgram(pPolyLineShader->program);
+            GfxDevice::SetTopologyType(TopologyType::TriangleList);
+            for (size_t i = 0; i < polylines.size(); i++)
+            {
+                const PolylineShape& polyline = polylines[i];
+                const Primitive& prim = polyline.mesh.primitives[0];
+
+                GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
+                GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_uvzw0);
+                GfxDevice::BindVertexBuffers(2, 1, &prim.bufferHandle_uvz0);
+                GfxDevice::BindVertexBuffers(3, 1, &prim.bufferHandle_uvz1);
+                GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
+                
+                GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);
+            }
         }
     }
 }

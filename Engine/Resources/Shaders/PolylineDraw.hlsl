@@ -10,6 +10,8 @@ cbuffer PerObjectData : register(b1)
     float4x4 worldToClipTransform;
 };
 
+#include "Engine/Resources/Shaders/Common.hlsl"
+
 struct VertInput
 {
     float4 pos : SV_POSITION;
@@ -25,51 +27,64 @@ struct VertOutput
     float2 uv : TEXCOORD;
     float4 pos : SV_POSITION;
     float4 color: COLOR;
+    float thicknessPixels: THICKPIXELS;
 };
+
+#define ANTI_ALIASING
 
 VertOutput VSMain(VertInput vertIn)
 {
 	VertOutput output;
 
-    float3 invDirectionToCam = vertIn.pos.xyz - camWorldPosition;
+    float thickness = vertIn.uv.z * 0.5;
 
-    // Note that you're getting perspective projection on far away poly line widths? Do we want that?
     float4 tanPrev = float4(vertIn.prev, 1.0) - vertIn.pos;
     float4 tanNext = vertIn.pos - float4(vertIn.next, 1.0);;
 
-    float4 normPrev = normalize(float4(cross(tanPrev, float4(-invDirectionToCam, 1.0)), 0.0));
-    float4 normNext = normalize(float4(cross(tanNext, float4(-invDirectionToCam, 1.0)), 0.0));
+    float3 invDirectionToCam = vertIn.pos.xyz - camWorldPosition;
+    float4 normPrev = normalize(float4(cross(tanPrev.xyz, -invDirectionToCam), 0.0));
+    float4 normNext = normalize(float4(cross(tanNext.xyz, -invDirectionToCam), 0.0));
 
     float4 cornerBisector = (normPrev + normNext) / 2.0;
     cornerBisector = cornerBisector / dot(cornerBisector, normNext);
 
-    float4 vertPos = vertIn.pos + cornerBisector * vertIn.uv.y * vertIn.uv.z;
+    float pixelsPerMeter = WorldDistanceInPixels(vertIn.pos.xyz, vertIn.pos.xyz + normalize(cornerBisector).xyz);
+    float thicknessPixelsDesired = thickness * pixelsPerMeter;
+    #if defined(ANTI_ALIASING)
+        float thicknessPixels = max(0.5, thicknessPixelsDesired + 1.0);
+    #else
+        float thicknessPixels = max(0.5, thicknessPixelsDesired);
+    #endif
+    thickness = thicknessPixels / pixelsPerMeter;
+    float2 uvScale = float2(1.0, 1.0);
+    uvScale.y = thicknessPixels / max(0.00001, thicknessPixelsDesired);
+
+    float4 vertPos = vertIn.pos + cornerBisector * vertIn.uv.y * thickness;
+
+    #if defined(ANTI_ALIASING)
+        float endPointExtrude = 1.0 / pixelsPerMeter;
+        vertPos -= tanNext * vertIn.uv.x * endPointExtrude;
+    #endif
+
 	output.pos = mul(vertPos, worldToClipTransform);
 	output.color = float4(1.0, 1.0, 1.0, 1.0);
-	output.uv = vertIn.uv.xy;
+	output.uv = vertIn.uv.xy * uvScale;
+	output.thicknessPixels = thicknessPixels;
 
     return output;
-}
-
-float FWidthFancy(float value)
-{
-    float2 pd = float2(ddx(value), ddy(value));
-	return sqrt( dot( pd, pd ) );
 }
 
 float4 PSMain(VertOutput pixelIn) : SV_TARGET
 {
     float4 result = pixelIn.color;
 
-    // TODO: need thickness padding data
-
-    float aliasingTune = 2.0;
+#if defined(ANTI_ALIASING)
     float2 distanceToLine = 1.0 - abs(pixelIn.uv);
-
     float mask = 1.0;
-    float gradientSize = aliasingTune * FWidthFancy(pixelIn.uv.y);
-    mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.y / gradientSize));
-
+    mask = min(mask, AntiAliasEdge(pixelIn.uv.y, distanceToLine.y, pixelIn.thicknessPixels));
+    mask = min(mask, AntiAliasEdge(pixelIn.uv.x, distanceToLine.x, 0.0));
     result.a *= mask;
+#endif
+
     return result;
 }

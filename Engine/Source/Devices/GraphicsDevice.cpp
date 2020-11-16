@@ -590,7 +590,7 @@ bool ShaderCompileFromFile(const wchar_t *fileName, const char *entry, const cha
 {
 	HRESULT hr;
 	ID3DBlob *pErrorBlob = nullptr;
-	hr = D3DCompileFromFile(fileName, 0, 0, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
+	hr = D3DCompileFromFile(fileName, 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
 		if (pErrorBlob)
@@ -610,7 +610,7 @@ bool ShaderCompile(eastl::string &fileContents, const char *entry, const char *t
 {
 	HRESULT hr;
 	ID3DBlob *pErrorBlob = nullptr;
-	hr = D3DCompile(fileContents.c_str(), fileContents.size(), NULL, 0, 0, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
+	hr = D3DCompile(fileContents.c_str(), fileContents.size(), NULL, 0, D3D_COMPILE_STANDARD_FILE_INCLUDE, entry, target, D3DCOMPILE_DEBUG, 0, pOutBlob, &pErrorBlob);
 	if (FAILED(hr))
 	{
 		if (pErrorBlob)

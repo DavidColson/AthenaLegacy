@@ -1,4 +1,5 @@
 
+
 cbuffer PerSceneData : register(b0)
 {
     float3 camWorldPosition;
@@ -9,6 +10,9 @@ cbuffer PerObjectData : register(b1)
 {
     float4x4 worldToClipTransform;
 };
+
+// Included after per scene and object data as it references the above data
+#include "Engine/Resources/Shaders/Common.hlsl"
 
 cbuffer InstanceData : register(b2)
 {
@@ -37,20 +41,6 @@ struct VertOutput
     float thicknessPixels : THICKPIXELS;
 };
 
-float2 WorldToScreenSpaceNormalized(float3 pos)
-{
-    float4 clipSpace = mul(float4(pos, 1.0), worldToClipTransform);
-    return clipSpace.xy / clipSpace.w;
-}
-
-float WorldDistanceInPixels(float3 pos1, float3 pos2)
-{
-    float2 screenSpace1 = WorldToScreenSpaceNormalized(pos1);
-    float2 screenSpace2 = WorldToScreenSpaceNormalized(pos2);
-    float2 distance = (screenSpace1 - screenSpace2) * screenDimensions.xy;
-    return length(distance) * 0.5;
-}
-
 #define ROUND_CAPS
 #define ANTI_ALIASING
 
@@ -70,10 +60,10 @@ VertOutput VSMain(VertInput vertIn)
     float3 invDirectionToCam = thisVert.xyz - camWorldPosition;
     float4 diff = lineEnd - lineStart;
     // if you want z aligned just use Z world axis instead of invDirectionToCam
-    float4 norm = normalize(float4(cross(diff, float4(-invDirectionToCam, 1.0)), 0.0));
+    float4 norm = normalize(float4(cross(diff.xyz, -invDirectionToCam), 0.0));
 
     // This will set the thickness such that it's never less than 1 pixel on the screen
-    float pixelsPerMeter = WorldDistanceInPixels(thisVert, thisVert + norm);
+    float pixelsPerMeter = WorldDistanceInPixels(thisVert.xyz, thisVert.xyz + norm.xyz);
     float thicknessPixelsDesired = thickness * pixelsPerMeter;
     #if defined(ANTI_ALIASING)
         float thicknessPixels = max(0.5, thicknessPixelsDesired + 1.0);
@@ -101,37 +91,27 @@ VertOutput VSMain(VertInput vertIn)
     return output;
 }
 
-float FWidthFancy(float value)
-{
-    float2 pd = float2(ddx(value), ddy(value));
-	return sqrt( dot( pd, pd ) );
-}
-
 float4 PSMain(VertOutput pixelIn) : SV_TARGET
 {
     float4 result = pixelIn.col;
 
 #if defined(ANTI_ALIASING)
-    float aliasingTune = 2.0;
-    float2 distanceToLine = 1.0 - abs(pixelIn.uv);
-    
     // Blur line edges
     float mask = 1.0;
-    float gradientSize = aliasingTune * FWidthFancy(pixelIn.uv.y);
-    mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.y / gradientSize + saturate(pixelIn.thicknessPixels) * 0.5));
+
+    float2 distanceToLine = 1.0 - abs(pixelIn.uv);
+    mask = min(mask, AntiAliasEdge(pixelIn.uv.y, distanceToLine.y, pixelIn.thicknessPixels));
 
     #if defined(ROUND_CAPS)
         float2 uv = abs(pixelIn.uv);
         uv.x = (uv.x - 1) / pixelIn.capLengthRatio + 1;
         float distanceToCap = 1.0 - length(max(0, uv));
-        mask = min(mask, smoothstep(0.0, 1.0, distanceToCap / gradientSize + saturate(pixelIn.thicknessPixels) * 0.5));
+        mask = min(mask, AntiAliasEdge(pixelIn.uv.y, distanceToCap, pixelIn.thicknessPixels));
     #else
-        float gradSize = aliasingTune * FWidthFancy(pixelIn.uv.x);
-        mask = min(mask, smoothstep(0.0, 1.0, distanceToLine.x / gradSize + saturate(pixelIn.thicknessPixels) * 0.5));
+        mask = min(mask, AntiAliasEdge(pixelIn.uv.x, distanceToLine.x, pixelIn.thicknessPixels));
     #endif
 
     result.a *= mask;
 #endif
-
     return result;
 }
