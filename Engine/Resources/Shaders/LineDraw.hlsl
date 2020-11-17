@@ -43,6 +43,7 @@ struct VertOutput
 
 #define ROUND_CAPS
 #define ANTI_ALIASING
+//#define Z_ALIGN
 
 VertOutput VSMain(VertInput vertIn)
 {
@@ -57,11 +58,14 @@ VertOutput VSMain(VertInput vertIn)
     float4 lineEnd = float4(array[vertIn.instanceId].lineEnd, 1.0);
     float4 thisVert = (vertIn.vertexId % 2 == 0) ? lineStart : lineEnd;
 
-    float3 invDirectionToCam = thisVert.xyz - camWorldPosition;
     float4 diff = lineEnd - lineStart;
-    // if you want z aligned just use Z world axis instead of invDirectionToCam
-    float4 norm = normalize(float4(cross(diff.xyz, -invDirectionToCam), 0.0));
 
+    #if defined(Z_ALIGN)
+        float4 norm = normalize(float4(cross(diff.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
+    #else
+        float3 invDirectionToCam = thisVert.xyz - camWorldPosition;
+        float4 norm = normalize(float4(cross(diff.xyz, -invDirectionToCam), 0.0));
+    #endif
     // This will set the thickness such that it's never less than 1 pixel on the screen
     float pixelsPerMeter = WorldDistanceInPixels(thisVert.xyz, thisVert.xyz + norm.xyz);
     float thicknessPixelsDesired = thickness * pixelsPerMeter;
