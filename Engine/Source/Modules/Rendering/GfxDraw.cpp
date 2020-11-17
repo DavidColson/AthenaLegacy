@@ -50,9 +50,9 @@ namespace
     BlendStateHandle blendState;
 }
 
-void GfxDraw::PolylineShape::AddPoint(const Vec3f& pos, float thickness)
+void GfxDraw::PolylineShape::AddPoint(const Vec3f& pos, const Vec4f& color, float thickness)
 {
-    points.push_back(Vec4f(pos.x, pos.y, pos.z, thickness));
+    points.emplace_back(Vec4f(pos.x, pos.y, pos.z, thickness), color);
 }
 
 void GfxDraw::PolylineShape::GenerateMesh()
@@ -65,11 +65,15 @@ void GfxDraw::PolylineShape::GenerateMesh()
 
     for (size_t i = 0; i < points.size(); i++)
     {
-        Vec3f pointPos = Vec3f::Project4D(points[i]);
-        float thickness = points[i].w;
+        Vec3f pointPos = Vec3f::Project4D(points[i].first);
+        Vec4f pointCol = points[i].second;
+        float thickness = points[i].first.w;
 
         prim.vertices.push_back(pointPos); uint16_t index1 = (uint16_t)i * 2;      // inner
         prim.vertices.push_back(pointPos); uint16_t index2 = (uint16_t)i * 2 + 1;  // outer
+
+        prim.colors.push_back(pointCol);
+        prim.colors.push_back(pointCol);
         
         float endPointUV = 0.0f;
         if (!closed)
@@ -87,23 +91,23 @@ void GfxDraw::PolylineShape::GenerateMesh()
         if (i == 0)
         {
             if (closed)
-                prim.uvz0.push_back(Vec3f::Project4D(points[points.size() - 1]));
+                prim.uvz0.push_back(Vec3f::Project4D(points[points.size() - 1].first));
             else
-                prim.uvz0.push_back(pointPos * 2.0f - Vec3f::Project4D(points[1]));
-            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1]));
+                prim.uvz0.push_back(pointPos * 2.0f - Vec3f::Project4D(points[1].first));
+            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1].first));
         }
         else if (i == points.size() - 1)
         {
-            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1]));
+            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1].first));
             if (closed)
-                prim.uvz1.push_back(Vec3f::Project4D(points[0]));
+                prim.uvz1.push_back(Vec3f::Project4D(points[0].first));
             else
-                prim.uvz1.push_back(pointPos * 2.0f - Vec3f::Project4D(points[points.size() - 2]));
+                prim.uvz1.push_back(pointPos * 2.0f - Vec3f::Project4D(points[points.size() - 2].first));
         }
         else
         {
-            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1]));
-            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1]));
+            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1].first));
+            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1].first));
         }
         prim.uvz0.push_back(prim.uvz0.back());
         prim.uvz1.push_back(prim.uvz1.back());
@@ -142,7 +146,7 @@ void GfxDraw::Line(Vec3f start, Vec3f end, Vec4f color, float thickness)
     lines.emplace_back(start, end, color, thickness);
 }
 
-void GfxDraw::Polyline(GfxDraw::PolylineShape shape)
+void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
 {
     polylines.push_back(shape);
 }
@@ -214,6 +218,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
                 GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_uvzw0);
                 GfxDevice::BindVertexBuffers(2, 1, &prim.bufferHandle_uvz0);
                 GfxDevice::BindVertexBuffers(3, 1, &prim.bufferHandle_uvz1);
+                GfxDevice::BindVertexBuffers(4, 1, &prim.bufferHandle_colors);
                 GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
                 
                 GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);

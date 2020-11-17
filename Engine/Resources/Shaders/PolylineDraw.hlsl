@@ -18,7 +18,7 @@ struct VertInput
     float4 uv : TEXCOORD0;
     float3 prev : TEXCOORD1;
     float3 next : TEXCOORD2;
-    // float4 color : COLOR;
+    float4 color : COLOR;
     uint instanceId : SV_InstanceID;
 };
 
@@ -67,7 +67,7 @@ VertOutput VSMain(VertInput vertIn)
     #endif
 
 	output.pos = mul(vertPos, worldToClipTransform);
-	output.color = float4(1.0, 1.0, 1.0, 1.0);
+	output.color = vertIn.color;
 	output.uv = vertIn.uv.xy * uvScale;
 	output.thicknessPixels = thicknessPixels;
 
