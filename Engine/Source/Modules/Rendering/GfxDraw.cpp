@@ -72,24 +72,33 @@ void GfxDraw::PolylineShape::GenerateMesh()
         prim.vertices.push_back(pointPos); uint16_t index2 = (uint16_t)i * 2 + 1;  // outer
         
         float endPointUV = 0.0f;
-        if (i == 0)
-            endPointUV = -1.f;
-        else if(i == (points.size() - 1))
-            endPointUV = 1.0f;
+        if (!closed)
+        {
+            if (i == 0)
+                endPointUV = -1.f;
+            else if(i == (points.size() - 1))
+                endPointUV = 1.0f;
+        }
 
         prim.uvzw0.push_back(Vec4f(endPointUV, -1.0, thickness, float(i))); // inner
-        prim.uvzw0.push_back(Vec4f(endPointUV, 1.0, thickness, float(i))); // inner
+        prim.uvzw0.push_back(Vec4f(endPointUV, 1.0, thickness, float(i))); // outer
 
         // Previous and next points
         if (i == 0)
         {
-            prim.uvz0.push_back(pointPos * 2.0f - Vec3f::Project4D(points[1]));
+            if (closed)
+                prim.uvz0.push_back(Vec3f::Project4D(points[points.size() - 1]));
+            else
+                prim.uvz0.push_back(pointPos * 2.0f - Vec3f::Project4D(points[1]));
             prim.uvz1.push_back(Vec3f::Project4D(points[i + 1]));
         }
         else if (i == points.size() - 1)
         {
             prim.uvz0.push_back(Vec3f::Project4D(points[i - 1]));
-            prim.uvz1.push_back(pointPos * 2.0f - Vec3f::Project4D(points[points.size() - 2]));
+            if (closed)
+                prim.uvz1.push_back(Vec3f::Project4D(points[0]));
+            else
+                prim.uvz1.push_back(pointPos * 2.0f - Vec3f::Project4D(points[points.size() - 2]));
         }
         else
         {
@@ -110,6 +119,18 @@ void GfxDraw::PolylineShape::GenerateMesh()
             prim.indices.push_back(index2);
             prim.indices.push_back(index1 + 2);
             prim.indices.push_back(index2 + 2);
+        }
+        else if (closed && i == points.size() - 1) // this makes a closed loop of quads
+        {
+            // First triangle
+            prim.indices.push_back(index1);
+            prim.indices.push_back(0);
+            prim.indices.push_back(index2);
+
+            // Second triangle
+            prim.indices.push_back(index2);
+            prim.indices.push_back(0);
+            prim.indices.push_back(1);
         }
     }
     mesh.primitives.push_back(prim);
@@ -158,6 +179,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     PerObject trans{ worldToClipTransform };
     GfxDevice::BindConstantBuffer(bufferHandle_perObjectData, &trans, ShaderType::Vertex, 1);
     
+    // TODO: need to render in order, rendering things further away first so that they blend properly.
 
     // Render Lines
     

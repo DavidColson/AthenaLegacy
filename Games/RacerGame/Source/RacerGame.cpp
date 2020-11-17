@@ -27,6 +27,9 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 	GfxDraw::PolylineShape poly;
 
+	poly.closed = true;
+	poly.AddPoint(Vec3f(3.0f, -1.0f, 0.0f), 0.1f);
+	poly.AddPoint(Vec3f(1.0f, -1.0f, 0.0f), 0.1f);
 	poly.AddPoint(Vec3f(0.0f, 0.0f, 0.0f), 0.1f);
 	poly.AddPoint(Vec3f(1.0f, 1.0f, 0.0f), 0.1f);
 	poly.AddPoint(Vec3f(2.0f, 0.0f, 0.0f), 0.1f);

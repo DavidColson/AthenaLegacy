@@ -17,6 +17,7 @@ namespace GfxDraw
         
         void GenerateMesh();
         eastl::vector<Vec4f> points;
+        bool closed{ false };
         Mesh mesh;
     };
 
