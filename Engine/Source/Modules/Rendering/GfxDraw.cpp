@@ -39,14 +39,15 @@ namespace
     struct RectShape
     {
         Vec3f location;
-        float borderSize;
-        Vec4f color;
+        float strokeSize;
+        Vec4f strokeColor;
+        Vec4f fillColor;
         Vec4f cornerRadius;
         Vec2f size;
         float padding;
         float padding2;
 
-        RectShape(Vec3f _location, float _borderSize, Vec4f _color, Vec4f _cornerRadius, Vec2f _size) : location(_location), borderSize(_borderSize), color(_color), cornerRadius(_cornerRadius), size(_size) {}
+        RectShape(Vec3f _location, float _strokeSize, Vec4f _strokeColor, Vec4f _fillColor, Vec4f _cornerRadius, Vec2f _size) : location(_location), strokeSize(_strokeSize), strokeColor(_strokeColor), fillColor(_fillColor), cornerRadius(_cornerRadius), size(_size) {}
     };
 
     eastl::vector<LineShape> lines;
@@ -161,9 +162,9 @@ void GfxDraw::Line(Vec3f start, Vec3f end, Vec4f color, float thickness)
     lines.emplace_back(start, end, color, thickness);
 }
 
-void GfxDraw::Rect(Vec3f pos, Vec2f size, Vec4f color, float borderThickness, Vec4f cornerRadius)
+void GfxDraw::Rect(Vec3f pos, Vec2f size, Vec4f fillcolor, Vec4f cornerRadius, float strokeThickness, Vec4f strokeColor)
 {
-    rects.emplace_back(pos, borderThickness, color, cornerRadius, size);
+    rects.emplace_back(pos, strokeThickness, strokeColor, fillcolor, cornerRadius, size);
 }
 
 void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)

@@ -38,10 +38,9 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 	//GfxDraw::Polyline(poly);
 
-
-	GfxDraw::Rect(Vec3f(2.0f, 2.0f, 0.0f), Vec2f(5.0f, 3.0f), Vec4f(1.0f), 0.0f, Vec4f(0.0f));
-	GfxDraw::Rect(Vec3f(-4.0f, 2.0f, 0.0f), Vec2f(3.0f, 8.0f), Vec4f(1.0f), 0.0f, Vec4f(0.0f));
-	GfxDraw::Rect(Vec3f(-4.0f, 6.0f, 0.0f), Vec2f(3.0f, 3.0f), Vec4f(1.0f), 0.0f, Vec4f(0.0f));
+	GfxDraw::Rect(Vec3f(0.0f, 0.0f, 0.0f), Vec2f(4.0f, 2.0f), Vec4f(0.6f, 0.0f, 0.0f, 1.0f), Vec4f(0.3f), 0.1f);
+	GfxDraw::Rect(Vec3f(-4.0f, 2.0f, 0.0f), Vec2f(1.0f, 4.0f), Vec4f(0.0f, 0.7f, 0.0f, 1.0f), Vec4f(0.5f, 0.0f, 0.0f, 0.2f), 0.2f);
+	GfxDraw::Rect(Vec3f(-4.0f, 6.0f, 0.0f), Vec2f(2.0f, 2.8f), Vec4f(1.0f), Vec4f(0.0f), 0.1f);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{

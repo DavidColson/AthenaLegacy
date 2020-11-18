@@ -22,7 +22,7 @@ namespace GfxDraw
     };
 
     void Line(Vec3f start, Vec3f end, Vec4f color, float thickness);
-    void Rect(Vec3f pos, Vec2f size, Vec4f color, float borderThickness, Vec4f borderRadius);
+    void Rect(Vec3f pos, Vec2f size, Vec4f fillcolor, Vec4f cornerRadius = Vec4f(0.0f), float strokeThickness = 0.0f, Vec4f strokeColor = Vec4f(0.0f, 0.0f, 0.0f, 1.0f));
     void Polyline(const GfxDraw::PolylineShape& shape);
 
     void Initialize();
