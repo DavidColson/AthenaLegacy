@@ -27,7 +27,6 @@ namespace
     struct LineShape
     {
         // This structure maps to a structure in shaders in which variables are 16 byte aligned, so we need padding to make it work properly
-
         Vec4f color;
         Vec3f start;
         float thickness;
@@ -37,16 +36,32 @@ namespace
         LineShape(Vec3f _start, Vec3f _end, Vec4f _color, float _thickness) : start(_start), end(_end), color(_color), thickness(_thickness) {}
     };
 
+    struct RectShape
+    {
+        Vec3f location;
+        float borderSize;
+        Vec4f color;
+        Vec4f cornerRadius;
+        Vec2f size;
+        float padding;
+        float padding2;
+
+        RectShape(Vec3f _location, float _borderSize, Vec4f _color, Vec4f _cornerRadius, Vec2f _size) : location(_location), borderSize(_borderSize), color(_color), cornerRadius(_cornerRadius), size(_size) {}
+    };
+
     eastl::vector<LineShape> lines;
+    eastl::vector<RectShape> rects;
     eastl::vector<GfxDraw::PolylineShape> polylines;
 
-    Primitive lineMesh;
+    Primitive basicQuadMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
     AssetHandle polyLineDrawShader{ AssetHandle("Shaders/PolylineDraw.hlsl") };
+    AssetHandle rectDrawShader{ AssetHandle("Shaders/RectDraw.hlsl") };
 
     ConstBufferHandle bufferHandle_perObjectData; 
     ConstBufferHandle bufferHandle_perSceneData; 
     ConstBufferHandle lineShaderInstanceData;
+    ConstBufferHandle rectShaderInstanceData;
     BlendStateHandle blendState;
 }
 
@@ -146,6 +161,11 @@ void GfxDraw::Line(Vec3f start, Vec3f end, Vec4f color, float thickness)
     lines.emplace_back(start, end, color, thickness);
 }
 
+void GfxDraw::Rect(Vec3f pos, Vec2f size, Vec4f color, float borderThickness, Vec4f cornerRadius)
+{
+    rects.emplace_back(pos, borderThickness, color, cornerRadius, size);
+}
+
 void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
 {
     polylines.push_back(shape);
@@ -153,14 +173,21 @@ void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
 
 void GfxDraw::Initialize()
 {
-    lines.reserve(16);
-    lineMesh = Primitive::NewPlainQuad();
+    lines.reserve(256);
+    rects.reserve(256);
+    basicQuadMesh = Primitive::NewPlainQuad();
 
     bufferHandle_perObjectData = GfxDevice::CreateConstantBuffer(sizeof(PerObject), "GfxDraw Per Object data");
     bufferHandle_perSceneData = GfxDevice::CreateConstantBuffer(sizeof(PerScene), "GfxDraw Per Scene data");
 
-    uint32_t bufferSize = sizeof(LineShape) * 16;
-	lineShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Line Renderer Instance Data");
+    {
+        uint32_t bufferSize = sizeof(LineShape) * 256;
+        lineShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Line Renderer Instance Data");
+    }
+    {
+        uint32_t bufferSize = sizeof(RectShape) * 256;
+        rectShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Rect Renderer Instance Data");
+    }
 
     BlendingInfo blender;
 	blender.enabled = true;
@@ -193,11 +220,27 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
         {
             GfxDevice::BindConstantBuffer(lineShaderInstanceData, lines.data(), ShaderType::Vertex, 2);
             GfxDevice::BindProgram(pLineShader->program);
-            GfxDevice::SetTopologyType(lineMesh.topologyType);
-            GfxDevice::BindVertexBuffers(0, 1, &lineMesh.bufferHandle_vertices);
-            GfxDevice::BindIndexBuffer(lineMesh.bufferHandle_indices);
+            GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
+            GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
+            GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
 
-            GfxDevice::DrawIndexedInstanced((int)lineMesh.indices.size(), (int)lines.size(), 0, 0, 0);
+            GfxDevice::DrawIndexedInstanced((int)basicQuadMesh.indices.size(), (int)lines.size(), 0, 0, 0);
+        }
+    }
+
+    // Render Rects
+
+    if (Shader* pRectShader = AssetDB::GetAsset<Shader>(rectDrawShader))
+    {
+        if (GfxDevice::IsValid(pRectShader->program))
+        {
+            GfxDevice::BindConstantBuffer(rectShaderInstanceData, rects.data(), ShaderType::Vertex, 2);
+            GfxDevice::BindProgram(pRectShader->program);
+            GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
+            GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
+            GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
+
+            GfxDevice::DrawIndexedInstanced((int)basicQuadMesh.indices.size(), (int)rects.size(), 0, 0, 0);
         }
     }
 
@@ -230,7 +273,10 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
 {
     lines.clear();
-    lines.reserve(16);
+    lines.reserve(256);
+
+    rects.clear();
+    rects.reserve(256);
 
     polylines.clear();
 }

@@ -36,7 +36,12 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	poly.AddPoint(Vec3f(3.0f, 1.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
 	poly.GenerateMesh();
 
-	GfxDraw::Polyline(poly);
+	//GfxDraw::Polyline(poly);
+
+
+	GfxDraw::Rect(Vec3f(2.0f, 2.0f, 0.0f), Vec2f(5.0f, 3.0f), Vec4f(1.0f), 0.0f, Vec4f(0.0f));
+	GfxDraw::Rect(Vec3f(-4.0f, 2.0f, 0.0f), Vec2f(3.0f, 8.0f), Vec4f(1.0f), 0.0f, Vec4f(0.0f));
+	GfxDraw::Rect(Vec3f(-4.0f, 6.0f, 0.0f), Vec2f(3.0f, 3.0f), Vec4f(1.0f), 0.0f, Vec4f(0.0f));
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{

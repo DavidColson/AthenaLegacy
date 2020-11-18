@@ -21,7 +21,7 @@ cbuffer InstanceData : register(b2)
 		float3 lineStart;
 		float thickness;
 		float3 lineEnd;
-	} array[16];
+	} array[256];
 };
 
 
