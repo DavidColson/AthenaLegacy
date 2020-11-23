@@ -88,12 +88,27 @@ float4 PSMain(VertOutput pixelIn) : SV_TARGET
 
     float dist = sdf(pixelIn.uv, pixelIn.uvScale, pixelIn.cornerRadius);
 
-    if (dist < -pixelIn.strokeSize)
-        return pixelIn.fillcol;
-    else if (dist < 0.0)
-        return pixelIn.strokecol;
-    else
-        return float4(0.0, 0.0, 0.0, 0.0);
+    #if defined(ANTI_ALIASING)
+        float blurAmount = 2.0;
+        float grad = blurAmount * FWidthFancy(dist);
+
+        float aaMask = smoothstep(0.0, 1.0, abs(dist) / grad);
+        float strokeFillBlend = smoothstep(0.0, 1.0, (dist + pixelIn.strokeSize) / grad);
+
+        if (dist > 0.0)
+            result = float4(0.0, 0.0, 0.0, 0.0);
+        else
+            result = lerp(pixelIn.fillcol, pixelIn.strokecol, strokeFillBlend);
+
+        result.a *= aaMask;
+    #else
+        if (dist < -pixelIn.strokeSize)
+            return pixelIn.fillcol;
+        else if (dist < 0.0)
+            return pixelIn.strokecol;
+        else
+            return float4(0.0, 0.0, 0.0, 0.0);
+    #endif
 
     return result;
 }
