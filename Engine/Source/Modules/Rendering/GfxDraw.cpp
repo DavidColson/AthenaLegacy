@@ -36,6 +36,18 @@ namespace
         LineShape(Vec3f _start, Vec3f _end, Vec4f _color, float _thickness) : start(_start), end(_end), color(_color), thickness(_thickness) {}
     };
 
+    struct CircleShape
+    {
+        Vec3f location;
+        float radius;
+        Vec4f fillColor;
+        Vec4f strokeColor;
+        float strokeWidth;
+        Vec3f padding;
+
+        CircleShape(Vec3f _location, float _radius, Vec4f _fillColor, Vec4f _strokeColor, float _strokeWidth) : location(_location), radius(_radius), fillColor(_fillColor), strokeColor(_strokeColor), strokeWidth(_strokeWidth) {}
+    };
+
     struct RectShape
     {
         Vec3f location;
@@ -52,17 +64,20 @@ namespace
 
     eastl::vector<LineShape> lines;
     eastl::vector<RectShape> rects;
+    eastl::vector<CircleShape> circles;
     eastl::vector<GfxDraw::PolylineShape> polylines;
 
     Primitive basicQuadMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
     AssetHandle polyLineDrawShader{ AssetHandle("Shaders/PolylineDraw.hlsl") };
     AssetHandle rectDrawShader{ AssetHandle("Shaders/RectDraw.hlsl") };
+    AssetHandle circleDrawShader{ AssetHandle("Shaders/CircleDraw.hlsl") };
 
     ConstBufferHandle bufferHandle_perObjectData; 
     ConstBufferHandle bufferHandle_perSceneData; 
     ConstBufferHandle lineShaderInstanceData;
     ConstBufferHandle rectShaderInstanceData;
+    ConstBufferHandle circleShaderInstanceData;
     BlendStateHandle blendState;
 }
 
@@ -172,10 +187,16 @@ void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
     polylines.push_back(shape);
 }
 
+void GfxDraw::Circle(Vec3f pos, float radius, Vec4f fillcolor, float strokeWidth, Vec4f strokeColor)
+{
+    circles.emplace_back(pos, radius, fillcolor, strokeColor, strokeWidth);
+}
+
 void GfxDraw::Initialize()
 {
     lines.reserve(256);
     rects.reserve(256);
+    circles.reserve(256);
     basicQuadMesh = Primitive::NewPlainQuad();
 
     bufferHandle_perObjectData = GfxDevice::CreateConstantBuffer(sizeof(PerObject), "GfxDraw Per Object data");
@@ -188,6 +209,10 @@ void GfxDraw::Initialize()
     {
         uint32_t bufferSize = sizeof(RectShape) * 256;
         rectShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Rect Renderer Instance Data");
+    }
+    {
+        uint32_t bufferSize = sizeof(CircleShape) * 256;
+        circleShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Circle Renderer Instance Data");
     }
 
     BlendingInfo blender;
@@ -245,6 +270,22 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
         }
     }
 
+    // Render Circles
+
+    if (Shader* pCircleShader = AssetDB::GetAsset<Shader>(circleDrawShader))
+    {
+        if (GfxDevice::IsValid(pCircleShader->program))
+        {
+            GfxDevice::BindConstantBuffer(circleShaderInstanceData, circles.data(), ShaderType::Vertex, 2);
+            GfxDevice::BindProgram(pCircleShader->program);
+            GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
+            GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
+            GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
+
+            GfxDevice::DrawIndexedInstanced((int)basicQuadMesh.indices.size(), (int)circles.size(), 0, 0, 0);
+        }
+    }
+
     // Render polylines
 
     if (Shader* pPolyLineShader = AssetDB::GetAsset<Shader>(polyLineDrawShader))
@@ -278,6 +319,9 @@ void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
 
     rects.clear();
     rects.reserve(256);
+
+    circles.clear();
+    circles.reserve(256);
 
     polylines.clear();
 }

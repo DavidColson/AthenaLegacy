@@ -45,7 +45,6 @@ struct VertOutput
 };
 
 #define ANTI_ALIASING
-//#define Z_ALIGN
 
 VertOutput VSMain(VertInput vertIn)
 {
