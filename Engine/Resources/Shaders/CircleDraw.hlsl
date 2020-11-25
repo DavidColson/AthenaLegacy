@@ -19,9 +19,10 @@ cbuffer InstanceData : register(b2)
 	struct {
 		float3 location;
         float radius;
-        float4 fillColor;
-        float4 strokeColor;
-        float strokeWidth;
+        float4 color;
+        float thickness;
+        float angleStart;
+        float angleEnd;
 	} array[256];
 };
 
@@ -36,10 +37,11 @@ struct VertOutput
 {   
     float2 uv : TEXCOORD;
     float4 pos : SV_POSITION;
-    float4 fillcol: COLOR1;
-    float4 strokecol: COLOR2;
-    float strokeWidth : STROKE_WIDTH;
+    float4 color: COLOR1;
     float radius : RADIUS;
+    float thickness : THICKNESS;
+    float angStart : ANGSTART;
+    float angEnd : ANGEND;
 };
 
 
@@ -57,11 +59,12 @@ VertOutput VSMain(VertInput vertIn)
     float4x4 modelToClipTransform = mul(modelToWorld, worldToClipTransform);
 
     output.pos = mul(vertIn.pos, modelToClipTransform);
-    output.fillcol = array[vertIn.instanceId].fillColor;
-    output.strokecol = array[vertIn.instanceId].strokeColor;
+    output.color = array[vertIn.instanceId].color;
     output.uv = vertIn.pos.xy * radius;
-    output.strokeWidth = array[vertIn.instanceId].strokeWidth;
     output.radius = array[vertIn.instanceId].radius;
+    output.thickness = array[vertIn.instanceId].thickness;
+    output.angStart = array[vertIn.instanceId].angleStart;
+    output.angEnd = array[vertIn.instanceId].angleEnd;
 
     return output;
 }
@@ -71,14 +74,33 @@ float sdf( float2 queryPoint, float radius)
     return length(queryPoint) - radius;
 }
 
+float2 rotate( float2 v, float ang ){
+	float2 a = float2( cos(ang), sin(ang) );
+	return float2( a.x * v.x - a.y * v.y, a.y * v.x + a.x * v.y );
+}
+
 float4 PSMain(VertOutput pixelIn) : SV_TARGET
 {
     float dist = sdf(pixelIn.uv, pixelIn.radius);
 
-    if (dist < -pixelIn.strokeWidth)
-        return pixelIn.fillcol;
+    float segmentMask = 1.0;
+    if (pixelIn.angStart != pixelIn.angEnd)
+    {
+        float angOffset = -(pixelIn.angEnd + pixelIn.angStart) * 0.5;
+        float2 segmentMaskCoords = rotate(pixelIn.uv, angOffset);
+        float ang = atan2(segmentMaskCoords.y, segmentMaskCoords.x);
+        float sectorSize = abs(pixelIn.angEnd - pixelIn.angStart);
+        segmentMask = 1.0 - step(0, abs(ang) - sectorSize * 0.5);
+    }
+
+    float thickness = pixelIn.radius;
+    if (pixelIn.thickness != 0.0)
+        thickness = pixelIn.thickness;
+
+    if (dist + thickness < 0.0)
+        return float4(0.0, 0.0, 0.0, 0.0);
     else if (dist < 0.0)
-        return pixelIn.strokecol;
+        return pixelIn.color * segmentMask;
     else
         return float4(0.0, 0.0, 0.0, 0.0);
 }

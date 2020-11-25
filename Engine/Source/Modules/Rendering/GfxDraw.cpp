@@ -40,12 +40,13 @@ namespace
     {
         Vec3f location;
         float radius;
-        Vec4f fillColor;
-        Vec4f strokeColor;
-        float strokeWidth;
-        Vec3f padding;
+        Vec4f color;
+        float thickness;
+        float angleStart;
+        float angleEnd;
+        float padding;
 
-        CircleShape(Vec3f _location, float _radius, Vec4f _fillColor, Vec4f _strokeColor, float _strokeWidth) : location(_location), radius(_radius), fillColor(_fillColor), strokeColor(_strokeColor), strokeWidth(_strokeWidth) {}
+        CircleShape(Vec3f _location, float _radius, Vec4f _color, float _thickness, float _angleStart, float _angleEnd) : location(_location), radius(_radius), color(_color), thickness(_thickness), angleStart(_angleStart), angleEnd(_angleEnd) {}
     };
 
     struct RectShape
@@ -187,9 +188,25 @@ void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
     polylines.push_back(shape);
 }
 
-void GfxDraw::Circle(Vec3f pos, float radius, Vec4f fillcolor, float strokeWidth, Vec4f strokeColor)
+
+void GfxDraw::Circle(Vec3f pos, float radius, Vec4f color)
 {
-    circles.emplace_back(pos, radius, fillcolor, strokeColor, strokeWidth);
+    circles.emplace_back(pos, radius, color, 0.0f, 0.0f, 0.0f);
+}
+
+void GfxDraw::Ring(Vec3f pos, float radius, float thickness, Vec4f color)
+{
+    circles.emplace_back(pos, radius, color, thickness, 0.0f, 0.0f);
+}
+
+void GfxDraw::Pie(Vec3f pos, float radius, float angleStart, float angleEnd, Vec4f color)
+{
+    circles.emplace_back(pos, radius, color, 0.0f, angleStart, angleEnd);
+}
+
+void GfxDraw::Arc(Vec3f pos, float radius, float thickness, float angleStart, float angleEnd, Vec4f color)
+{
+    circles.emplace_back(pos, radius, color, thickness, angleStart, angleEnd);
 }
 
 void GfxDraw::Initialize()

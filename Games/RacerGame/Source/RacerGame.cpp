@@ -42,8 +42,15 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	// GfxDraw::Rect(Vec3f(-4.0f, 2.0f, 0.0f), Vec2f(1.0f, 4.0f), Vec4f(0.0f, 0.7f, 0.0f, 1.0f), Vec4f(0.5f, 0.0f, 0.0f, 0.2f), 0.2f);
 	// GfxDraw::Rect(Vec3f(-4.0f, 6.0f, 0.0f), Vec2f(2.0f, 2.8f), Vec4f(1.0f), Vec4f(0.0f), 0.1f);
 
-	GfxDraw::Circle(Vec3f(0.0f), 1.0f, Vec4f(1.0f));
-	GfxDraw::Circle(Vec3f(3.1f, 0.0f, 0.0f), 2.0f, Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.1f, Vec4f(0.0f, 0.0f, 0.0f, 1.0f));
+	float pi = 3.1415926f;
+
+	GfxDraw::Circle(Vec3f(0.0f), 1.2f, Vec4f(1.0f));
+
+	GfxDraw::Pie(Vec3f(3.0f, 0.0f, 0.0f), 0.8f, 0.12f, pi / 2.0f, Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+	
+	GfxDraw::Ring(Vec3f(0.0f, 3.0f, 0.0f), 1.5f, 0.1f, Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+
+	GfxDraw::Arc(Vec3f(0.0f, -3.0f, 0.0f), 1.5f, 0.1f, 0.3f, pi, Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
