@@ -143,7 +143,7 @@ struct Vec2
 	**/
 	inline static float Cross(const Vec2& lhs, const Vec2& rhs)
 	{
-		return lhs.x * rhs.x - lhs.y * rhs.y;
+		return lhs.x * rhs.y - lhs.y * rhs.x;
 	}
 
 	/**

@@ -7,6 +7,7 @@
 #include "Shader.h"
 
 #include <EASTL/vector.h>
+#include <EASTL/fixed_vector.h>
 
 namespace
 {
@@ -67,12 +68,14 @@ namespace
     eastl::vector<RectShape> rects;
     eastl::vector<CircleShape> circles;
     eastl::vector<GfxDraw::PolylineShape> polylines;
+    eastl::vector<GfxDraw::PolygonShape> polygons;
 
     Primitive basicQuadMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
     AssetHandle polyLineDrawShader{ AssetHandle("Shaders/PolylineDraw.hlsl") };
     AssetHandle rectDrawShader{ AssetHandle("Shaders/RectDraw.hlsl") };
     AssetHandle circleDrawShader{ AssetHandle("Shaders/CircleDraw.hlsl") };
+    AssetHandle polygonDrawShader{ AssetHandle("Shaders/PolygonDraw.hlsl") };
 
     ConstBufferHandle bufferHandle_perObjectData; 
     ConstBufferHandle bufferHandle_perSceneData; 
@@ -172,6 +175,94 @@ void GfxDraw::PolylineShape::GenerateMesh()
     mesh.primitives.push_back(prim);
 }
 
+void GfxDraw::PolygonShape::AddPoint(const Vec2f& pos)
+{
+    points.emplace_back(Vec2f(pos.x, pos.y));
+}
+
+bool TriangleIsCCW(Vec2f a, Vec2f b, Vec2f c)
+{
+	return Vec2f::Cross(b - a, b - c) < 0.0f;
+}
+
+bool PointInsideTriangle(Vec2f p, Vec2f a, Vec2f b, Vec2f c)
+{
+    if (Vec2f::Cross(b - a, p - a) < 0.0f) return false;
+    if (Vec2f::Cross(c - b, p - b) < 0.0f) return false;
+    if (Vec2f::Cross(a - c, p - c) < 0.0f) return false;
+    return true;
+}
+
+void GfxDraw::PolygonShape::GenerateMesh()
+{
+    // Triangulate?p - c
+    Primitive prim;
+    prim.vertices.reserve(points.size());
+    for (size_t i = 0; i < points.size(); i++)
+    {
+        prim.vertices.push_back(Vec3f::Embed2D(points[i]));
+        prim.colors.push_back(Vec4f(1.0));
+    }
+
+    eastl::vector<int> prev;
+    eastl::vector<int> next;
+
+    for (int i = 0; i < (int)points.size(); i++)
+    {
+        prev.push_back(i - 1);
+        next.push_back(i + 1);
+    }
+    prev[0] = (int)points.size() - 1;
+    next[points.size() - 1] = 0;
+
+    size_t i = 0;
+    size_t n = points.size();
+    int infiniteLoopCounter = 10000;
+    while (n > 3)
+    {
+        infiniteLoopCounter--;
+        bool isEar = true;
+        if (TriangleIsCCW(points[prev[i]], points[i], points[next[i]]))
+        {
+            int k = next[next[i]]; // We're going to test every vertex other than the three that define this triangle
+            do
+            {
+                if (PointInsideTriangle(points[k], points[prev[i]], points[i], points[next[i]]))
+                {
+                    isEar = false;
+                    break;
+                }
+                k = next[k];
+            } while (k != prev[i]);
+        }
+        else
+        {
+            isEar = false;
+        }
+
+        if (isEar)
+        {
+            prim.indices.push_back(prev[i]);
+            prim.indices.push_back((uint16_t)i);
+            prim.indices.push_back(next[i]);
+
+            next[prev[i]] = next[i];
+            prev[next[i]] = prev[i];
+            n--;
+            i = prev[i];
+        }
+        else
+        {
+            i = next[i];
+        }
+    }
+    // Final triangle
+    prim.indices.push_back(prev[i]);
+    prim.indices.push_back((uint16_t)i);
+    prim.indices.push_back(next[i]);
+
+    mesh.primitives.push_back(prim);
+}
 
 void GfxDraw::Line(Vec3f start, Vec3f end, Vec4f color, float thickness)
 {
@@ -186,6 +277,11 @@ void GfxDraw::Rect(Vec3f pos, Vec2f size, Vec4f fillcolor, Vec4f cornerRadius, f
 void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
 {
     polylines.push_back(shape);
+}
+
+void GfxDraw::Polygon(const GfxDraw::PolygonShape& shape)
+{
+    polygons.push_back(shape);
 }
 
 void GfxDraw::Circle(Vec3f pos, float radius, Vec4f color)
@@ -326,6 +422,28 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
             }
         }
     }
+
+    // Render polygons
+
+    if (Shader* pPolygonShader = AssetDB::GetAsset<Shader>(polygonDrawShader))
+    {
+        if (GfxDevice::IsValid(pPolygonShader->program))
+        {
+            GfxDevice::BindProgram(pPolygonShader->program);
+            GfxDevice::SetTopologyType(TopologyType::TriangleList);
+            for (size_t i = 0; i < polygons.size(); i++)
+            {
+                const PolygonShape& polygon = polygons[i];
+                const Primitive& prim = polygon.mesh.primitives[0];
+
+                GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
+                GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_colors);
+                GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
+                
+                GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);
+            }
+        }
+    }
 }
 
 void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
@@ -340,4 +458,5 @@ void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
     circles.reserve(256);
 
     polylines.clear();
+    polygons.clear();
 }

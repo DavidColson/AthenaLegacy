@@ -52,6 +52,29 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 	GfxDraw::Arc(Vec3f(0.0f, -3.0f, 0.0f), 1.5f, 0.4f, 0.3f, pi, Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
 
+	GfxDraw::PolygonShape asteroidshape;
+	
+	asteroidshape.AddPoint(Vec2f(0.056f, 0.265f));
+	asteroidshape.AddPoint(Vec2f(0.312f, 0.074f));
+	asteroidshape.AddPoint(Vec2f(0.683f, 0.086f));
+	asteroidshape.AddPoint(Vec2f(0.943f, 0.298f));
+	asteroidshape.AddPoint(Vec2f(0.974f, 0.65f));
+	asteroidshape.AddPoint(Vec2f(0.83f, 0.85f));
+	asteroidshape.AddPoint(Vec2f(0.64f, 0.75f));
+	asteroidshape.AddPoint(Vec2f(0.673f, 0.952f));
+	asteroidshape.AddPoint(Vec2f(0.348f, 0.96f));
+	asteroidshape.AddPoint(Vec2f(0.37f, 0.65f));
+	asteroidshape.AddPoint(Vec2f(0.213f, 0.78f));
+	asteroidshape.AddPoint(Vec2f(0.05f, 0.54f));
+	for (size_t i = 0; i < asteroidshape.points.size(); i++)
+	{
+		asteroidshape.points[i] *= 2.0f;
+		asteroidshape.points[i] += Vec2f(-1.0f, 5.0f);
+	}
+	asteroidshape.GenerateMesh();
+
+	GfxDraw::Polygon(asteroidshape);
+
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
 		CCamera* pCam = scene.Get<CCamera>(cams);
@@ -104,7 +127,6 @@ int main(int argc, char *argv[])
 	pCubeMesh->primitives.push_back(Primitive::NewCube());
 	AssetDB::RegisterAsset(pCubeMesh, "cube");
 
-	
 	// Open the level we want to play
 	// JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile("Games/RacerGame/Resources/Levels/RacerGame.lvl"));
 	// Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);

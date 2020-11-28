@@ -21,11 +21,22 @@ namespace GfxDraw
         Mesh mesh;
     };
 
+    struct PolygonShape
+    {
+        void AddPoint(const Vec2f& pos);
+        
+        void GenerateMesh();
+        eastl::vector<Vec2f> points;
+        const Vec4f& color{ Vec4f(1.0f) };
+        Mesh mesh;
+    };
+
     void Line(Vec3f start, Vec3f end, Vec4f color, float thickness);
 
     // Need to make variants of these that take a transform to be applied to it during rendering
     void Rect(Vec3f pos, Vec2f size, Vec4f fillcolor, Vec4f cornerRadius = Vec4f(0.0f), float strokeThickness = 0.0f, Vec4f strokeColor = Vec4f(0.0f, 0.0f, 0.0f, 1.0f));
     void Polyline(const GfxDraw::PolylineShape& shape);
+    void Polygon(const GfxDraw::PolygonShape& shape);
     void Circle(Vec3f pos, float radius, Vec4f color);
     void Ring(Vec3f pos, float radius, float thickness, Vec4f color);
     void Pie(Vec3f pos, float radius, float angleStart, float angleEnd, Vec4f color);
