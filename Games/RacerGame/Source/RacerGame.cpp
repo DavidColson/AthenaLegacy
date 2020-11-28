@@ -46,7 +46,7 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 	GfxDraw::Circle(Vec3f(0.0f), 1.2f, Vec4f(1.0f));
 
-	GfxDraw::Pie(Vec3f(3.0f, 0.0f, 0.0f), 0.8f, 0.12f, pi / 2.0f, Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+	GfxDraw::Pie(Vec3f(3.0f, 0.0f, 0.0f), 0.8f, 0.12f, pi * 1.6f, Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
 	
 	GfxDraw::Ring(Vec3f(0.0f, 3.0f, 0.0f), 1.5f, 0.1f, Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
 
