@@ -148,25 +148,25 @@ void GfxDraw::PolylineShape::GenerateMesh()
         {
             // First triangle
             prim.indices.push_back(index1);
-            prim.indices.push_back(index1 + 2);
             prim.indices.push_back(index2);
+            prim.indices.push_back(index1 + 2);
             
             // Second triangle
             prim.indices.push_back(index2);
-            prim.indices.push_back(index1 + 2);
             prim.indices.push_back(index2 + 2);
+            prim.indices.push_back(index1 + 2);
         }
         else if (closed && i == points.size() - 1) // this makes a closed loop of quads
         {
             // First triangle
             prim.indices.push_back(index1);
-            prim.indices.push_back(0);
             prim.indices.push_back(index2);
+            prim.indices.push_back(0);
 
             // Second triangle
             prim.indices.push_back(index2);
-            prim.indices.push_back(0);
             prim.indices.push_back(1);
+            prim.indices.push_back(0);
         }
     }
     mesh.primitives.push_back(prim);
@@ -187,7 +187,6 @@ void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
 {
     polylines.push_back(shape);
 }
-
 
 void GfxDraw::Circle(Vec3f pos, float radius, Vec4f color)
 {

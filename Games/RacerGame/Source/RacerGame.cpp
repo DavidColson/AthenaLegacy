@@ -21,36 +21,36 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	// GfxDraw::Line(Vec3f(0.0f, 0.0f, 2.0f), Vec3f(0.0f, 1.0f, 5.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.01f);
-	// GfxDraw::Line(Vec3f(2.0f, 0.0f, -1.0f), Vec3f(0.0f, 0.0f, 5.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.02f);
-	// GfxDraw::Line(Vec3f(2.0f, 0.0f, 4.0f), Vec3f(0.0f, 2.0f, 5.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.03f);
+	GfxDraw::Line(Vec3f(3.0f, 2.0f, 0.0f), Vec3f(3.2f, 4.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.01f);
+	GfxDraw::Line(Vec3f(3.3f, 2.0f, 0.0f), Vec3f(3.5f, 4.0f, 0.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.05f);
+	GfxDraw::Line(Vec3f(3.6f, 2.0f, 0.0f), Vec3f(3.8f, 4.0f, 0.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.1f);
 
 	GfxDraw::PolylineShape poly;
 
 	poly.closed = true;
-	poly.AddPoint(Vec3f(3.0f, -1.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(1.0f, -1.0f, 0.0f), Vec4f(0.0f, 0.0f, 0.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(0.0f, 0.0f, 0.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(1.0f, 1.0f, 0.0f), Vec4f(1.0f, 0.0f, 1.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(2.0f, 0.0f, 0.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(3.0f, 1.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
+	poly.AddPoint(Vec3f(1.0f, -1.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
+	poly.AddPoint(Vec3f(-1.0f, -1.0f, 0.0f), Vec4f(0.0f, 0.0f, 0.0f, 1.0f), 0.1f);
+	poly.AddPoint(Vec3f(-2.0f, 0.0f, 0.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.1f);
+	poly.AddPoint(Vec3f(-1.0f, 1.0f, 0.0f), Vec4f(1.0f, 0.0f, 1.0f, 1.0f), 0.1f);
+	poly.AddPoint(Vec3f(0.0f, 0.0f, 0.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.1f);
+	poly.AddPoint(Vec3f(1.0f, 1.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
 	poly.GenerateMesh();
 
-	//GfxDraw::Polyline(poly);
+	GfxDraw::Polyline(poly);
 
-	// GfxDraw::Rect(Vec3f(0.0f, 0.0f, 0.0f), Vec2f(4.0f, 2.0f), Vec4f(0.6f, 0.0f, 0.0f, 1.0f), Vec4f(0.3f), 0.1f);
-	// GfxDraw::Rect(Vec3f(-4.0f, 2.0f, 0.0f), Vec2f(1.0f, 4.0f), Vec4f(0.0f, 0.7f, 0.0f, 1.0f), Vec4f(0.5f, 0.0f, 0.0f, 0.2f), 0.2f);
-	// GfxDraw::Rect(Vec3f(-4.0f, 6.0f, 0.0f), Vec2f(2.0f, 2.8f), Vec4f(1.0f), Vec4f(0.0f), 0.1f);
+	GfxDraw::Rect(Vec3f(-4.0f, -2.0f, 0.0f), Vec2f(4.0f, 2.0f), Vec4f(0.6f, 0.0f, 0.0f, 1.0f), Vec4f(0.3f), 0.1f);
+	GfxDraw::Rect(Vec3f(-4.0f, 2.0f, 0.0f), Vec2f(1.0f, 4.0f), Vec4f(0.0f, 0.7f, 0.0f, 1.0f), Vec4f(0.5f, 0.0f, 0.0f, 0.2f), 0.2f);
+	GfxDraw::Rect(Vec3f(-4.0f, 6.0f, 0.0f), Vec2f(2.0f, 2.8f), Vec4f(1.0f), Vec4f(0.0f), 0.1f);
 
 	float pi = 3.1415926f;
 
-	GfxDraw::Circle(Vec3f(0.0f), 1.2f, Vec4f(1.0f));
+	GfxDraw::Circle(Vec3f(0.0f, 3.0f, -0.01f), 1.2f, Vec4f(1.0f));
 
 	GfxDraw::Pie(Vec3f(3.0f, 0.0f, 0.0f), 0.8f, 0.12f, pi * 1.6f, Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
 	
 	GfxDraw::Ring(Vec3f(0.0f, 3.0f, 0.0f), 1.5f, 0.1f, Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
 
-	GfxDraw::Arc(Vec3f(0.0f, -3.0f, 0.0f), 1.5f, 0.1f, 0.3f, pi, Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
+	GfxDraw::Arc(Vec3f(0.0f, -3.0f, 0.0f), 1.5f, 0.4f, 0.3f, pi, Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
