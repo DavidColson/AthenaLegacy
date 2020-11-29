@@ -117,6 +117,8 @@ float4 PSMain(VertOutput pixelIn) : SV_TARGET
             innerRingMask = smoothstep(0.0, 1.0, abs(dist + thickness) / grad);
     #endif
 
+    // TODO: Need to boost thickness when screen space stroke width is smaller than size of blur
+
     float4 result = float4(0.0, 0.0, 0.0, 0.0);
     if (dist + thickness < 0.0)
         result = float4(0.0, 0.0, 0.0, 0.0);

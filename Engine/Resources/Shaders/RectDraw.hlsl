@@ -86,6 +86,8 @@ float4 PSMain(VertOutput pixelIn) : SV_TARGET
     float4 result = pixelIn.fillcol;
 
     float dist = sdf(pixelIn.uv, pixelIn.uvScale, pixelIn.cornerRadius);
+    
+    // TODO: Need to boost thickness when screen space stroke width is smaller than size of blur
 
     #if defined(ANTI_ALIASING)
         float blurAmount = 2.0;

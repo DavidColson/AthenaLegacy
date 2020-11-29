@@ -64,9 +64,11 @@ namespace
         RectShape(Vec3f _location, float _strokeSize, Vec4f _strokeColor, Vec4f _fillColor, Vec4f _cornerRadius, Vec2f _size) : location(_location), strokeSize(_strokeSize), strokeColor(_strokeColor), fillColor(_fillColor), cornerRadius(_cornerRadius), size(_size) {}
     };
 
+    // Instance buffers
     eastl::vector<LineShape> lines;
     eastl::vector<RectShape> rects;
     eastl::vector<CircleShape> circles;
+
     eastl::vector<GfxDraw::PolylineShape> polylines;
     eastl::vector<GfxDraw::PolygonShape> polygons;
 
