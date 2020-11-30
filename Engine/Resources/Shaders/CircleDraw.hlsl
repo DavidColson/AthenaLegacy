@@ -2,21 +2,18 @@
 
 cbuffer PerSceneData : register(b0)
 {
+    float4x4 worldToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
 
-cbuffer PerObjectData : register(b1)
-{
-    float4x4 worldToClipTransform;
-};
-
 // Included after per scene and object data as it references the above data
 #include "Engine/Resources/Shaders/Common.hlsl"
 
-cbuffer InstanceData : register(b2)
+cbuffer InstanceData : register(b1)
 {
 	struct {
+		float4x4 transform;
 		float3 location;
         float radius;
         float4 color;
@@ -51,12 +48,12 @@ VertOutput VSMain(VertInput vertIn)
     
     float radius = array[vertIn.instanceId].radius;
 
-    float4x4 modelToWorld = {radius, 0.0, 0.0, 0.0,
+    float4x4 localTrans = {radius, 0.0, 0.0, 0.0,
                              0.0, radius, 0.0, 0.0,
                              0.0, 0.0, 1.0, 0.0,
                              array[vertIn.instanceId].location.x, array[vertIn.instanceId].location.y, array[vertIn.instanceId].location.z, 1.0};
 
-    float4x4 modelToClipTransform = mul(modelToWorld, worldToClipTransform);
+    float4x4 modelToClipTransform = mul(localTrans, mul(array[vertIn.instanceId].transform, worldToClipTransform));
 
     output.pos = mul(vertIn.pos, modelToClipTransform);
     output.color = array[vertIn.instanceId].color;

@@ -2,21 +2,18 @@
 
 cbuffer PerSceneData : register(b0)
 {
+    float4x4 worldToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
 
-cbuffer PerObjectData : register(b1)
-{
-    float4x4 worldToClipTransform;
-};
-
 // Included after per scene and object data as it references the above data
 #include "Engine/Resources/Shaders/Common.hlsl"
 
-cbuffer InstanceData : register(b2)
+cbuffer InstanceData : register(b1)
 {
 	struct {
+		float4x4 transform;
 		float3 location;
         float strokeSize;
         float4 strokeColor;
@@ -52,13 +49,12 @@ VertOutput VSMain(VertInput vertIn)
     
     float2 uvScale = float2(array[vertIn.instanceId].size.x, array[vertIn.instanceId].size.y) * 0.5;
 
-    float4x4 modelToWorld = {uvScale.x, 0.0, 0.0, 0.0,
+    float4x4 localTrans = {uvScale.x, 0.0, 0.0, 0.0,
                              0.0, uvScale.y, 0.0, 0.0,
                              0.0, 0.0, 1.0, 0.0,
                              array[vertIn.instanceId].location.x, array[vertIn.instanceId].location.y, array[vertIn.instanceId].location.z, 1.0};
 
-    float4x4 modelToClipTransform = mul(modelToWorld, worldToClipTransform);
-
+    float4x4 modelToClipTransform = mul(localTrans, mul(array[vertIn.instanceId].transform, worldToClipTransform));
 
     output.pos = mul(vertIn.pos, modelToClipTransform);
     output.fillcol = array[vertIn.instanceId].fillColor;

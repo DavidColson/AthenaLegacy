@@ -21,59 +21,68 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
-	GfxDraw::Line(Vec3f(3.0f, 2.0f, 0.0f), Vec3f(3.2f, 4.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.01f);
-	GfxDraw::Line(Vec3f(3.3f, 2.0f, 0.0f), Vec3f(3.5f, 4.0f, 0.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.05f);
-	GfxDraw::Line(Vec3f(3.6f, 2.0f, 0.0f), Vec3f(3.8f, 4.0f, 0.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.1f);
+	GfxDraw::Paint paint;
+	paint.strokeThickness = 0.01f;
+	paint.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+	GfxDraw::Line(Vec3f(3.0f, 2.0f, 0.0f), Vec3f(3.2f, 4.0f, 0.0f), paint);
+	paint.strokeThickness = 0.05f;
+	paint.strokeColor = Vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+	GfxDraw::Line(Vec3f(3.3f, 2.0f, 0.0f), Vec3f(3.5f, 4.0f, 0.0f), paint);
+	paint.strokeThickness = 0.1f;
+	paint.strokeColor = Vec4f(0.0f, 0.0f, 1.0f, 1.0f);
+	GfxDraw::Line(Vec3f(3.6f, 2.0f, 0.0f), Vec3f(3.8f, 4.0f, 0.0f), paint);
 
-	GfxDraw::PolylineShape poly;
+	eastl::vector<Vec3f> polyline;
+	polyline.push_back(Vec3f(1.0f, -1.0f, 0.0f));
+	polyline.push_back(Vec3f(-1.0f, -1.0f, 0.0f));
+	polyline.push_back(Vec3f(-2.0f, 0.0f, 0.0f));
+	polyline.push_back(Vec3f(-1.0f, 1.0f, 0.0f));
+	polyline.push_back(Vec3f(0.0f, 0.0f, 0.0f));
+	polyline.push_back(Vec3f(1.0f, 1.0f, 0.0f));
+	GfxDraw::Paint polyPaint;
+	polyPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
+	polyPaint.strokeThickness = 0.2f;
+	polyPaint.strokeColor = Vec4f(1.0f);
+	GfxDraw::Polyline(polyline, true, polyPaint);
 
-	poly.closed = true;
-	poly.AddPoint(Vec3f(1.0f, -1.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(-1.0f, -1.0f, 0.0f), Vec4f(0.0f, 0.0f, 0.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(-2.0f, 0.0f, 0.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(-1.0f, 1.0f, 0.0f), Vec4f(1.0f, 0.0f, 1.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(0.0f, 0.0f, 0.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f), 0.1f);
-	poly.AddPoint(Vec3f(1.0f, 1.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
-	poly.GenerateMesh();
+	GfxDraw::Paint rectPaint;
+	rectPaint.drawStyle = GfxDraw::DrawStyle::Both;
+	rectPaint.fillColor = Vec4f(0.6f, 0.0f, 0.0f, 1.0f);
+	rectPaint.strokeColor = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	rectPaint.strokeThickness = 0.2f;
+	GfxDraw::Rect(Vec3f(-4.0f, -2.0f, 0.0f), Vec2f(4.0f, 2.0f), Vec4f(0.6f, 0.0f, 0.0f, 1.0f), rectPaint);
 
-	GfxDraw::Polyline(poly);
+	GfxDraw::Paint circlePaint;
+	circlePaint.strokeThickness = 0.1f;
+	circlePaint.strokeColor = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	circlePaint.fillColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+	circlePaint.drawStyle = GfxDraw::DrawStyle::Both;
+	GfxDraw::Circle(Vec3f(0.0f, 3.0f, -0.01f), 1.2f, circlePaint);
+	GfxDraw::Sector(Vec3f(0.0f, -3.0f, -0.01f), 1.2f, 0.1f, 2.0f, circlePaint);
 
-	GfxDraw::Rect(Vec3f(-4.0f, -2.0f, 0.0f), Vec2f(4.0f, 2.0f), Vec4f(0.6f, 0.0f, 0.0f, 1.0f), Vec4f(0.3f), 0.1f);
-	GfxDraw::Rect(Vec3f(-4.0f, 2.0f, 0.0f), Vec2f(1.0f, 4.0f), Vec4f(0.0f, 0.7f, 0.0f, 1.0f), Vec4f(0.5f, 0.0f, 0.0f, 0.2f), 0.2f);
-	GfxDraw::Rect(Vec3f(-4.0f, 6.0f, 0.0f), Vec2f(2.0f, 2.8f), Vec4f(1.0f), Vec4f(0.0f), 0.1f);
-
-	float pi = 3.1415926f;
-
-	GfxDraw::Circle(Vec3f(0.0f, 3.0f, -0.01f), 1.2f, Vec4f(1.0f));
-
-	GfxDraw::Pie(Vec3f(3.0f, 0.0f, 0.0f), 0.8f, 0.12f, pi * 1.6f, Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
-	
-	GfxDraw::Ring(Vec3f(0.0f, 3.0f, 0.0f), 1.5f, 0.1f, Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
-
-	GfxDraw::Arc(Vec3f(0.0f, -3.0f, 0.0f), 1.5f, 0.4f, 0.3f, pi, Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
-
-	GfxDraw::PolygonShape asteroidshape;
-	
-	asteroidshape.AddPoint(Vec2f(0.056f, 0.265f));
-	asteroidshape.AddPoint(Vec2f(0.312f, 0.074f));
-	asteroidshape.AddPoint(Vec2f(0.683f, 0.086f));
-	asteroidshape.AddPoint(Vec2f(0.943f, 0.298f));
-	asteroidshape.AddPoint(Vec2f(0.974f, 0.65f));
-	asteroidshape.AddPoint(Vec2f(0.83f, 0.85f));
-	asteroidshape.AddPoint(Vec2f(0.64f, 0.75f));
-	asteroidshape.AddPoint(Vec2f(0.673f, 0.952f));
-	asteroidshape.AddPoint(Vec2f(0.348f, 0.96f));
-	asteroidshape.AddPoint(Vec2f(0.37f, 0.65f));
-	asteroidshape.AddPoint(Vec2f(0.213f, 0.78f));
-	asteroidshape.AddPoint(Vec2f(0.05f, 0.54f));
-	for (size_t i = 0; i < asteroidshape.points.size(); i++)
+	eastl::vector<Vec2f> asteroidPoly;
+	asteroidPoly.push_back(Vec2f(0.056f, 0.265f));
+	asteroidPoly.push_back(Vec2f(0.312f, 0.074f));
+	asteroidPoly.push_back(Vec2f(0.683f, 0.086f));
+	asteroidPoly.push_back(Vec2f(0.943f, 0.298f));
+	asteroidPoly.push_back(Vec2f(0.974f, 0.65f));
+	asteroidPoly.push_back(Vec2f(0.83f, 0.85f));
+	asteroidPoly.push_back(Vec2f(0.64f, 0.75f));
+	asteroidPoly.push_back(Vec2f(0.673f, 0.952f));
+	asteroidPoly.push_back(Vec2f(0.348f, 0.96f));
+	asteroidPoly.push_back(Vec2f(0.37f, 0.65f));
+	asteroidPoly.push_back(Vec2f(0.213f, 0.78f));
+	asteroidPoly.push_back(Vec2f(0.05f, 0.54f));
+	for (size_t i = 0; i < asteroidPoly.size(); i++)
 	{
-		asteroidshape.points[i] *= 2.0f;
-		asteroidshape.points[i] += Vec2f(-1.0f, 5.0f);
+		asteroidPoly[i] *= 2.0f;
+		asteroidPoly[i] += Vec2f(-1.0f, 5.0f);
 	}
-	asteroidshape.GenerateMesh();
 
-	GfxDraw::Polygon(asteroidshape);
+	GfxDraw::Paint asteroidPaint;
+	asteroidPaint.drawStyle = GfxDraw::DrawStyle::Fill;
+	asteroidPaint.fillColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+	GfxDraw::Polygon(asteroidPoly, asteroidPaint);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{

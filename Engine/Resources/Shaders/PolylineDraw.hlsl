@@ -1,14 +1,15 @@
 
 cbuffer PerSceneData : register(b0)
 {
+    float4x4 worldToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
 
-cbuffer PerObjectData : register(b1)
+cbuffer InstanceData : register(b1)
 {
-    float4x4 worldToClipTransform;
-};
+    float4x4 transform;
+}
 
 #include "Engine/Resources/Shaders/Common.hlsl"
 
@@ -72,7 +73,7 @@ VertOutput VSMain(VertInput vertIn)
         vertPos -= tanNext * vertIn.uv.x * endPointExtrude;
     #endif
 
-	output.pos = mul(vertPos, worldToClipTransform);
+	output.pos = mul(vertPos, mul(transform, worldToClipTransform));
 	output.color = vertIn.color;
 	output.uv = vertIn.uv.xy * uvScale;
 	output.thicknessPixels = thicknessPixels;

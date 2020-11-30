@@ -2,21 +2,18 @@
 
 cbuffer PerSceneData : register(b0)
 {
+    float4x4 worldToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
 
-cbuffer PerObjectData : register(b1)
-{
-    float4x4 worldToClipTransform;
-};
-
 // Included after per scene and object data as it references the above data
 #include "Engine/Resources/Shaders/Common.hlsl"
 
-cbuffer InstanceData : register(b2)
+cbuffer InstanceData : register(b1)
 {
 	struct {
+		float4x4 transform;
 		float4 color;
 		float3 lineStart;
 		float thickness;
@@ -84,7 +81,8 @@ VertOutput VSMain(VertInput vertIn)
         thisVert += vertIn.pos.x * normalize(diff) * thickness; // Extrude ends
     #endif
 
-    output.pos = mul(thisVert, worldToClipTransform);
+    float4x4 modelToClipTransform = mul(array[vertIn.instanceId].transform, worldToClipTransform);
+    output.pos = mul(thisVert, modelToClipTransform);
     output.col = array[vertIn.instanceId].color;
     output.uv = vertIn.pos.xy * uvScale;
     output.capLengthRatio = 2.0 * thickness / length(diff);

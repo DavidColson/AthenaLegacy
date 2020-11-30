@@ -11,34 +11,29 @@
 
 namespace
 {
-    struct PerObject
+    struct CBufferPerScene
     {
         Matrixf worldToClipTransform;
-    };
-
-    struct PerScene
-    {
         Vec3f camWorldPosition;
         float padding;
         Vec2f screenDimensions;
         float padding1;
         float padding2;
-    };
+    }; 
 
-    struct LineShape
+    struct CBufferLine
     {
-        // This structure maps to a structure in shaders in which variables are 16 byte aligned, so we need padding to make it work properly
+        Matrixf transform;
         Vec4f color;
         Vec3f start;
         float thickness;
         Vec3f end;
         float padding;
-
-        LineShape(Vec3f _start, Vec3f _end, Vec4f _color, float _thickness) : start(_start), end(_end), color(_color), thickness(_thickness) {}
     };
 
-    struct CircleShape
+    struct CBufferCircle
     {
+        Matrixf transform;
         Vec3f location;
         float radius;
         Vec4f color;
@@ -46,12 +41,11 @@ namespace
         float angleStart;
         float angleEnd;
         float padding;
-
-        CircleShape(Vec3f _location, float _radius, Vec4f _color, float _thickness, float _angleStart, float _angleEnd) : location(_location), radius(_radius), color(_color), thickness(_thickness), angleStart(_angleStart), angleEnd(_angleEnd) {}
     };
 
-    struct RectShape
+    struct CBufferRect
     {
+        Matrixf transform;
         Vec3f location;
         float strokeSize;
         Vec4f strokeColor;
@@ -60,17 +54,15 @@ namespace
         Vec2f size;
         float padding;
         float padding2;
-
-        RectShape(Vec3f _location, float _strokeSize, Vec4f _strokeColor, Vec4f _fillColor, Vec4f _cornerRadius, Vec2f _size) : location(_location), strokeSize(_strokeSize), strokeColor(_strokeColor), fillColor(_fillColor), cornerRadius(_cornerRadius), size(_size) {}
     };
 
     // Instance buffers
-    eastl::vector<LineShape> lines;
-    eastl::vector<RectShape> rects;
-    eastl::vector<CircleShape> circles;
+    eastl::vector<CBufferLine> lines;
+    eastl::vector<CBufferRect> rects;
+    eastl::vector<CBufferCircle> circles;
 
-    eastl::vector<GfxDraw::PolylineShape> polylines;
-    eastl::vector<GfxDraw::PolygonShape> polygons;
+    eastl::vector<eastl::pair<Matrixf, Mesh>> polylines;
+    eastl::vector<eastl::pair<Matrixf, Mesh>> polygons;
 
     Primitive basicQuadMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
@@ -79,20 +71,22 @@ namespace
     AssetHandle circleDrawShader{ AssetHandle("Shaders/CircleDraw.hlsl") };
     AssetHandle polygonDrawShader{ AssetHandle("Shaders/PolygonDraw.hlsl") };
 
-    ConstBufferHandle bufferHandle_perObjectData; 
     ConstBufferHandle bufferHandle_perSceneData; 
+    
+    ConstBufferHandle transformsInstanceData;
     ConstBufferHandle lineShaderInstanceData;
     ConstBufferHandle rectShaderInstanceData;
     ConstBufferHandle circleShaderInstanceData;
+    ConstBufferHandle polylineInstanceData;
+    ConstBufferHandle polygonInstanceData;
+
     BlendStateHandle blendState;
+
+    Matrixf currentTransform = Matrixf::Identity();
 }
 
-void GfxDraw::PolylineShape::AddPoint(const Vec3f& pos, const Vec4f& color, float thickness)
-{
-    points.emplace_back(Vec4f(pos.x, pos.y, pos.z, thickness), color);
-}
-
-void GfxDraw::PolylineShape::GenerateMesh()
+// TODO: Move geometry gen code somewhere else
+void GeneratePolylineMesh(const eastl::vector<Vec3f> points, bool closed, const GfxDraw::Paint& paint, Mesh& outMesh)
 {
     Primitive prim;
     prim.vertices.reserve(points.size() * 2);
@@ -102,15 +96,13 @@ void GfxDraw::PolylineShape::GenerateMesh()
 
     for (size_t i = 0; i < points.size(); i++)
     {
-        Vec3f pointPos = Vec3f::Project4D(points[i].first);
-        Vec4f pointCol = points[i].second;
-        float thickness = points[i].first.w;
+        Vec3f pointPos = points[i];
 
         prim.vertices.push_back(pointPos); uint16_t index1 = (uint16_t)i * 2;      // inner
         prim.vertices.push_back(pointPos); uint16_t index2 = (uint16_t)i * 2 + 1;  // outer
 
-        prim.colors.push_back(pointCol);
-        prim.colors.push_back(pointCol);
+        prim.colors.push_back(paint.strokeColor);
+        prim.colors.push_back(paint.strokeColor);
         
         float endPointUV = 0.0f;
         if (!closed)
@@ -121,30 +113,30 @@ void GfxDraw::PolylineShape::GenerateMesh()
                 endPointUV = 1.0f;
         }
 
-        prim.uvzw0.push_back(Vec4f(endPointUV, -1.0, thickness, float(i))); // inner
-        prim.uvzw0.push_back(Vec4f(endPointUV, 1.0, thickness, float(i))); // outer
+        prim.uvzw0.push_back(Vec4f(endPointUV, -1.0, paint.strokeThickness, float(i))); // inner
+        prim.uvzw0.push_back(Vec4f(endPointUV, 1.0, paint.strokeThickness, float(i))); // outer
 
         // Previous and next points
         if (i == 0)
         {
             if (closed)
-                prim.uvz0.push_back(Vec3f::Project4D(points[points.size() - 1].first));
+                prim.uvz0.push_back(points[points.size() - 1]);
             else
-                prim.uvz0.push_back(pointPos * 2.0f - Vec3f::Project4D(points[1].first));
-            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1].first));
+                prim.uvz0.push_back(pointPos * 2.0f - points[1]);
+            prim.uvz1.push_back(points[i + 1]);
         }
         else if (i == points.size() - 1)
         {
-            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1].first));
+            prim.uvz0.push_back(points[i - 1]);
             if (closed)
-                prim.uvz1.push_back(Vec3f::Project4D(points[0].first));
+                prim.uvz1.push_back(points[0]);
             else
-                prim.uvz1.push_back(pointPos * 2.0f - Vec3f::Project4D(points[points.size() - 2].first));
+                prim.uvz1.push_back(pointPos * 2.0f - points[points.size() - 2]);
         }
         else
         {
-            prim.uvz0.push_back(Vec3f::Project4D(points[i - 1].first));
-            prim.uvz1.push_back(Vec3f::Project4D(points[i + 1].first));
+            prim.uvz0.push_back(points[i - 1]);
+            prim.uvz1.push_back(points[i + 1]);
         }
         prim.uvz0.push_back(prim.uvz0.back());
         prim.uvz1.push_back(prim.uvz1.back());
@@ -174,12 +166,7 @@ void GfxDraw::PolylineShape::GenerateMesh()
             prim.indices.push_back(0);
         }
     }
-    mesh.primitives.push_back(prim);
-}
-
-void GfxDraw::PolygonShape::AddPoint(const Vec2f& pos)
-{
-    points.emplace_back(Vec2f(pos.x, pos.y));
+    outMesh.primitives.push_back(prim);
 }
 
 bool TriangleIsCCW(Vec2f a, Vec2f b, Vec2f c)
@@ -195,9 +182,8 @@ bool PointInsideTriangle(Vec2f p, Vec2f a, Vec2f b, Vec2f c)
     return true;
 }
 
-void GfxDraw::PolygonShape::GenerateMesh()
+void GeneratePolygonMesh(const eastl::vector<Vec2f>& points, const GfxDraw::Paint& paint, Mesh& outMesh)
 {
-    // Triangulate?p - c
     Primitive prim;
     prim.vertices.reserve(points.size());
     for (size_t i = 0; i < points.size(); i++)
@@ -263,48 +249,130 @@ void GfxDraw::PolygonShape::GenerateMesh()
     prim.indices.push_back((uint16_t)i);
     prim.indices.push_back(next[i]);
 
-    mesh.primitives.push_back(prim);
+    outMesh.primitives.push_back(prim);
 }
 
-void GfxDraw::Line(Vec3f start, Vec3f end, Vec4f color, float thickness)
+
+
+
+
+
+void GfxDraw::SetTransform(const Matrixf& transform)
 {
-    lines.emplace_back(start, end, color, thickness);
+    currentTransform = transform;
 }
 
-void GfxDraw::Rect(Vec3f pos, Vec2f size, Vec4f fillcolor, Vec4f cornerRadius, float strokeThickness, Vec4f strokeColor)
+void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
 {
-    rects.emplace_back(pos, strokeThickness, strokeColor, fillcolor, cornerRadius, size);
+    lines.emplace_back();
+    CBufferLine& newLine = lines.back();
+    newLine.transform = currentTransform;
+    newLine.start = start;
+    newLine.end = end;
+    newLine.thickness = paint.strokeThickness;
+    newLine.color = paint.strokeColor;
 }
 
-void GfxDraw::Polyline(const GfxDraw::PolylineShape& shape)
+void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
 {
-    polylines.push_back(shape);
+    if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
+    {
+        circles.emplace_back();
+        CBufferCircle& circle = circles.back();
+        circle.transform = currentTransform;
+        circle.location = pos;
+        circle.radius = radius;
+        circle.color = paint.fillColor;
+    }
+    if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
+    {
+        circles.emplace_back();
+        CBufferCircle& circle = circles.back();
+        circle.transform = currentTransform;
+        circle.location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
+        circle.radius = radius;
+        circle.thickness = paint.strokeThickness;
+        circle.color = paint.strokeColor;
+    }
 }
 
-void GfxDraw::Polygon(const GfxDraw::PolygonShape& shape)
+void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float angleEnd, const Paint& paint)
 {
-    polygons.push_back(shape);
+    if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
+    {
+        circles.emplace_back();
+        CBufferCircle& circle = circles.back();
+        circle.transform = currentTransform;
+        circle.location = pos;
+        circle.radius = radius;
+        circle.angleStart = angleStart;
+        circle.angleEnd = angleEnd;
+        circle.color = paint.fillColor;
+    }
+    if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
+    {
+        circles.emplace_back();
+        CBufferCircle& circle = circles.back();
+        circle.transform = currentTransform;
+        circle.location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
+        circle.radius = radius;
+        circle.thickness = paint.strokeThickness;
+        circle.angleStart = angleStart;
+        circle.angleEnd = angleEnd;
+        circle.color = paint.strokeColor;
+    }
 }
 
-void GfxDraw::Circle(Vec3f pos, float radius, Vec4f color)
+void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad, const Paint& paint)
 {
-    circles.emplace_back(pos, radius, color, 0.0f, 0.0f, 0.0f);
+    rects.emplace_back();
+    CBufferRect& rect = rects.back();
+    rect.transform = currentTransform;
+    rect.cornerRadius = cornerRad;
+    rect.location = center;
+    rect.size = size;
+    
+    if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
+        rect.fillColor = paint.fillColor;
+    else
+        rect.fillColor = Vec4f(0.0f);
+
+    if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
+    {
+        rect.strokeColor = paint.strokeColor;
+        rect.strokeSize = paint.strokeThickness;
+    }
 }
 
-void GfxDraw::Ring(Vec3f pos, float radius, float thickness, Vec4f color)
+void GfxDraw::Polyline(const eastl::vector<Vec3f>& points, bool closed, const Paint& paint)
 {
-    circles.emplace_back(pos, radius, color, thickness, 0.0f, 0.0f);
+    if (paint.drawStyle == DrawStyle::Stroke)
+    {
+        polylines.emplace_back();
+        eastl::pair<Matrixf, Mesh>& polylineData = polylines.back();
+        polylineData.first = currentTransform;
+        GeneratePolylineMesh(points, closed, paint, polylineData.second);
+    }
+
 }
 
-void GfxDraw::Pie(Vec3f pos, float radius, float angleStart, float angleEnd, Vec4f color)
-{
-    circles.emplace_back(pos, radius, color, 0.0f, angleStart, angleEnd);
+void GfxDraw::Polygon(const eastl::vector<Vec2f>& points, const Paint& paint)
+{   
+    if (paint.drawStyle == DrawStyle::Fill)
+    {
+        polygons.emplace_back();
+        eastl::pair<Matrixf, Mesh>& polygonData = polygons.back();
+        polygonData.first = currentTransform;
+        GeneratePolygonMesh(points, paint, polygonData.second);
+    }
+
+    // Polyline is trivial here, just embed 2D into 3D coordinates.
 }
 
-void GfxDraw::Arc(Vec3f pos, float radius, float thickness, float angleStart, float angleEnd, Vec4f color)
-{
-    circles.emplace_back(pos, radius, color, thickness, angleStart, angleEnd);
-}
+
+
+
+
 
 void GfxDraw::Initialize()
 {
@@ -313,20 +381,27 @@ void GfxDraw::Initialize()
     circles.reserve(256);
     basicQuadMesh = Primitive::NewPlainQuad();
 
-    bufferHandle_perObjectData = GfxDevice::CreateConstantBuffer(sizeof(PerObject), "GfxDraw Per Object data");
-    bufferHandle_perSceneData = GfxDevice::CreateConstantBuffer(sizeof(PerScene), "GfxDraw Per Scene data");
+    bufferHandle_perSceneData = GfxDevice::CreateConstantBuffer(sizeof(CBufferPerScene), "GfxDraw Per Scene data");
 
     {
-        uint32_t bufferSize = sizeof(LineShape) * 256;
+        uint32_t bufferSize = sizeof(CBufferLine) * 256;
         lineShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Line Renderer Instance Data");
     }
     {
-        uint32_t bufferSize = sizeof(RectShape) * 256;
+        uint32_t bufferSize = sizeof(CBufferRect) * 256;
         rectShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Rect Renderer Instance Data");
     }
     {
-        uint32_t bufferSize = sizeof(CircleShape) * 256;
+        uint32_t bufferSize = sizeof(CBufferCircle) * 256;
         circleShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Circle Renderer Instance Data");
+    }
+    {
+        uint32_t bufferSize = sizeof(Matrixf) * 256;
+        polygonInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polygon Renderer Instance Data");
+    }
+    {
+        uint32_t bufferSize = sizeof(Matrixf) * 256;
+        polylineInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polyline Renderer Instance Data");
     }
 
     BlendingInfo blender;
@@ -343,22 +418,19 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	GfxDevice::SetBlending(blendState);
     
     ctx.view.GetForwardVector();
-    PerScene data{ctx.camWorldPosition, 0.0f, Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y)};
+    CBufferPerScene data;
+    data.worldToClipTransform = ctx.projection * ctx.view;
+    data.camWorldPosition = ctx.camWorldPosition;
+    data.screenDimensions = Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y);
     GfxDevice::BindConstantBuffer(bufferHandle_perSceneData, &data, ShaderType::Vertex, 0);
     
-    Matrixf worldToClipTransform = ctx.projection * ctx.view;
-    PerObject trans{ worldToClipTransform };
-    GfxDevice::BindConstantBuffer(bufferHandle_perObjectData, &trans, ShaderType::Vertex, 1);
-    
-    // TODO: need to render in order, rendering things further away first so that they blend properly.
-
     // Render Lines
     
     if (Shader* pLineShader = AssetDB::GetAsset<Shader>(lineDrawShader))
     {
         if (GfxDevice::IsValid(pLineShader->program))
         {
-            GfxDevice::BindConstantBuffer(lineShaderInstanceData, lines.data(), ShaderType::Vertex, 2);
+            GfxDevice::BindConstantBuffer(lineShaderInstanceData, lines.data(), ShaderType::Vertex, 1);
             GfxDevice::BindProgram(pLineShader->program);
             GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
             GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
@@ -374,7 +446,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     {
         if (GfxDevice::IsValid(pRectShader->program))
         {
-            GfxDevice::BindConstantBuffer(rectShaderInstanceData, rects.data(), ShaderType::Vertex, 2);
+            GfxDevice::BindConstantBuffer(rectShaderInstanceData, rects.data(), ShaderType::Vertex, 1);
             GfxDevice::BindProgram(pRectShader->program);
             GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
             GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
@@ -390,7 +462,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     {
         if (GfxDevice::IsValid(pCircleShader->program))
         {
-            GfxDevice::BindConstantBuffer(circleShaderInstanceData, circles.data(), ShaderType::Vertex, 2);
+            GfxDevice::BindConstantBuffer(circleShaderInstanceData, circles.data(), ShaderType::Vertex, 1);
             GfxDevice::BindProgram(pCircleShader->program);
             GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
             GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
@@ -410,9 +482,10 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
             GfxDevice::SetTopologyType(TopologyType::TriangleList);
             for (size_t i = 0; i < polylines.size(); i++)
             {
-                const PolylineShape& polyline = polylines[i];
-                const Primitive& prim = polyline.mesh.primitives[0];
+                const Mesh& polyline = polylines[i].second;
+                const Primitive& prim = polyline.primitives[0];
 
+                GfxDevice::BindConstantBuffer(polylineInstanceData, &polylines[i].first, ShaderType::Vertex, 1);
                 GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
                 GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_uvzw0);
                 GfxDevice::BindVertexBuffers(2, 1, &prim.bufferHandle_uvz0);
@@ -435,9 +508,10 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
             GfxDevice::SetTopologyType(TopologyType::TriangleList);
             for (size_t i = 0; i < polygons.size(); i++)
             {
-                const PolygonShape& polygon = polygons[i];
-                const Primitive& prim = polygon.mesh.primitives[0];
+                const Mesh& polygon = polygons[i].second;
+                const Primitive& prim = polygon.primitives[0];
 
+                GfxDevice::BindConstantBuffer(polygonInstanceData, &polygons[i].first, ShaderType::Vertex, 1);
                 GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
                 GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_colors);
                 GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
