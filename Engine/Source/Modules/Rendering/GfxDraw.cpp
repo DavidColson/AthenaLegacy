@@ -56,13 +56,31 @@ namespace
         float padding2;
     };
 
+    struct PolyshapeDrawData
+    {
+        GfxDraw::PolyshapeMesh meshData;
+        Matrixf transform;
+
+        VertexBufferHandle strokeVertices;
+        VertexBufferHandle strokeUvzw0;
+        VertexBufferHandle strokeUvz0;
+        VertexBufferHandle strokeUvz1;
+        VertexBufferHandle strokeColors;
+        IndexBufferHandle  strokeIndices;
+        int nStrokeIndices{ 0 };
+
+        VertexBufferHandle fillVertices;
+        VertexBufferHandle fillColors;
+        IndexBufferHandle  fillIndices;
+        int nFillIndices{ 0 };
+    };
+
     // Instance buffers
     eastl::vector<CBufferLine> lines;
     eastl::vector<CBufferRect> rects;
     eastl::vector<CBufferCircle> circles;
 
-    eastl::vector<eastl::pair<Matrixf, Mesh>> polylines;
-    eastl::vector<eastl::pair<Matrixf, Mesh>> polygons;
+    eastl::vector<PolyshapeDrawData> polyshapes;
 
     Primitive basicQuadMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
@@ -357,62 +375,103 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     }
 }
 
-void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, bool closed, const Paint& paint)
+void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
 {
-    polylines.emplace_back();
-    eastl::pair<Matrixf, Mesh>& polylineData = polylines.back();
-    polylineData.first = currentTransform;
-    GeneratePolylineMesh(points, closed, paint, polylineData.second);
+    polyshapes.emplace_back();
+    PolyshapeDrawData& polyshapeData = polyshapes.back();
+    polyshapeData.transform = currentTransform;
+    GeneratePolylineMesh(points, paint.strokeLoop, paint, polyshapeData.meshData.strokeMesh);
+
+    Primitive& prim = polyshapeData.meshData.strokeMesh.primitives[0];
+    polyshapeData.strokeVertices = prim.bufferHandle_vertices;
+    polyshapeData.strokeUvzw0 = prim.bufferHandle_uvzw0;
+    polyshapeData.strokeUvz0 = prim.bufferHandle_uvz0;
+    polyshapeData.strokeUvz1 = prim.bufferHandle_uvz1;
+    polyshapeData.strokeColors = prim.bufferHandle_colors;
+    polyshapeData.strokeIndices = prim.bufferHandle_indices;
+    polyshapeData.nStrokeIndices = (int)prim.indices.size();
 }
 
-void GfxDraw::Polyline(const eastl::vector<Vec2f>& points, const Paint& paint)
+void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
 {
-    eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
-    for (const Vec2f& vec : points)
-    {
-        points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
-    }
+    polyshapes.emplace_back();
+    PolyshapeDrawData& polyshapeData = polyshapes.back();
+    polyshapeData.transform = currentTransform;
 
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
-        polylines.emplace_back();
-        eastl::pair<Matrixf, Mesh>& polylineData = polylines.back();
-        polylineData.first = currentTransform;
-        GeneratePolylineMesh(points3d, false, paint, polylineData.second);
+        eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
+        for (const Vec2f& vec : points)
+        {
+            points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
+        }
+        GeneratePolylineMesh(points3d, paint.strokeLoop, paint, polyshapeData.meshData.strokeMesh);
+        Primitive& prim = polyshapeData.meshData.strokeMesh.primitives[0];
+        polyshapeData.strokeVertices = prim.bufferHandle_vertices;
+        polyshapeData.strokeUvzw0 = prim.bufferHandle_uvzw0;
+        polyshapeData.strokeUvz0 = prim.bufferHandle_uvz0;
+        polyshapeData.strokeUvz1 = prim.bufferHandle_uvz1;
+        polyshapeData.strokeColors = prim.bufferHandle_colors;
+        polyshapeData.strokeIndices = prim.bufferHandle_indices;
+        polyshapeData.nStrokeIndices = (int)prim.indices.size();
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
-        polygons.emplace_back();
-        eastl::pair<Matrixf, Mesh>& polygonData = polygons.back();
-        polygonData.first = currentTransform;
-        GeneratePolygonMesh(points, paint, polygonData.second);
+        GeneratePolygonMesh(points, paint, polyshapeData.meshData.fillMesh);
+        Primitive& prim = polyshapeData.meshData.fillMesh.primitives[0];
+        polyshapeData.fillVertices = prim.bufferHandle_vertices;
+        polyshapeData.fillColors = prim.bufferHandle_colors;
+        polyshapeData.fillIndices = prim.bufferHandle_indices;
+        polyshapeData.nFillIndices = (int)prim.indices.size();
     }
 }
 
-void GfxDraw::Polygon(const eastl::vector<Vec2f>& points, const Paint& paint)
-{   
-    eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
-    for (const Vec2f& vec : points)
-    {
-        points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
-    }
+GfxDraw::PolyshapeMesh GfxDraw::CreatePolyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
+{
+    PolyshapeMesh shape;
 
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
-        polylines.emplace_back();
-        eastl::pair<Matrixf, Mesh>& polylineData = polylines.back();
-        polylineData.first = currentTransform;
-        GeneratePolylineMesh(points3d, true, paint, polylineData.second);
+        eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
+        for (const Vec2f& vec : points)
+            points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
+
+        GeneratePolylineMesh(points3d, paint.strokeLoop, paint, shape.strokeMesh);
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
-        polygons.emplace_back();
-        eastl::pair<Matrixf, Mesh>& polygonData = polygons.back();
-        polygonData.first = currentTransform;
-        GeneratePolygonMesh(points, paint, polygonData.second);
+        GeneratePolygonMesh(points, paint, shape.fillMesh);
     }
+    return shape;
 }
 
+void GfxDraw::Polyshape(const PolyshapeMesh& shape)
+{
+    polyshapes.emplace_back();
+    PolyshapeDrawData& polyshapeData = polyshapes.back();
+    polyshapeData.transform = currentTransform;
+
+    if (shape.strokeMesh.primitives.size() > 0)
+    {
+        const Primitive& prim = shape.strokeMesh.primitives[0];
+        polyshapeData.strokeVertices = prim.bufferHandle_vertices;
+        polyshapeData.strokeUvzw0 = prim.bufferHandle_uvzw0;
+        polyshapeData.strokeUvz0 = prim.bufferHandle_uvz0;
+        polyshapeData.strokeUvz1 = prim.bufferHandle_uvz1;
+        polyshapeData.strokeColors = prim.bufferHandle_colors;
+        polyshapeData.strokeIndices = prim.bufferHandle_indices;
+        polyshapeData.nStrokeIndices = (int)prim.indices.size();
+    }
+
+    if (shape.fillMesh.primitives.size() > 0)
+    {
+        const Primitive& prim = shape.fillMesh.primitives[0];
+        polyshapeData.fillVertices = prim.bufferHandle_vertices;
+        polyshapeData.fillColors = prim.bufferHandle_colors;
+        polyshapeData.fillIndices = prim.bufferHandle_indices;
+        polyshapeData.nFillIndices = (int)prim.indices.size();
+    }
+}
 
 
 
@@ -524,20 +583,20 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
         {
             GfxDevice::BindProgram(pPolyLineShader->program);
             GfxDevice::SetTopologyType(TopologyType::TriangleList);
-            for (size_t i = 0; i < polylines.size(); i++)
+            for (size_t i = 0; i < polyshapes.size(); i++)
             {
-                const Mesh& polyline = polylines[i].second;
-                const Primitive& prim = polyline.primitives[0];
+                const PolyshapeDrawData& polyshape = polyshapes[i];
+                if (polyshape.nStrokeIndices == 0) continue;
 
-                GfxDevice::BindConstantBuffer(polylineInstanceData, &polylines[i].first, ShaderType::Vertex, 1);
-                GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
-                GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_uvzw0);
-                GfxDevice::BindVertexBuffers(2, 1, &prim.bufferHandle_uvz0);
-                GfxDevice::BindVertexBuffers(3, 1, &prim.bufferHandle_uvz1);
-                GfxDevice::BindVertexBuffers(4, 1, &prim.bufferHandle_colors);
-                GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
+                GfxDevice::BindConstantBuffer(polylineInstanceData, &polyshape.transform, ShaderType::Vertex, 1);
+                GfxDevice::BindVertexBuffers(0, 1, &polyshape.strokeVertices);
+                GfxDevice::BindVertexBuffers(1, 1, &polyshape.strokeUvzw0);
+                GfxDevice::BindVertexBuffers(2, 1, &polyshape.strokeUvz0);
+                GfxDevice::BindVertexBuffers(3, 1, &polyshape.strokeUvz1);
+                GfxDevice::BindVertexBuffers(4, 1, &polyshape.strokeColors);
+                GfxDevice::BindIndexBuffer(polyshape.strokeIndices);
                 
-                GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);
+                GfxDevice::DrawIndexed(polyshape.nStrokeIndices, 0, 0);
             }
         }
     }
@@ -550,18 +609,17 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
         {
             GfxDevice::BindProgram(pPolygonShader->program);
             GfxDevice::SetTopologyType(TopologyType::TriangleList);
-            for (size_t i = 0; i < polygons.size(); i++)
+            for (size_t i = 0; i < polyshapes.size(); i++)
             {
-                const Mesh& polygon = polygons[i].second;
-                if (polygon.primitives.empty()) continue;
-                const Primitive& prim = polygon.primitives[0];
+                const PolyshapeDrawData& polyshape = polyshapes[i];
+                if (polyshape.nFillIndices == 0) continue;
 
-                GfxDevice::BindConstantBuffer(polygonInstanceData, &polygons[i].first, ShaderType::Vertex, 1);
-                GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
-                GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_colors);
-                GfxDevice::BindIndexBuffer(prim.bufferHandle_indices);
+                GfxDevice::BindConstantBuffer(polygonInstanceData, &polyshape.transform, ShaderType::Vertex, 1);
+                GfxDevice::BindVertexBuffers(0, 1, &polyshape.fillVertices);
+                GfxDevice::BindVertexBuffers(1, 1, &polyshape.fillColors);
+                GfxDevice::BindIndexBuffer(polyshape.fillIndices);
                 
-                GfxDevice::DrawIndexed((int)prim.indices.size(), 0, 0);
+                GfxDevice::DrawIndexed(polyshape.nFillIndices, 0, 0);
             }
         }
     }
@@ -578,6 +636,5 @@ void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
     circles.clear();
     circles.reserve(256);
 
-    polylines.clear();
-    polygons.clear();
+    polyshapes.clear();
 }

@@ -17,6 +17,11 @@
 
 #include <FileSystem.h>
 
+namespace
+{
+	GfxDraw::PolyshapeMesh asteroidPolyShape;
+}
+
 void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
@@ -45,7 +50,7 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 		polyPaint.fillColor = Vec4f(0.0f, 0.5f, 0.5f, 1.0f);
 		polyPaint.strokeThickness = 0.1f;
 		polyPaint.strokeColor = Vec4f(1.0f);
-		GfxDraw::Polygon(polyline, polyPaint);
+		GfxDraw::Polyshape(polyline, polyPaint);
 	}
 
 	GfxDraw::Paint rectPaint;
@@ -63,29 +68,7 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	GfxDraw::Circle(Vec3f(0.0f, 3.0f, -0.01f), 1.2f, circlePaint);
 	GfxDraw::Sector(Vec3f(0.0f, -3.0f, -0.01f), 1.2f, 0.1f, 2.0f, circlePaint);
 
-	eastl::vector<Vec2f> asteroidPoly;
-	asteroidPoly.push_back(Vec2f(0.056f, 0.265f));
-	asteroidPoly.push_back(Vec2f(0.312f, 0.074f));
-	asteroidPoly.push_back(Vec2f(0.683f, 0.086f));
-	asteroidPoly.push_back(Vec2f(0.943f, 0.298f));
-	asteroidPoly.push_back(Vec2f(0.974f, 0.65f));
-	asteroidPoly.push_back(Vec2f(0.83f, 0.85f));
-	asteroidPoly.push_back(Vec2f(0.64f, 0.75f));
-	asteroidPoly.push_back(Vec2f(0.673f, 0.952f));
-	asteroidPoly.push_back(Vec2f(0.348f, 0.96f));
-	asteroidPoly.push_back(Vec2f(0.37f, 0.65f));
-	asteroidPoly.push_back(Vec2f(0.213f, 0.78f));
-	asteroidPoly.push_back(Vec2f(0.05f, 0.54f));
-	for (size_t i = 0; i < asteroidPoly.size(); i++)
-	{
-		asteroidPoly[i] *= 2.0f;
-		asteroidPoly[i] += Vec2f(-1.0f, 5.0f);
-	}
-
-	GfxDraw::Paint asteroidPaint;
-	asteroidPaint.drawStyle = GfxDraw::DrawStyle::Fill;
-	asteroidPaint.fillColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
-	GfxDraw::Polygon(asteroidPoly, asteroidPaint);
+	GfxDraw::Polyshape(asteroidPolyShape);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
@@ -138,6 +121,34 @@ int main(int argc, char *argv[])
 	pCubeMesh->name = "Cube";
 	pCubeMesh->primitives.push_back(Primitive::NewCube());
 	AssetDB::RegisterAsset(pCubeMesh, "cube");
+
+
+	{
+		eastl::vector<Vec2f> asteroidPoly;
+		asteroidPoly.push_back(Vec2f(0.056f, 0.265f));
+		asteroidPoly.push_back(Vec2f(0.312f, 0.074f));
+		asteroidPoly.push_back(Vec2f(0.683f, 0.086f));
+		asteroidPoly.push_back(Vec2f(0.943f, 0.298f));
+		asteroidPoly.push_back(Vec2f(0.974f, 0.65f));
+		asteroidPoly.push_back(Vec2f(0.83f, 0.85f));
+		asteroidPoly.push_back(Vec2f(0.64f, 0.75f));
+		asteroidPoly.push_back(Vec2f(0.673f, 0.952f));
+		asteroidPoly.push_back(Vec2f(0.348f, 0.96f));
+		asteroidPoly.push_back(Vec2f(0.37f, 0.65f));
+		asteroidPoly.push_back(Vec2f(0.213f, 0.78f));
+		asteroidPoly.push_back(Vec2f(0.05f, 0.54f));
+		for (size_t i = 0; i < asteroidPoly.size(); i++)
+		{
+			asteroidPoly[i] *= 2.0f;
+			asteroidPoly[i] += Vec2f(-1.0f, 5.0f);
+		}
+		GfxDraw::Paint asteroidPaint;
+		asteroidPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
+		asteroidPaint.strokeThickness = 0.1f;
+		asteroidPaint.strokeColor = Vec4f(1.0f);
+		asteroidPaint.fillColor = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+		asteroidPolyShape = GfxDraw::CreatePolyshape(asteroidPoly, asteroidPaint);
+	}
 
 	// Open the level we want to play
 	// JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile("Games/RacerGame/Resources/Levels/RacerGame.lvl"));
