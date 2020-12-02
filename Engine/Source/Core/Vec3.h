@@ -349,11 +349,12 @@ struct Vec3
 	* Embeds a 2D vector into 3D space
 	*
 	* @param  vec The target 2D vector
+	* @param  z the desired z component
 	* @return The 3D vector
 	**/
-	inline static Vec3 Embed2D(const Vec2<T>& vec)
+	inline static Vec3 Embed2D(const Vec2<T>& vec, T _z = T())
 	{
-		return Vec3(vec.x, vec.y, 0.0f);
+		return Vec3(vec.x, vec.y, _z);
 	}
 };
 

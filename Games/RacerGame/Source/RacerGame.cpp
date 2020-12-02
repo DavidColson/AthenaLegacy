@@ -32,18 +32,21 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	paint.strokeColor = Vec4f(0.0f, 0.0f, 1.0f, 1.0f);
 	GfxDraw::Line(Vec3f(3.6f, 2.0f, 0.0f), Vec3f(3.8f, 4.0f, 0.0f), paint);
 
-	eastl::vector<Vec3f> polyline;
-	polyline.push_back(Vec3f(1.0f, -1.0f, 0.0f));
-	polyline.push_back(Vec3f(-1.0f, -1.0f, 0.0f));
-	polyline.push_back(Vec3f(-2.0f, 0.0f, 0.0f));
-	polyline.push_back(Vec3f(-1.0f, 1.0f, 0.0f));
-	polyline.push_back(Vec3f(0.0f, 0.0f, 0.0f));
-	polyline.push_back(Vec3f(1.0f, 1.0f, 0.0f));
-	GfxDraw::Paint polyPaint;
-	polyPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
-	polyPaint.strokeThickness = 0.2f;
-	polyPaint.strokeColor = Vec4f(1.0f);
-	GfxDraw::Polyline(polyline, true, polyPaint);
+	{
+		eastl::vector<Vec2f> polyline;
+		polyline.push_back(Vec2f(1.0f, 1.0f));
+		polyline.push_back(Vec2f(0.0f, 0.0f));
+		polyline.push_back(Vec2f(-1.0f, 1.0f));
+		polyline.push_back(Vec2f(-2.0f, 0.0f));
+		polyline.push_back(Vec2f(-1.0f, -1.0f));
+		polyline.push_back(Vec2f(1.0f, -1.0f));
+		GfxDraw::Paint polyPaint;
+		polyPaint.drawStyle = GfxDraw::DrawStyle::Both;
+		polyPaint.fillColor = Vec4f(0.0f, 0.5f, 0.5f, 1.0f);
+		polyPaint.strokeThickness = 0.1f;
+		polyPaint.strokeColor = Vec4f(1.0f);
+		GfxDraw::Polygon(polyline, polyPaint);
+	}
 
 	GfxDraw::Paint rectPaint;
 	rectPaint.drawStyle = GfxDraw::DrawStyle::Both;

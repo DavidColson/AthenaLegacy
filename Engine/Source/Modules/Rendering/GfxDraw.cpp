@@ -184,12 +184,25 @@ bool PointInsideTriangle(Vec2f p, Vec2f a, Vec2f b, Vec2f c)
 
 void GeneratePolygonMesh(const eastl::vector<Vec2f>& points, const GfxDraw::Paint& paint, Mesh& outMesh)
 {
+    float sumArea = 0.0f;
+    for (size_t i = 0; i < points.size(); i++)
+    {
+        Vec2f a = points[i];
+        Vec2f b = points[(i + 1) % points.size()];
+        sumArea +=  (b.x - a.x) * (b.y + a.y);
+    }
+    if (sumArea > 0.0f)
+    {
+        Log::Crit("Polygon points are not counter clockwise defined");
+        return;
+    }
+
     Primitive prim;
     prim.vertices.reserve(points.size());
     for (size_t i = 0; i < points.size(); i++)
     {
         prim.vertices.push_back(Vec3f::Embed2D(points[i]));
-        prim.colors.push_back(Vec4f(1.0));
+        prim.colors.push_back(paint.fillColor);
     }
 
     eastl::vector<int> prev;
@@ -344,29 +357,60 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     }
 }
 
-void GfxDraw::Polyline(const eastl::vector<Vec3f>& points, bool closed, const Paint& paint)
+void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, bool closed, const Paint& paint)
 {
-    if (paint.drawStyle == DrawStyle::Stroke)
+    polylines.emplace_back();
+    eastl::pair<Matrixf, Mesh>& polylineData = polylines.back();
+    polylineData.first = currentTransform;
+    GeneratePolylineMesh(points, closed, paint, polylineData.second);
+}
+
+void GfxDraw::Polyline(const eastl::vector<Vec2f>& points, const Paint& paint)
+{
+    eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
+    for (const Vec2f& vec : points)
+    {
+        points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
+    }
+
+    if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
         polylines.emplace_back();
         eastl::pair<Matrixf, Mesh>& polylineData = polylines.back();
         polylineData.first = currentTransform;
-        GeneratePolylineMesh(points, closed, paint, polylineData.second);
+        GeneratePolylineMesh(points3d, false, paint, polylineData.second);
     }
-
-}
-
-void GfxDraw::Polygon(const eastl::vector<Vec2f>& points, const Paint& paint)
-{   
-    if (paint.drawStyle == DrawStyle::Fill)
+    if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
         polygons.emplace_back();
         eastl::pair<Matrixf, Mesh>& polygonData = polygons.back();
         polygonData.first = currentTransform;
         GeneratePolygonMesh(points, paint, polygonData.second);
     }
+}
 
-    // Polyline is trivial here, just embed 2D into 3D coordinates.
+void GfxDraw::Polygon(const eastl::vector<Vec2f>& points, const Paint& paint)
+{   
+    eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
+    for (const Vec2f& vec : points)
+    {
+        points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
+    }
+
+    if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
+    {
+        polylines.emplace_back();
+        eastl::pair<Matrixf, Mesh>& polylineData = polylines.back();
+        polylineData.first = currentTransform;
+        GeneratePolylineMesh(points3d, true, paint, polylineData.second);
+    }
+    if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
+    {
+        polygons.emplace_back();
+        eastl::pair<Matrixf, Mesh>& polygonData = polygons.back();
+        polygonData.first = currentTransform;
+        GeneratePolygonMesh(points, paint, polygonData.second);
+    }
 }
 
 
@@ -509,6 +553,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
             for (size_t i = 0; i < polygons.size(); i++)
             {
                 const Mesh& polygon = polygons[i].second;
+                if (polygon.primitives.empty()) continue;
                 const Primitive& prim = polygon.primitives[0];
 
                 GfxDevice::BindConstantBuffer(polygonInstanceData, &polygons[i].first, ShaderType::Vertex, 1);
