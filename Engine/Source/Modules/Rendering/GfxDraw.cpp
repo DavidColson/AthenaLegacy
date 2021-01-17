@@ -14,6 +14,7 @@ namespace
     struct CBufferPerScene
     {
         Matrixf worldToClipTransform;
+        Matrixf worldToCameraTransform;
         Vec3f camWorldPosition;
         float padding;
         Vec2f screenDimensions;
@@ -523,6 +524,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     ctx.view.GetForwardVector();
     CBufferPerScene data;
     data.worldToClipTransform = ctx.projection * ctx.view;
+    data.worldToCameraTransform = ctx.view;
     data.camWorldPosition = ctx.camWorldPosition;
     data.screenDimensions = Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y);
     GfxDevice::BindConstantBuffer(bufferHandle_perSceneData, &data, ShaderType::Vertex, 0);

@@ -3,6 +3,7 @@
 cbuffer PerSceneData : register(b0)
 {
     float4x4 worldToClipTransform;
+    float4x4 worldToCameraTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
@@ -42,6 +43,7 @@ struct VertOutput
 };
 
 #define ANTI_ALIASING
+#define Z_ALIGN
 
 VertOutput VSMain(VertInput vertIn)
 {
@@ -49,14 +51,17 @@ VertOutput VSMain(VertInput vertIn)
     
     float2 uvScale = float2(array[vertIn.instanceId].size.x, array[vertIn.instanceId].size.y) * 0.5;
 
-    float4x4 localTrans = {uvScale.x, 0.0, 0.0, 0.0,
-                             0.0, uvScale.y, 0.0, 0.0,
-                             0.0, 0.0, 1.0, 0.0,
-                             array[vertIn.instanceId].location.x, array[vertIn.instanceId].location.y, array[vertIn.instanceId].location.z, 1.0};
+     #if defined(Z_ALIGN)
+        float3 right = float3(1, 0, 0);
+        float3 up = float3(0, 1, 0);
+    #else
+        float3 right = mul(float3(1, 0, 0), (float3x3)transpose(worldToCameraTransform));
+        float3 up = mul(float3(0, 1, 0), (float3x3)transpose(worldToCameraTransform));
+    #endif
 
-    float4x4 modelToClipTransform = mul(localTrans, mul(array[vertIn.instanceId].transform, worldToClipTransform));
+    float3 vertWorldPos = array[vertIn.instanceId].location + right * vertIn.pos.x * uvScale.x + up * vertIn.pos.y * uvScale.y;
 
-    output.pos = mul(vertIn.pos, modelToClipTransform);
+    output.pos = mul(float4(vertWorldPos, 1), mul(array[vertIn.instanceId].transform, worldToClipTransform));
     output.fillcol = array[vertIn.instanceId].fillColor;
     output.strokecol = array[vertIn.instanceId].strokeColor;
     output.uv = vertIn.pos * uvScale;

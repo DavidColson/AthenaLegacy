@@ -3,6 +3,7 @@
 cbuffer PerSceneData : register(b0)
 {
     float4x4 worldToClipTransform;
+    float4x4 worldToCameraTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
