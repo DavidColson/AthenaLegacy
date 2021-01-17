@@ -21,8 +21,8 @@ namespace GfxDraw
 
     enum class DrawSpace
     {
-        Screen,
-        World
+        ForceScreen,
+        GameCamera
     };
 
     struct Paint

@@ -15,13 +15,14 @@ namespace
     {
         Matrixf worldToClipTransform;
         Matrixf worldToCameraTransform;
+        Matrixf screenSpaceToClipTransform;
         Vec3f camWorldPosition;
         float padding;
         Vec2f screenDimensions;
         float padding1;
         float padding2;
     }; 
-
+    
     struct CBufferLine
     {
         Matrixf transform;
@@ -29,7 +30,7 @@ namespace
         Vec3f start;
         float thickness;
         Vec3f end;
-        float padding;
+        int isScreenSpace;
     };
 
     struct CBufferCircle
@@ -41,7 +42,7 @@ namespace
         float thickness;
         float angleStart;
         float angleEnd;
-        float padding;
+        int isScreenSpace;
     };
 
     struct CBufferRect
@@ -53,7 +54,7 @@ namespace
         Vec4f fillColor;
         Vec4f cornerRadius;
         Vec2f size;
-        float padding;
+        int isScreenSpace;
         float padding2;
     };
 
@@ -61,6 +62,7 @@ namespace
     {
         GfxDraw::PolyshapeMesh meshData;
         Matrixf transform;
+        bool isScreenSpace;
 
         VertexBufferHandle strokeVertices;
         VertexBufferHandle strokeUvzw0;
@@ -74,6 +76,15 @@ namespace
         VertexBufferHandle fillColors;
         IndexBufferHandle  fillIndices;
         int nFillIndices{ 0 };
+    };
+
+    struct CBufferPolyshape
+    {
+        Matrixf transform;
+        int isScreenSpace;
+        float padding1;
+        float padding2;
+        float padding3;
     };
 
     // Instance buffers
@@ -102,6 +113,7 @@ namespace
     BlendStateHandle blendState;
 
     Matrixf currentTransform = Matrixf::Identity();
+    GfxDraw::DrawSpace currentDrawSpace = GfxDraw::DrawSpace::GameCamera;
 }
 
 // TODO: Move geometry gen code somewhere else
@@ -288,6 +300,10 @@ void GeneratePolygonMesh(const eastl::vector<Vec2f>& points, const GfxDraw::Pain
 
 
 
+void GfxDraw::SetDrawSpace(DrawSpace space)
+{
+    currentDrawSpace = space;
+}
 
 void GfxDraw::SetTransform(const Matrixf& transform)
 {
@@ -303,6 +319,7 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     newLine.end = end;
     newLine.thickness = paint.strokeThickness;
     newLine.color = paint.strokeColor;
+    newLine.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
@@ -315,6 +332,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         circle.location = pos;
         circle.radius = radius;
         circle.color = paint.fillColor;
+        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -325,6 +343,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         circle.radius = radius;
         circle.thickness = paint.strokeThickness;
         circle.color = paint.strokeColor;
+        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
     }
 }
 
@@ -340,6 +359,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         circle.angleStart = angleStart;
         circle.angleEnd = angleEnd;
         circle.color = paint.fillColor;
+        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -352,6 +372,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         circle.angleStart = angleStart;
         circle.angleEnd = angleEnd;
         circle.color = paint.strokeColor;
+        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
     }
 }
 
@@ -360,6 +381,7 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     rects.emplace_back();
     CBufferRect& rect = rects.back();
     rect.transform = currentTransform;
+    rect.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
     rect.cornerRadius = cornerRad;
     rect.location = center;
     rect.size = size;
@@ -381,6 +403,7 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     polyshapes.emplace_back();
     PolyshapeDrawData& polyshapeData = polyshapes.back();
     polyshapeData.transform = currentTransform;
+    polyshapeData.isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
     GeneratePolylineMesh(points, paint.strokeLoop, paint, polyshapeData.meshData.strokeMesh);
 
     Primitive& prim = polyshapeData.meshData.strokeMesh.primitives[0];
@@ -398,6 +421,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
     polyshapes.emplace_back();
     PolyshapeDrawData& polyshapeData = polyshapes.back();
     polyshapeData.transform = currentTransform;
+    polyshapeData.isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
 
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -451,6 +475,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
     polyshapes.emplace_back();
     PolyshapeDrawData& polyshapeData = polyshapes.back();
     polyshapeData.transform = currentTransform;
+    polyshapeData.isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
 
     if (shape.strokeMesh.primitives.size() > 0)
     {
@@ -500,11 +525,11 @@ void GfxDraw::Initialize()
         circleShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Circle Renderer Instance Data");
     }
     {
-        uint32_t bufferSize = sizeof(Matrixf) * 256;
+        uint32_t bufferSize = sizeof(CBufferPolyshape);
         polygonInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polygon Renderer Instance Data");
     }
     {
-        uint32_t bufferSize = sizeof(Matrixf) * 256;
+        uint32_t bufferSize = sizeof(CBufferPolyshape);
         polylineInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polyline Renderer Instance Data");
     }
 
@@ -525,6 +550,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     CBufferPerScene data;
     data.worldToClipTransform = ctx.projection * ctx.view;
     data.worldToCameraTransform = ctx.view;
+    data.screenSpaceToClipTransform = Matrixf::Orthographic(0.f, ctx.screenDimensions.x, 0.0f, ctx.screenDimensions.y, -1.0f, 200.0f);;
     data.camWorldPosition = ctx.camWorldPosition;
     data.screenDimensions = Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y);
     GfxDevice::BindConstantBuffer(bufferHandle_perSceneData, &data, ShaderType::Vertex, 0);
@@ -590,7 +616,11 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
                 const PolyshapeDrawData& polyshape = polyshapes[i];
                 if (polyshape.nStrokeIndices == 0) continue;
 
-                GfxDevice::BindConstantBuffer(polylineInstanceData, &polyshape.transform, ShaderType::Vertex, 1);
+                CBufferPolyshape data;
+                data.transform = polyshape.transform;
+                data.isScreenSpace = (int)polyshape.isScreenSpace;
+
+                GfxDevice::BindConstantBuffer(polylineInstanceData, &data, ShaderType::Vertex, 1);
                 GfxDevice::BindVertexBuffers(0, 1, &polyshape.strokeVertices);
                 GfxDevice::BindVertexBuffers(1, 1, &polyshape.strokeUvzw0);
                 GfxDevice::BindVertexBuffers(2, 1, &polyshape.strokeUvz0);
@@ -616,7 +646,11 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
                 const PolyshapeDrawData& polyshape = polyshapes[i];
                 if (polyshape.nFillIndices == 0) continue;
 
-                GfxDevice::BindConstantBuffer(polygonInstanceData, &polyshape.transform, ShaderType::Vertex, 1);
+                CBufferPolyshape data;
+                data.transform = polyshape.transform;
+                data.isScreenSpace = (int)polyshape.isScreenSpace;
+
+                GfxDevice::BindConstantBuffer(polygonInstanceData, &data, ShaderType::Vertex, 1);
                 GfxDevice::BindVertexBuffers(0, 1, &polyshape.fillVertices);
                 GfxDevice::BindVertexBuffers(1, 1, &polyshape.fillColors);
                 GfxDevice::BindIndexBuffer(polyshape.fillIndices);

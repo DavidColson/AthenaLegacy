@@ -4,6 +4,7 @@ cbuffer PerSceneData : register(b0)
 {
     float4x4 worldToClipTransform;
     float4x4 worldToCameraTransform;
+    float4x4 screenSpaceToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
@@ -21,6 +22,7 @@ cbuffer InstanceData : register(b1)
         float4 fillColor;
         float4 cornerRadius;
         float2 size;
+        int isScreenSpace;
 	} array[256];
 };
 
@@ -51,7 +53,11 @@ VertOutput VSMain(VertInput vertIn)
     
     float2 uvScale = float2(array[vertIn.instanceId].size.x, array[vertIn.instanceId].size.y) * 0.5;
 
-     #if defined(Z_ALIGN)
+    float4x4 toClipTransform = worldToClipTransform;
+    if (array[vertIn.instanceId].isScreenSpace == 1)
+        toClipTransform = screenSpaceToClipTransform;
+
+    #if defined(Z_ALIGN)
         float3 right = float3(1, 0, 0);
         float3 up = float3(0, 1, 0);
     #else
@@ -61,7 +67,7 @@ VertOutput VSMain(VertInput vertIn)
 
     float3 vertWorldPos = array[vertIn.instanceId].location + right * vertIn.pos.x * uvScale.x + up * vertIn.pos.y * uvScale.y;
 
-    output.pos = mul(float4(vertWorldPos, 1), mul(array[vertIn.instanceId].transform, worldToClipTransform));
+    output.pos = mul(float4(vertWorldPos, 1), mul(array[vertIn.instanceId].transform, toClipTransform));
     output.fillcol = array[vertIn.instanceId].fillColor;
     output.strokecol = array[vertIn.instanceId].strokeColor;
     output.uv = vertIn.pos * uvScale;

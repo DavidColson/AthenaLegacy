@@ -4,6 +4,7 @@ cbuffer PerSceneData : register(b0)
 {
     float4x4 worldToClipTransform;
     float4x4 worldToCameraTransform;
+    float4x4 screenSpaceToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
@@ -19,6 +20,7 @@ cbuffer InstanceData : register(b1)
 		float3 lineStart;
 		float thickness;
 		float3 lineEnd;
+		int isScreenSpace;
 	} array[256];
 };
 
@@ -65,13 +67,17 @@ VertOutput VSMain(VertInput vertIn)
         float4 norm = normalize(float4(cross(diff.xyz, -invDirectionToCam), 0.0));
     #endif
     // This will set the thickness such that it's never less than 1 pixel on the screen
-    float pixelsPerMeter = WorldDistanceInPixels(thisVert.xyz, thisVert.xyz + norm.xyz);
+    float pixelsPerMeter = 1;
+    if (array[vertIn.instanceId].isScreenSpace == 0)
+        pixelsPerMeter = WorldDistanceInPixels(thisVert.xyz, thisVert.xyz + norm.xyz);
+
     float thicknessPixelsDesired = thickness * pixelsPerMeter;
     #if defined(ANTI_ALIASING)
         float thicknessPixels = max(0.5, thicknessPixelsDesired + 1.0);
     #else
         float thicknessPixels = max(0.5, thicknessPixelsDesired);
     #endif
+
     thickness = thicknessPixels / pixelsPerMeter;
     float2 uvScale = float2(1.0, 1.0);
     uvScale.y = thicknessPixels / max(0.00001, thicknessPixelsDesired);
@@ -82,7 +88,12 @@ VertOutput VSMain(VertInput vertIn)
         thisVert += vertIn.pos.x * normalize(diff) * thickness; // Extrude ends
     #endif
 
-    float4x4 modelToClipTransform = mul(array[vertIn.instanceId].transform, worldToClipTransform);
+    float4x4 modelToClipTransform;
+    if (array[vertIn.instanceId].isScreenSpace == 1)
+        modelToClipTransform = mul(array[vertIn.instanceId].transform, screenSpaceToClipTransform);
+    else
+        modelToClipTransform = mul(array[vertIn.instanceId].transform, worldToClipTransform);
+
     output.pos = mul(thisVert, modelToClipTransform);
     output.col = array[vertIn.instanceId].color;
     output.uv = vertIn.pos.xy * uvScale;

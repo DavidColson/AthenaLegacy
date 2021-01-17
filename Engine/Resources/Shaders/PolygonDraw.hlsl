@@ -4,6 +4,7 @@ cbuffer PerSceneData : register(b0)
 {
     float4x4 worldToClipTransform;
     float4x4 worldToCameraTransform;
+    float4x4 screenSpaceToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
@@ -11,6 +12,7 @@ cbuffer PerSceneData : register(b0)
 cbuffer InstanceData : register(b1)
 {
     float4x4 transform;
+    int isScreenSpace;
 }
 
 // Included after per scene and object data as it references the above data
@@ -32,8 +34,12 @@ struct VertOutput
 VertOutput VSMain(VertInput vertIn)
 {
     VertOutput output;
-    
-    output.pos = mul(vertIn.pos, mul(transform, worldToClipTransform));
+
+    float4x4 toClipTransform = worldToClipTransform;
+    if (isScreenSpace == 1)
+        toClipTransform = screenSpaceToClipTransform;
+
+    output.pos = mul(vertIn.pos, mul(transform, toClipTransform));
     output.color = vertIn.col;
     return output;
 }

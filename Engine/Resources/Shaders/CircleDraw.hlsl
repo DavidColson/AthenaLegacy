@@ -4,6 +4,7 @@ cbuffer PerSceneData : register(b0)
 {
     float4x4 worldToClipTransform;
     float4x4 worldToCameraTransform;
+    float4x4 screenSpaceToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
@@ -21,6 +22,7 @@ cbuffer InstanceData : register(b1)
         float thickness;
         float angleStart;
         float angleEnd;
+        int isScreenSpace;
 	} array[256];
 };
 
@@ -51,6 +53,10 @@ VertOutput VSMain(VertInput vertIn)
     
     float radius = array[vertIn.instanceId].radius;
 
+    float4x4 toClipTransform = worldToClipTransform;
+    if (array[vertIn.instanceId].isScreenSpace == 1)
+        toClipTransform = screenSpaceToClipTransform;
+
     #if defined(Z_ALIGN)
         float3 right = float3(1, 0, 0);
         float3 up = float3(0, 1, 0);
@@ -61,7 +67,7 @@ VertOutput VSMain(VertInput vertIn)
 
     float3 vertWorldPos = array[vertIn.instanceId].location + right * vertIn.pos.x * radius + up * vertIn.pos.y * radius;
 
-    output.pos = mul(float4(vertWorldPos, 1), mul(array[vertIn.instanceId].transform, worldToClipTransform));
+    output.pos = mul(float4(vertWorldPos, 1), mul(array[vertIn.instanceId].transform, toClipTransform));
     output.color = array[vertIn.instanceId].color;
     output.uv = vertIn.pos.xy * radius;
     output.radius = array[vertIn.instanceId].radius;

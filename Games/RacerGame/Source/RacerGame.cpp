@@ -26,6 +26,8 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 {
 	PROFILE();
 
+	GfxDraw::SetDrawSpace(GfxDraw::DrawSpace::GameCamera);
+
 	GfxDraw::Paint paint;
 	paint.strokeThickness = 0.01f;
 	paint.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
@@ -69,6 +71,41 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	GfxDraw::Sector(Vec3f(0.0f, -3.0f, -0.01f), 1.2f, 0.1f, 2.0f, circlePaint);
 
 	GfxDraw::Polyshape(asteroidPolyShape);
+
+
+	// SCREEN SPACE FORCED DRAWING
+
+	GfxDraw::SetDrawSpace(GfxDraw::DrawSpace::ForceScreen);
+
+	GfxDraw::Paint screenLinePaint;
+	screenLinePaint.strokeThickness = 5.f;
+	screenLinePaint.strokeColor = Vec4f(1.0f, 1.0f, 0.0f, 1.0f);
+	GfxDraw::Line(Vec3f(100.0f, 100.0f, 0.0f), Vec3f(200.2f, 200.0f, 0.0f), screenLinePaint);
+
+	GfxDraw::Paint screenCirclePaint;
+	screenCirclePaint.strokeThickness = 10.0f;
+	screenCirclePaint.strokeColor = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+	screenCirclePaint.fillColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+	screenCirclePaint.drawStyle = GfxDraw::DrawStyle::Both;
+	GfxDraw::Circle(Vec3f(100.f, 200.f, 0.0f), 50.0f, screenCirclePaint);
+	GfxDraw::Sector(Vec3f(100.f, 300.f, 0.0f), 50.0f, 0.1f, 2.0f, screenCirclePaint);
+
+	{
+		eastl::vector<Vec2f> polyline;
+		polyline.push_back(Vec2f(450.0f, 400.0f));
+		polyline.push_back(Vec2f(350.0f, 300.0f));
+		polyline.push_back(Vec2f(250.0f, 400.0f));
+		polyline.push_back(Vec2f(150.0f, 300.0f));
+		polyline.push_back(Vec2f(250.0f, 200.0f));
+		polyline.push_back(Vec2f(450.0f, 200.0f));
+		GfxDraw::Paint polyPaint;
+		polyPaint.drawStyle = GfxDraw::DrawStyle::Both;
+		polyPaint.fillColor = Vec4f(0.0f, 0.5f, 0.5f, 1.0f);
+		polyPaint.strokeThickness = 5.f;
+		polyPaint.strokeColor = Vec4f(1.0f);
+		GfxDraw::Polyshape(polyline, polyPaint);
+	}
+
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{

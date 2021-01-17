@@ -3,6 +3,7 @@ cbuffer PerSceneData : register(b0)
 {
     float4x4 worldToClipTransform;
     float4x4 worldToCameraTransform;
+    float4x4 screenSpaceToClipTransform;
     float3 camWorldPosition;
     float2 screenDimensions;
 }
@@ -10,6 +11,7 @@ cbuffer PerSceneData : register(b0)
 cbuffer InstanceData : register(b1)
 {
     float4x4 transform;
+    int isScreenSpace;
 }
 
 #include "Engine/Resources/Shaders/Common.hlsl"
@@ -39,6 +41,10 @@ VertOutput VSMain(VertInput vertIn)
 {
 	VertOutput output;
 
+    float4x4 toClipTransform = worldToClipTransform;
+    if (isScreenSpace == 1)
+        toClipTransform = screenSpaceToClipTransform;
+
     float thickness = vertIn.uv.z * 0.5;
 
     float4 tanPrev = float4(vertIn.prev, 1.0) - vertIn.pos;
@@ -56,7 +62,11 @@ VertOutput VSMain(VertInput vertIn)
     float4 cornerBisector = (normPrev + normNext) / 2.0;
     cornerBisector = cornerBisector / dot(cornerBisector, normNext);
 
-    float pixelsPerMeter = WorldDistanceInPixels(vertIn.pos.xyz, vertIn.pos.xyz + normalize(cornerBisector).xyz);
+
+    float pixelsPerMeter = 1;
+    if (isScreenSpace == 0)
+        pixelsPerMeter = WorldDistanceInPixels(vertIn.pos.xyz, vertIn.pos.xyz + normalize(cornerBisector).xyz);
+    
     float thicknessPixelsDesired = thickness * pixelsPerMeter;
     #if defined(ANTI_ALIASING)
         float thicknessPixels = max(0.5, thicknessPixelsDesired + 1.0);
@@ -74,7 +84,7 @@ VertOutput VSMain(VertInput vertIn)
         vertPos -= tanNext * vertIn.uv.x * endPointExtrude;
     #endif
 
-	output.pos = mul(vertPos, mul(transform, worldToClipTransform));
+	output.pos = mul(vertPos, mul(transform, toClipTransform));
 	output.color = vertIn.color;
 	output.uv = vertIn.uv.xy * uvScale;
 	output.thicknessPixels = thicknessPixels;
