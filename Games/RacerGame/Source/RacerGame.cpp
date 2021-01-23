@@ -13,6 +13,8 @@
 #include <Json.h>
 #include <Path.h>
 
+#include "LinearAllocator.h"
+
 #include <Rendering/GfxDraw.h>
 
 #include <FileSystem.h>

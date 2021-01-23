@@ -2,6 +2,7 @@
 
 struct LinearAllocator
 {
+    LinearAllocator();
     LinearAllocator(size_t initSize);
 
     ~LinearAllocator();

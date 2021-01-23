@@ -2,6 +2,9 @@
 #include "LinearAllocator.h"
 #include "ErrorHandling.h"
 
+LinearAllocator::LinearAllocator()
+{}
+
 LinearAllocator::LinearAllocator(size_t initSize)
 {
     pData = new char[initSize];

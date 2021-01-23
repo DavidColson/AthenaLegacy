@@ -43,7 +43,7 @@ struct VertOutput
 
 #define ROUND_CAPS
 #define ANTI_ALIASING
-//#define Z_ALIGN
+#define Z_ALIGN
 
 VertOutput VSMain(VertInput vertIn)
 {
@@ -61,7 +61,7 @@ VertOutput VSMain(VertInput vertIn)
     float4 diff = lineEnd - lineStart;
 
     #if defined(Z_ALIGN)
-        float4 norm = normalize(float4(cross(diff.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
+        float4 norm = normalize(float4(cross(diff.xyz, float3(0.0, 0.0, 1.0)), 0.0));
     #else
         float3 invDirectionToCam = thisVert.xyz - camWorldPosition;
         float4 norm = normalize(float4(cross(diff.xyz, -invDirectionToCam), 0.0));

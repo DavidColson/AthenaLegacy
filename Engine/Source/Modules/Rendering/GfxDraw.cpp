@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "Mesh.h"
 #include "Shader.h"
+#include "LinearAllocator.h"
 
 #include <EASTL/vector.h>
 #include <EASTL/fixed_vector.h>
@@ -85,6 +86,23 @@ namespace
         float padding1;
         float padding2;
         float padding3;
+    };
+
+    LinearAllocator cbuffers;
+
+    struct CBuffer
+    {
+        void* pData;
+        size_t size;
+    };
+
+    struct DrawCommand
+    {
+        eastl::vector<CBuffer> cbuffers;
+        eastl::vector<VertexBufferHandle> vertBuffers;
+        IndexBufferHandle indexBuffer;
+        TopologyType topology;
+        ProgramHandle program;
     };
 
     // Instance buffers
@@ -313,7 +331,13 @@ void GfxDraw::SetTransform(const Matrixf& transform)
 void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
 {
     lines.emplace_back();
+
     CBufferLine& newLine = lines.back();
+
+    // line.pData = cbuffers.Allocate(sizeof(CBufferLine), 4);
+    // line.size = sizeof(CBufferLine);
+    // CBufferLine* pNewLine = new (line.pData) CBufferLine();
+
     newLine.transform = currentTransform;
     newLine.start = start;
     newLine.end = end;
@@ -505,6 +529,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
 
 void GfxDraw::Initialize()
 {
+    cbuffers = LinearAllocator(500000);
     lines.reserve(256);
     rects.reserve(256);
     circles.reserve(256);
@@ -561,13 +586,16 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     {
         if (GfxDevice::IsValid(pLineShader->program))
         {
-            GfxDevice::BindConstantBuffer(lineShaderInstanceData, lines.data(), ShaderType::Vertex, 1);
-            GfxDevice::BindProgram(pLineShader->program);
-            GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
-            GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
-            GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
+            for (CBufferLine& line : lines)
+            {
+                GfxDevice::BindConstantBuffer(lineShaderInstanceData, &line, ShaderType::Vertex, 1);
+                GfxDevice::BindProgram(pLineShader->program);
+                GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
+                GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
+                GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
 
-            GfxDevice::DrawIndexedInstanced((int)basicQuadMesh.indices.size(), (int)lines.size(), 0, 0, 0);
+                GfxDevice::DrawIndexed((int)basicQuadMesh.indices.size(), 0, 0);
+            }
         }
     }
 
@@ -577,13 +605,16 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     {
         if (GfxDevice::IsValid(pRectShader->program))
         {
-            GfxDevice::BindConstantBuffer(rectShaderInstanceData, rects.data(), ShaderType::Vertex, 1);
-            GfxDevice::BindProgram(pRectShader->program);
-            GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
-            GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
-            GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
+            for (CBufferRect& rect : rects)
+            {   
+                GfxDevice::BindConstantBuffer(rectShaderInstanceData, &rect, ShaderType::Vertex, 1);
+                GfxDevice::BindProgram(pRectShader->program);
+                GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
+                GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
+                GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
 
-            GfxDevice::DrawIndexedInstanced((int)basicQuadMesh.indices.size(), (int)rects.size(), 0, 0, 0);
+                GfxDevice::DrawIndexed((int)basicQuadMesh.indices.size(), 0, 0);
+            }
         }
     }
 
@@ -593,13 +624,16 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     {
         if (GfxDevice::IsValid(pCircleShader->program))
         {
-            GfxDevice::BindConstantBuffer(circleShaderInstanceData, circles.data(), ShaderType::Vertex, 1);
-            GfxDevice::BindProgram(pCircleShader->program);
-            GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
-            GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
-            GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
+            for (CBufferCircle& circle : circles)
+            {  
+                GfxDevice::BindConstantBuffer(circleShaderInstanceData, &circle, ShaderType::Vertex, 1);
+                GfxDevice::BindProgram(pCircleShader->program);
+                GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
+                GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
+                GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
 
-            GfxDevice::DrawIndexedInstanced((int)basicQuadMesh.indices.size(), (int)circles.size(), 0, 0, 0);
+                GfxDevice::DrawIndexed((int)basicQuadMesh.indices.size(), 0, 0);
+            }
         }
     }
 
@@ -663,6 +697,8 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
 {
+    cbuffers.Clear();
+
     lines.clear();
     lines.reserve(256);
 
