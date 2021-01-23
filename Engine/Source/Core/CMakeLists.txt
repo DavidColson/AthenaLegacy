@@ -44,4 +44,6 @@ target_sources(Engine
         "Scanning.cpp"
         "SceneSerializer.h"
         "SceneSerializer.cpp"
+        "LinearAllocator.h"
+        "LinearAllocator.cpp"
 )
