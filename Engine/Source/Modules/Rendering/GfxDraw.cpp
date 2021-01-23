@@ -10,6 +10,8 @@
 #include <EASTL/vector.h>
 #include <EASTL/fixed_vector.h>
 
+#define MAX_CMD_PER_FRAME 256
+
 namespace
 {
     struct CBufferPerScene
@@ -24,7 +26,7 @@ namespace
         float padding2;
     }; 
     
-    struct CBufferLine
+    struct LineData
     {
         Matrixf transform;
         Vec4f color;
@@ -34,7 +36,7 @@ namespace
         int isScreenSpace;
     };
 
-    struct CBufferCircle
+    struct CircleData
     {
         Matrixf transform;
         Vec3f location;
@@ -46,7 +48,7 @@ namespace
         int isScreenSpace;
     };
 
-    struct CBufferRect
+    struct RectData
     {
         Matrixf transform;
         Vec3f location;
@@ -59,27 +61,7 @@ namespace
         float padding2;
     };
 
-    struct PolyshapeDrawData
-    {
-        GfxDraw::PolyshapeMesh meshData;
-        Matrixf transform;
-        bool isScreenSpace;
-
-        VertexBufferHandle strokeVertices;
-        VertexBufferHandle strokeUvzw0;
-        VertexBufferHandle strokeUvz0;
-        VertexBufferHandle strokeUvz1;
-        VertexBufferHandle strokeColors;
-        IndexBufferHandle  strokeIndices;
-        int nStrokeIndices{ 0 };
-
-        VertexBufferHandle fillVertices;
-        VertexBufferHandle fillColors;
-        IndexBufferHandle  fillIndices;
-        int nFillIndices{ 0 };
-    };
-
-    struct CBufferPolyshape
+    struct PolyshapeData
     {
         Matrixf transform;
         int isScreenSpace;
@@ -88,10 +70,11 @@ namespace
         float padding3;
     };
 
-    LinearAllocator cbuffers;
+    LinearAllocator cbufferMemory;
 
     struct CBuffer
     {
+        ConstBufferHandle gfxBufferHandle;
         void* pData;
         size_t size;
     };
@@ -101,16 +84,14 @@ namespace
         eastl::vector<CBuffer> cbuffers;
         eastl::vector<VertexBufferHandle> vertBuffers;
         IndexBufferHandle indexBuffer;
+        int nIndices;
         TopologyType topology;
-        ProgramHandle program;
+        AssetHandle shader;
+        float sortDepth;
     };
 
-    // Instance buffers
-    eastl::vector<CBufferLine> lines;
-    eastl::vector<CBufferRect> rects;
-    eastl::vector<CBufferCircle> circles;
-
-    eastl::vector<PolyshapeDrawData> polyshapes;
+    eastl::vector<DrawCommand> drawCommands;
+    eastl::vector<GfxDraw::PolyshapeMesh> polyshapeMeshes;
 
     Primitive basicQuadMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
@@ -125,14 +106,24 @@ namespace
     ConstBufferHandle lineShaderInstanceData;
     ConstBufferHandle rectShaderInstanceData;
     ConstBufferHandle circleShaderInstanceData;
-    ConstBufferHandle polylineInstanceData;
-    ConstBufferHandle polygonInstanceData;
+    ConstBufferHandle polyshapeInstanceData;
 
     BlendStateHandle blendState;
 
     Matrixf currentTransform = Matrixf::Identity();
     GfxDraw::DrawSpace currentDrawSpace = GfxDraw::DrawSpace::GameCamera;
 }
+
+template<typename T>
+T* NewCBuffer(CBuffer& outCBuffer, ConstBufferHandle handle)
+{
+    outCBuffer.gfxBufferHandle = handle;
+    outCBuffer.pData = cbufferMemory.Allocate(sizeof(T), 4);
+    outCBuffer.size = sizeof(T);
+    return new (outCBuffer.pData) T();
+}
+
+
 
 // TODO: Move geometry gen code somewhere else
 void GeneratePolylineMesh(const eastl::vector<Vec3f> points, bool closed, const GfxDraw::Paint& paint, Mesh& outMesh)
@@ -330,122 +321,185 @@ void GfxDraw::SetTransform(const Matrixf& transform)
 
 void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
 {
-    lines.emplace_back();
+    // Allocate and populate line cbuffer data
+    CBuffer lineCBuffer;
+    LineData* pNewLine = NewCBuffer<LineData>(lineCBuffer, lineShaderInstanceData);
+    pNewLine->transform = currentTransform;
+    pNewLine->start = start;
+    pNewLine->end = end;
+    pNewLine->thickness = paint.strokeThickness;
+    pNewLine->color = paint.strokeColor;
+    pNewLine->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
 
-    CBufferLine& newLine = lines.back();
-
-    // line.pData = cbuffers.Allocate(sizeof(CBufferLine), 4);
-    // line.size = sizeof(CBufferLine);
-    // CBufferLine* pNewLine = new (line.pData) CBufferLine();
-
-    newLine.transform = currentTransform;
-    newLine.start = start;
-    newLine.end = end;
-    newLine.thickness = paint.strokeThickness;
-    newLine.color = paint.strokeColor;
-    newLine.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+    // Create draw command for this line
+    drawCommands.emplace_back();
+    DrawCommand& draw = drawCommands.back();
+    draw.cbuffers.push_back(lineCBuffer);
+    draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
+    draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
+    draw.nIndices = (int)basicQuadMesh.indices.size();
+    draw.topology = basicQuadMesh.topologyType;
+    draw.shader = lineDrawShader;
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
 {
+
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
-        circles.emplace_back();
-        CBufferCircle& circle = circles.back();
-        circle.transform = currentTransform;
-        circle.location = pos;
-        circle.radius = radius;
-        circle.color = paint.fillColor;
-        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+        CBuffer circleCBuffer;
+        CircleData* pCircle = NewCBuffer<CircleData>(circleCBuffer, circleShaderInstanceData);
+        pCircle->transform = currentTransform;
+        pCircle->location = pos;
+        pCircle->radius = radius;
+        pCircle->color = paint.fillColor;
+        pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+    
+        drawCommands.emplace_back();
+        DrawCommand& draw = drawCommands.back();
+        draw.cbuffers.push_back(circleCBuffer);
+        draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
+        draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
+        draw.nIndices = (int)basicQuadMesh.indices.size();
+        draw.topology = basicQuadMesh.topologyType;
+        draw.shader = circleDrawShader;
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
-    {
-        circles.emplace_back();
-        CBufferCircle& circle = circles.back();
-        circle.transform = currentTransform;
-        circle.location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
-        circle.radius = radius;
-        circle.thickness = paint.strokeThickness;
-        circle.color = paint.strokeColor;
-        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+    {   
+        CBuffer circleCBuffer;
+        CircleData* pCircle = NewCBuffer<CircleData>(circleCBuffer, circleShaderInstanceData);
+        pCircle->transform = currentTransform;
+        pCircle->location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
+        pCircle->radius = radius;
+        pCircle->thickness = paint.strokeThickness;
+        pCircle->color = paint.strokeColor;
+        pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+    
+        drawCommands.emplace_back();
+        DrawCommand& draw = drawCommands.back();
+        draw.cbuffers.push_back(circleCBuffer);
+        draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
+        draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
+        draw.nIndices = (int)basicQuadMesh.indices.size();
+        draw.topology = basicQuadMesh.topologyType;
+        draw.shader = circleDrawShader;
     }
+
 }
 
 void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float angleEnd, const Paint& paint)
 {
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
-        circles.emplace_back();
-        CBufferCircle& circle = circles.back();
-        circle.transform = currentTransform;
-        circle.location = pos;
-        circle.radius = radius;
-        circle.angleStart = angleStart;
-        circle.angleEnd = angleEnd;
-        circle.color = paint.fillColor;
-        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+        CBuffer circleCBuffer;
+        CircleData* pCircle = NewCBuffer<CircleData>(circleCBuffer, circleShaderInstanceData);
+        pCircle->transform = currentTransform;
+        pCircle->location = pos;
+        pCircle->radius = radius;
+        pCircle->angleStart = angleStart;
+        pCircle->angleEnd = angleEnd;
+        pCircle->color = paint.fillColor;
+        pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+
+        drawCommands.emplace_back();
+        DrawCommand& draw = drawCommands.back();
+        draw.cbuffers.push_back(circleCBuffer);
+        draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
+        draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
+        draw.nIndices = (int)basicQuadMesh.indices.size();
+        draw.topology = basicQuadMesh.topologyType;
+        draw.shader = circleDrawShader;
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
-        circles.emplace_back();
-        CBufferCircle& circle = circles.back();
-        circle.transform = currentTransform;
-        circle.location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
-        circle.radius = radius;
-        circle.thickness = paint.strokeThickness;
-        circle.angleStart = angleStart;
-        circle.angleEnd = angleEnd;
-        circle.color = paint.strokeColor;
-        circle.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+        CBuffer circleCBuffer;
+        CircleData* pCircle = NewCBuffer<CircleData>(circleCBuffer, circleShaderInstanceData);
+        pCircle->transform = currentTransform;
+        pCircle->location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
+        pCircle->radius = radius;
+        pCircle->thickness = paint.strokeThickness;
+        pCircle->angleStart = angleStart;
+        pCircle->angleEnd = angleEnd;
+        pCircle->color = paint.strokeColor;
+        pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+
+        drawCommands.emplace_back();
+        DrawCommand& draw = drawCommands.back();
+        draw.cbuffers.push_back(circleCBuffer);
+        draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
+        draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
+        draw.nIndices = (int)basicQuadMesh.indices.size();
+        draw.topology = basicQuadMesh.topologyType;
+        draw.shader = circleDrawShader;
     }
 }
 
 void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad, const Paint& paint)
 {
-    rects.emplace_back();
-    CBufferRect& rect = rects.back();
-    rect.transform = currentTransform;
-    rect.isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
-    rect.cornerRadius = cornerRad;
-    rect.location = center;
-    rect.size = size;
+    CBuffer rectCBuffer;
+    RectData* pRect = NewCBuffer<RectData>(rectCBuffer, rectShaderInstanceData);
+    pRect->transform = currentTransform;
+    pRect->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+    pRect->cornerRadius = cornerRad;
+    pRect->location = center;
+    pRect->size = size;
     
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
-        rect.fillColor = paint.fillColor;
+        pRect->fillColor = paint.fillColor;
     else
-        rect.fillColor = Vec4f(0.0f);
+        pRect->fillColor = Vec4f(0.0f);
 
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
-        rect.strokeColor = paint.strokeColor;
-        rect.strokeSize = paint.strokeThickness;
+        pRect->strokeColor = paint.strokeColor;
+        pRect->strokeSize = paint.strokeThickness;
     }
+
+    drawCommands.emplace_back();
+    DrawCommand& draw = drawCommands.back();
+    draw.cbuffers.push_back(rectCBuffer);
+    draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
+    draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
+    draw.nIndices = (int)basicQuadMesh.indices.size();
+    draw.topology = basicQuadMesh.topologyType;
+    draw.shader = rectDrawShader;
 }
 
 void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
 {
-    polyshapes.emplace_back();
-    PolyshapeDrawData& polyshapeData = polyshapes.back();
-    polyshapeData.transform = currentTransform;
-    polyshapeData.isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
-    GeneratePolylineMesh(points, paint.strokeLoop, paint, polyshapeData.meshData.strokeMesh);
+    CBuffer polyshapeCBuffer;
+    PolyshapeData* pPolyshape = NewCBuffer<PolyshapeData>(polyshapeCBuffer, polyshapeInstanceData);
+    pPolyshape->transform = currentTransform;
+    pPolyshape->isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
 
-    Primitive& prim = polyshapeData.meshData.strokeMesh.primitives[0];
-    polyshapeData.strokeVertices = prim.bufferHandle_vertices;
-    polyshapeData.strokeUvzw0 = prim.bufferHandle_uvzw0;
-    polyshapeData.strokeUvz0 = prim.bufferHandle_uvz0;
-    polyshapeData.strokeUvz1 = prim.bufferHandle_uvz1;
-    polyshapeData.strokeColors = prim.bufferHandle_colors;
-    polyshapeData.strokeIndices = prim.bufferHandle_indices;
-    polyshapeData.nStrokeIndices = (int)prim.indices.size();
+    polyshapeMeshes.emplace_back();
+    PolyshapeMesh& mesh = polyshapeMeshes.back();
+    GeneratePolylineMesh(points, paint.strokeLoop, paint, mesh.strokeMesh);
+
+    Primitive& prim = mesh.strokeMesh.primitives[0];
+    drawCommands.emplace_back();
+    DrawCommand& drawStroke = drawCommands.back();
+    drawStroke.cbuffers.push_back(polyshapeCBuffer);
+    drawStroke.vertBuffers.push_back(prim.bufferHandle_vertices);
+    drawStroke.vertBuffers.push_back(prim.bufferHandle_uvzw0);
+    drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz0);
+    drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz1);
+    drawStroke.vertBuffers.push_back(prim.bufferHandle_colors);
+    drawStroke.indexBuffer = prim.bufferHandle_indices;
+    drawStroke.nIndices = (int)prim.indices.size();
+    drawStroke.topology = TopologyType::TriangleList;
+    drawStroke.shader = polyLineDrawShader;
 }
 
 void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
 {
-    polyshapes.emplace_back();
-    PolyshapeDrawData& polyshapeData = polyshapes.back();
-    polyshapeData.transform = currentTransform;
-    polyshapeData.isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
+    polyshapeMeshes.emplace_back();
+    PolyshapeMesh& mesh = polyshapeMeshes.back();
+
+    CBuffer polyshapeCBuffer;
+    PolyshapeData* pPolyshape = NewCBuffer<PolyshapeData>(polyshapeCBuffer, polyshapeInstanceData);
+    pPolyshape->transform = currentTransform;
+    pPolyshape->isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
 
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -454,24 +508,36 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         {
             points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
         }
-        GeneratePolylineMesh(points3d, paint.strokeLoop, paint, polyshapeData.meshData.strokeMesh);
-        Primitive& prim = polyshapeData.meshData.strokeMesh.primitives[0];
-        polyshapeData.strokeVertices = prim.bufferHandle_vertices;
-        polyshapeData.strokeUvzw0 = prim.bufferHandle_uvzw0;
-        polyshapeData.strokeUvz0 = prim.bufferHandle_uvz0;
-        polyshapeData.strokeUvz1 = prim.bufferHandle_uvz1;
-        polyshapeData.strokeColors = prim.bufferHandle_colors;
-        polyshapeData.strokeIndices = prim.bufferHandle_indices;
-        polyshapeData.nStrokeIndices = (int)prim.indices.size();
+        GeneratePolylineMesh(points3d, paint.strokeLoop, paint, mesh.strokeMesh);
+        Primitive& prim = mesh.strokeMesh.primitives[0];
+
+        drawCommands.emplace_back();
+        DrawCommand& drawStroke = drawCommands.back();
+        drawStroke.cbuffers.push_back(polyshapeCBuffer);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_vertices);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_uvzw0);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz0);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz1);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_colors);
+        drawStroke.indexBuffer = prim.bufferHandle_indices;
+        drawStroke.nIndices = (int)prim.indices.size();
+        drawStroke.topology = TopologyType::TriangleList;
+        drawStroke.shader = polyLineDrawShader;
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
-        GeneratePolygonMesh(points, paint, polyshapeData.meshData.fillMesh);
-        Primitive& prim = polyshapeData.meshData.fillMesh.primitives[0];
-        polyshapeData.fillVertices = prim.bufferHandle_vertices;
-        polyshapeData.fillColors = prim.bufferHandle_colors;
-        polyshapeData.fillIndices = prim.bufferHandle_indices;
-        polyshapeData.nFillIndices = (int)prim.indices.size();
+        GeneratePolygonMesh(points, paint, mesh.fillMesh);
+        Primitive& prim = mesh.fillMesh.primitives[0];
+
+        drawCommands.emplace_back();
+        DrawCommand& drawFill = drawCommands.back();
+        drawFill.cbuffers.push_back(polyshapeCBuffer);
+        drawFill.vertBuffers.push_back(prim.bufferHandle_vertices);
+        drawFill.vertBuffers.push_back(prim.bufferHandle_colors);
+        drawFill.indexBuffer = prim.bufferHandle_indices;
+        drawFill.nIndices = (int)prim.indices.size();
+        drawFill.topology = TopologyType::TriangleList;
+        drawFill.shader = polygonDrawShader;
     }
 }
 
@@ -496,30 +562,40 @@ GfxDraw::PolyshapeMesh GfxDraw::CreatePolyshape(const eastl::vector<Vec2f>& poin
 
 void GfxDraw::Polyshape(const PolyshapeMesh& shape)
 {
-    polyshapes.emplace_back();
-    PolyshapeDrawData& polyshapeData = polyshapes.back();
-    polyshapeData.transform = currentTransform;
-    polyshapeData.isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
+    CBuffer polyshapeCBuffer;
+    PolyshapeData* pPolyshape = NewCBuffer<PolyshapeData>(polyshapeCBuffer, polyshapeInstanceData);
+    pPolyshape->transform = currentTransform;
+    pPolyshape->isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
 
     if (shape.strokeMesh.primitives.size() > 0)
     {
         const Primitive& prim = shape.strokeMesh.primitives[0];
-        polyshapeData.strokeVertices = prim.bufferHandle_vertices;
-        polyshapeData.strokeUvzw0 = prim.bufferHandle_uvzw0;
-        polyshapeData.strokeUvz0 = prim.bufferHandle_uvz0;
-        polyshapeData.strokeUvz1 = prim.bufferHandle_uvz1;
-        polyshapeData.strokeColors = prim.bufferHandle_colors;
-        polyshapeData.strokeIndices = prim.bufferHandle_indices;
-        polyshapeData.nStrokeIndices = (int)prim.indices.size();
+        drawCommands.emplace_back();
+        DrawCommand& drawStroke = drawCommands.back();
+        drawStroke.cbuffers.push_back(polyshapeCBuffer);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_vertices);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_uvzw0);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz0);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz1);
+        drawStroke.vertBuffers.push_back(prim.bufferHandle_colors);
+        drawStroke.indexBuffer = prim.bufferHandle_indices;
+        drawStroke.nIndices = (int)prim.indices.size();
+        drawStroke.topology = TopologyType::TriangleList;
+        drawStroke.shader = polyLineDrawShader;
     }
 
     if (shape.fillMesh.primitives.size() > 0)
     {
         const Primitive& prim = shape.fillMesh.primitives[0];
-        polyshapeData.fillVertices = prim.bufferHandle_vertices;
-        polyshapeData.fillColors = prim.bufferHandle_colors;
-        polyshapeData.fillIndices = prim.bufferHandle_indices;
-        polyshapeData.nFillIndices = (int)prim.indices.size();
+        drawCommands.emplace_back();
+        DrawCommand& drawFill = drawCommands.back();
+        drawFill.cbuffers.push_back(polyshapeCBuffer);
+        drawFill.vertBuffers.push_back(prim.bufferHandle_vertices);
+        drawFill.vertBuffers.push_back(prim.bufferHandle_colors);
+        drawFill.indexBuffer = prim.bufferHandle_indices;
+        drawFill.nIndices = (int)prim.indices.size();
+        drawFill.topology = TopologyType::TriangleList;
+        drawFill.shader = polygonDrawShader;
     }
 }
 
@@ -529,33 +605,27 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
 
 void GfxDraw::Initialize()
 {
-    cbuffers = LinearAllocator(500000);
-    lines.reserve(256);
-    rects.reserve(256);
-    circles.reserve(256);
+    drawCommands.reserve(MAX_CMD_PER_FRAME);
+    cbufferMemory.Init(500000);
     basicQuadMesh = Primitive::NewPlainQuad();
 
     bufferHandle_perSceneData = GfxDevice::CreateConstantBuffer(sizeof(CBufferPerScene), "GfxDraw Per Scene data");
 
     {
-        uint32_t bufferSize = sizeof(CBufferLine) * 256;
+        uint32_t bufferSize = sizeof(LineData) * MAX_CMD_PER_FRAME;
         lineShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Line Renderer Instance Data");
     }
     {
-        uint32_t bufferSize = sizeof(CBufferRect) * 256;
+        uint32_t bufferSize = sizeof(RectData) * MAX_CMD_PER_FRAME;
         rectShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Rect Renderer Instance Data");
     }
     {
-        uint32_t bufferSize = sizeof(CBufferCircle) * 256;
+        uint32_t bufferSize = sizeof(CircleData) * MAX_CMD_PER_FRAME;
         circleShaderInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Circle Renderer Instance Data");
     }
     {
-        uint32_t bufferSize = sizeof(CBufferPolyshape);
-        polygonInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polygon Renderer Instance Data");
-    }
-    {
-        uint32_t bufferSize = sizeof(CBufferPolyshape);
-        polylineInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polyline Renderer Instance Data");
+        uint32_t bufferSize = sizeof(PolyshapeData);
+        polyshapeInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polyshape Renderer Instance Data");
     }
 
     BlendingInfo blender;
@@ -580,116 +650,23 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     data.screenDimensions = Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y);
     GfxDevice::BindConstantBuffer(bufferHandle_perSceneData, &data, ShaderType::Vertex, 0);
     
-    // Render Lines
-    
-    if (Shader* pLineShader = AssetDB::GetAsset<Shader>(lineDrawShader))
+
+    // Render Draw Commands
+
+    for (DrawCommand& cmd : drawCommands)
     {
-        if (GfxDevice::IsValid(pLineShader->program))
+        if (Shader* pShader = AssetDB::GetAsset<Shader>(cmd.shader))
         {
-            for (CBufferLine& line : lines)
+            if (GfxDevice::IsValid(pShader->program))
             {
-                GfxDevice::BindConstantBuffer(lineShaderInstanceData, &line, ShaderType::Vertex, 1);
-                GfxDevice::BindProgram(pLineShader->program);
-                GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
-                GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
-                GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
+                for (CBuffer& cbuf : cmd.cbuffers)
+                    GfxDevice::BindConstantBuffer(cbuf.gfxBufferHandle, cbuf.pData, ShaderType::Vertex, 1);
+                GfxDevice::BindVertexBuffers(0, cmd.vertBuffers.size(), cmd.vertBuffers.data());
+                GfxDevice::BindProgram(pShader->program);
+                GfxDevice::SetTopologyType(cmd.topology);
+                GfxDevice::BindIndexBuffer(cmd.indexBuffer);
 
-                GfxDevice::DrawIndexed((int)basicQuadMesh.indices.size(), 0, 0);
-            }
-        }
-    }
-
-    // Render Rects
-
-    if (Shader* pRectShader = AssetDB::GetAsset<Shader>(rectDrawShader))
-    {
-        if (GfxDevice::IsValid(pRectShader->program))
-        {
-            for (CBufferRect& rect : rects)
-            {   
-                GfxDevice::BindConstantBuffer(rectShaderInstanceData, &rect, ShaderType::Vertex, 1);
-                GfxDevice::BindProgram(pRectShader->program);
-                GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
-                GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
-                GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
-
-                GfxDevice::DrawIndexed((int)basicQuadMesh.indices.size(), 0, 0);
-            }
-        }
-    }
-
-    // Render Circles
-
-    if (Shader* pCircleShader = AssetDB::GetAsset<Shader>(circleDrawShader))
-    {
-        if (GfxDevice::IsValid(pCircleShader->program))
-        {
-            for (CBufferCircle& circle : circles)
-            {  
-                GfxDevice::BindConstantBuffer(circleShaderInstanceData, &circle, ShaderType::Vertex, 1);
-                GfxDevice::BindProgram(pCircleShader->program);
-                GfxDevice::SetTopologyType(basicQuadMesh.topologyType);
-                GfxDevice::BindVertexBuffers(0, 1, &basicQuadMesh.bufferHandle_vertices);
-                GfxDevice::BindIndexBuffer(basicQuadMesh.bufferHandle_indices);
-
-                GfxDevice::DrawIndexed((int)basicQuadMesh.indices.size(), 0, 0);
-            }
-        }
-    }
-
-    // Render polylines
-
-    if (Shader* pPolyLineShader = AssetDB::GetAsset<Shader>(polyLineDrawShader))
-    {
-        if (GfxDevice::IsValid(pPolyLineShader->program))
-        {
-            GfxDevice::BindProgram(pPolyLineShader->program);
-            GfxDevice::SetTopologyType(TopologyType::TriangleList);
-            for (size_t i = 0; i < polyshapes.size(); i++)
-            {
-                const PolyshapeDrawData& polyshape = polyshapes[i];
-                if (polyshape.nStrokeIndices == 0) continue;
-
-                CBufferPolyshape data;
-                data.transform = polyshape.transform;
-                data.isScreenSpace = (int)polyshape.isScreenSpace;
-
-                GfxDevice::BindConstantBuffer(polylineInstanceData, &data, ShaderType::Vertex, 1);
-                GfxDevice::BindVertexBuffers(0, 1, &polyshape.strokeVertices);
-                GfxDevice::BindVertexBuffers(1, 1, &polyshape.strokeUvzw0);
-                GfxDevice::BindVertexBuffers(2, 1, &polyshape.strokeUvz0);
-                GfxDevice::BindVertexBuffers(3, 1, &polyshape.strokeUvz1);
-                GfxDevice::BindVertexBuffers(4, 1, &polyshape.strokeColors);
-                GfxDevice::BindIndexBuffer(polyshape.strokeIndices);
-                
-                GfxDevice::DrawIndexed(polyshape.nStrokeIndices, 0, 0);
-            }
-        }
-    }
-
-    // Render polygons
-
-    if (Shader* pPolygonShader = AssetDB::GetAsset<Shader>(polygonDrawShader))
-    {
-        if (GfxDevice::IsValid(pPolygonShader->program))
-        {
-            GfxDevice::BindProgram(pPolygonShader->program);
-            GfxDevice::SetTopologyType(TopologyType::TriangleList);
-            for (size_t i = 0; i < polyshapes.size(); i++)
-            {
-                const PolyshapeDrawData& polyshape = polyshapes[i];
-                if (polyshape.nFillIndices == 0) continue;
-
-                CBufferPolyshape data;
-                data.transform = polyshape.transform;
-                data.isScreenSpace = (int)polyshape.isScreenSpace;
-
-                GfxDevice::BindConstantBuffer(polygonInstanceData, &data, ShaderType::Vertex, 1);
-                GfxDevice::BindVertexBuffers(0, 1, &polyshape.fillVertices);
-                GfxDevice::BindVertexBuffers(1, 1, &polyshape.fillColors);
-                GfxDevice::BindIndexBuffer(polyshape.fillIndices);
-                
-                GfxDevice::DrawIndexed(polyshape.nFillIndices, 0, 0);
+                GfxDevice::DrawIndexed(cmd.nIndices, 0, 0);
             }
         }
     }
@@ -697,16 +674,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
 {
-    cbuffers.Clear();
-
-    lines.clear();
-    lines.reserve(256);
-
-    rects.clear();
-    rects.reserve(256);
-
-    circles.clear();
-    circles.reserve(256);
-
-    polyshapes.clear();
+    drawCommands.clear();
+    cbufferMemory.Clear();
+    polyshapeMeshes.clear();
 }

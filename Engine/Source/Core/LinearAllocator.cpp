@@ -1,20 +1,20 @@
 
 #include "LinearAllocator.h"
 #include "ErrorHandling.h"
+#include "Log.h"
 
 LinearAllocator::LinearAllocator()
 {}
 
-LinearAllocator::LinearAllocator(size_t initSize)
-{
-    pData = new char[initSize];
-    totalSize = initSize;
-}
-
 LinearAllocator::~LinearAllocator()
 {
-    // memfree whole blockP
     delete[] pData;
+}
+
+void LinearAllocator::Init(size_t size)
+{
+    pData = new char[size];
+    totalSize = size;
 }
 
 uintptr_t AlignAddress(uintptr_t address, size_t alignment)

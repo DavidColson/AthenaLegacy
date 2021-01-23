@@ -3,9 +3,9 @@
 struct LinearAllocator
 {
     LinearAllocator();
-    LinearAllocator(size_t initSize);
-
     ~LinearAllocator();
+
+    void Init(size_t size);
 
     // Allocate nBytes of data on the stack. Alignment must be power of 2
     void* Allocate(size_t nBytes, size_t alignment = 0);
