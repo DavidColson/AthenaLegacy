@@ -12,5 +12,6 @@ struct LinearAllocator
     void Clear();
 
     char* pData{ nullptr };
+    size_t totalSize{ 0 };
     size_t offset{ 0 };
 };

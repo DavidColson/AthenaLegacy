@@ -5,6 +5,7 @@
 LinearAllocator::LinearAllocator(size_t initSize)
 {
     pData = new char[initSize];
+    totalSize = initSize;
 }
 
 LinearAllocator::~LinearAllocator()
@@ -29,8 +30,8 @@ void* LinearAllocator::Allocate(size_t nBytes, size_t alignment)
     if (alignment != 0)
         padding = AlignAddress(currentAddress, alignment) - currentAddress;
 
-    // move head pointer to current + nBytes + padding
-    
+    ASSERT(offset + padding + nBytes < totalSize, "Memory buffer overflow");
+
     uintptr_t nextAddress = currentAddress + padding; 
     offset += nBytes + padding;
     return reinterpret_cast<void*>(nextAddress);
