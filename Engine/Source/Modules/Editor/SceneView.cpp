@@ -187,6 +187,7 @@ void SceneView::DrawSceneViewHelpers3D()
 
     if (drawOrigin)
     {
+        GfxDraw::SetSortLayer(-9);
         GfxDraw::Paint paint;
         paint.strokeThickness = 0.01f;
         paint.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
@@ -238,18 +239,13 @@ void SceneView::DrawSceneViewHelpers2D()
     {
         float width = GameRenderer::GetWidth();
         float height = GameRenderer::GetHeight();
-        
+
         GfxDraw::Paint paint;
         paint.strokeThickness = 10.f;
         paint.strokeColor = Vec4f(1.0f, 1.0f, 1.0f, 1.0f);
+        paint.drawStyle = GfxDraw::DrawStyle::Stroke;
 
-        // Top and bottom
-        GfxDraw::Line(Vec3f(0.0f, height, -1000.0f), Vec3f(width, height, -1000.0f), paint);
-        GfxDraw::Line(Vec3f(0.0f, 0.0f, -1000.0f), Vec3f(width, 0.0f, -1000.0f), paint);
-
-         // left and right
-        GfxDraw::Line(Vec3f(0.0f, 0.0f, -1000.0f), Vec3f(0.0f, height, -1000.0f), paint);
-        GfxDraw::Line(Vec3f(width, 0.0f, -1000.0f), Vec3f(width, height, -1000.0f), paint);
+        GfxDraw::Rect(Vec3f(width * 0.5f, height * 0.5f, -1.0f), Vec2f(width + 5.0f, height + 5.0f), Vec4f(0.0f), paint);
     }
 }
 
