@@ -54,6 +54,7 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 		polyPaint.fillColor = Vec4f(0.0f, 0.5f, 0.5f, 1.0f);
 		polyPaint.strokeThickness = 0.1f;
 		polyPaint.strokeColor = Vec4f(1.0f);
+		GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::ZAlign);
 		GfxDraw::Polyshape(polyline, polyPaint);
 	}
 

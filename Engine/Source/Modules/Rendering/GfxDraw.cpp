@@ -134,6 +134,7 @@ namespace
     Matrixf currentTransform = Matrixf::Identity();
     GfxDraw::DrawSpace currentDrawSpace = GfxDraw::DrawSpace::GameCamera;
     GfxDraw::GeometryMode currentGeometryMode = GfxDraw::GeometryMode::ZAlign;
+    uint16_t currentSortLayer{ (uint16_t)INT16_MAX };
 }
 
 template<typename T>
@@ -145,9 +146,10 @@ T* NewCBuffer(CBuffer& outCBuffer, ConstBufferHandle handle)
     return new (outCBuffer.pData) T();
 }
 
-uint64_t CreateSortKey(bool screenSpace, uint8_t instanceId)
+uint64_t CreateSortKey(bool screenSpace, uint16_t sortLayer)
 {
     uint64_t sortKey = 0;
+    sortKey |= (uint64_t)sortLayer << 35;
     sortKey |= (uint64_t)screenSpace << 62;
     return sortKey;
 }
@@ -353,6 +355,12 @@ void GfxDraw::SetGeometryMode(GeometryMode mode)
     currentGeometryMode = mode;
 }
 
+void GfxDraw::SetSortLayer(int16_t sortLayer)
+{
+    currentSortLayer = (uint16_t)INT16_MAX + (uint16_t)sortLayer;
+}
+
+
 void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
 {
     // Allocate and populate line cbuffer data
@@ -376,7 +384,7 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = lineDrawShader;
     draw.sortLocation = currentTransform * start;
-    draw.sortKey = CreateSortKey(pNewLine->isScreenSpace, InstanceGroupId::Line);
+    draw.sortKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer);
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
@@ -402,7 +410,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, InstanceGroupId::Circle);
+        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {   
@@ -425,7 +433,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, InstanceGroupId::Circle);
+        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer+1);
     }
 
 }
@@ -454,7 +462,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, InstanceGroupId::Circle);
+        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -479,7 +487,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, InstanceGroupId::Circle);
+        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer+1);
     }
 }
 
@@ -514,7 +522,7 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = rectDrawShader;
     draw.sortLocation = currentTransform * center;
-    draw.sortKey = CreateSortKey(pRect->isScreenSpace, InstanceGroupId::Rect);
+    draw.sortKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer);
 }
 
 void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
@@ -543,7 +551,7 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     drawStroke.topology = TopologyType::TriangleList;
     drawStroke.shader = polyLineDrawShader;
     drawStroke.sortLocation = currentTransform.GetTranslation();
-    drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, InstanceGroupId::Polyline);
+    drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
 }   
 
 void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
@@ -580,7 +588,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawStroke.topology = TopologyType::TriangleList;
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
-        drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, InstanceGroupId::Polyline);
+        drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer+1);
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
@@ -597,7 +605,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
-        drawFill.sortKey = CreateSortKey(pPolyshape->isScreenSpace, InstanceGroupId::Polygon);
+        drawFill.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 }
 
@@ -645,7 +653,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
         drawStroke.sortKey |= (uint64_t)pPolyshape->isScreenSpace << 62;
-        drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, InstanceGroupId::Polyline);
+        drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer+1);
     }
 
     if (shape.fillMesh.primitives.size() > 0)
@@ -661,7 +669,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
-        drawFill.sortKey = CreateSortKey(pPolyshape->isScreenSpace, InstanceGroupId::Polygon);
+        drawFill.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 }
 
@@ -702,6 +710,17 @@ void GfxDraw::Initialize()
 	blender.destinationAlpha = Blend::One;
 	blendState = GfxDevice::CreateBlendState(blender);
 
+    // This blend state will disable alpha blending without writing alpha to the output image
+    // Gives us opaque geometry effectively
+    
+    // BlendingInfo blender;
+	// blender.enabled = true;
+	// blender.source = Blend::One;
+	// blender.destination = Blend::Zero;
+	// blender.sourceAlpha = Blend::One;
+	// blender.destinationAlpha = Blend::One;
+	// blendState = GfxDevice::CreateBlendState(blender);
+
     DepthTestInfo depth;
     depth.depthEnabled = false;
     depth.stencilEnabled = false;
@@ -711,8 +730,6 @@ void GfxDraw::Initialize()
 void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 { 
     PROFILE();
-
-    // Consider turning off depth writes for all draw commands in here?
 
 	GfxDevice::SetBlending(blendState);
     GfxDevice::SetDepthTest(depthState);

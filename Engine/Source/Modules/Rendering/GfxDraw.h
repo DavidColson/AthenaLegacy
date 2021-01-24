@@ -51,6 +51,7 @@ namespace GfxDraw
     void SetDrawSpace(DrawSpace space); // TODO: projection matrix needs to be part of per object data, set it to ortho if space is screen, otherwise use scene camera
     void SetTransform(const Matrixf& transform);
     void SetGeometryMode(GeometryMode mode);
+    void SetSortLayer(int16_t sortLayer);
 
     void Line(const Vec3f& start, const Vec3f& end, const Paint& paint);
     void Circle(const Vec3f& pos, float radius, const Paint& paint);
