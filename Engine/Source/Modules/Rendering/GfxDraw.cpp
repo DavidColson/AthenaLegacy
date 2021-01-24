@@ -421,7 +421,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         CBuffer circleCBuffer;
         CircleData* pCircle = NewCBuffer<CircleData>(circleCBuffer, circleShaderInstanceData);
         pCircle->transform = currentTransform;
-        pCircle->location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
+        pCircle->location = pos;
         pCircle->radius = radius;
         pCircle->thickness = paint.strokeThickness;
         pCircle->color = paint.strokeColor;
@@ -473,7 +473,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         CBuffer circleCBuffer;
         CircleData* pCircle = NewCBuffer<CircleData>(circleCBuffer, circleShaderInstanceData);
         pCircle->transform = currentTransform;
-        pCircle->location = pos + Vec3f(0.0f, 0.0f, 0.001f); // Draw in front, maybe better way to do this one day
+        pCircle->location = pos;
         pCircle->radius = radius;
         pCircle->thickness = paint.strokeThickness;
         pCircle->angleStart = angleStart;
@@ -574,7 +574,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
         for (const Vec2f& vec : points)
         {
-            points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
+            points3d.push_back(Vec3f::Embed2D(vec, 0.0f));
         }
         GeneratePolylineMesh(points3d, paint.strokeLoop, paint, mesh.strokeMesh);
         Primitive& prim = mesh.strokeMesh.primitives[0];
@@ -621,7 +621,7 @@ GfxDraw::PolyshapeMesh GfxDraw::CreatePolyshape(const eastl::vector<Vec2f>& poin
     {
         eastl::vector<Vec3f> points3d; points3d.reserve(points.size());
         for (const Vec2f& vec : points)
-            points3d.push_back(Vec3f::Embed2D(vec, 0.0001f));
+            points3d.push_back(Vec3f::Embed2D(vec, 0.0f));
 
         GeneratePolylineMesh(points3d, paint.strokeLoop, paint, shape.strokeMesh);
     }
@@ -725,8 +725,9 @@ void GfxDraw::Initialize()
 	// blender.destinationAlpha = Blend::One;
 	// blendState = GfxDevice::CreateBlendState(blender);
 
+    // TODO: Add depth comparison and write masks params
     DepthTestInfo depth;
-    depth.depthEnabled = false;
+    depth.depthEnabled = true;
     depth.stencilEnabled = false;
     depthState = GfxDevice::CreateDepthTestState(depth);
 }

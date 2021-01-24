@@ -87,8 +87,9 @@ void FontSystem::Initialize()
 	SamplerState SampleType;\
 	float4 PSMain(VS_OUTPUT input) : SV_TARGET\
 	{\
-		float4 textureColor = float4(1.0, 1.0, 1.0, shaderTexture.Sample(SampleType, input.Tex).r);\
-		return textureColor * color;\
+		float4 outColor = color * float4(1.0, 1.0, 1.0, shaderTexture.Sample(SampleType, input.Tex).r);\
+		clip(outColor.a - 0.00001);\
+		return outColor;\
 	}";
 
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", "Fonts");
