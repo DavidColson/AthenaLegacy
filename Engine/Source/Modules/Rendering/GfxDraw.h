@@ -25,6 +25,12 @@ namespace GfxDraw
         GameCamera
     };
 
+    enum class GeometryMode
+    {
+        ZAlign,
+        Billboard
+    };
+
     struct Paint
     {   
         DrawStyle drawStyle = DrawStyle::Fill;
@@ -44,6 +50,7 @@ namespace GfxDraw
 
     void SetDrawSpace(DrawSpace space); // TODO: projection matrix needs to be part of per object data, set it to ortho if space is screen, otherwise use scene camera
     void SetTransform(const Matrixf& transform);
+    void SetGeometryMode(GeometryMode mode);
 
     void Line(const Vec3f& start, const Vec3f& end, const Paint& paint);
     void Circle(const Vec3f& pos, float radius, const Paint& paint);

@@ -45,6 +45,10 @@ namespace
         float thickness;
         Vec3f end;
         int isScreenSpace;
+        int zAlign;
+        float pad1;
+        float pad2;
+        float pad3;
     };
 
     struct CircleData
@@ -57,6 +61,10 @@ namespace
         float angleStart;
         float angleEnd;
         int isScreenSpace;
+        int zAlign;
+        float pad1;
+        float pad2;
+        float pad3;
     };
 
     struct RectData
@@ -69,14 +77,14 @@ namespace
         Vec4f cornerRadius;
         Vec2f size;
         int isScreenSpace;
-        float padding2;
+        int zAlign;
     };
 
     struct PolyshapeData
     {
         Matrixf transform;
         int isScreenSpace;
-        float padding1;
+        int zAlign;
         float padding2;
         float padding3;
     };
@@ -121,9 +129,11 @@ namespace
     ConstBufferHandle polyshapeInstanceData;
 
     BlendStateHandle blendState;
+    DepthTestStateHandle depthState;
 
     Matrixf currentTransform = Matrixf::Identity();
     GfxDraw::DrawSpace currentDrawSpace = GfxDraw::DrawSpace::GameCamera;
+    GfxDraw::GeometryMode currentGeometryMode = GfxDraw::GeometryMode::ZAlign;
 }
 
 template<typename T>
@@ -338,6 +348,11 @@ void GfxDraw::SetTransform(const Matrixf& transform)
     currentTransform = transform;
 }
 
+void GfxDraw::SetGeometryMode(GeometryMode mode)
+{
+    currentGeometryMode = mode;
+}
+
 void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
 {
     // Allocate and populate line cbuffer data
@@ -349,6 +364,7 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     pNewLine->thickness = paint.strokeThickness;
     pNewLine->color = paint.strokeColor;
     pNewLine->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+    pNewLine->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
 
     // Create draw command for this line
     drawCommands.emplace_back();
@@ -375,6 +391,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         pCircle->radius = radius;
         pCircle->color = paint.fillColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+        pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
     
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
@@ -397,6 +414,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         pCircle->thickness = paint.strokeThickness;
         pCircle->color = paint.strokeColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+        pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
     
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
@@ -425,6 +443,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         pCircle->angleEnd = angleEnd;
         pCircle->color = paint.fillColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+        pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
 
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
@@ -449,6 +468,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         pCircle->angleEnd = angleEnd;
         pCircle->color = paint.strokeColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
+        pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
 
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
@@ -472,6 +492,7 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     pRect->cornerRadius = cornerRad;
     pRect->location = center;
     pRect->size = size;
+    pRect->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
     
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
         pRect->fillColor = paint.fillColor;
@@ -502,6 +523,7 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     PolyshapeData* pPolyshape = NewCBuffer<PolyshapeData>(polyshapeCBuffer, polyshapeInstanceData);
     pPolyshape->transform = currentTransform;
     pPolyshape->isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
+    pPolyshape->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
 
     polyshapeMeshes.emplace_back();
     PolyshapeMesh& mesh = polyshapeMeshes.back();
@@ -533,6 +555,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
     PolyshapeData* pPolyshape = NewCBuffer<PolyshapeData>(polyshapeCBuffer, polyshapeInstanceData);
     pPolyshape->transform = currentTransform;
     pPolyshape->isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
+    pPolyshape->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
 
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -603,6 +626,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
     PolyshapeData* pPolyshape = NewCBuffer<PolyshapeData>(polyshapeCBuffer, polyshapeInstanceData);
     pPolyshape->transform = currentTransform;
     pPolyshape->isScreenSpace = currentDrawSpace == DrawSpace::ForceScreen;
+    pPolyshape->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
 
     if (shape.strokeMesh.primitives.size() > 0)
     {
@@ -677,6 +701,11 @@ void GfxDraw::Initialize()
 	blender.sourceAlpha = Blend::InverseSrcAlpha;
 	blender.destinationAlpha = Blend::One;
 	blendState = GfxDevice::CreateBlendState(blender);
+
+    DepthTestInfo depth;
+    depth.depthEnabled = false;
+    depth.stencilEnabled = false;
+    depthState = GfxDevice::CreateDepthTestState(depth);
 }
 
 void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
@@ -686,6 +715,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     // Consider turning off depth writes for all draw commands in here?
 
 	GfxDevice::SetBlending(blendState);
+    GfxDevice::SetDepthTest(depthState);
     
     ctx.view.GetForwardVector();
     CBufferPerScene data;
@@ -736,6 +766,9 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
             }
         }
     }
+
+    GfxDevice::SetBlending(INVALID_HANDLE);
+    GfxDevice::SetDepthTest(INVALID_HANDLE);
 }
 
 void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)

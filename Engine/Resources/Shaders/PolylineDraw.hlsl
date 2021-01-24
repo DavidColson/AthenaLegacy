@@ -12,6 +12,7 @@ cbuffer InstanceData : register(b1)
 {
     float4x4 transform;
     int isScreenSpace;
+	int zAlign;
 }
 
 #include "Engine/Resources/Shaders/Common.hlsl"
@@ -50,14 +51,19 @@ VertOutput VSMain(VertInput vertIn)
     float4 tanPrev = float4(vertIn.prev, 1.0) - vertIn.pos;
     float4 tanNext = vertIn.pos - float4(vertIn.next, 1.0);;
 
-    #if defined(Z_ALIGN)
-        float4 normPrev = normalize(float4(cross(tanPrev.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
-        float4 normNext = normalize(float4(cross(tanNext.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
-    #else
+    float4 normPrev;
+    float4 normNext;
+    if (zAlign)
+    {
+        normPrev = normalize(float4(cross(tanPrev.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
+        normNext = normalize(float4(cross(tanNext.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
+    }
+    else
+    {
         float3 invDirectionToCam = vertIn.pos.xyz - camWorldPosition;
-        float4 normPrev = normalize(float4(cross(tanPrev.xyz, -invDirectionToCam), 0.0));
-        float4 normNext = normalize(float4(cross(tanNext.xyz, -invDirectionToCam), 0.0));
-    #endif
+        normPrev = normalize(float4(cross(tanPrev.xyz, -invDirectionToCam), 0.0));
+        normNext = normalize(float4(cross(tanNext.xyz, -invDirectionToCam), 0.0));
+    }
 
     float4 cornerBisector = (normPrev + normNext) / 2.0;
     cornerBisector = cornerBisector / dot(cornerBisector, normNext);

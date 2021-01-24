@@ -21,6 +21,7 @@ cbuffer InstanceData : register(b1)
 		float thickness;
 		float3 lineEnd;
 		int isScreenSpace;
+		int zAlign;
 	} array[256];
 };
 
@@ -43,7 +44,6 @@ struct VertOutput
 
 #define ROUND_CAPS
 #define ANTI_ALIASING
-// /#define Z_ALIGN
 
 VertOutput VSMain(VertInput vertIn)
 {
@@ -60,12 +60,14 @@ VertOutput VSMain(VertInput vertIn)
 
     float4 diff = lineEnd - lineStart;
 
-    #if defined(Z_ALIGN)
-        float4 norm = normalize(float4(cross(diff.xyz, float3(0.0, 0.0, 1.0)), 0.0));
-    #else
+    float4 norm;
+    if (array[vertIn.instanceId].zAlign)
+        norm = normalize(float4(cross(diff.xyz, float3(0.0, 0.0, 1.0)), 0.0));
+    else
+    {
         float3 invDirectionToCam = thisVert.xyz - camWorldPosition;
-        float4 norm = normalize(float4(cross(diff.xyz, -invDirectionToCam), 0.0));
-    #endif
+        norm = normalize(float4(cross(diff.xyz, -invDirectionToCam), 0.0));
+    }
     // This will set the thickness such that it's never less than 1 pixel on the screen
     float pixelsPerMeter = 1;
     if (array[vertIn.instanceId].isScreenSpace == 0)

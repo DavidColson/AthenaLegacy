@@ -94,6 +94,12 @@ struct BlendState
 	ID3D11BlendState *pState;
 };
 
+struct DepthTestState
+{
+	DepthTestInfo info;
+	ID3D11DepthStencilState *pState;
+};
+
 struct Context
 {
 	IDXGISwapChain *pSwapChain{nullptr};
@@ -118,6 +124,7 @@ struct Context
 	DEFINE_RESOURCE_POOLS(TextureHandle, Texture)
 	DEFINE_RESOURCE_POOLS(ConstBufferHandle, ConstantBuffer)
 	DEFINE_RESOURCE_POOLS(BlendStateHandle, BlendState)
+	DEFINE_RESOURCE_POOLS(DepthTestStateHandle, DepthTestState)
 };
 
 namespace
@@ -136,6 +143,7 @@ DEFINE_GFX_HANDLE(SamplerHandle)
 DEFINE_GFX_HANDLE(TextureHandle)
 DEFINE_GFX_HANDLE(ConstBufferHandle)
 DEFINE_GFX_HANDLE(BlendStateHandle)
+DEFINE_GFX_HANDLE(DepthTestStateHandle)
 
 // ***********************************
 // D3D11 Flag conversions
@@ -583,6 +591,74 @@ void GfxDevice::FreeBlendState(BlendStateHandle handle)
 	if (state.pState)
 		state.pState->Release();
 }
+
+// ***********************************************************************
+
+DepthTestStateHandle GfxDevice::CreateDepthTestState(const DepthTestInfo& info)
+{
+	DepthTestState state;
+	state.info = info;
+
+	D3D11_DEPTH_STENCIL_DESC depthDesc;
+	ZeroMemory(&depthDesc, sizeof(depthDesc));
+
+	// Depth test parameters
+	depthDesc.DepthEnable = info.depthEnabled;
+	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	depthDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	// Stencil test parameters
+	depthDesc.StencilEnable = info.stencilEnabled;
+	depthDesc.StencilReadMask = 0xFF;
+	depthDesc.StencilWriteMask = 0xFF;
+
+	// Stencil operations if pixel is front-facing
+	depthDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+	depthDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Stencil operations if pixel is back-facing
+	depthDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	depthDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+	depthDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+	// Create depth stencil state
+	pCtx->pDevice->CreateDepthStencilState(&depthDesc, &state.pState);
+
+	SetDebugName(state.pState, "[DEPTH STATE]");
+
+	DepthTestStateHandle handle = pCtx->allocDepthTestStateHandle.NewHandle();
+	pCtx->poolDepthTestState[handle.id] = state;
+	return handle;
+}
+	
+// ***********************************************************************
+
+void GfxDevice::SetDepthTest(DepthTestStateHandle handle)
+{
+	if (!IsValid(handle))
+	{
+		pCtx->pDeviceContext->OMSetDepthStencilState(NULL, 1);
+		return;
+	}
+	DepthTestState &state = pCtx->poolDepthTestState[handle.id];
+	pCtx->pDeviceContext->OMSetDepthStencilState(state.pState, 1);
+}
+
+// ***********************************************************************
+
+void GfxDevice::FreeDepthTest(DepthTestStateHandle handle)
+{
+	if (!IsValid(handle))
+		return;
+	DepthTestState &state = pCtx->poolDepthTestState[handle.id];
+
+	if (state.pState)
+		state.pState->Release();
+}
+
 
 // ***********************************************************************
 

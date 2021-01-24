@@ -23,6 +23,7 @@ cbuffer InstanceData : register(b1)
         float angleStart;
         float angleEnd;
         int isScreenSpace;
+	    int zAlign;
 	} array[256];
 };
 
@@ -57,13 +58,18 @@ VertOutput VSMain(VertInput vertIn)
     if (array[vertIn.instanceId].isScreenSpace == 1)
         toClipTransform = screenSpaceToClipTransform;
 
-    #if defined(Z_ALIGN)
-        float3 right = float3(1, 0, 0);
-        float3 up = float3(0, 1, 0);
-    #else
-        float3 right = mul(float3(1, 0, 0), (float3x3)transpose(worldToCameraTransform));
-        float3 up = mul(float3(0, 1, 0), (float3x3)transpose(worldToCameraTransform));
-    #endif
+    float3 right;
+    float3 up;
+    if (array[vertIn.instanceId].zAlign)
+    {
+        right = float3(1, 0, 0);
+        up = float3(0, 1, 0);
+    }
+    else
+    {
+        right = mul(float3(1, 0, 0), (float3x3)transpose(worldToCameraTransform));
+        up = mul(float3(0, 1, 0), (float3x3)transpose(worldToCameraTransform));
+    }
 
     float3 vertWorldPos = array[vertIn.instanceId].location + right * vertIn.pos.x * radius + up * vertIn.pos.y * radius;
 

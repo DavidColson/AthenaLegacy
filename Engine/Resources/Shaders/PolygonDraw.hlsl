@@ -13,6 +13,7 @@ cbuffer InstanceData : register(b1)
 {
     float4x4 transform;
     int isScreenSpace;
+	int zAlign;
 }
 
 // Included after per scene and object data as it references the above data

@@ -90,6 +90,7 @@ DECLARE_GFX_HANDLE(SamplerHandle)
 DECLARE_GFX_HANDLE(TextureHandle)
 DECLARE_GFX_HANDLE(ConstBufferHandle)
 DECLARE_GFX_HANDLE(BlendStateHandle)
+DECLARE_GFX_HANDLE(DepthTestStateHandle)
 
 enum class Filter
 {
@@ -185,6 +186,14 @@ struct BlendingInfo
 	eastl::array<float, 4> blendFactor;
 };
 
+struct DepthTestInfo
+{
+	bool depthEnabled{ true };
+	bool stencilEnabled{ true };
+
+	// TODO: More params here
+};
+
 namespace GfxDevice
 {
 	void Initialize(SDL_Window* pWindow, float width, float height);
@@ -226,6 +235,14 @@ namespace GfxDevice
 	void SetBlending(BlendStateHandle handle);
 
 	void FreeBlendState(BlendStateHandle handle);
+
+	// Depth Testing
+
+	DepthTestStateHandle CreateDepthTestState(const DepthTestInfo& info);
+	
+	void SetDepthTest(DepthTestStateHandle handle);
+
+	void FreeDepthTest(DepthTestStateHandle handle);
 
 	// Vertex Buffers
 
