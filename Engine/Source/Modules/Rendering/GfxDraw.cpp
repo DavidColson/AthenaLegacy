@@ -6,9 +6,11 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "LinearAllocator.h"
+#include "Profiler.h"
 
 #include <EASTL/vector.h>
 #include <EASTL/fixed_vector.h>
+#include <EASTL/sort.h>
 
 #define MAX_CMD_PER_FRAME 256
 
@@ -84,10 +86,11 @@ namespace
         eastl::vector<CBuffer> cbuffers;
         eastl::vector<VertexBufferHandle> vertBuffers;
         IndexBufferHandle indexBuffer;
-        int nIndices;
+        int nIndices{ 0 };
         TopologyType topology;
         AssetHandle shader;
-        float sortDepth;
+        Vec3f sortLocation;
+        uint64_t sortKey{ 0 };
     };
 
     eastl::vector<DrawCommand> drawCommands;
@@ -340,6 +343,8 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     draw.nIndices = (int)basicQuadMesh.indices.size();
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = lineDrawShader;
+    draw.sortLocation = currentTransform * start;
+    draw.sortKey |= (int)pNewLine->isScreenSpace << 30;
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
@@ -363,6 +368,8 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
+        draw.sortLocation = currentTransform * pos;
+        draw.sortKey |= (int)pCircle->isScreenSpace << 30;
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {   
@@ -383,6 +390,8 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
+        draw.sortLocation = currentTransform * pos;
+        draw.sortKey |= (int)pCircle->isScreenSpace << 30;
     }
 
 }
@@ -409,6 +418,8 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
+        draw.sortLocation = currentTransform * pos;
+        draw.sortKey |= (int)pCircle->isScreenSpace << 30;
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -431,6 +442,8 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
+        draw.sortLocation = currentTransform * pos;
+        draw.sortKey |= (int)pCircle->isScreenSpace << 30;
     }
 }
 
@@ -463,6 +476,8 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     draw.nIndices = (int)basicQuadMesh.indices.size();
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = rectDrawShader;
+    draw.sortLocation = currentTransform * center;
+    draw.sortKey |= (int)pRect->isScreenSpace << 30;
 }
 
 void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
@@ -489,7 +504,9 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     drawStroke.nIndices = (int)prim.indices.size();
     drawStroke.topology = TopologyType::TriangleList;
     drawStroke.shader = polyLineDrawShader;
-}
+    drawStroke.sortLocation = currentTransform.GetTranslation();
+    drawStroke.sortKey |= (int)pPolyshape->isScreenSpace << 30;
+}   
 
 void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
 {
@@ -523,6 +540,8 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawStroke.nIndices = (int)prim.indices.size();
         drawStroke.topology = TopologyType::TriangleList;
         drawStroke.shader = polyLineDrawShader;
+        drawStroke.sortLocation = currentTransform.GetTranslation();
+        drawStroke.sortKey |= (int)pPolyshape->isScreenSpace << 30;
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
@@ -538,6 +557,8 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawFill.nIndices = (int)prim.indices.size();
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
+        drawFill.sortLocation = currentTransform.GetTranslation();
+        drawFill.sortKey |= (int)pPolyshape->isScreenSpace << 30;
     }
 }
 
@@ -582,6 +603,8 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawStroke.nIndices = (int)prim.indices.size();
         drawStroke.topology = TopologyType::TriangleList;
         drawStroke.shader = polyLineDrawShader;
+        drawStroke.sortLocation = currentTransform.GetTranslation();
+        drawStroke.sortKey |= (int)pPolyshape->isScreenSpace << 30;
     }
 
     if (shape.fillMesh.primitives.size() > 0)
@@ -596,6 +619,8 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawFill.nIndices = (int)prim.indices.size();
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
+        drawFill.sortLocation = currentTransform.GetTranslation();
+        drawFill.sortKey |= (int)pPolyshape->isScreenSpace << 30;
     }
 }
 
@@ -639,6 +664,8 @@ void GfxDraw::Initialize()
 
 void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 {
+    PROFILE();
+
 	GfxDevice::SetBlending(blendState);
     
     ctx.view.GetForwardVector();
@@ -650,6 +677,20 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     data.screenDimensions = Vec2f(ctx.screenDimensions.x, ctx.screenDimensions.y);
     GfxDevice::BindConstantBuffer(bufferHandle_perSceneData, &data, ShaderType::Vertex, 0);
     
+    // Sort draw commands
+
+    eastl::sort(drawCommands.begin(), drawCommands.end(), 
+        [ &ctx ] (const DrawCommand& a, const DrawCommand& b) 
+        {
+            if (a.sortKey == b.sortKey)
+            {
+                float aDepth = (ctx.camWorldPosition - a.sortLocation).GetLength();
+                float bDepth = (ctx.camWorldPosition - b.sortLocation).GetLength();
+                return aDepth > bDepth;
+            }
+            return a.sortKey < b.sortKey;
+        });
+
 
     // Render Draw Commands
 

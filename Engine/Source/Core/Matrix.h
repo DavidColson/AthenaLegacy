@@ -95,6 +95,23 @@ struct Matrix
 		return vec;
 	}
 
+	/**
+	* Matrix vs Vector3 multiplication. Note that this will implicitly convert rhs to a vec4 with w component equal to 1
+	*
+	* @param  rhs The matrix to multiple on the right of this
+	* @return The result of the multiplication
+	**/
+	inline Vec3<T> operator*(const Vec3<T>& rhs) const
+	{
+		Vec3<T> vec;
+
+		vec.x = m[0][0] * rhs.x + m[0][1] * rhs.y + m[0][2] * rhs.z + m[0][3];
+		vec.y = m[1][0] * rhs.x + m[1][1] * rhs.y + m[1][2] * rhs.z + m[1][3];
+		vec.z = m[2][0] * rhs.x + m[2][1] * rhs.y + m[2][2] * rhs.z + m[2][3];
+
+		return vec;
+	}
+
 	inline Matrix GetTranspose() const
 	{
 		Matrix mat;
@@ -331,6 +348,17 @@ struct Matrix
         outTranslation.x = m.m[0][3];
         outTranslation.y = m.m[1][3];
         outTranslation.z = m.m[2][3];
+	}
+
+	inline Vec3<T> GetTranslation()
+	{
+		Vec3<T> outTrans;
+
+		outTrans.x = m[0][3];
+        outTrans.y = m[1][3];
+        outTrans.z = m[2][3];
+		
+		return outTrans;
 	}
 
 	inline eastl::string ToString() const 
