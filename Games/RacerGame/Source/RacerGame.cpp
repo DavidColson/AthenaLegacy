@@ -72,7 +72,9 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 	GfxDraw::Circle(Vec3f(0.0f, 3.0f, -0.01f), 1.2f, circlePaint);
 	GfxDraw::Sector(Vec3f(0.0f, -3.0f, -0.01f), 1.2f, 0.1f, 2.0f, circlePaint);
 
+	GfxDraw::SetTransform(Matrixf::MakeTRS(Vec3f(-1.f, 5.0f, 0.0f), Vec3f(), Vec3f(2.0f, 2.0f, 1.0f)));
 	GfxDraw::Polyshape(asteroidPolyShape);
+	GfxDraw::SetTransform(Matrixf::Identity());
 
 
 	// SCREEN SPACE FORCED DRAWING
@@ -176,14 +178,14 @@ int main(int argc, char *argv[])
 		asteroidPoly.push_back(Vec2f(0.37f, 0.65f));
 		asteroidPoly.push_back(Vec2f(0.213f, 0.78f));
 		asteroidPoly.push_back(Vec2f(0.05f, 0.54f));
-		for (size_t i = 0; i < asteroidPoly.size(); i++)
-		{
-			asteroidPoly[i] *= 2.0f;
-			asteroidPoly[i] += Vec2f(-1.0f, 5.0f);
-		}
+		// for (size_t i = 0; i < asteroidPoly.size(); i++)
+		// {
+		// 	asteroidPoly[i] *= 2.0f;
+		// 	asteroidPoly[i] += Vec2f(-1.0f, 5.0f);
+		// }
 		GfxDraw::Paint asteroidPaint;
 		asteroidPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
-		asteroidPaint.strokeThickness = 0.1f;
+		asteroidPaint.strokeThickness = 0.05f;
 		asteroidPaint.strokeColor = Vec4f(1.0f);
 		asteroidPaint.fillColor = Vec4f(0.0f, 0.0f, 0.0f, 1.0f);
 		asteroidPolyShape = GfxDraw::CreatePolyshape(asteroidPoly, asteroidPaint);

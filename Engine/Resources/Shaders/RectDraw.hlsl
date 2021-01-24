@@ -118,5 +118,7 @@ float4 PSMain(VertOutput pixelIn) : SV_TARGET
             return float4(0.0, 0.0, 0.0, 0.0);
     #endif
 
+    clip(result.a - 0.0001);
+
     return result;
 }

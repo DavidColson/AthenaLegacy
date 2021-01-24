@@ -90,6 +90,8 @@ float2 rotate( float2 v, float ang ){
 
 float4 PSMain(VertOutput pixelIn) : SV_TARGET
 {
+
+
     float dist = sdf(pixelIn.uv, pixelIn.radius);
 
     float segmentMask = 1.0;
@@ -135,6 +137,8 @@ float4 PSMain(VertOutput pixelIn) : SV_TARGET
     #if defined(ANTI_ALIASING)
         result.a *= outerRingMask * innerRingMask;
     #endif
+
+    clip(result.a - 0.0001);
 
     return result;
 }

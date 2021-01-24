@@ -104,5 +104,7 @@ float4 PSMain(VertOutput pixelIn) : SV_TARGET
     result.a *= mask;
 #endif
 
+    clip(result.a - 0.0001);
+
     return result;
 }
