@@ -108,6 +108,16 @@ AssetHandle& AssetHandle::operator=(AssetHandle&& move)
     return *this;
 }
 
+bool AssetHandle::operator==(const AssetHandle& other)
+{
+    return id == other.id;
+}
+
+bool AssetHandle::operator!=(const AssetHandle& other)
+{
+    return id != other.id;
+}
+
 AssetHandle::~AssetHandle()
 {
     if (id != 0)

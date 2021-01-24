@@ -24,6 +24,9 @@ struct AssetHandle
 	AssetHandle& operator=(const AssetHandle& copy);
 	AssetHandle& operator=(AssetHandle&& move);
 
+    bool operator==(const AssetHandle& other);
+    bool operator!=(const AssetHandle& other);
+
     ~AssetHandle();
 
     uint64_t id{ 0 };

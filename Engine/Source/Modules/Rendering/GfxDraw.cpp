@@ -90,6 +90,7 @@ namespace
     };
 
     LinearAllocator cbufferMemory;
+    LinearAllocator cbufferInstanceGroupMemory;
 
     struct CBuffer
     {
@@ -100,17 +101,20 @@ namespace
 
     struct DrawCommand
     {
-        eastl::vector<CBuffer> cbuffers;
+        typedef uint64_t radix_type;
+        
+        CBuffer cbuffer;
         eastl::vector<VertexBufferHandle> vertBuffers;
         IndexBufferHandle indexBuffer;
         int nIndices{ 0 };
         TopologyType topology;
         AssetHandle shader;
         Vec3f sortLocation;
-        uint64_t sortKey{ 0 };
+        uint64_t mKey{ 0 };
     };
 
     eastl::vector<DrawCommand> drawCommands;
+    DrawCommand drawCommandSortBuffer[MAX_CMD_PER_FRAME];
     eastl::vector<GfxDraw::PolyshapeMesh> polyshapeMeshes;
 
     Primitive basicQuadMesh;
@@ -377,14 +381,14 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     // Create draw command for this line
     drawCommands.emplace_back();
     DrawCommand& draw = drawCommands.back();
-    draw.cbuffers.push_back(lineCBuffer);
+    draw.cbuffer = lineCBuffer;
     draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
     draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
     draw.nIndices = (int)basicQuadMesh.indices.size();
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = lineDrawShader;
     draw.sortLocation = currentTransform * start;
-    draw.sortKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer);
+    draw.mKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer);
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
@@ -403,14 +407,14 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
     
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
-        draw.cbuffers.push_back(circleCBuffer);
+        draw.cbuffer = circleCBuffer;
         draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {   
@@ -426,14 +430,14 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
     
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
-        draw.cbuffers.push_back(circleCBuffer);
+        draw.cbuffer = circleCBuffer;
         draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer+1);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
 
 }
@@ -455,14 +459,14 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
 
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
-        draw.cbuffers.push_back(circleCBuffer);
+        draw.cbuffer = circleCBuffer;
         draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -480,14 +484,14 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
 
         drawCommands.emplace_back();
         DrawCommand& draw = drawCommands.back();
-        draw.cbuffers.push_back(circleCBuffer);
+        draw.cbuffer = circleCBuffer;
         draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
-        draw.sortKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer+1);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
 }
 
@@ -515,14 +519,14 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
 
     drawCommands.emplace_back();
     DrawCommand& draw = drawCommands.back();
-    draw.cbuffers.push_back(rectCBuffer);
+    draw.cbuffer = rectCBuffer;
     draw.vertBuffers.push_back(basicQuadMesh.bufferHandle_vertices);
     draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
     draw.nIndices = (int)basicQuadMesh.indices.size();
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = rectDrawShader;
     draw.sortLocation = currentTransform * center;
-    draw.sortKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer);
+    draw.mKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer);
 }
 
 void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
@@ -540,7 +544,7 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     Primitive& prim = mesh.strokeMesh.primitives[0];
     drawCommands.emplace_back();
     DrawCommand& drawStroke = drawCommands.back();
-    drawStroke.cbuffers.push_back(polyshapeCBuffer);
+    drawStroke.cbuffer = polyshapeCBuffer;
     drawStroke.vertBuffers.push_back(prim.bufferHandle_vertices);
     drawStroke.vertBuffers.push_back(prim.bufferHandle_uvzw0);
     drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz0);
@@ -551,7 +555,7 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     drawStroke.topology = TopologyType::TriangleList;
     drawStroke.shader = polyLineDrawShader;
     drawStroke.sortLocation = currentTransform.GetTranslation();
-    drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+    drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
 }   
 
 void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
@@ -577,7 +581,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
 
         drawCommands.emplace_back();
         DrawCommand& drawStroke = drawCommands.back();
-        drawStroke.cbuffers.push_back(polyshapeCBuffer);
+        drawStroke.cbuffer = polyshapeCBuffer;
         drawStroke.vertBuffers.push_back(prim.bufferHandle_vertices);
         drawStroke.vertBuffers.push_back(prim.bufferHandle_uvzw0);
         drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz0);
@@ -588,7 +592,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawStroke.topology = TopologyType::TriangleList;
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
-        drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer+1);
+        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
@@ -597,7 +601,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
 
         drawCommands.emplace_back();
         DrawCommand& drawFill = drawCommands.back();
-        drawFill.cbuffers.push_back(polyshapeCBuffer);
+        drawFill.cbuffer = polyshapeCBuffer;
         drawFill.vertBuffers.push_back(prim.bufferHandle_vertices);
         drawFill.vertBuffers.push_back(prim.bufferHandle_colors);
         drawFill.indexBuffer = prim.bufferHandle_indices;
@@ -605,7 +609,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
-        drawFill.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 }
 
@@ -641,7 +645,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         const Primitive& prim = shape.strokeMesh.primitives[0];
         drawCommands.emplace_back();
         DrawCommand& drawStroke = drawCommands.back();
-        drawStroke.cbuffers.push_back(polyshapeCBuffer);
+        drawStroke.cbuffer = polyshapeCBuffer;
         drawStroke.vertBuffers.push_back(prim.bufferHandle_vertices);
         drawStroke.vertBuffers.push_back(prim.bufferHandle_uvzw0);
         drawStroke.vertBuffers.push_back(prim.bufferHandle_uvz0);
@@ -652,8 +656,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawStroke.topology = TopologyType::TriangleList;
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
-        drawStroke.sortKey |= (uint64_t)pPolyshape->isScreenSpace << 62;
-        drawStroke.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer+1);
+        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 
     if (shape.fillMesh.primitives.size() > 0)
@@ -661,7 +664,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         const Primitive& prim = shape.fillMesh.primitives[0];
         drawCommands.emplace_back();
         DrawCommand& drawFill = drawCommands.back();
-        drawFill.cbuffers.push_back(polyshapeCBuffer);
+        drawFill.cbuffer = polyshapeCBuffer;
         drawFill.vertBuffers.push_back(prim.bufferHandle_vertices);
         drawFill.vertBuffers.push_back(prim.bufferHandle_colors);
         drawFill.indexBuffer = prim.bufferHandle_indices;
@@ -669,7 +672,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
-        drawFill.sortKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 }
 
@@ -680,6 +683,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
 void GfxDraw::Initialize()
 {
     drawCommands.reserve(MAX_CMD_PER_FRAME);
+    cbufferInstanceGroupMemory.Init(500000);
     cbufferMemory.Init(500000);
     basicQuadMesh = Primitive::NewPlainQuad();
 
@@ -712,7 +716,7 @@ void GfxDraw::Initialize()
 
     // This blend state will disable alpha blending without writing alpha to the output image
     // Gives us opaque geometry effectively
-    
+
     // BlendingInfo blender;
 	// blender.enabled = true;
 	// blender.source = Blend::One;
@@ -751,38 +755,79 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
         float depth = (clipSpace.z / clipSpace.w) * 0.5f + 0.5f;
         depth = 1.0f - depth;
         uint32_t intDepth = uint32_t(depth * (float)UINT32_MAX);
-        cmd.sortKey &= ~(uint64_t)0xffffffff; // clears bottom 32 bits from the last render pass which may have written to depth
-        cmd.sortKey |= intDepth;
+        cmd.mKey &= ~(uint64_t)0xffffffff; // clears bottom 32 bits from the last render pass which may have written to depth
+        cmd.mKey |= intDepth;
     }
 
     // Sort draw commands
 
-    eastl::sort(drawCommands.begin(), drawCommands.end(), 
-        [ &ctx ] (const DrawCommand& a, const DrawCommand& b) 
-        {
-            return a.sortKey < b.sortKey;
-        });
+    eastl::radix_sort<DrawCommand*, eastl::Internal::extract_radix_key<DrawCommand>>(drawCommands.begin(), drawCommands.end(), drawCommandSortBuffer);
 
 
     // Render Draw Commands
 
-    for (DrawCommand& cmd : drawCommands)
-    {
-        if (Shader* pShader = AssetDB::GetAsset<Shader>(cmd.shader))
-        {
-            if (GfxDevice::IsValid(pShader->program))
-            {
-                for (CBuffer& cbuf : cmd.cbuffers)
-                    GfxDevice::BindConstantBuffer(cbuf.gfxBufferHandle, cbuf.pData, ShaderType::Vertex, 1);
-                GfxDevice::BindVertexBuffers(0, cmd.vertBuffers.size(), cmd.vertBuffers.data());
-                GfxDevice::BindProgram(pShader->program);
-                GfxDevice::SetTopologyType(cmd.topology);
-                GfxDevice::BindIndexBuffer(cmd.indexBuffer);
+    for (int i = 0; i < drawCommands.size(); i++)
+    {   
+        DrawCommand& cmd = drawCommands[i];
 
-                GfxDevice::DrawIndexed(cmd.nIndices, 0, 0);
+        // Automatic instancing
+        int instanceCount = 1;
+        if (i + 2 < drawCommands.size())
+        {
+            int j = i+1;
+            if (drawCommands[j].shader == cmd.shader && (cmd.shader != polygonDrawShader) && (cmd.shader != polyLineDrawShader))
+            {
+                void* pCbufferData = cbufferInstanceGroupMemory.Allocate(cmd.cbuffer.size, 4);
+                memcpy(pCbufferData, cmd.cbuffer.pData, cmd.cbuffer.size);
+            }
+
+            while (j < drawCommands.size() && drawCommands[j].shader == drawCommands[j-1].shader && (drawCommands[j-1].shader != polygonDrawShader) && (drawCommands[j-1].shader != polyLineDrawShader))
+            {
+                void* pCbufferData = cbufferInstanceGroupMemory.Allocate(drawCommands[j].cbuffer.size, 4);
+                memcpy(pCbufferData, drawCommands[j].cbuffer.pData, drawCommands[j].cbuffer.size);
+                j++;
+            }
+
+            instanceCount = j - i;
+            i = j-1;
+        }
+
+        if (instanceCount == 1)
+        {
+            if (Shader* pShader = AssetDB::GetAsset<Shader>(cmd.shader))
+            {
+                if (GfxDevice::IsValid(pShader->program))
+                {
+                    GfxDevice::BindConstantBuffer(cmd.cbuffer.gfxBufferHandle, cmd.cbuffer.pData, ShaderType::Vertex, 1);
+                    GfxDevice::BindVertexBuffers(0, cmd.vertBuffers.size(), cmd.vertBuffers.data());
+                    GfxDevice::BindProgram(pShader->program);
+                    GfxDevice::SetTopologyType(cmd.topology);
+                    GfxDevice::BindIndexBuffer(cmd.indexBuffer);
+
+                    GfxDevice::DrawIndexed(cmd.nIndices, 0, 0);
+                }
             }
         }
+        else
+        {
+            if (Shader* pShader = AssetDB::GetAsset<Shader>(cmd.shader))
+            {
+                if (GfxDevice::IsValid(pShader->program))
+                {
+                    GfxDevice::BindConstantBuffer(cmd.cbuffer.gfxBufferHandle, cbufferInstanceGroupMemory.pData, ShaderType::Vertex, 1);
+                    GfxDevice::BindVertexBuffers(0, cmd.vertBuffers.size(), cmd.vertBuffers.data());
+                    GfxDevice::BindProgram(pShader->program);
+                    GfxDevice::SetTopologyType(cmd.topology);
+                    GfxDevice::BindIndexBuffer(cmd.indexBuffer);
+
+                    GfxDevice::DrawIndexedInstanced(cmd.nIndices, instanceCount, 0, 0, 0);
+                }
+            }
+        }
+
+        cbufferInstanceGroupMemory.Clear();
     }
+
 
     GfxDevice::SetBlending(INVALID_HANDLE);
     GfxDevice::SetDepthTest(INVALID_HANDLE);
