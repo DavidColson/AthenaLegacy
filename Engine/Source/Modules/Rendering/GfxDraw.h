@@ -52,6 +52,7 @@ namespace GfxDraw
     void SetTransform(const Matrixf& transform);
     void SetGeometryMode(GeometryMode mode);
     void SetSortLayer(int16_t sortLayer);
+    void SetDepthTest(bool enabled);
 
     void Line(const Vec3f& start, const Vec3f& end, const Paint& paint);
     void Circle(const Vec3f& pos, float radius, const Paint& paint);

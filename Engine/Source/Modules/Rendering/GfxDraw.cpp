@@ -16,15 +16,6 @@
 
 namespace
 {
-    enum InstanceGroupId : uint8_t
-    {
-        Line,
-        Circle,
-        Rect,
-        Polyline,
-        Polygon
-    };
-
     struct CBufferPerScene
     {
         Matrixf worldToClipTransform;
@@ -37,6 +28,7 @@ namespace
         float padding2;
     }; 
     
+    // TODO: Consider forcing a high alignment amount in the cbuffer memory to avoid having to declare these padding values
     struct LineData
     {
         Matrixf transform;
@@ -110,6 +102,7 @@ namespace
         TopologyType topology;
         AssetHandle shader;
         Vec3f sortLocation;
+        bool enableDepthTest{ true };
         uint64_t mKey{ 0 };
     };
 
@@ -133,12 +126,14 @@ namespace
     ConstBufferHandle polyshapeInstanceData;
 
     BlendStateHandle blendState;
-    DepthTestStateHandle depthState;
+    DepthTestStateHandle depthStateEnabled;
+    DepthTestStateHandle depthStateDisabled;
 
     Matrixf currentTransform = Matrixf::Identity();
     GfxDraw::DrawSpace currentDrawSpace = GfxDraw::DrawSpace::GameCamera;
     GfxDraw::GeometryMode currentGeometryMode = GfxDraw::GeometryMode::ZAlign;
     uint16_t currentSortLayer{ (uint16_t)INT16_MAX };
+    bool currentDepthTestState{ true };
 }
 
 template<typename T>
@@ -364,6 +359,11 @@ void GfxDraw::SetSortLayer(int16_t sortLayer)
     currentSortLayer = (uint16_t)INT16_MAX + (uint16_t)sortLayer;
 }
 
+void GfxDraw::SetDepthTest(bool enabled)
+{
+    currentDepthTestState = enabled;
+}
+
 
 void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
 {
@@ -387,6 +387,7 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     draw.nIndices = (int)basicQuadMesh.indices.size();
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = lineDrawShader;
+    draw.enableDepthTest = currentDepthTestState;
     draw.sortLocation = currentTransform * start;
     draw.mKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer);
 }
@@ -414,6 +415,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
+        draw.enableDepthTest = currentDepthTestState;
         draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
@@ -437,6 +439,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
+        draw.enableDepthTest = currentDepthTestState;
         draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
 
@@ -465,6 +468,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
+        draw.enableDepthTest = currentDepthTestState;
         draw.sortLocation = currentTransform * pos;
         draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
@@ -490,6 +494,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
         draw.shader = circleDrawShader;
+        draw.enableDepthTest = currentDepthTestState;
         draw.sortLocation = currentTransform * pos;
         draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
     }
@@ -526,6 +531,7 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     draw.topology = basicQuadMesh.topologyType;
     draw.shader = rectDrawShader;
     draw.sortLocation = currentTransform * center;
+    draw.enableDepthTest = currentDepthTestState;
     draw.mKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer);
 }
 
@@ -555,6 +561,7 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     drawStroke.topology = TopologyType::TriangleList;
     drawStroke.shader = polyLineDrawShader;
     drawStroke.sortLocation = currentTransform.GetTranslation();
+    drawStroke.enableDepthTest = currentDepthTestState;
     drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
 }   
 
@@ -592,6 +599,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawStroke.topology = TopologyType::TriangleList;
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
+        drawStroke.enableDepthTest = currentDepthTestState;
         drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
@@ -609,6 +617,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
+        drawFill.enableDepthTest = currentDepthTestState;
         drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 }
@@ -656,6 +665,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawStroke.topology = TopologyType::TriangleList;
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
+        drawStroke.enableDepthTest = currentDepthTestState;
         drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 
@@ -672,6 +682,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawFill.topology = TopologyType::TriangleList;
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
+        drawFill.enableDepthTest = currentDepthTestState;
         drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
     }
 }
@@ -726,10 +737,17 @@ void GfxDraw::Initialize()
 	// blendState = GfxDevice::CreateBlendState(blender);
 
     // TODO: Add depth comparison and write masks params
-    DepthTestInfo depth;
-    depth.depthEnabled = true;
-    depth.stencilEnabled = false;
-    depthState = GfxDevice::CreateDepthTestState(depth);
+    DepthTestInfo depthOn;
+    depthOn.depthEnabled = true;
+    depthOn.stencilEnabled = false;
+    depthOn.depthWrite = false;
+    depthStateEnabled = GfxDevice::CreateDepthTestState(depthOn);
+
+    DepthTestInfo depthOff;
+    depthOff.depthEnabled = false;
+    depthOff.stencilEnabled = false;
+    depthOff.depthWrite = false;
+    depthStateDisabled = GfxDevice::CreateDepthTestState(depthOff);
 }
 
 void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
@@ -737,8 +755,8 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     PROFILE();
 
 	GfxDevice::SetBlending(blendState);
-    GfxDevice::SetDepthTest(depthState);
-    
+    GfxDevice::SetDepthTest(depthStateEnabled);
+
     ctx.view.GetForwardVector();
     CBufferPerScene data;
     data.worldToClipTransform = ctx.projection * ctx.view;
@@ -752,6 +770,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
     for (DrawCommand& cmd : drawCommands)
     {
+        // TODO: Could optimize this by just calculating z and w component in this multiplication
         Vec4f clipSpace = data.worldToClipTransform * Vec4f::Embed3D(cmd.sortLocation);
         float depth = (clipSpace.z / clipSpace.w) * 0.5f + 0.5f;
         depth = 1.0f - depth;
@@ -767,6 +786,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
     // Render Draw Commands
 
+    bool lastDepth = true;
     for (int i = 0; i < drawCommands.size(); i++)
     {   
         DrawCommand& cmd = drawCommands[i];
@@ -791,6 +811,12 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
             instanceCount = j - i;
             i = j-1;
+        }
+
+        if (cmd.enableDepthTest != lastDepth)
+        {
+            GfxDevice::SetDepthTest(cmd.enableDepthTest ? depthStateEnabled : depthStateDisabled);
+            lastDepth = cmd.enableDepthTest;
         }
 
         if (instanceCount == 1)

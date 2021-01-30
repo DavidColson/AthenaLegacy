@@ -604,7 +604,7 @@ DepthTestStateHandle GfxDevice::CreateDepthTestState(const DepthTestInfo& info)
 
 	// Depth test parameters
 	depthDesc.DepthEnable = info.depthEnabled;
-	depthDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	depthDesc.DepthWriteMask = info.depthWrite ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
 	depthDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
 	// Stencil test parameters

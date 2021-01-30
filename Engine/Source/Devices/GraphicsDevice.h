@@ -191,6 +191,8 @@ struct DepthTestInfo
 	bool depthEnabled{ true };
 	bool stencilEnabled{ true };
 
+	bool depthWrite{ true };
+
 	// TODO: More params here
 };
 
