@@ -25,6 +25,7 @@ struct VertInput
 {
     float4 pos : SV_POSITION;
     float4 col : COLOR1;
+    uint instanceId : SV_InstanceID;
 };
 
 struct VertOutput

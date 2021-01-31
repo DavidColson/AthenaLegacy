@@ -797,13 +797,13 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
         if (i + 2 < drawCommands.size())
         {
             int j = i+1;
-            if (drawCommands[j].vertBuffers[0].id == cmd.vertBuffers[0].id)
+            if (drawCommands[j].vertBuffers[0].id == cmd.vertBuffers[0].id && drawCommands[j].shader == cmd.shader)
             {
                 void* pCbufferData = cbufferInstanceGroupMemory.Allocate(cmd.cbuffer.size, 4);
                 memcpy(pCbufferData, cmd.cbuffer.pData, cmd.cbuffer.size);
             }
 
-            while (j < drawCommands.size() && drawCommands[j].vertBuffers[0].id == drawCommands[j-1].vertBuffers[0].id)
+            while (j < drawCommands.size() && drawCommands[j].vertBuffers[0].id == drawCommands[j-1].vertBuffers[0].id && drawCommands[j].shader == drawCommands[j-1].shader)
             {
                 void* pCbufferData = cbufferInstanceGroupMemory.Allocate(drawCommands[j].cbuffer.size, 4);
                 memcpy(pCbufferData, drawCommands[j].cbuffer.pData, drawCommands[j].cbuffer.size);
