@@ -4,10 +4,8 @@
 #include "Components.h"
 
 #include <AudioDevice.h>
-#include <Rendering/DebugDraw.h>
 #include <Rendering/FontSystem.h>
 #include <Rendering/ParticlesSystem.h>
-#include <Rendering/ShapesSystem.h>
 #include <Rendering/GameRenderer.h>
 #include <Input/Input.h>
 #include <Profiler.h>
@@ -36,15 +34,6 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform, const Vec3f atVel
 
 	scene.Assign<CVisibility>(bullet);
 	scene.Assign<CCollidable>(bullet)->radius = 4.0f;
-	
-	Vec2f verts[2] = {
-		Vec2f(0.f, 0.0f),
-		Vec2f(0.f, 1.0f)
-	};
-	CPolyShape* pPolyShape = scene.Assign<CPolyShape>(bullet);
-	pPolyShape->points.assign(verts, verts + 2);
-	pPolyShape->thickness = 17.0f;
-	pPolyShape->connected = false;
 }
 
 
@@ -100,8 +89,9 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 		scene.Assign<CDynamics>(newAsteroid)->vel = randomVelocity;
 
 		scene.Assign<CVisibility>(newAsteroid);
-		scene.Assign<CAsteroid>(newAsteroid)->hitCount = scene.Get<CAsteroid>(asteroid)->hitCount + 1;
-		scene.Assign<CPolyShape>(newAsteroid)->points = GetRandomAsteroidMesh();
+		CAsteroid* pAsteroid = scene.Assign<CAsteroid>(newAsteroid);
+		pAsteroid->hitCount = scene.Get<CAsteroid>(asteroid)->hitCount + 1;
+		pAsteroid->type = AsteroidType(rand() % 4);
 	}
 
 	scene.DestroyEntity(asteroid);
@@ -141,84 +131,56 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	pDynamics->accel = Vec3f(0.0f, 0.0f, 0.0f);
 }
 
-eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh()
-{
-	static Vec2f asteroidMesh1[] = {
-		Vec2f(0.03f, 0.379f),
-		Vec2f(0.03f, 0.64f),
-		Vec2f(0.314f, 0.69f),
-		Vec2f(0.348f, 0.96f),
-		Vec2f(0.673f, 0.952f),
-		Vec2f(0.698f, 0.724f),
-		Vec2f(0.97f, 0.645f),
-		Vec2f(0.936f, 0.228f),
-		Vec2f(0.555f, 0.028f),
-		Vec2f(0.22f, 0.123f)
-	};
-	static Vec2f asteroidMesh2[] = {
-		Vec2f(0.05f, 0.54f),
-		Vec2f(0.213f, 0.78f),
-		Vec2f(0.37f, 0.65f),
-		Vec2f(0.348f, 0.96f),
-		Vec2f(0.673f, 0.952f),
-		Vec2f(0.64f, 0.75f),
-		Vec2f(0.83f, 0.85f),
-		Vec2f(0.974f, 0.65f),
-		Vec2f(0.943f, 0.298f),
-		Vec2f(0.683f, 0.086f),
-		Vec2f(0.312f, 0.074f),
-		Vec2f(0.056f, 0.265f)
-	};
-	static Vec2f asteroidMesh3[] = {
-		Vec2f(0.066f, 0.335f),
-		Vec2f(0.077f, 0.683f),
-		Vec2f(0.3f, 0.762f),
-		Vec2f(0.348f, 0.96f),
-		Vec2f(0.673f, 0.952f),
-		Vec2f(0.724f, 0.752f),
-		Vec2f(0.967f, 0.63f),
-		Vec2f(0.946f, 0.312f),
-		Vec2f(0.706f, 0.353f),
-		Vec2f(0.767f, 0.07f),
-		Vec2f(0.37f, 0.07f),
-		Vec2f(0.21f, 0.33f)
-	};
-	static Vec2f asteroidMesh4[] = {
-		Vec2f(0.056f, 0.284f),
-		Vec2f(0.064f, 0.752f),
-		Vec2f(0.353f, 0.762f),
-		Vec2f(0.286f, 0.952f),
-		Vec2f(0.72f, 0.944f),
-		Vec2f(0.928f, 0.767f),
-		Vec2f(0.962f, 0.604f),
-		Vec2f(0.568f, 0.501f),
-		Vec2f(0.967f, 0.366f),
-		Vec2f(0.857f, 0.16f),
-		Vec2f(0.563f, 0.217f),
-		Vec2f(0.358f, 0.043f)
-	};
-
-	eastl::fixed_vector<Vec2f, 15> vec;
-	switch (rand() % 4)
-	{
-	case 0: vec.assign(asteroidMesh1, asteroidMesh1 + 10); break;
-	case 1: vec.assign(asteroidMesh2, asteroidMesh2 + 12); break;
-	case 2: vec.assign(asteroidMesh3, asteroidMesh3 + 12); break;
-	case 3: vec.assign(asteroidMesh4, asteroidMesh4 + 12); break;
-	default: break;
-	}
-	return vec;
-}
-
 // **********
 // SYSTEMS
 // **********
 
-void DrawPolyShapes(Scene& scene, float /* deltaTime */)
+void DrawAsteroids(Scene& scene, float /* deltaTime */)
 {
 	PROFILE();
 
-	for (EntityID shape : SceneIterator<CPolyShape, CTransform, CVisibility>(scene))
+	for (EntityID shape : SceneIterator<CAsteroid, CTransform, CVisibility>(scene))
+	{
+		if (scene.Get<CVisibility>(shape)->visible == false)
+			continue;
+
+		CTransform* pTrans = scene.Get<CTransform>(shape);
+		Matrixf pivotAdjust = Matrixf::MakeTranslation(Vec3f(-0.5f, -0.5f, 0.0f));
+		Matrixf world = Matrixf::MakeTRS(pTrans->localPos, Vec3f(0.0f, 0.0f, pTrans->localRot.z), pTrans->localSca) * pivotAdjust;
+
+		CAsteroid* pAsteroid = scene.Get<CAsteroid>(shape);
+		GfxDraw::SetTransform(world);
+		GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::ZAlign);
+		GfxDraw::Polyshape(GetAsteroidMesh(pAsteroid->type));
+		GfxDraw::SetTransform(Matrixf::Identity());
+	}	
+}
+
+void DrawBullets(Scene& scene, float deltaTime)
+{
+	for (EntityID shape : SceneIterator<CBullet, CTransform, CVisibility>(scene))
+	{
+		if (scene.Get<CVisibility>(shape)->visible == false)
+			continue;
+
+		CTransform* pTrans = scene.Get<CTransform>(shape);
+		Matrixf world = Matrixf::MakeTRS(pTrans->localPos, Vec3f(0.0f, 0.0f, pTrans->localRot.z), pTrans->localSca);
+
+		GfxDraw::Paint bulletPaint;
+		bulletPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
+		bulletPaint.strokeThickness = 1.0f;
+		bulletPaint.strokeColor = Vec4f(1.0f);
+
+		GfxDraw::SetTransform(world);
+		GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::ZAlign);
+		GfxDraw::Rect(Vec3f(0.0f), Vec2f(1.0f, 1.0f), Vec4f(0.0f), bulletPaint);
+		GfxDraw::SetTransform(Matrixf::Identity());
+	}	
+}
+
+void DrawShips(Scene& scene, float deltaTime)
+{
+	for (EntityID shape : SceneIterator<CShipDraw, CTransform, CVisibility>(scene))
 	{
 		if (scene.Get<CVisibility>(shape)->visible == false)
 			continue;
@@ -230,11 +192,10 @@ void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 		Matrixf pivotAdjust = Matrixf::MakeTranslation(Vec3f(-0.5f, -0.5f, 0.0f));
 		Matrixf world = posMat * rotMat * scaMat * pivotAdjust;
 
-		VertsVector transformedVerts;
-		for (const Vec2f& vert : scene.Get<CPolyShape>(shape)->points)
-			transformedVerts.push_back(Vec2f::Project4D(world * Vec4f::Embed2D(vert)));
-
-		Shapes::DrawPolyLine(scene, transformedVerts, scene.Get<CPolyShape>(shape)->thickness, Vec4f(1.0f, 1.0f, 1.0f, 1.0f), scene.Get<CPolyShape>(shape)->connected);
+		GfxDraw::SetTransform(world);
+		GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::ZAlign);
+		GfxDraw::Polyshape(GetPlayerMesh());
+		GfxDraw::SetTransform(Matrixf::Identity());
 	}	
 }
 
@@ -298,8 +259,7 @@ void AsteroidSpawning(Scene& scene, float deltaTime)
 			scene.Assign<CDynamics>(asteroid)->vel = randomVelocity * 60.0f;
 
 			scene.Assign<CVisibility>(asteroid);
-			scene.Assign<CAsteroid>(asteroid);
-			scene.Assign<CPolyShape>(asteroid)->points = GetRandomAsteroidMesh();
+			scene.Assign<CAsteroid>(asteroid)->type = AsteroidType(rand() % 4);
 		}
 	}
 }
@@ -480,6 +440,23 @@ void MenuInterationSystem(Scene& scene, float /* deltaTime */)
 	{
 		CTransform* pTransform = scene.Get<CTransform>(id);
 		CMenuInteraction* pInteraction = scene.Get<CMenuInteraction>(id);
+
+		eastl::vector<Vec2f> points;
+		points.push_back(Vec2f(0.f, 0.0f));
+		points.push_back(Vec2f(0.7f, 0.5f));
+		points.push_back(Vec2f(0.f, 1.f));
+
+		Matrixf pivotAdjust = Matrixf::MakeTranslation(Vec3f(-0.5f, -0.5f, 0.0f));
+		Matrixf world = Matrixf::MakeTRS(pTransform->localPos, Vec3f(0.0f, 0.0f, pTransform->localRot.z), pTransform->localSca) * pivotAdjust;
+
+		GfxDraw::Paint paint;
+		paint.drawStyle = GfxDraw::DrawStyle::Stroke;
+		paint.strokeThickness = 2.f;
+		paint.strokeColor = Vec4f(1.0f);
+		GfxDraw::SetTransform(world);
+		GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::ZAlign);
+		GfxDraw::Polyshape(points, paint);
+		GfxDraw::SetTransform(Matrixf::Identity());
 
 		const float w = GameRenderer::GetWidth();
 		const float h = GameRenderer::GetHeight();

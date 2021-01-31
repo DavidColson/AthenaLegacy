@@ -8,6 +8,8 @@
 #include <AudioDevice.h>
 #include <EASTL/fixed_vector.h>
 
+#include "Asteroids.h"
+
 struct CDynamics
 {
 	Vec3f vel;
@@ -27,11 +29,8 @@ struct CMenuInteraction
 	State currentState;
 };
 
-struct CPolyShape
+struct CShipDraw
 {
-	eastl::fixed_vector<Vec2f, 15> points;
-	float thickness = 5.0f;
-	bool connected = true;
 	REFLECT();
 };
 
@@ -105,6 +104,7 @@ struct CCollidable
 struct CAsteroid
 {
 	int hitCount{ 0 };
+	AsteroidType type;
 
 	REFLECT()
 };

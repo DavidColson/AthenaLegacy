@@ -45,10 +45,17 @@ VertOutput VSMain(VertInput vertIn)
     if (isScreenSpace == 1)
         toClipTransform = screenSpaceToClipTransform;
 
+    // Scale breaks out careful transformations, so we must do it before we start
+    float3 transformScale;
+    float4x4 transformScaleless = RemoveScaling(transform, transformScale);
+    vertIn.pos *= float4(transformScale, 1);
+    vertIn.prev *= float4(transformScale, 1);
+    vertIn.next *= float4(transformScale, 1);
+
     float thickness = vertIn.uv.z * 0.5;
 
     float4 tanPrev = float4(vertIn.prev, 1.0) - vertIn.pos;
-    float4 tanNext = vertIn.pos - float4(vertIn.next, 1.0);;
+    float4 tanNext = vertIn.pos - float4(vertIn.next, 1.0);
 
     float4 normPrev;
     float4 normNext;
@@ -89,7 +96,7 @@ VertOutput VSMain(VertInput vertIn)
         vertPos -= tanNext * vertIn.uv.x * endPointExtrude;
     #endif
 
-	output.pos = mul(vertPos, mul(transform, toClipTransform));
+	output.pos = mul(vertPos, mul(transformScaleless, toClipTransform));
 	output.color = vertIn.color;
 	output.uv = vertIn.uv.xy * uvScale;
 	output.thicknessPixels = thicknessPixels;

@@ -16,7 +16,11 @@ void AsteroidSpawning(Scene& scene, float deltaTime);
 
 void InvincibilitySystemUpdate(Scene& scene, float deltaTime);
 
-void DrawPolyShapes(Scene& scene, float deltaTime);
+void DrawAsteroids(Scene& scene, float deltaTime);
+
+void DrawShips(Scene& scene, float deltaTime);
+
+void DrawBullets(Scene& scene, float deltaTime);
 
 void AsteroidSystemUpdate(Scene& scene, float deltaTime);
 

@@ -6,8 +6,6 @@
 #include "ParticlesSystem.h"
 #include "PostProcessingSystem.h"
 #include "FontSystem.h"
-#include "DebugDraw.h"
-#include "ShapesSystem.h"
 #include "SceneDrawSystem.h"
 #include "SpriteDrawSystem.h"
 #include "GfxDraw.h"
@@ -42,8 +40,6 @@ namespace
 
 void GameRenderer::Initialize(float width, float height)
 {
-    Shapes::Initialize();
-	DebugDraw::Initialize();
 	FontSystem::Initialize();
     SpriteDrawSystem::Initialize();
     GfxDraw::Initialize();
@@ -99,9 +95,7 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 
     // Opaque things
     SceneDrawSystem::OnFrame(scene, context, deltaTime);
-    Shapes::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
-    DebugDraw::OnFrame(scene, context, deltaTime);
 
     // Things that have transparency
     FontSystem::OnFrame(scene, context, deltaTime);
@@ -124,8 +118,6 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 
 void GameRenderer::OnFrameEnd(Scene& scene, float deltaTime)
 {
-    Shapes::OnFrameEnd(scene, deltaTime);
-    DebugDraw::OnFrameEnd(scene, deltaTime);
     GfxDraw::OnFrameEnd(scene, deltaTime);
 }
 
@@ -135,8 +127,6 @@ void GameRenderer::Destroy()
 {
     GfxDevice::FreeRenderTarget(gameRenderTarget);
     GfxDevice::FreeTexture(resolvedGameFrame);
-    DebugDraw::Destroy();
-	Shapes::Destroy();
 	FontSystem::Destroy();
 	SpriteDrawSystem::Destroy();
 }
