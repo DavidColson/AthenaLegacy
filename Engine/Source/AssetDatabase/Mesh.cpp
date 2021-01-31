@@ -29,6 +29,7 @@ Primitive::Primitive(const Primitive& copy)
     colors = eastl::vector<Vec4f>(copy.colors);
     indices = eastl::vector<uint16_t>(copy.indices);
     topologyType = copy.topologyType;
+    localBounds = copy.localBounds;
 
     CreateGfxBuffers();
 }
@@ -44,6 +45,7 @@ Primitive::Primitive(Primitive&& copy)
     colors = copy.colors;
     indices = copy.indices;
     topologyType = copy.topologyType;
+    localBounds = copy.localBounds;
 
     bufferHandle_vertices = copy.bufferHandle_vertices;
     bufferHandle_normals = copy.bufferHandle_normals;
@@ -84,6 +86,7 @@ Primitive& Primitive::operator=(const Primitive& copy)
     colors = eastl::vector<Vec4f>(copy.colors);
     indices = eastl::vector<uint16_t>(copy.indices);
     topologyType = copy.topologyType;
+    localBounds = copy.localBounds;
     CreateGfxBuffers();
     
     return *this;
@@ -100,6 +103,8 @@ Primitive& Primitive::operator=(Primitive&& copy)
     colors = copy.colors;
     indices = copy.indices;
     topologyType = copy.topologyType;
+
+    localBounds = copy.localBounds;
 
     bufferHandle_vertices = copy.bufferHandle_vertices;
     bufferHandle_normals = copy.bufferHandle_normals;
@@ -132,6 +137,36 @@ Primitive::~Primitive()
     GfxDevice::FreeVertexBuffer(bufferHandle_uvzw0);
     GfxDevice::FreeVertexBuffer(bufferHandle_colors);
     GfxDevice::FreeIndexBuffer(bufferHandle_indices);
+}
+
+void Primitive::RecalcLocalBounds()
+{
+    // Loop through vertices, collecitng the max in each axis.
+    for (int i = 0; i < 3; i++)
+    {
+        Vec3f dir;
+        dir[i] = 1.0f;
+
+        float minProj = FLT_MAX; float maxProj = -FLT_MAX;
+        int vertMin; int vertMax;
+        for (int n = 0; n < (int)vertices.size(); n++)
+        {
+            float projection = Vec3f::Dot(vertices[n], dir);
+            if (projection < minProj)
+            {
+                minProj = projection;
+                vertMin = n;
+            }
+
+            if (projection > maxProj)
+            {
+                maxProj = projection;
+                vertMax = n;
+            }
+        }
+        localBounds.min[i] = vertices[vertMin][i];
+        localBounds.max[i] = vertices[vertMax][i];
+    }
 }
 
 void Primitive::CreateGfxBuffers()
@@ -170,6 +205,7 @@ Primitive Primitive::NewPlainQuad()
     prim.indices = {0, 1, 2, 3};
 
     prim.topologyType = TopologyType::TriangleStrip;
+    prim.RecalcLocalBounds();
     prim.CreateGfxBuffers();
     return prim;
 }
@@ -209,6 +245,7 @@ Primitive Primitive::NewCube()
 		0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
 	};
     prim.topologyType = TopologyType::TriangleStrip;
+    prim.RecalcLocalBounds();
     prim.CreateGfxBuffers();
     return prim;
 }

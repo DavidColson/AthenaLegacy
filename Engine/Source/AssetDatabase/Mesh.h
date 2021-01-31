@@ -2,6 +2,7 @@
 
 #include "Vec3.h"
 #include "Vec4.h"
+#include "AABB.h"
 #include "GraphicsDevice.h"
 #include "AssetDatabase.h"
 
@@ -40,6 +41,9 @@ struct Primitive
     VertexBufferHandle bufferHandle_colors;
     IndexBufferHandle bufferHandle_indices;
 
+    AABBf localBounds;
+
+    void RecalcLocalBounds();
     void CreateGfxBuffers();
 
     // Primitive Mesh Creation

@@ -6,6 +6,9 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "GameRenderer.h"
+#include "GfxDraw.h"
+
+//#define DEBUG_BOUNDS
 
 struct cbTransformBuf
 {
@@ -54,6 +57,30 @@ void SceneDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 		for (Primitive& prim : pMesh->primitives)
 		{
+			// Debug draw bounds
+			#ifdef DEBUG_BOUNDS
+			Vec3f worldTrans = pTrans->globalTransform.GetTranslation();
+			AABBf worldBounds = TransformAABB(prim.localBounds, pTrans->globalTransform);
+			GfxDraw::Paint paint;
+			paint.strokeColor = Vec4f(1.0f);
+			paint.strokeThickness = 0.01f;
+
+			Vec3f diff = worldBounds.max - worldBounds.min;	
+			GfxDraw::Line(worldBounds.min, worldBounds.min + Vec3f(diff.x, 0.0f, 0.0f), paint);
+			GfxDraw::Line(worldBounds.min, worldBounds.min + Vec3f(0.0f, diff.y, 0.0f), paint);
+			GfxDraw::Line(worldBounds.min, worldBounds.min + Vec3f(0.0f, 0.0f, diff.z), paint);
+			GfxDraw::Line(worldBounds.min + Vec3f(diff.x, 0.0f, 0.0f), worldBounds.max - Vec3f(0.0f, 0.0f, diff.z), paint);
+			GfxDraw::Line(worldBounds.min + Vec3f(diff.x, 0.0f, 0.0f), worldBounds.max - Vec3f(0.0f, diff.y, 0.0f), paint);
+			GfxDraw::Line(worldBounds.min + Vec3f(0.0f, diff.y, 0.0f), worldBounds.max - Vec3f(0.0f, 0.0f, diff.z), paint);
+
+			GfxDraw::Line(worldBounds.max, worldBounds.max - Vec3f(diff.x, 0.0f, 0.0f), paint);
+			GfxDraw::Line(worldBounds.max, worldBounds.max - Vec3f(0.0f, diff.y, 0.0f), paint);
+			GfxDraw::Line(worldBounds.max, worldBounds.max - Vec3f(0.0f, 0.0f, diff.z), paint);
+			GfxDraw::Line(worldBounds.max - Vec3f(diff.x, 0.0f, 0.0f), worldBounds.min + Vec3f(0.0f, 0.0f, diff.z), paint);
+			GfxDraw::Line(worldBounds.max - Vec3f(diff.x, 0.0f, 0.0f), worldBounds.min + Vec3f(0.0f, diff.y, 0.0f), paint);
+			GfxDraw::Line(worldBounds.max - Vec3f(0.0f, diff.y, 0.0f), worldBounds.min + Vec3f(0.0f, 0.0f, diff.z), paint);
+			#endif
+
 			GfxDevice::SetTopologyType(prim.topologyType);
 			GfxDevice::BindVertexBuffers(0, 1, &prim.bufferHandle_vertices);
 			GfxDevice::BindVertexBuffers(1, 1, &prim.bufferHandle_normals);

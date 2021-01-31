@@ -22,6 +22,8 @@ target_sources(Engine
         "Matrix.cpp"
         "Quat.h"
         "Quat.cpp"
+        "AABB.h"
+        "AABB.cpp"
         "Engine.h"
         "Engine.cpp"
         "AppWindow.h"

@@ -12,7 +12,7 @@
 #include <EASTL/fixed_vector.h>
 #include <EASTL/sort.h>
 
-#define MAX_CMD_PER_FRAME 256
+#define MAX_CMD_PER_FRAME 1024
 
 namespace
 {
@@ -163,6 +163,7 @@ uint64_t CreateSortKey(bool screenSpace, uint16_t sortLayer, uint16_t vertBuffer
 
 DrawCommand& NewDrawCommand(bool screenSpace, uint16_t sortLayer, uint16_t vertBufferId)
 {
+    ASSERT(drawCommands.size() < MAX_CMD_PER_FRAME, "Draw commands overflow");
     drawCommands.emplace_back();
     DrawCommand& draw = drawCommands.back();
 

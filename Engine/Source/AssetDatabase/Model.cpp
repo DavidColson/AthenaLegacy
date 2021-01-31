@@ -187,6 +187,7 @@ void Model::Load(Path path, AssetHandle handleForThis)
             uint16_t* indexBuffer = (uint16_t*)accessors[jsonPrimitive["indices"].ToInt()].pBuffer;
             prim.indices = eastl::vector<uint16_t>(indexBuffer, indexBuffer + nIndices);
 
+            prim.RecalcLocalBounds();
             mesh.primitives.push_back(prim);
         }
         meshes.push_back(mesh);
