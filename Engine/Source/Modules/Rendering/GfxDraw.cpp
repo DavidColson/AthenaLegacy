@@ -145,11 +145,12 @@ T* NewCBuffer(CBuffer& outCBuffer, ConstBufferHandle handle)
     return new (outCBuffer.pData) T();
 }
 
-uint64_t CreateSortKey(bool screenSpace, uint16_t sortLayer)
+uint64_t CreateSortKey(bool screenSpace, uint16_t sortLayer, uint16_t vertBufferId)
 {
     uint64_t sortKey = 0;
-    sortKey |= (uint64_t)sortLayer << 35;
-    sortKey |= (uint64_t)screenSpace << 62;
+    sortKey |= (uint64_t)vertBufferId << 32;
+    sortKey |= (uint64_t)sortLayer << 47;
+    sortKey |= (uint64_t)screenSpace << 63;
     return sortKey;
 }
 
@@ -389,7 +390,7 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     draw.shader = lineDrawShader;
     draw.enableDepthTest = currentDepthTestState;
     draw.sortLocation = currentTransform * start;
-    draw.mKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer);
+    draw.mKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
@@ -416,7 +417,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
         draw.enableDepthTest = currentDepthTestState;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {   
@@ -440,7 +441,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.shader = circleDrawShader;
         draw.sortLocation = currentTransform * pos;
         draw.enableDepthTest = currentDepthTestState;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
 
 }
@@ -470,7 +471,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.shader = circleDrawShader;
         draw.enableDepthTest = currentDepthTestState;
         draw.sortLocation = currentTransform * pos;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -496,7 +497,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.shader = circleDrawShader;
         draw.enableDepthTest = currentDepthTestState;
         draw.sortLocation = currentTransform * pos;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer);
+        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
 }
 
@@ -532,7 +533,7 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     draw.shader = rectDrawShader;
     draw.sortLocation = currentTransform * center;
     draw.enableDepthTest = currentDepthTestState;
-    draw.mKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer);
+    draw.mKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
 }
 
 void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
@@ -562,7 +563,7 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     drawStroke.shader = polyLineDrawShader;
     drawStroke.sortLocation = currentTransform.GetTranslation();
     drawStroke.enableDepthTest = currentDepthTestState;
-    drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+    drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
 }   
 
 void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
@@ -600,7 +601,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
         drawStroke.enableDepthTest = currentDepthTestState;
-        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
@@ -618,7 +619,7 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
         drawFill.enableDepthTest = currentDepthTestState;
-        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawFill.vertBuffers[0].id);
     }
 }
 
@@ -666,7 +667,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawStroke.shader = polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
         drawStroke.enableDepthTest = currentDepthTestState;
-        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
     }
 
     if (shape.fillMesh.primitives.size() > 0)
@@ -683,7 +684,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawFill.shader = polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
         drawFill.enableDepthTest = currentDepthTestState;
-        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer);
+        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawFill.vertBuffers[0].id);
     }
 }
 
