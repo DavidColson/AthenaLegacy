@@ -96,7 +96,7 @@ namespace
         typedef uint64_t radix_type;
         
         CBuffer cbuffer;
-        eastl::vector<VertexBufferHandle> vertBuffers;
+        eastl::fixed_vector<VertexBufferHandle, 6> vertBuffers;
         IndexBufferHandle indexBuffer;
         int nIndices{ 0 };
         TopologyType topology;
