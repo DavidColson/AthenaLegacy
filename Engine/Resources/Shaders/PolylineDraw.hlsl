@@ -10,9 +10,11 @@ cbuffer PerSceneData : register(b0)
 
 cbuffer InstanceData : register(b1)
 {
-    float4x4 transform;
-    int isScreenSpace;
-	int zAlign;
+    struct {
+		float4x4 transform;
+        int isScreenSpace;
+	    int zAlign;
+	} array[256];
 }
 
 #include "Engine/Resources/Shaders/Common.hlsl"
@@ -42,12 +44,12 @@ VertOutput VSMain(VertInput vertIn)
 	VertOutput output;
 
     float4x4 toClipTransform = worldToClipTransform;
-    if (isScreenSpace == 1)
+    if (array[vertIn.instanceId].isScreenSpace == 1)
         toClipTransform = screenSpaceToClipTransform;
 
     // Scale breaks out careful transformations, so we must do it before we start
     float3 transformScale;
-    float4x4 transformScaleless = RemoveScaling(transform, transformScale);
+    float4x4 transformScaleless = RemoveScaling(array[vertIn.instanceId].transform, transformScale);
     vertIn.pos *= float4(transformScale, 1);
     vertIn.prev *= float4(transformScale, 1);
     vertIn.next *= float4(transformScale, 1);
@@ -59,7 +61,7 @@ VertOutput VSMain(VertInput vertIn)
 
     float4 normPrev;
     float4 normNext;
-    if (zAlign)
+    if (array[vertIn.instanceId].zAlign)
     {
         normPrev = normalize(float4(cross(tanPrev.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
         normNext = normalize(float4(cross(tanNext.xyz, -float3(0.0, 0.0, 1.0)), 0.0));
@@ -76,7 +78,7 @@ VertOutput VSMain(VertInput vertIn)
 
 
     float pixelsPerMeter = 1;
-    if (isScreenSpace == 0)
+    if (array[vertIn.instanceId].isScreenSpace == 0)
         pixelsPerMeter = WorldDistanceInPixels(vertIn.pos.xyz, vertIn.pos.xyz + normalize(cornerBisector).xyz);
     
     float thicknessPixelsDesired = thickness * pixelsPerMeter;

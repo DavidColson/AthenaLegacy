@@ -11,9 +11,11 @@ cbuffer PerSceneData : register(b0)
 
 cbuffer InstanceData : register(b1)
 {
-    float4x4 transform;
-    int isScreenSpace;
-	int zAlign;
+    struct {
+		float4x4 transform;
+        int isScreenSpace;
+	    int zAlign;
+	} array[256];
 }
 
 // Included after per scene and object data as it references the above data
@@ -37,10 +39,10 @@ VertOutput VSMain(VertInput vertIn)
     VertOutput output;
 
     float4x4 toClipTransform = worldToClipTransform;
-    if (isScreenSpace == 1)
+    if (array[vertIn.instanceId].isScreenSpace == 1)
         toClipTransform = screenSpaceToClipTransform;
 
-    output.pos = mul(vertIn.pos, mul(transform, toClipTransform));
+    output.pos = mul(vertIn.pos, mul(array[vertIn.instanceId].transform, toClipTransform));
     output.color = vertIn.col;
     return output;
 }
