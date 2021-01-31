@@ -93,21 +93,28 @@ namespace
 
     struct DrawCommand
     {
-        typedef uint64_t radix_type;
-        
         CBuffer cbuffer;
         eastl::fixed_vector<VertexBufferHandle, 6> vertBuffers;
         IndexBufferHandle indexBuffer;
         int nIndices{ 0 };
         TopologyType topology;
-        AssetHandle shader;
+        AssetHandle* pShader;
         Vec3f sortLocation;
         bool enableDepthTest{ true };
+    };
+
+    struct SortValue
+    {
+        typedef uint64_t radix_type;
+
+        uint32_t cmdIndex;
         uint64_t mKey{ 0 };
     };
 
+    // Would sort a lot faster if we didn't have to move so much memory around?
     eastl::vector<DrawCommand> drawCommands;
-    DrawCommand drawCommandSortBuffer[MAX_CMD_PER_FRAME];
+    eastl::vector<SortValue> sortValues;
+    SortValue sortBuffer[MAX_CMD_PER_FRAME];
     eastl::vector<GfxDraw::PolyshapeMesh> polyshapeMeshes;
 
     Primitive basicQuadMesh;
@@ -387,10 +394,14 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
     draw.nIndices = (int)basicQuadMesh.indices.size();
     draw.topology = basicQuadMesh.topologyType;
-    draw.shader = lineDrawShader;
+    draw.pShader = &lineDrawShader;
     draw.enableDepthTest = currentDepthTestState;
     draw.sortLocation = currentTransform * start;
-    draw.mKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
+
+    sortValues.emplace_back();
+    SortValue& sort = sortValues.back();
+    sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+    sort.mKey = CreateSortKey(pNewLine->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
@@ -414,10 +425,14 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
-        draw.shader = circleDrawShader;
+        draw.pShader = &circleDrawShader;
         draw.sortLocation = currentTransform * pos;
         draw.enableDepthTest = currentDepthTestState;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {   
@@ -438,10 +453,14 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
-        draw.shader = circleDrawShader;
+        draw.pShader = &circleDrawShader;
         draw.sortLocation = currentTransform * pos;
         draw.enableDepthTest = currentDepthTestState;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
 
 }
@@ -468,10 +487,14 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
-        draw.shader = circleDrawShader;
+        draw.pShader = &circleDrawShader;
         draw.enableDepthTest = currentDepthTestState;
         draw.sortLocation = currentTransform * pos;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
     if (paint.drawStyle == DrawStyle::Stroke || paint.drawStyle == DrawStyle::Both)
     {
@@ -494,10 +517,14 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
         draw.nIndices = (int)basicQuadMesh.indices.size();
         draw.topology = basicQuadMesh.topologyType;
-        draw.shader = circleDrawShader;
+        draw.pShader = &circleDrawShader;
         draw.enableDepthTest = currentDepthTestState;
         draw.sortLocation = currentTransform * pos;
-        draw.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pCircle->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
     }
 }
 
@@ -530,10 +557,14 @@ void GfxDraw::Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad
     draw.indexBuffer = basicQuadMesh.bufferHandle_indices;
     draw.nIndices = (int)basicQuadMesh.indices.size();
     draw.topology = basicQuadMesh.topologyType;
-    draw.shader = rectDrawShader;
+    draw.pShader = &rectDrawShader;
     draw.sortLocation = currentTransform * center;
     draw.enableDepthTest = currentDepthTestState;
-    draw.mKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
+    
+    sortValues.emplace_back();
+    SortValue& sort = sortValues.back();
+    sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+    sort.mKey = CreateSortKey(pRect->isScreenSpace, currentSortLayer, draw.vertBuffers[0].id);
 }
 
 void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
@@ -560,10 +591,14 @@ void GfxDraw::Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint)
     drawStroke.indexBuffer = prim.bufferHandle_indices;
     drawStroke.nIndices = (int)prim.indices.size();
     drawStroke.topology = TopologyType::TriangleList;
-    drawStroke.shader = polyLineDrawShader;
+    drawStroke.pShader = &polyLineDrawShader;
     drawStroke.sortLocation = currentTransform.GetTranslation();
     drawStroke.enableDepthTest = currentDepthTestState;
-    drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
+
+    sortValues.emplace_back();
+    SortValue& sort = sortValues.back();
+    sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+    sort.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
 }   
 
 void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
@@ -598,10 +633,14 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawStroke.indexBuffer = prim.bufferHandle_indices;
         drawStroke.nIndices = (int)prim.indices.size();
         drawStroke.topology = TopologyType::TriangleList;
-        drawStroke.shader = polyLineDrawShader;
+        drawStroke.pShader = &polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
         drawStroke.enableDepthTest = currentDepthTestState;
-        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
     }
     if (paint.drawStyle == DrawStyle::Fill || paint.drawStyle == DrawStyle::Both)
     {
@@ -616,10 +655,14 @@ void GfxDraw::Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint)
         drawFill.indexBuffer = prim.bufferHandle_indices;
         drawFill.nIndices = (int)prim.indices.size();
         drawFill.topology = TopologyType::TriangleList;
-        drawFill.shader = polygonDrawShader;
+        drawFill.pShader = &polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
         drawFill.enableDepthTest = currentDepthTestState;
-        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawFill.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawFill.vertBuffers[0].id);
     }
 }
 
@@ -664,10 +707,14 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawStroke.indexBuffer = prim.bufferHandle_indices;
         drawStroke.nIndices = (int)prim.indices.size();
         drawStroke.topology = TopologyType::TriangleList;
-        drawStroke.shader = polyLineDrawShader;
+        drawStroke.pShader = &polyLineDrawShader;
         drawStroke.sortLocation = currentTransform.GetTranslation();
         drawStroke.enableDepthTest = currentDepthTestState;
-        drawStroke.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawStroke.vertBuffers[0].id);
     }
 
     if (shape.fillMesh.primitives.size() > 0)
@@ -681,10 +728,14 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
         drawFill.indexBuffer = prim.bufferHandle_indices;
         drawFill.nIndices = (int)prim.indices.size();
         drawFill.topology = TopologyType::TriangleList;
-        drawFill.shader = polygonDrawShader;
+        drawFill.pShader = &polygonDrawShader;
         drawFill.sortLocation = currentTransform.GetTranslation();
         drawFill.enableDepthTest = currentDepthTestState;
-        drawFill.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawFill.vertBuffers[0].id);
+        
+        sortValues.emplace_back();
+        SortValue& sort = sortValues.back();
+        sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
+        sort.mKey = CreateSortKey(pPolyshape->isScreenSpace, currentSortLayer, drawFill.vertBuffers[0].id);
     }
 }
 
@@ -695,6 +746,7 @@ void GfxDraw::Polyshape(const PolyshapeMesh& shape)
 void GfxDraw::Initialize()
 {
     drawCommands.reserve(MAX_CMD_PER_FRAME);
+    sortValues.reserve(MAX_CMD_PER_FRAME);
     cbufferInstanceGroupMemory.Init(500000);
     cbufferMemory.Init(500000);
     basicQuadMesh = Primitive::NewPlainQuad();
@@ -769,45 +821,62 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
     // Calculate object depth values
 
-    for (DrawCommand& cmd : drawCommands)
+    for (SortValue& sortVal : sortValues)
     {
-        // TODO: Could optimize this by just calculating z and w component in this multiplication
-        Vec4f clipSpace = data.worldToClipTransform * Vec4f::Embed3D(cmd.sortLocation);
-        float depth = (clipSpace.z / clipSpace.w) * 0.5f + 0.5f;
+        DrawCommand& cmd = drawCommands[sortVal.cmdIndex];
+
+        Matrixf& m = data.worldToClipTransform;
+        float z = m.m[2][0] * cmd.sortLocation.x + m.m[2][1] * cmd.sortLocation.y + m.m[2][2] * cmd.sortLocation.z + m.m[2][3];
+		float w = m.m[3][0] * cmd.sortLocation.x + m.m[3][1] * cmd.sortLocation.y + m.m[3][2] * cmd.sortLocation.z + m.m[3][3];
+        float depth = (z / w) * 0.5f + 0.5f;
+
         depth = 1.0f - depth;
         uint32_t intDepth = uint32_t(depth * (float)UINT32_MAX);
-        cmd.mKey &= ~(uint64_t)0xffffffff; // clears bottom 32 bits from the last render pass which may have written to depth
-        cmd.mKey |= intDepth;
+        sortVal.mKey &= ~(uint64_t)0xffffffff; // clears bottom 32 bits from the last render pass which may have written to depth
+        sortVal.mKey |= intDepth;
     }
 
     // Sort draw commands
 
-    eastl::radix_sort<DrawCommand*, eastl::Internal::extract_radix_key<DrawCommand>>(drawCommands.begin(), drawCommands.end(), drawCommandSortBuffer);
+    eastl::radix_sort<SortValue*, eastl::Internal::extract_radix_key<SortValue>>(sortValues.begin(), sortValues.end(), sortBuffer);
 
 
     // Render Draw Commands
 
     bool lastDepth = true;
-    for (int i = 0; i < drawCommands.size(); i++)
+    for (int i = 0; i < sortValues.size(); i++)
     {   
-        DrawCommand& cmd = drawCommands[i];
+        DrawCommand& cmd = drawCommands[sortValues[i].cmdIndex];
 
         // Automatic instancing
         int instanceCount = 1;
         if (i + 2 < drawCommands.size())
         {
             int j = i+1;
-            if (drawCommands[j].vertBuffers[0].id == cmd.vertBuffers[0].id && drawCommands[j].shader == cmd.shader)
+            DrawCommand* pCmdNext = &drawCommands[sortValues[j].cmdIndex];
+
+            if (pCmdNext->vertBuffers[0].id == cmd.vertBuffers[0].id && *pCmdNext->pShader == *cmd.pShader)
             {
                 void* pCbufferData = cbufferInstanceGroupMemory.Allocate(cmd.cbuffer.size, 4);
                 memcpy(pCbufferData, cmd.cbuffer.pData, cmd.cbuffer.size);
             }
 
-            while (j < drawCommands.size() && drawCommands[j].vertBuffers[0].id == drawCommands[j-1].vertBuffers[0].id && drawCommands[j].shader == drawCommands[j-1].shader)
+            DrawCommand* pCmdPrev = &drawCommands[sortValues[j-1].cmdIndex];
+            while (pCmdNext->vertBuffers[0].id == pCmdPrev->vertBuffers[0].id && *pCmdNext->pShader == *pCmdPrev->pShader)
             {
-                void* pCbufferData = cbufferInstanceGroupMemory.Allocate(drawCommands[j].cbuffer.size, 4);
-                memcpy(pCbufferData, drawCommands[j].cbuffer.pData, drawCommands[j].cbuffer.size);
+                void* pCbufferData = cbufferInstanceGroupMemory.Allocate(pCmdNext->cbuffer.size, 4);
+                memcpy(pCbufferData, pCmdNext->cbuffer.pData, pCmdNext->cbuffer.size);
                 j++;
+
+                if (j < drawCommands.size())
+                {
+                    pCmdPrev = &drawCommands[sortValues[j-1].cmdIndex];
+                    pCmdNext = &drawCommands[sortValues[j].cmdIndex];
+                }
+                else
+                {
+                    break;
+                }
             }
 
             instanceCount = j - i;
@@ -822,7 +891,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
         if (instanceCount == 1)
         {
-            if (Shader* pShader = AssetDB::GetAsset<Shader>(cmd.shader))
+            if (Shader* pShader = AssetDB::GetAsset<Shader>(*cmd.pShader))
             {
                 if (GfxDevice::IsValid(pShader->program))
                 {
@@ -838,7 +907,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
         }
         else
         {
-            if (Shader* pShader = AssetDB::GetAsset<Shader>(cmd.shader))
+            if (Shader* pShader = AssetDB::GetAsset<Shader>(*cmd.pShader))
             {
                 if (GfxDevice::IsValid(pShader->program))
                 {
@@ -864,6 +933,7 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 void GfxDraw::OnFrameEnd(Scene& scene, float deltaTime)
 {
     drawCommands.clear();
+    sortValues.clear();
     cbufferMemory.Clear();
     polyshapeMeshes.clear();
 }
