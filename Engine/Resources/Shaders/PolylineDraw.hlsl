@@ -54,7 +54,9 @@ VertOutput VSMain(VertInput vertIn)
     vertIn.prev *= float4(transformScale, 1);
     vertIn.next *= float4(transformScale, 1);
 
-    float thickness = vertIn.uv.z * 0.5;
+    // If you don't want thickness to scale, then maybe make this bit an option?
+    float uniformScale = ( transformScale.x + transformScale.y + transformScale.z ) / 3;
+    float thickness = vertIn.uv.z * 0.5 * uniformScale;
 
     float4 tanPrev = float4(vertIn.prev, 1.0) - vertIn.pos;
     float4 tanNext = vertIn.pos - float4(vertIn.next, 1.0);

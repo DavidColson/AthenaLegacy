@@ -76,7 +76,7 @@ void CameraControlSystem(Scene& scene, float deltaTime)
 
 	GfxDraw::Sector(Vec3f(0.0f, -3.0f, -0.01f), 1.2f, 0.1f, 2.0f, circlePaint);
 
-	GfxDraw::SetTransform(Matrixf::MakeTRS(Vec3f(-1.f, 5.0f, 0.0f), Vec3f(), Vec3f(200.0f, 200.0f, 1.0f)));
+	GfxDraw::SetTransform(Matrixf::MakeTRS(Vec3f(-1.f, 5.0f, 0.0f), Vec3f(), Vec3f(10.0f, 10.0f, 1.0f)));
 	GfxDraw::Polyshape(asteroidPolyShape);
 	GfxDraw::SetTransform(Matrixf::Identity());
 

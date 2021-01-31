@@ -51,6 +51,9 @@ VertOutput VSMain(VertInput vertIn)
 {
     VertOutput output;
     
+    float3 scale;
+    float4x4 transformScaleless = RemoveScaling(array[vertIn.instanceId].transform, scale);
+
     float radius = array[vertIn.instanceId].radius;
 
     float4x4 toClipTransform = worldToClipTransform;
@@ -70,9 +73,9 @@ VertOutput VSMain(VertInput vertIn)
         up = mul(float3(0, 1, 0), (float3x3)transpose(worldToCameraTransform));
     }
 
-    float3 vertWorldPos = array[vertIn.instanceId].location + right * vertIn.pos.x * radius + up * vertIn.pos.y * radius;
+    float3 vertWorldPos = array[vertIn.instanceId].location + right * vertIn.pos.x * radius * scale.x + up * vertIn.pos.y * radius * scale.y;
 
-    output.pos = mul(float4(vertWorldPos, 1), mul(array[vertIn.instanceId].transform, toClipTransform));
+    output.pos = mul(float4(vertWorldPos, 1), mul(transformScaleless, toClipTransform));
     output.color = array[vertIn.instanceId].color;
     output.uv = vertIn.pos.xy * radius;
     output.radius = array[vertIn.instanceId].radius;

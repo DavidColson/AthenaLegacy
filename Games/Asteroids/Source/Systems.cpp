@@ -27,7 +27,6 @@ void SpawnBullet(Scene& scene, const CTransform* pAtTransform, const Vec3f atVel
 	pBulletTrans->localPos = pAtTransform->localPos;
 	Vec3f travelDir = Vec3f(-cosf(pAtTransform->localRot.z), -sinf(pAtTransform->localRot.z), 0.0f);
 	pBulletTrans->localRot = pAtTransform->localRot;
-	pBulletTrans->localSca = Vec3f(7.0f);
 
 	CDynamics* pDynamics = scene.Assign<CDynamics>(bullet);
 	pDynamics->vel = atVelocity + travelDir * pBullet->speed;
@@ -168,12 +167,12 @@ void DrawBullets(Scene& scene, float deltaTime)
 
 		GfxDraw::Paint bulletPaint;
 		bulletPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
-		bulletPaint.strokeThickness = 1.0f;
+		bulletPaint.strokeThickness = 10.f;
 		bulletPaint.strokeColor = Vec4f(1.0f);
 
 		GfxDraw::SetTransform(world);
 		GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::ZAlign);
-		GfxDraw::Rect(Vec3f(0.0f), Vec2f(1.0f, 1.0f), Vec4f(0.0f), bulletPaint);
+		GfxDraw::Rect(Vec3f(0.0f), Vec2f(10.0f, 10.0f), Vec4f(0.0f), bulletPaint);
 		GfxDraw::SetTransform(Matrixf::Identity());
 	}	
 }
@@ -451,7 +450,7 @@ void MenuInterationSystem(Scene& scene, float /* deltaTime */)
 
 		GfxDraw::Paint paint;
 		paint.drawStyle = GfxDraw::DrawStyle::Stroke;
-		paint.strokeThickness = 2.f;
+		paint.strokeThickness = 0.07f;
 		paint.strokeColor = Vec4f(1.0f);
 		GfxDraw::SetTransform(world);
 		GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::ZAlign);

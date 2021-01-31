@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 	// Make some asteroids!
 	GfxDraw::Paint asteroidPaint;
 	asteroidPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
-	asteroidPaint.strokeThickness = 2.f;
+	asteroidPaint.strokeThickness = 0.04f;
 	asteroidPaint.strokeColor = Vec4f(1.0f);
 	{
 		eastl::vector<Vec2f> asteroidPoly;
@@ -282,13 +282,17 @@ int main(int argc, char *argv[])
 	}
 
 	{
+		GfxDraw::Paint paint;
+		paint.drawStyle = GfxDraw::DrawStyle::Stroke;
+		paint.strokeThickness = 0.07f;
+		paint.strokeColor = Vec4f(1.0f);
 		eastl::vector<Vec2f> playerPoly;
 		playerPoly.push_back(Vec2f(0.f, 0.5f));
 		playerPoly.push_back(Vec2f(1.f, 0.8f));
 		playerPoly.push_back(Vec2f(0.9f, 0.7f));
 		playerPoly.push_back(Vec2f(0.9f, 0.3f));
 		playerPoly.push_back(Vec2f(1.0f, 0.2f));
-		playerMeshCache = GfxDraw::CreatePolyshape(playerPoly, asteroidPaint);
+		playerMeshCache = GfxDraw::CreatePolyshape(playerPoly, paint);
 	}
 
 	// Run everything
