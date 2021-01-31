@@ -73,6 +73,8 @@ VertOutput VSMain(VertInput vertIn)
     if (array[vertIn.instanceId].isScreenSpace == 0)
         pixelsPerMeter = WorldDistanceInPixels(thisVert.xyz, thisVert.xyz + norm.xyz);
 
+    float uncorrectedThickness = thickness;
+
     float thicknessPixelsDesired = thickness * pixelsPerMeter;
     #if defined(ANTI_ALIASING)
         float thicknessPixels = max(0.5, thicknessPixelsDesired + 1.0);
@@ -87,7 +89,7 @@ VertOutput VSMain(VertInput vertIn)
 
     thisVert -= vertIn.pos.y * norm * thickness; // Extrude width
     #if defined(ROUND_CAPS)
-        thisVert += vertIn.pos.x * normalize(diff) * thickness; // Extrude ends
+        thisVert += vertIn.pos.x * normalize(diff) * uncorrectedThickness; // Extrude ends
     #endif
 
     float4x4 modelToClipTransform;
