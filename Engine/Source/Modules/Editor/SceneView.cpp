@@ -293,8 +293,10 @@ void SceneView::Update(Scene& scene, float deltaTime)
         if (SceneQueries::RaycastRenderables(scene, rayStart, rayDir * 100.0f, hitEnt))
         {
             Log::Debug("Hit Entity: %s", scene.GetEntityName(hitEnt).c_str());
+            Editor::SetSelectedEntity(hitEnt);
         }
         bPendingLeftClickRay = false;
+
 
         // Debug draw ray
         // GfxDraw::Paint paint;
