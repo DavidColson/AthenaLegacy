@@ -755,6 +755,9 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 { 
     PROFILE();
 
+    if (drawCommands.empty())
+        return;
+
 	GfxDevice::SetBlending(blendState);
     GfxDevice::SetDepthTest(depthStateEnabled);
 

@@ -48,4 +48,5 @@ target_sources(Engine
         "SceneSerializer.cpp"
         "LinearAllocator.h"
         "LinearAllocator.cpp"
+        "IntersectionTests.h"
 )
