@@ -65,4 +65,8 @@ struct SceneView : public EditorTool
     // When dragging to move camera we use this data
     Vec2i mouseDragStart{ Vec2i(0, 0) };
     Vec3f cameraPositionStart{ Vec3f(0.0f, 0.0f, 0.0f) };
+
+    bool bPendingLeftClickRay{ false };
+    Vec3f rayStart{Vec3f(0.f) };
+    Vec3f rayDir{ Vec3f(0.0f) };
 };

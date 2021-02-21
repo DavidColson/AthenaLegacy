@@ -3,6 +3,8 @@
 #include "Input/Input.h"
 #include "AppWindow.h"
 
+#include "SceneQueries.h"
+
 #include "Rendering/ParticlesSystem.h"
 #include "Rendering/FontSystem.h"
 #include "Rendering/SceneDrawSystem.h"
@@ -64,6 +66,32 @@ bool SceneView::OnEvent(SDL_Event* event)
             controls.mouseY = (float)event->motion.y;
             break;
         case SDL_MOUSEBUTTONDOWN:
+
+            // if left mouse button down
+            // Then call a special function (in maybe a new file like SceneQueries)
+            if (event->button.button == SDL_BUTTON_LEFT)
+            {
+                // Calculate ray, save for doing in update function
+                bPendingLeftClickRay = true;
+
+                rayStart = cameraTransform3D.localPos;
+                Matrixf camRot = Matrixf::MakeRotation(cameraTransform3D.localRot);
+
+                float width = GameRenderer::GetWidth();
+                float height = GameRenderer::GetHeight();
+                // Need to get a location on the screen as a normalized coordinate. Then multiply by inverse/view matrix to get the direction
+                Vec4f ray = Vec4f((controls.localMouseX / width) * 2.0f - 1.0f, 1.0f - (controls.localMouseY / height) * 2.0f, 1.0f, 1.0f);
+
+                // BUG: Not correct if camera parented to something
+                Quatf rotation = Quatf::MakeFromEuler(cameraTransform3D.localRot);
+                Matrixf view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector());
+                Matrixf projection = Matrixf::Perspective(windowSize.x, windowSize.y, 0.1f, 100.0f, camera.fov);
+
+                Vec4f rayEye = projection.GetInverse() * ray;
+                rayEye = Vec4f(rayEye.x, rayEye.y, -1.0f, 1.0f);
+                Vec4f rayWorld = view.GetInverse() * rayEye;
+                rayDir = Vec3f(rayWorld.x, rayWorld.y, rayWorld.z).GetNormalized();
+            }
             if (event->button.button == SDL_BUTTON_RIGHT)
             {
                 controls.rightMouse = true;
@@ -259,7 +287,21 @@ void SceneView::Update(Scene& scene, float deltaTime)
 
     UpdateCameraControls(deltaTime);
 
+    if (bPendingLeftClickRay)
+    {
+        EntityID hitEnt;
+        if (SceneQueries::RaycastRenderables(scene, rayStart, rayDir * 100.0f, hitEnt))
+        {
+            Log::Debug("Hit Entity: %s", scene.GetEntityName(hitEnt).c_str());
+        }
+        bPendingLeftClickRay = false;
 
+        // Debug draw ray
+        // GfxDraw::Paint paint;
+        // paint.strokeThickness = 0.01f;
+        // paint.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+        // GfxDraw::Line(rayStart, rayStart + rayDir * 100.0f, paint);
+    }
 
     // Draw the options bar along the top
 
