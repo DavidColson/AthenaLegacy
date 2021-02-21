@@ -73,14 +73,13 @@ bool SceneView::OnEvent(SDL_Event* event)
             {
                 // Calculate ray, save for doing in update function
                 bPendingLeftClickRay = true;
+                
 
                 rayStart = cameraTransform3D.localPos;
                 Matrixf camRot = Matrixf::MakeRotation(cameraTransform3D.localRot);
 
-                float width = GameRenderer::GetWidth();
-                float height = GameRenderer::GetHeight();
                 // Need to get a location on the screen as a normalized coordinate. Then multiply by inverse/view matrix to get the direction
-                Vec4f ray = Vec4f((controls.localMouseX / width) * 2.0f - 1.0f, 1.0f - (controls.localMouseY / height) * 2.0f, 1.0f, 1.0f);
+                Vec4f ray = Vec4f((controls.localMouseX / windowSize.x) * 2.0f - 1.0f, 1.0f - (controls.localMouseY / windowSize.y) * 2.0f, 1.0f, 1.0f);
 
                 // BUG: Not correct if camera parented to something
                 Quatf rotation = Quatf::MakeFromEuler(cameraTransform3D.localRot);
@@ -289,24 +288,15 @@ void SceneView::Update(Scene& scene, float deltaTime)
 
     if (bPendingLeftClickRay)
     {
-        EntityID hitEnt;
-        if (SceneQueries::RaycastRenderables(scene, rayStart, rayDir * 100.0f, hitEnt))
-        {
-            Log::Debug("Hit Entity: %s", scene.GetEntityName(hitEnt).c_str());
-            Editor::SetSelectedEntity(hitEnt);
-        }
+        lastHit = SceneQueries::Hit();
+        if (SceneQueries::RaycastRenderables(scene, rayStart, rayDir, lastHit))
+            Editor::SetSelectedEntity(lastHit.ent);   
+        else
+            Editor::SetSelectedEntity(EntityID::InvalidID());   
         bPendingLeftClickRay = false;
-
-
-        // Debug draw ray
-        // GfxDraw::Paint paint;
-        // paint.strokeThickness = 0.01f;
-        // paint.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
-        // GfxDraw::Line(rayStart, rayStart + rayDir * 100.0f, paint);
     }
 
     // Draw the options bar along the top
-
     const char* buttonLabel = "3D";
     if (isIn2DMode)
         buttonLabel = "2D";

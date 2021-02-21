@@ -315,7 +315,7 @@ struct Matrix
         outScale = m.ExtractScaling();
 
         // Special case for negative scaling
-		if (affineTransform.GetDeterminant() < 0.f)
+		if (m.GetDeterminant() < 0.f)
 		{
             // choice of axis to flip makes no difference
 			outScale.x *= -1.f;

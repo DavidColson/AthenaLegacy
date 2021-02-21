@@ -6,6 +6,7 @@
 #include "GraphicsDevice.h"
 #include "Rendering/GameRenderer.h"
 #include "Scene.h"
+#include "SceneQueries.h"
 
 struct SceneView : public EditorTool
 {
@@ -69,4 +70,6 @@ struct SceneView : public EditorTool
     bool bPendingLeftClickRay{ false };
     Vec3f rayStart{Vec3f(0.f) };
     Vec3f rayDir{ Vec3f(0.0f) };
+
+    SceneQueries::Hit lastHit;
 };

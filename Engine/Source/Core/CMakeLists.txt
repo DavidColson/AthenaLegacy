@@ -49,6 +49,7 @@ target_sources(Engine
         "LinearAllocator.h"
         "LinearAllocator.cpp"
         "IntersectionTests.h"
+        "IntersectionTests.cpp"
         "SceneQueries.h"
         "SceneQueries.cpp"
 )
