@@ -1,4 +1,5 @@
-
+#define METERS_SPACE 0
+#define PIXELS_SPACE 1
 
 // Anti Aliasing functions
 // ------------------------
@@ -30,6 +31,26 @@ float WorldDistanceInPixels(float3 pos1, float3 pos2)
     float2 screenSpace2 = WorldToScreenSpaceNormalized(pos2);
     float2 distance = (screenSpace1 - screenSpace2) * screenDimensions.xy;
     return length(distance) * 0.5;
+}
+
+float ConvertToMeters(float3 vertOrigin, float3 normal, float distanceToConvert, int fromUnitSpace)
+{
+    float pixelsPerMeter = WorldDistanceInPixels(vertOrigin, vertOrigin + normal); // 1 meter in pixels at the location "vertOrigin"
+
+    float result = 0;
+    switch( fromUnitSpace )
+    {
+        case METERS_SPACE:
+            result = distanceToConvert;
+            break;
+        case PIXELS_SPACE:
+            result = distanceToConvert / pixelsPerMeter;
+            break;
+        default:
+            result = 0;
+            break;
+    }
+    return result;
 }
 
 float4x4 RemoveScaling(in float4x4 m, out float3 scale)

@@ -54,7 +54,7 @@ namespace
         float angleEnd;
         int isScreenSpace;
         int zAlign;
-        float pad1;
+        int radiusUnits;
         float pad2;
         float pad3;
     };
@@ -425,6 +425,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         pCircle->color = paint.fillColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
         pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
+        pCircle->radiusUnits = (int)paint.sizeUnits;
     
         DrawCommand& draw = NewDrawCommand(pCircle->isScreenSpace, currentSortLayer, basicQuadMesh.bufferHandle_vertices.id);
         draw.cbuffer = circleCBuffer;
@@ -447,6 +448,7 @@ void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
         pCircle->color = paint.strokeColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
         pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
+        pCircle->radiusUnits = (int)paint.sizeUnits;
     
         DrawCommand& draw = NewDrawCommand(pCircle->isScreenSpace, currentSortLayer, basicQuadMesh.bufferHandle_vertices.id);
         draw.cbuffer = circleCBuffer;
@@ -475,6 +477,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         pCircle->color = paint.fillColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
         pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
+        pCircle->radiusUnits = (int)paint.sizeUnits;
 
         DrawCommand& draw = NewDrawCommand(pCircle->isScreenSpace, currentSortLayer, basicQuadMesh.bufferHandle_vertices.id);
         draw.cbuffer = circleCBuffer;
@@ -499,6 +502,7 @@ void GfxDraw::Sector(const Vec3f& pos, float radius, float angleStart, float ang
         pCircle->color = paint.strokeColor;
         pCircle->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
         pCircle->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
+        pCircle->radiusUnits = (int)paint.sizeUnits;
 
         DrawCommand& draw = NewDrawCommand(pCircle->isScreenSpace, currentSortLayer, basicQuadMesh.bufferHandle_vertices.id);
         draw.cbuffer = circleCBuffer;

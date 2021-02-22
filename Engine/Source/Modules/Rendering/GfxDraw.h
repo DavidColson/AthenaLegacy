@@ -31,6 +31,12 @@ namespace GfxDraw
         Billboard
     };
 
+    enum class Units
+    {
+        Meters,
+        Pixels
+    };
+
     struct Paint
     {   
         DrawStyle drawStyle = DrawStyle::Fill;
@@ -40,6 +46,7 @@ namespace GfxDraw
         Vec4f fillColor = Vec4f(1.0f);
         bool billboard = false; // Make this part of instance buffer data
         bool depthTest = true;
+        Units sizeUnits = Units::Meters;
     };
 
     struct PolyshapeMesh

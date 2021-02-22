@@ -24,6 +24,7 @@ cbuffer InstanceData : register(b1)
         float angleEnd;
         int isScreenSpace;
 	    int zAlign;
+        int radiusUnits;
 	} array[256];
 };
 
@@ -53,9 +54,6 @@ VertOutput VSMain(VertInput vertIn)
     
     float3 scale;
     float4x4 transformScaleless = RemoveScaling(array[vertIn.instanceId].transform, scale);
-
-    float radius = array[vertIn.instanceId].radius;
-
     float4x4 toClipTransform = worldToClipTransform;
     if (array[vertIn.instanceId].isScreenSpace == 1)
         toClipTransform = screenSpaceToClipTransform;
@@ -73,9 +71,13 @@ VertOutput VSMain(VertInput vertIn)
         up = mul(float3(0, 1, 0), (float3x3)transpose(worldToCameraTransform));
     }
 
-    float3 vertWorldPos = array[vertIn.instanceId].location + right * vertIn.pos.x * radius * scale.x + up * vertIn.pos.y * radius * scale.y;
+    float3 worldLocation = mul(float4(array[vertIn.instanceId].location, 1), transformScaleless).xyz;
+    float radiusMeters = ConvertToMeters(worldLocation, up, array[vertIn.instanceId].radius, array[vertIn.instanceId].radiusUnits);
+    float radius = array[vertIn.instanceId].radius * 1.0;
 
-    output.pos = mul(float4(vertWorldPos, 1), mul(transformScaleless, toClipTransform));
+    float3 vertModelPos = array[vertIn.instanceId].location + right * vertIn.pos.x * radiusMeters * scale.x + up * vertIn.pos.y * radiusMeters * scale.y;
+
+    output.pos = mul(float4(vertModelPos, 1), mul(transformScaleless, toClipTransform));
     output.color = array[vertIn.instanceId].color;
     output.uv = vertIn.pos.xy * radius;
     output.radius = array[vertIn.instanceId].radius;
