@@ -22,9 +22,9 @@ struct SceneView : public EditorTool
 
     void UpdateCameraControls(float deltaTime);
 
-    void DrawSceneViewHelpers3D();
+    void DrawSceneViewHelpers3D(Scene& scene);
 
-    void DrawSceneViewHelpers2D();
+    void DrawSceneViewHelpers2D(Scene& scene);
 
     // General Scene view info
     RenderTargetHandle renderTarget;

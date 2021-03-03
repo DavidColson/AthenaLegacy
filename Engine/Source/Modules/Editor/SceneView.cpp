@@ -181,7 +181,7 @@ void SceneView::UpdateCameraControls(float deltaTime)
     controls.mouseYRel = 0.0f;
 }
 
-void SceneView::DrawSceneViewHelpers3D()
+void SceneView::DrawSceneViewHelpers3D(Scene& scene)
 {
     if (drawGridLines)
     {
@@ -223,9 +223,53 @@ void SceneView::DrawSceneViewHelpers3D()
         GfxDraw::Line(Vec3f(0.0f, 0.0f, -50.0f), Vec3f(0.0f, 0.0f, 50.0f), paint);
     }
     GfxDraw::SetSortLayer(0);
+
+    // world to pixels
+    auto pixelToWorld = [this](Vec3f atLocation, float distanceInPixels)
+    {
+        float d = (atLocation - cameraTransform3D.localPos).GetLength();
+        float projY = tanf(ToRadian(camera.fov) * 0.5f) * 2.0f;
+        return projY * d * (distanceInPixels / windowSize.y);
+    };
+
+    EntityID selectedEntity = Editor::GetSelectedEntity();
+    if (scene.Has<CTransform>(selectedEntity))
+    {
+        CTransform* pTrans = scene.Get<CTransform>(selectedEntity);
+
+        GfxDraw::SetDepthTest(false);
+
+        Vec3f translate = Vec3f(pTrans->globalTransform.m[0][3], pTrans->globalTransform.m[1][3], pTrans->globalTransform.m[2][3]);
+        GfxDraw::SetTransform(Matrixf::MakeTranslation(translate));
+
+        GfxDraw::Paint centerDot;
+        centerDot.fillColor = Vec4f(1.0f, 1.0f, 1.0f, 1.0f);
+        centerDot.drawStyle = GfxDraw::DrawStyle::Fill;
+        centerDot.billboard = true;
+        centerDot.sizeUnits = GfxDraw::Units::Pixels;
+        GfxDraw::Circle(Vec3f(0.0f), 5.f, centerDot);
+
+        GfxDraw::Paint xAxisLine;
+        xAxisLine.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+        xAxisLine.strokeThickness = 5.0f;
+        xAxisLine.billboard = true;
+        xAxisLine.sizeUnits = GfxDraw::Units::Pixels;
+        GfxDraw::Line(Vec3f(pixelToWorld(translate, 10.f), 0.0f, 0.0f), Vec3f(pixelToWorld(translate, 64.0f), 0.0f, 0.0f), xAxisLine);
+
+        GfxDraw::Paint yAxisLine(xAxisLine);
+        yAxisLine.strokeColor = Vec4f(0.0f, 1.0f, 0.0f, 1.0f);
+        GfxDraw::Line(Vec3f(0.0f, pixelToWorld(translate, 10.f), 0.0f), Vec3f(0.0f, pixelToWorld(translate, 64.0f), 0.0f), yAxisLine);
+
+        GfxDraw::Paint zAxisLine(xAxisLine);
+        zAxisLine.strokeColor = Vec4f(0.0f, 0.0f, 1.0f, 1.0f);
+        GfxDraw::Line(Vec3f(0.0f, 0.0f, pixelToWorld(translate, 10.f)), Vec3f(0.0f, 0.0f, pixelToWorld(translate, 64.0f)), zAxisLine);
+        
+        GfxDraw::SetTransform(Matrixf::Identity());
+        GfxDraw::SetDepthTest(true);
+    }
 }
 
-void SceneView::DrawSceneViewHelpers2D()
+void SceneView::DrawSceneViewHelpers2D(Scene& scene)
 {
     GfxDraw::SetDrawSpace(GfxDraw::DrawSpace::GameCamera);
     GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::Billboard);
@@ -368,9 +412,9 @@ void SceneView::Update(Scene& scene, float deltaTime)
     context.camWorldPosition = Vec3f(activeCamTransform.localPos);
 
     if (isIn2DMode)
-        DrawSceneViewHelpers2D();
+        DrawSceneViewHelpers2D(scene);
     else
-        DrawSceneViewHelpers3D();
+        DrawSceneViewHelpers3D(scene);
     
     SceneDrawSystem::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
