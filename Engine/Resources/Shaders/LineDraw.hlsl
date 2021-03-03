@@ -58,6 +58,7 @@ VertOutput VSMain(VertInput vertIn)
     float4 lineStart = float4(array[vertIn.instanceId].lineStart, 1.0);
     float4 lineEnd = float4(array[vertIn.instanceId].lineEnd, 1.0);
     float4 thisVert = (vertIn.vertexId % 2 == 0) ? lineStart : lineEnd;
+    thisVert = mul(thisVert, array[vertIn.instanceId].transform);
 
     float4 diff = lineEnd - lineStart;
 
@@ -96,9 +97,9 @@ VertOutput VSMain(VertInput vertIn)
 
     float4x4 modelToClipTransform;
     if (array[vertIn.instanceId].isScreenSpace == 1)
-        modelToClipTransform = mul(array[vertIn.instanceId].transform, screenSpaceToClipTransform);
+        modelToClipTransform = screenSpaceToClipTransform;
     else
-        modelToClipTransform = mul(array[vertIn.instanceId].transform, worldToClipTransform);
+        modelToClipTransform = worldToClipTransform;
 
     output.pos = mul(thisVert, modelToClipTransform);
     output.col = array[vertIn.instanceId].color;
