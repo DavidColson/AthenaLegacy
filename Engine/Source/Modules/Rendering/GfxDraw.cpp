@@ -38,7 +38,7 @@ namespace
         Vec3f end;
         int isScreenSpace;
         int zAlign;
-        float pad1;
+        int thicknessUnits;
         float pad2;
         float pad3;
     };
@@ -399,6 +399,7 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     pNewLine->color = paint.strokeColor;
     pNewLine->isScreenSpace = (int)(currentDrawSpace == DrawSpace::ForceScreen);
     pNewLine->zAlign = (int)(currentGeometryMode == GeometryMode::ZAlign);
+    pNewLine->thicknessUnits = (int)paint.sizeUnits;
 
     // Create draw command for this line
     DrawCommand& draw = NewDrawCommand(pNewLine->isScreenSpace, currentSortLayer, basicQuadMesh.bufferHandle_vertices.id);

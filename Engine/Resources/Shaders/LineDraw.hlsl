@@ -22,6 +22,7 @@ cbuffer InstanceData : register(b1)
 		float3 lineEnd;
 		int isScreenSpace;
 		int zAlign;
+        int thicknessUnits;
 	} array[256];
 };
 
@@ -73,6 +74,7 @@ VertOutput VSMain(VertInput vertIn)
     if (array[vertIn.instanceId].isScreenSpace == 0)
         pixelsPerMeter = WorldDistanceInPixels(thisVert.xyz, thisVert.xyz + norm.xyz);
 
+    thickness = ConvertToMeters(pixelsPerMeter, thickness, array[vertIn.instanceId].thicknessUnits);
     float uncorrectedThickness = thickness;
 
     float thicknessPixelsDesired = thickness * pixelsPerMeter;

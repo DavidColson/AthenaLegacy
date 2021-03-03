@@ -33,10 +33,8 @@ float WorldDistanceInPixels(float3 pos1, float3 pos2)
     return length(distance) * 0.5;
 }
 
-float ConvertToMeters(float3 vertOrigin, float3 normal, float distanceToConvert, int fromUnitSpace)
+float ConvertToMeters(float pixelsPerMeter, float distanceToConvert, int fromUnitSpace)
 {
-    float pixelsPerMeter = WorldDistanceInPixels(vertOrigin, vertOrigin + normal); // 1 meter in pixels at the location "vertOrigin"
-
     float result = 0;
     switch( fromUnitSpace )
     {

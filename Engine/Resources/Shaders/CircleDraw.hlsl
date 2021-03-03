@@ -72,7 +72,8 @@ VertOutput VSMain(VertInput vertIn)
     }
 
     float3 worldLocation = mul(float4(array[vertIn.instanceId].location, 1), transformScaleless).xyz;
-    float radiusMeters = ConvertToMeters(worldLocation, up, array[vertIn.instanceId].radius, array[vertIn.instanceId].radiusUnits);
+    float pixelsPerMeter = WorldDistanceInPixels(worldLocation, worldLocation + up);
+    float radiusMeters = ConvertToMeters(pixelsPerMeter, array[vertIn.instanceId].radius, array[vertIn.instanceId].radiusUnits);
     float radius = array[vertIn.instanceId].radius * 1.0;
 
     float3 vertModelPos = array[vertIn.instanceId].location + right * vertIn.pos.x * radiusMeters * scale.x + up * vertIn.pos.y * radiusMeters * scale.y;
