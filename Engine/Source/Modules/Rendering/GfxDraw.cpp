@@ -152,10 +152,11 @@ T* NewCBuffer(CBuffer& outCBuffer, ConstBufferHandle handle)
     return new (outCBuffer.pData) T();
 }
 
-uint64_t CreateSortKey(bool screenSpace, uint16_t sortLayer, uint16_t vertBufferId)
+uint64_t CreateSortKey(bool screenSpace, uint16_t sortLayer, uint16_t vertBufferId, bool depthEnabled)
 {
     uint64_t sortKey = 0;
-    sortKey |= (uint64_t)vertBufferId << 32;
+    sortKey |= (uint64_t)depthEnabled << 30;
+    sortKey |= (uint64_t)vertBufferId << 31;
     sortKey |= (uint64_t)sortLayer << 47;
     sortKey |= (uint64_t)screenSpace << 63;
     return sortKey;
@@ -170,7 +171,7 @@ DrawCommand& NewDrawCommand(bool screenSpace, uint16_t sortLayer, uint16_t vertB
     sortValues.emplace_back();
     SortValue& sort = sortValues.back();
     sort.cmdIndex = (uint32_t)drawCommands.size() - 1;
-    sort.mKey = CreateSortKey(screenSpace, currentSortLayer, vertBufferId);
+    sort.mKey = CreateSortKey(screenSpace, currentSortLayer, vertBufferId, currentDepthTestState);
 
     return draw;
 }
@@ -811,14 +812,15 @@ void GfxDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
             int j = i+1;
             DrawCommand* pCmdNext = &drawCommands[sortValues[j].cmdIndex];
 
-            if (pCmdNext->vertBuffers[0].id == cmd.vertBuffers[0].id && *pCmdNext->pShader == *cmd.pShader)
+            // Group this set of draw calls if using the same vert buffer and the same shader and the same depth test state
+            if (pCmdNext->vertBuffers[0].id == cmd.vertBuffers[0].id && *pCmdNext->pShader == *cmd.pShader && pCmdNext->enableDepthTest == cmd.enableDepthTest)
             {
                 void* pCbufferData = cbufferInstanceGroupMemory.Allocate(cmd.cbuffer.size, 4);
                 memcpy(pCbufferData, cmd.cbuffer.pData, cmd.cbuffer.size);
             }
 
             DrawCommand* pCmdPrev = &drawCommands[sortValues[j-1].cmdIndex];
-            while (pCmdNext->vertBuffers[0].id == pCmdPrev->vertBuffers[0].id && *pCmdNext->pShader == *pCmdPrev->pShader)
+            while (pCmdNext->vertBuffers[0].id == pCmdPrev->vertBuffers[0].id && *pCmdNext->pShader == *pCmdPrev->pShader && pCmdNext->enableDepthTest == pCmdPrev->enableDepthTest)
             {
                 void* pCbufferData = cbufferInstanceGroupMemory.Allocate(pCmdNext->cbuffer.size, 4);
                 memcpy(pCbufferData, pCmdNext->cbuffer.pData, pCmdNext->cbuffer.size);
