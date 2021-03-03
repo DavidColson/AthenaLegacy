@@ -8,7 +8,7 @@
 #include "GameRenderer.h"
 #include "GfxDraw.h"
 
-#define DEBUG_BOUNDS
+//#define DEBUG_BOUNDS
 
 struct cbTransformBuf
 {
