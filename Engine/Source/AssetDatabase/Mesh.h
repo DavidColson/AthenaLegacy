@@ -49,6 +49,7 @@ struct Primitive
     // Primitive Mesh Creation
     // TODO: These should really return Mesh's not primitives.
     static Primitive NewPlainQuad();
+    static Primitive NewPlainTriangle();
     static Primitive NewCube();
 };
 

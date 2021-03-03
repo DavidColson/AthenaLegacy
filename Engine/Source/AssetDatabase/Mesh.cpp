@@ -181,6 +181,27 @@ void Primitive::CreateGfxBuffers()
     if (!indices.empty())  bufferHandle_indices = GfxDevice::CreateIndexBuffer(indices.size(), IndexFormat::UShort, indices.data(), name + " iBuffer");
 }
 
+Primitive Primitive::NewPlainTriangle()
+{
+    Primitive prim;
+    prim.vertices = {
+        Vec3f(-1.0f, -1.0f, 0.0f),
+        Vec3f(1.f, -1.f, 0.0f),
+        Vec3f(0.f, 1.f, 0.0f)
+    };
+    prim.colors = {
+        Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
+        Vec4f(1.0f, 1.0f, 1.0f, 1.0f),
+        Vec4f(1.0f, 1.0f, 1.0f, 1.0f)
+    };
+    prim.indices = {0, 1, 2};
+
+    prim.topologyType = TopologyType::TriangleList;
+    prim.RecalcLocalBounds();
+    prim.CreateGfxBuffers();
+    return prim;
+}
+
 Primitive Primitive::NewPlainQuad()
 {
     Primitive prim;

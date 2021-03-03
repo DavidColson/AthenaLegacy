@@ -65,6 +65,7 @@ namespace GfxDraw
     void Circle(const Vec3f& pos, float radius, const Paint& paint);
     void Sector(const Vec3f& pos, float radius, float angleStart, float angleEnd, const Paint& paint);
     void Rect(const Vec3f& center, const Vec2f& size, const Vec4f cornerRad, const Paint& paint);
+    void Triangle(const Vec3f& p1, const Vec3f& p2, const Vec3f p3, const Paint& paint);
     void Polyline3D(const eastl::vector<Vec3f>& points, const Paint& paint);
     void Polyshape(const eastl::vector<Vec2f>& points, const Paint& paint);
 

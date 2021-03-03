@@ -72,6 +72,18 @@ namespace
         int zAlign;
     };
 
+    struct TriangleData
+    {
+        Matrixf transform;
+        Vec4f color;
+        Vec3f point1;
+        float pad1;
+        Vec3f point2;
+        float pad2;
+        Vec3f point3;
+        float pad3;
+    };
+
     struct PolyshapeData
     {
         Matrixf transform;
@@ -118,11 +130,13 @@ namespace
     eastl::vector<GfxDraw::PolyshapeMesh> polyshapeMeshes;
 
     Primitive basicQuadMesh;
+    Primitive basicTriMesh;
     AssetHandle lineDrawShader{ AssetHandle("Shaders/LineDraw.hlsl") };
     AssetHandle polyLineDrawShader{ AssetHandle("Shaders/PolylineDraw.hlsl") };
     AssetHandle rectDrawShader{ AssetHandle("Shaders/RectDraw.hlsl") };
     AssetHandle circleDrawShader{ AssetHandle("Shaders/CircleDraw.hlsl") };
     AssetHandle polygonDrawShader{ AssetHandle("Shaders/PolygonDraw.hlsl") };
+    AssetHandle triangleDrawShader{ AssetHandle("Shaders/TriangleDraw.hlsl") };
 
     ConstBufferHandle bufferHandle_perSceneData; 
     
@@ -131,6 +145,7 @@ namespace
     ConstBufferHandle rectShaderInstanceData;
     ConstBufferHandle circleShaderInstanceData;
     ConstBufferHandle polyshapeInstanceData;
+    ConstBufferHandle triangleInstanceData;
 
     BlendStateHandle blendState;
     DepthTestStateHandle depthStateEnabled;
@@ -412,6 +427,29 @@ void GfxDraw::Line(const Vec3f& start, const Vec3f& end, const Paint& paint)
     draw.pShader = &lineDrawShader;
     draw.enableDepthTest = currentDepthTestState;
     draw.sortLocation = currentTransform * start;
+}
+
+void GfxDraw::Triangle(const Vec3f& p1, const Vec3f& p2, const Vec3f p3, const Paint& paint)
+{
+    // Allocate and populate triangle cbuffer data
+    CBuffer triCBuffer;
+    TriangleData* pNewTri = NewCBuffer<TriangleData>(triCBuffer, triangleInstanceData);
+    pNewTri->transform = currentTransform;
+    pNewTri->point1 = p1;
+    pNewTri->point2 = p2;
+    pNewTri->point3 = p3;
+    pNewTri->color = paint.fillColor;
+
+    // Create draw command for this line
+    DrawCommand& draw = NewDrawCommand(false, currentSortLayer, basicTriMesh.bufferHandle_vertices.id);
+    draw.cbuffer = triCBuffer;
+    draw.vertBuffers.push_back(basicTriMesh.bufferHandle_vertices);
+    draw.indexBuffer = basicTriMesh.bufferHandle_indices;
+    draw.nIndices = (int)basicTriMesh.indices.size();
+    draw.topology = basicTriMesh.topologyType;
+    draw.pShader = &triangleDrawShader;
+    draw.enableDepthTest = currentDepthTestState;
+    draw.sortLocation = currentTransform * p1;
 }
 
 void GfxDraw::Circle(const Vec3f& pos, float radius, const Paint& paint)
@@ -704,6 +742,7 @@ void GfxDraw::Initialize()
     cbufferInstanceGroupMemory.Init(500000);
     cbufferMemory.Init(500000);
     basicQuadMesh = Primitive::NewPlainQuad();
+    basicTriMesh = Primitive::NewPlainTriangle();
 
     bufferHandle_perSceneData = GfxDevice::CreateConstantBuffer(sizeof(CBufferPerScene), "GfxDraw Per Scene data");
 
@@ -722,6 +761,10 @@ void GfxDraw::Initialize()
     {
         uint32_t bufferSize = sizeof(PolyshapeData) * MAX_CMD_PER_FRAME;
         polyshapeInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Polyshape Renderer Instance Data");
+    }
+    {
+        uint32_t bufferSize = sizeof(TriangleData) * MAX_CMD_PER_FRAME;
+        triangleInstanceData = GfxDevice::CreateConstantBuffer(bufferSize, "Triangle Renderer Instance Data");
     }
 
     BlendingInfo blender;
