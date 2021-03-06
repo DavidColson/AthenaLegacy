@@ -15,8 +15,6 @@
 
 #include "LinearAllocator.h"
 
-#include <Rendering/GfxDraw.h>
-
 #include <FileSystem.h>
 
 void CameraControlSystem(Scene& scene, float deltaTime)

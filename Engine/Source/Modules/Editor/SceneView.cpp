@@ -11,7 +11,6 @@
 #include "Rendering/ShapesSystem.h"
 #include "Rendering/SceneDrawSystem.h"
 #include "Rendering/SpriteDrawSystem.h"
-#include "Rendering/GfxDraw.h"
 
 #include <ImGui/imgui.h>
 #include <SDL.h>
@@ -200,83 +199,40 @@ void SceneView::DrawSceneViewHelpers3D(Scene& scene)
             if (iterate == 0.0f)
                 continue;
         
-            GfxDraw::Paint paint;
-            paint.strokeThickness = 0.01f;
-            paint.strokeColor = color;
-
-            GfxDraw::SetDrawSpace(GfxDraw::DrawSpace::GameCamera);
-            GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::Billboard);
-            GfxDraw::SetSortLayer(-10);
-            GfxDraw::Line(Vec3f(staticStart, 0.0f, iterate), Vec3f(staticEnd, 0.0f, iterate), paint);
-            GfxDraw::Line(Vec3f(iterate, 0.0f, staticStart), Vec3f(iterate, 0.0f, staticEnd), paint);
+            DebugDraw::DrawLine(Vec3f(staticStart, 0.0f, iterate), Vec3f(staticEnd, 0.0f, iterate), color);
+            DebugDraw::DrawLine(Vec3f(iterate, 0.0f, staticStart), Vec3f(iterate, 0.0f, staticEnd), color);
         }
     }
 
     if (drawOrigin)
     {
-        GfxDraw::SetSortLayer(-9);
-        GfxDraw::Paint paint;
-        paint.strokeThickness = 0.01f;
-        paint.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
-        GfxDraw::Line(Vec3f(-50.0f, 0.0f, 0.0f), Vec3f(50.0f, 0.0f, 0.0f), paint);
-        paint.strokeColor = Vec4f(0.0f, 1.0f, 0.0f, 1.0f);
-        GfxDraw::Line(Vec3f(0.0f, -50.0f, 0.0f), Vec3f(0.0f, 50.0f, 0.0f), paint);
-        paint.strokeColor = Vec4f(0.0f, 0.0f, 1.0f, 1.0f);
-        GfxDraw::Line(Vec3f(0.0f, 0.0f, -50.0f), Vec3f(0.0f, 0.0f, 50.0f), paint);
-    }
-    GfxDraw::SetSortLayer(0);
-
-    // world to pixels
-    auto pixelToWorld = [this](Vec3f atLocation, float distanceInPixels)
-    {
-        float d = (atLocation - cameraTransform3D.localPos).GetLength();
-        float projY = tanf(ToRadian(camera.fov) * 0.5f) * 2.0f;
-        return projY * d * (distanceInPixels / windowSize.y);
-    };
-
-    EntityID selectedEntity = Editor::GetSelectedEntity();
-    if (scene.Has<CTransform>(selectedEntity))
-    {
-        CTransform* pTrans = scene.Get<CTransform>(selectedEntity);
-
-        GfxDraw::SetDepthTest(false);
-
-        Vec3f translate = Vec3f(pTrans->globalTransform.m[0][3], pTrans->globalTransform.m[1][3], pTrans->globalTransform.m[2][3]);
-        GfxDraw::SetTransform(Matrixf::MakeTranslation(translate));
-
-        GfxDraw::Paint centerDot;
-        centerDot.fillColor = Vec4f(1.0f, 1.0f, 1.0f, 1.0f);
-        centerDot.drawStyle = GfxDraw::DrawStyle::Fill;
-        centerDot.billboard = true;
-        centerDot.sizeUnits = GfxDraw::Units::Pixels;
-        GfxDraw::Circle(Vec3f(0.0f), 5.f, centerDot);
-
-        GfxDraw::Paint xAxisLine;
-        xAxisLine.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
-        xAxisLine.strokeThickness = 5.0f;
-        xAxisLine.billboard = true;
-        xAxisLine.sizeUnits = GfxDraw::Units::Pixels;
-        GfxDraw::Line(Vec3f(pixelToWorld(translate, 10.f), 0.0f, 0.0f), Vec3f(pixelToWorld(translate, 64.0f), 0.0f, 0.0f), xAxisLine);
-
-        GfxDraw::Paint yAxisLine(xAxisLine);
-        yAxisLine.strokeColor = Vec4f(0.0f, 1.0f, 0.0f, 1.0f);
-        GfxDraw::Line(Vec3f(0.0f, pixelToWorld(translate, 10.f), 0.0f), Vec3f(0.0f, pixelToWorld(translate, 64.0f), 0.0f), yAxisLine);
-
-        GfxDraw::Paint zAxisLine(xAxisLine);
-        zAxisLine.strokeColor = Vec4f(0.0f, 0.0f, 1.0f, 1.0f);
-        GfxDraw::Line(Vec3f(0.0f, 0.0f, pixelToWorld(translate, 10.f)), Vec3f(0.0f, 0.0f, pixelToWorld(translate, 64.0f)), zAxisLine);
-        
-        GfxDraw::SetTransform(Matrixf::Identity());
-        GfxDraw::SetDepthTest(true);
+        DebugDraw::DrawLine(Vec3f(-50.0f, 0.0f, 0.0f), Vec3f(50.0f, 0.0f, 0.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, -50.0f, 0.0f), Vec3f(0.0f, 50.0f, 0.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, 0.0f, -50.0f), Vec3f(0.0f, 0.0f, 50.0f), Vec4f(0.0f, 0.0f, 1.0f, 1.0f));
     }
 }
 
 void SceneView::DrawSceneViewHelpers2D(Scene& scene)
 {
-    GfxDraw::SetDrawSpace(GfxDraw::DrawSpace::GameCamera);
-    GfxDraw::SetGeometryMode(GfxDraw::GeometryMode::Billboard);
-    GfxDraw::SetSortLayer(-10);
+    if (drawFrame)
+    {
+        float width = GameRenderer::GetWidth();
+        float height = GameRenderer::GetHeight();
+        // Top and bottom
+        DebugDraw::DrawLine(Vec3f(0.0f, height, -1000.0f), Vec3f(width, height, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, 0.0f, -1000.0f), Vec3f(width, 0.0f, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
 
+         // left and right
+        DebugDraw::DrawLine(Vec3f(0.0f, 0.0f, -1000.0f), Vec3f(0.0f, height, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(width, 0.0f, -1000.0f), Vec3f(width, height, -1000.0f), Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    }
+
+    if (drawOrigin)
+    {
+        DebugDraw::DrawLine(Vec3f(-5000.0f, 0.0f, -1000.0f), Vec3f(5000.0f, 0.0f, -1000.0f), Vec4f(1.0f, 0.0f, 0.0f, 1.0f));
+        DebugDraw::DrawLine(Vec3f(0.0f, -5000.0f, -1000.0f), Vec3f(0.0f, 5000.0f, -1000.0f), Vec4f(0.0f, 1.0f, 0.0f, 1.0f));
+    }
+    
     if (drawGridLines)
     {
         for (int i = 0; i < 60; i++)
@@ -285,38 +241,15 @@ void SceneView::DrawSceneViewHelpers2D(Scene& scene)
             float staticEnd = 4000.0f;
             float iterate = i * 100.0f - 2000.0f;
 
-            GfxDraw::Paint paint;
-            paint.strokeThickness = 5.f;
-            paint.strokeColor = Vec4f(0.32f, 0.32f, 0.32f, 1.0f);
+            Vec4f color = Vec4f(0.32f, 0.32f, 0.32f, 1.0f);
+
+
             if (i % 10 == 0)
-                paint.strokeColor = Vec4f(0.45f, 0.45f, 0.45f, 1.0f);
+                color = Vec4f(0.45f, 0.45f, 0.45f, 1.0f);
 
-            GfxDraw::Line(Vec3f(staticStart, iterate, -1000.0f), Vec3f(staticEnd, iterate, -1000.0f), paint);
-            GfxDraw::Line(Vec3f(iterate, staticStart, -1000.0f), Vec3f(iterate, staticEnd, -1000.0f), paint);
+            DebugDraw::DrawLine(Vec3f(staticStart, iterate, -1000.0f), Vec3f(staticEnd, iterate, -1000.0f), color);
+            DebugDraw::DrawLine(Vec3f(iterate, staticStart, -1000.0f), Vec3f(iterate, staticEnd, -1000.0f), color);
         }
-    }
-    
-    if (drawOrigin)
-    {
-        GfxDraw::Paint paint;
-        paint.strokeThickness = 5.f;
-        paint.strokeColor = Vec4f(1.0f, 0.0f, 0.0f, 1.0f);
-        GfxDraw::Line(Vec3f(-5000.0f, 0.0f, -1000.0f), Vec3f(5000.0f, 0.0f, -1000.0f), paint);
-        paint.strokeColor = Vec4f(0.0f, 1.0f, 0.0f, 1.0f);
-        GfxDraw::Line(Vec3f(0.0f, -5000.0f, -1000.0f), Vec3f(0.0f, 5000.0f, -1000.0f), paint);
-    }
-    
-    if (drawFrame)
-    {
-        float width = GameRenderer::GetWidth();
-        float height = GameRenderer::GetHeight();
-
-        GfxDraw::Paint paint;
-        paint.strokeThickness = 10.f;
-        paint.strokeColor = Vec4f(1.0f, 1.0f, 1.0f, 1.0f);
-        paint.drawStyle = GfxDraw::DrawStyle::Stroke;
-
-        GfxDraw::Rect(Vec3f(width * 0.5f, height * 0.5f, -1.0f), Vec2f(width + 5.0f, height + 5.0f), Vec4f(0.0f), paint);
     }
 }
 
@@ -423,7 +356,6 @@ void SceneView::Update(Scene& scene, float deltaTime)
     ParticlesSystem::OnFrame(scene, context, deltaTime);
     DebugDraw::OnFrame(scene, context, deltaTime);
     FontSystem::OnFrame(scene, context, deltaTime);
-    GfxDraw::OnFrame(scene, context, deltaTime);
     SpriteDrawSystem::OnFrame(scene, context, deltaTime);
 
     GfxDevice::UnbindRenderTarget(renderTarget);

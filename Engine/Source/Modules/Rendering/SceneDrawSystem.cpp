@@ -6,7 +6,6 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "GameRenderer.h"
-#include "GfxDraw.h"
 
 //#define DEBUG_BOUNDS
 
