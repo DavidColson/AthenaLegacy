@@ -7,6 +7,8 @@
 
 #include "Rendering/ParticlesSystem.h"
 #include "Rendering/FontSystem.h"
+#include "Rendering/DebugDraw.h"
+#include "Rendering/ShapesSystem.h"
 #include "Rendering/SceneDrawSystem.h"
 #include "Rendering/SpriteDrawSystem.h"
 #include "Rendering/GfxDraw.h"
@@ -417,7 +419,9 @@ void SceneView::Update(Scene& scene, float deltaTime)
         DrawSceneViewHelpers3D(scene);
     
     SceneDrawSystem::OnFrame(scene, context, deltaTime);
+    Shapes::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
+    DebugDraw::OnFrame(scene, context, deltaTime);
     FontSystem::OnFrame(scene, context, deltaTime);
     GfxDraw::OnFrame(scene, context, deltaTime);
     SpriteDrawSystem::OnFrame(scene, context, deltaTime);

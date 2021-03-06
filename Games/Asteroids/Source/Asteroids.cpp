@@ -20,22 +20,6 @@
 
 #include <SDL.h>
 
-namespace
-{
-	GfxDraw::PolyshapeMesh asteroidMeshCache[4];
-	GfxDraw::PolyshapeMesh playerMeshCache;
-}
-
-GfxDraw::PolyshapeMesh& GetAsteroidMesh(AsteroidType type)
-{
-	return asteroidMeshCache[(uint8_t)type];
-}
-
-GfxDraw::PolyshapeMesh& GetPlayerMesh()
-{
-	return playerMeshCache;
-}
-
 Scene* CreateMainAsteroidsScene()
 {
 	Scene& scene = *(new Scene());
@@ -45,9 +29,7 @@ Scene* CreateMainAsteroidsScene()
 	scene.RegisterSystem(SystemPhase::Update, CollisionSystemUpdate);
 	scene.RegisterSystem(SystemPhase::Update, AsteroidSpawning);
 	scene.RegisterSystem(SystemPhase::Update, InvincibilitySystemUpdate);
-	scene.RegisterSystem(SystemPhase::Update, DrawAsteroids);
-	scene.RegisterSystem(SystemPhase::Update, DrawShips);
-	scene.RegisterSystem(SystemPhase::Update, DrawBullets);
+	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
 
 	scene.RegisterReactiveSystem<CPlayerControl>(Reaction::OnRemove, OnPlayerControlRemoved);
 
@@ -79,7 +61,7 @@ Scene* CreateMainAsteroidsScene()
 	CPlayerUI* pPlayerUI = scene.Assign<CPlayerUI>(ship);
 	scene.Assign<CPostProcessing>(ship);
 	scene.Assign<CInvincibility>(ship);
-	scene.Assign<CShipDraw>(ship);
+	scene.Assign<CPolyShape>(ship)->points.assign(verts, verts + 5);
 
 	CSounds* pSounds = scene.Assign<CSounds>(ship);
 	pSounds->engineSound = AssetHandle("Audio/Engine.wav");
@@ -105,7 +87,8 @@ Scene* CreateMainAsteroidsScene()
 		scene.Assign<CDynamics>(asteroid)->vel = randomVelocity;
 
 		scene.Assign<CVisibility>(asteroid);
-		scene.Assign<CAsteroid>(asteroid)->type = AsteroidType(rand() % 4);
+		scene.Assign<CAsteroid>(asteroid);
+		scene.Assign<CPolyShape>(asteroid)->points = GetRandomAsteroidMesh();
 	}
 
 	scene.Assign<CAsteroidSpawner>(ship);
@@ -122,7 +105,7 @@ Scene* CreateMainAsteroidsScene()
 		pTransform->localRot = -3.14159f / 2.0f;
 		offset += 30.0f;
 		
-		scene.Assign<CShipDraw>(life);
+		scene.Assign<CPolyShape>(life)->points.assign(verts, verts + 5);
 		scene.Assign<CVisibility>(life);
 		pPlayer->lifeEntities[i] = life;
 	}
@@ -162,7 +145,7 @@ Scene* CreateMainAsteroidsScene()
 Scene* CreateMainMenuScene()
 {
 	Scene& scene = *(new Scene());
-	scene.RegisterSystem(SystemPhase::Update, DrawAsteroids);
+	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
 	scene.RegisterSystem(SystemPhase::Update, MenuInterationSystem);
 
 	const float w = GameRenderer::GetWidth();
@@ -192,6 +175,13 @@ Scene* CreateMainMenuScene()
 	EntityID buttonSelector =scene.NewEntity("Button Selector");
 	scene.Assign<CVisibility>(buttonSelector);
 	scene.Assign<CMenuInteraction>(buttonSelector);
+
+	Vec2f verts[3] = {
+		Vec2f(0.f, 0.0f),
+		Vec2f(0.7f, 0.5f),
+		Vec2f(0.f, 1.f)
+	};
+	scene.Assign<CPolyShape>(buttonSelector)->points.assign(verts, verts + 3);
 	CTransform* pTransform = scene.Assign<CTransform>(buttonSelector);
 	pTransform->localPos = Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f);
 	pTransform->localSca = Vec3f(30.f, 30.0f, 1.0f);
@@ -212,88 +202,6 @@ void LoadMenu()
 int main(int argc, char *argv[])
 {
 	Engine::Initialize("Games/Asteroids/Asteroids.cfg");
-
-	// Make some asteroids!
-	GfxDraw::Paint asteroidPaint;
-	asteroidPaint.drawStyle = GfxDraw::DrawStyle::Stroke;
-	asteroidPaint.strokeThickness = 0.04f;
-	asteroidPaint.strokeColor = Vec4f(1.0f);
-	{
-		eastl::vector<Vec2f> asteroidPoly;
-		asteroidPoly.push_back(Vec2f(0.056f, 0.265f));
-		asteroidPoly.push_back(Vec2f(0.312f, 0.074f));
-		asteroidPoly.push_back(Vec2f(0.683f, 0.086f));
-		asteroidPoly.push_back(Vec2f(0.943f, 0.298f));
-		asteroidPoly.push_back(Vec2f(0.974f, 0.65f));
-		asteroidPoly.push_back(Vec2f(0.83f, 0.85f));
-		asteroidPoly.push_back(Vec2f(0.64f, 0.75f));
-		asteroidPoly.push_back(Vec2f(0.673f, 0.952f));
-		asteroidPoly.push_back(Vec2f(0.348f, 0.96f));
-		asteroidPoly.push_back(Vec2f(0.37f, 0.65f));
-		asteroidPoly.push_back(Vec2f(0.213f, 0.78f));
-		asteroidPoly.push_back(Vec2f(0.05f, 0.54f));
-		asteroidMeshCache[0] = GfxDraw::CreatePolyshape(asteroidPoly, asteroidPaint);
-	}
-	{
-		eastl::vector<Vec2f> asteroidPoly;
-		asteroidPoly.push_back(Vec2f(0.03f, 0.379f));
-		asteroidPoly.push_back(Vec2f(0.03f, 0.64f));
-		asteroidPoly.push_back(Vec2f(0.314f, 0.69f));
-		asteroidPoly.push_back(Vec2f(0.348f, 0.96f));
-		asteroidPoly.push_back(Vec2f(0.673f, 0.952f));
-		asteroidPoly.push_back(Vec2f(0.698f, 0.724f));
-		asteroidPoly.push_back(Vec2f(0.97f, 0.645f));
-		asteroidPoly.push_back(Vec2f(0.936f, 0.228f));
-		asteroidPoly.push_back(Vec2f(0.555f, 0.028f));
-		asteroidPoly.push_back(Vec2f(0.22f, 0.123f));
-		asteroidMeshCache[1] = GfxDraw::CreatePolyshape(asteroidPoly, asteroidPaint);
-	}
-	{
-		eastl::vector<Vec2f> asteroidPoly;
-		asteroidPoly.push_back(Vec2f(0.05f, 0.54f));
-		asteroidPoly.push_back(Vec2f(0.213f, 0.78f));
-		asteroidPoly.push_back(Vec2f(0.37f, 0.65f));
-		asteroidPoly.push_back(Vec2f(0.348f, 0.96f));
-		asteroidPoly.push_back(Vec2f(0.673f, 0.952f));
-		asteroidPoly.push_back(Vec2f(0.64f, 0.75f));
-		asteroidPoly.push_back(Vec2f(0.83f, 0.85f));
-		asteroidPoly.push_back(Vec2f(0.974f, 0.65f));
-		asteroidPoly.push_back(Vec2f(0.943f, 0.298f));
-		asteroidPoly.push_back(Vec2f(0.683f, 0.086f));
-		asteroidPoly.push_back(Vec2f(0.312f, 0.074f));
-		asteroidPoly.push_back(Vec2f(0.056f, 0.265f));
-		asteroidMeshCache[2] = GfxDraw::CreatePolyshape(asteroidPoly, asteroidPaint);
-	}
-	{
-		eastl::vector<Vec2f> asteroidPoly;
-		asteroidPoly.push_back(Vec2f(0.066f, 0.335f));
-		asteroidPoly.push_back(Vec2f(0.077f, 0.683f));
-		asteroidPoly.push_back(Vec2f(0.3f, 0.762f));
-		asteroidPoly.push_back(Vec2f(0.348f, 0.96f));
-		asteroidPoly.push_back(Vec2f(0.673f, 0.952f));
-		asteroidPoly.push_back(Vec2f(0.724f, 0.752f));
-		asteroidPoly.push_back(Vec2f(0.967f, 0.63f));
-		asteroidPoly.push_back(Vec2f(0.946f, 0.312f));
-		asteroidPoly.push_back(Vec2f(0.706f, 0.353f));
-		asteroidPoly.push_back(Vec2f(0.767f, 0.07f));
-		asteroidPoly.push_back(Vec2f(0.37f, 0.07f));
-		asteroidPoly.push_back(Vec2f(0.21f, 0.33f));
-		asteroidMeshCache[3] = GfxDraw::CreatePolyshape(asteroidPoly, asteroidPaint);
-	}
-
-	{
-		GfxDraw::Paint paint;
-		paint.drawStyle = GfxDraw::DrawStyle::Stroke;
-		paint.strokeThickness = 0.07f;
-		paint.strokeColor = Vec4f(1.0f);
-		eastl::vector<Vec2f> playerPoly;
-		playerPoly.push_back(Vec2f(0.f, 0.5f));
-		playerPoly.push_back(Vec2f(1.f, 0.8f));
-		playerPoly.push_back(Vec2f(0.9f, 0.7f));
-		playerPoly.push_back(Vec2f(0.9f, 0.3f));
-		playerPoly.push_back(Vec2f(1.0f, 0.2f));
-		playerMeshCache = GfxDraw::CreatePolyshape(playerPoly, paint);
-	}
 
 	// Run everything
 	Engine::Run(CreateMainMenuScene());
