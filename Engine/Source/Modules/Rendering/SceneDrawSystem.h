@@ -3,20 +3,33 @@
 #include "GraphicsDevice.h"
 #include "AssetDatabase.h"
 
+#include "Systems.h"
+#include "Entity.h"
+#include "SpatialComponent.h"
+
+struct IComponent;
+
 struct Scene;
 struct Mesh;
 struct FrameContext;
 
-struct CRenderable
+struct Renderable : public SpatialComponent
 {
-    AssetHandle shaderHandle;
+	AssetHandle shaderHandle;
     AssetHandle meshHandle;
-
-    REFLECT()
+	
+	REFLECT_DERIVED();
 };
 
-namespace SceneDrawSystem
-{	
-    void OnSceneCreate(Scene& scene);
-	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
-}
+struct SceneDrawSystem : public ISystem
+{
+    virtual void Initialize() override;
+
+	virtual void RegisterComponent(IComponent* pComponent) override;
+
+	virtual void UnregisterComponent(IComponent* pComponent) override;
+
+	virtual void Update(float deltaTime, FrameContext& ctx) override;
+
+	eastl::vector<Renderable*> renderableComponents;
+};

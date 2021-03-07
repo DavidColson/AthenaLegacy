@@ -7,7 +7,7 @@ class ISystem;
 
 struct IComponent
 {
-    REFLECT_DERIVED();
+    REFLECT_DERIVED()
 };
 
 class Entity

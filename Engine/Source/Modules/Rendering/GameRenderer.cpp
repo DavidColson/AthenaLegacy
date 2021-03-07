@@ -35,6 +35,17 @@ namespace
     TextureHandle resolvedGameFrame;
     RenderTargetHandle gameRenderTarget;
     Vec2f gameWindowSize;
+    SceneDrawSystem* pSceneDrawSystem;
+}
+
+void GameRenderer::SetSceneDrawSystem(SceneDrawSystem* system)
+{
+    pSceneDrawSystem = system;
+}
+
+SceneDrawSystem* GameRenderer::GetSceneDrawSystem()
+{
+    return pSceneDrawSystem;
 }
 
 // ***********************************************************************
@@ -55,8 +66,6 @@ void GameRenderer::Initialize(float width, float height)
 
 void GameRenderer::OnSceneCreate(Scene& scene)
 {
-    SceneDrawSystem::OnSceneCreate(scene);
-
     scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
 	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnRemove, ParticlesSystem::OnRemoveEmitter);
 
@@ -96,7 +105,7 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 	}
 
     // Opaque things
-    SceneDrawSystem::OnFrame(scene, context, deltaTime);
+    if (pSceneDrawSystem) pSceneDrawSystem->Update(deltaTime, context);
     Shapes::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
     DebugDraw::OnFrame(scene, context, deltaTime);

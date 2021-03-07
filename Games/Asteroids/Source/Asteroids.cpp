@@ -18,6 +18,10 @@
 
 #include <Variant.h>
 
+#include <World.h>
+#include <Systems.h>
+#include <Rendering/SceneDrawSystem.h>
+
 #include <SDL.h>
 
 Scene* CreateMainAsteroidsScene()
@@ -202,6 +206,10 @@ void LoadMenu()
 int main(int argc, char *argv[])
 {
 	Engine::Initialize("Games/Asteroids/Asteroids.cfg");
+
+	World world;
+	Entity* pPlayer = world.NewEntity("Player");
+	world.ActivateWorld();
 
 	// Run everything
 	Engine::Run(CreateMainMenuScene());

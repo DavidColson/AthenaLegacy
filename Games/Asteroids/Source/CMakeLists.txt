@@ -2,6 +2,8 @@ project(AsteroidsGame)
 
 include_directories("${ENGINE_SOURCE_PATH}/AssetDatabase/")
 include_directories("${ENGINE_SOURCE_PATH}/Core/")
+include_directories("${ENGINE_SOURCE_PATH}/Core/")
+include_directories("${ENGINE_SOURCE_PATH}/EntitySystem/")
 include_directories("${ENGINE_SOURCE_PATH}/Devices/")
 include_directories("${ENGINE_SOURCE_PATH}/Modules/")
 include_directories("${ENGINE_SOURCE_PATH}/Modules/")

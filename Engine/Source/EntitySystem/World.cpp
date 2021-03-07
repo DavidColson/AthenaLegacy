@@ -14,6 +14,11 @@ Entity* World::NewEntity(eastl::string name)
 
 void World::ActivateWorld()
 {
+    for (ISystem* pGlobalSystem : globalSystems)
+    {
+        pGlobalSystem->Initialize();
+    }
+
     for (Entity* pEntity : entities)
     {
         eastl::vector<IComponent*> comps = pEntity->Activate();
@@ -64,9 +69,4 @@ void World::DestroyWorld()
     {
         delete pEntity;
     }
-}
-
-void World::AddGlobalSystem(ISystem* pSystem)
-{
-    globalSystems.push_back(pSystem);
 }

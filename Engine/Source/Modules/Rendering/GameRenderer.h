@@ -6,6 +6,7 @@
 #include "Matrix.h"
 #include "GraphicsDevice.h"
 
+struct SceneDrawSystem;
 struct Scene;
 struct TextureHandle;
 
@@ -42,6 +43,9 @@ namespace GameRenderer
     TextureHandle DrawFrame(Scene& scene, float deltaTime);
     void OnFrameEnd(Scene& scene, float deltaTime);
     void Destroy();
+
+    void SetSceneDrawSystem(SceneDrawSystem* system);
+    SceneDrawSystem* GetSceneDrawSystem();
 
     void SetBackBufferActive();
     void ClearBackBuffer(eastl::array<float, 4> color, bool clearDepth, bool clearStencil);

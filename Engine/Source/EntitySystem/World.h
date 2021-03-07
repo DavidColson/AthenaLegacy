@@ -24,7 +24,12 @@ public:
 
 	void DestroyWorld();
 
-    void AddGlobalSystem(ISystem* pSystem);
+	template<typename Type>
+    ISystem* AddGlobalSystem()
+	{
+    	globalSystems.push_back(new Type());
+		return globalSystems.back();
+	}
 
 private:
 

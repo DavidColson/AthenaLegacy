@@ -329,14 +329,14 @@ struct Matrix
         outTranslation.z = m.m[2][3];
 	}
 
-	inline void ToTRS(Vec3<T>& outTranslation, Vec3<T> outEulerAngles, Vec3<T> outScale)
+	inline void ToTRS(Vec3<T>& outTranslation, Vec3<T>& outEulerAngles, Vec3<T>& outScale)
 	{
         Matrix<T> m = *this;
         // Extract scaling first from each row
         outScale = m.ExtractScaling();
 
         // Special case for negative scaling
-		if (affineTransform.GetDeterminant() < 0.f)
+		if (m.GetDeterminant() < 0.f)
 		{
             // choice of axis to flip makes no difference
 			outScale.x *= -1.f;

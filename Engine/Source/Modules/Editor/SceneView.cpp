@@ -351,7 +351,7 @@ void SceneView::Update(Scene& scene, float deltaTime)
     else
         DrawSceneViewHelpers3D(scene);
     
-    SceneDrawSystem::OnFrame(scene, context, deltaTime);
+    if (GameRenderer::GetSceneDrawSystem()) GameRenderer::GetSceneDrawSystem()->Update(deltaTime, context);
     Shapes::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
     DebugDraw::OnFrame(scene, context, deltaTime);
