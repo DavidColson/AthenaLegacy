@@ -474,13 +474,13 @@ struct DefaultTypeResolver
 	template<typename T, typename = int>
 	struct IsReflected : eastl::false_type {};
 	template<typename T>
-	struct IsReflected<T, decltype((void) T::typeData, 0)> : eastl::true_type {};
+	struct IsReflected<T, decltype((void) T::staticTypeData, 0)> : eastl::true_type {};
 
 	// We're switching template versions depending on whether T has been internally reflected (i.e. has an typeData member)
 	template<typename T, eastl::enable_if_t<IsReflected<T>::value, int> = 0>
 	static TypeData& Get()
 	{
-		return T::typeData;
+		return T::staticTypeData;
 	}
 	template<typename T, eastl::enable_if_t<!IsReflected<T>::value, int> = 0>
 	static TypeData& Get()
