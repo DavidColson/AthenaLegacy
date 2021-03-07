@@ -201,6 +201,14 @@ struct Member
 #define REFLECT()                               \
 	static TypeData_Struct staticTypeData;                \
 	static void initReflection(TypeData_Struct* type); \
+	TypeData_Struct& GetTypeData();
+
+/**
+ * Used to define a type as reflectable struct during type declaration 
+ **/
+#define REFLECT_DERIVED()                               \
+	static TypeData_Struct staticTypeData;                \
+	static void initReflection(TypeData_Struct* type); \
 	virtual TypeData_Struct& GetTypeData();
 
 /**
