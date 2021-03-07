@@ -113,7 +113,7 @@ bool Engine::IsInEditor()
 
 void Engine::SaveConfig(const eastl::string& fileName)
 {
-	JsonValue configJson = EngineConfig::typeData.ToJson(config);
+	JsonValue configJson = EngineConfig::staticTypeData.ToJson(config);
 	FileSys::WriteWholeFile(fileName, SerializeJsonValue(configJson));
 	configFileName = fileName;
 }
@@ -129,7 +129,7 @@ void Engine::Initialize(const char* _configFileName)
 		Log::Info("Config file loaded from '%s'", _configFileName);
 
 		JsonValue configJson = ParseJsonFile(FileSys::ReadWholeFile(configFileName));
-		config = EngineConfig::typeData.FromJson(configJson).GetValue<EngineConfig>();
+		config = EngineConfig::staticTypeData.FromJson(configJson).GetValue<EngineConfig>();
 	}
 	else
 	{
@@ -137,7 +137,7 @@ void Engine::Initialize(const char* _configFileName)
 
 		Path pathToFile = Path(configFileName).ParentPath();
 		FileSys::NewDirectories(pathToFile);
-		JsonValue configJson = EngineConfig::typeData.ToJson(config);
+		JsonValue configJson = EngineConfig::staticTypeData.ToJson(config);
 		FileSys::WriteWholeFile(configFileName, SerializeJsonValue(configJson));
 	}
 
