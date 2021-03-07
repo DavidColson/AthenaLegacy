@@ -6,6 +6,7 @@
 #include "Matrix.h"
 #include "GraphicsDevice.h"
 
+class ISystem;
 struct SceneDrawSystem;
 struct Scene;
 struct TextureHandle;
@@ -43,6 +44,15 @@ namespace GameRenderer
     TextureHandle DrawFrame(Scene& scene, float deltaTime);
     void OnFrameEnd(Scene& scene, float deltaTime);
     void Destroy();
+
+    void RegisterRenderSystemOpaque(ISystem* pSystem);
+    void RegisterRenderSystemTransparent(ISystem* pSystem);
+
+    void UnregisterRenderSystemOpaque(ISystem* pSystem);
+    void UnregisterRenderSystemTransparent(ISystem* pSystem);
+
+    void SceneRenderPassOpaque(Scene& scene, FrameContext& ctx, float deltaTime);
+    void SceneRenderPassTransparent(Scene& scene, FrameContext& ctx, float deltaTime);
 
     void SetSceneDrawSystem(SceneDrawSystem* system);
     SceneDrawSystem* GetSceneDrawSystem();

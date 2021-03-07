@@ -309,6 +309,10 @@ void SceneView::Update(Scene& scene, float deltaTime)
 
 
 
+    if (isIn2DMode)
+        DrawSceneViewHelpers2D(scene);
+    else
+        DrawSceneViewHelpers3D(scene);
 
     // Render the scene view
 
@@ -346,24 +350,13 @@ void SceneView::Update(Scene& scene, float deltaTime)
     context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
     context.camWorldPosition = Vec3f(activeCamTransform.localPos);
 
-    if (isIn2DMode)
-        DrawSceneViewHelpers2D(scene);
-    else
-        DrawSceneViewHelpers3D(scene);
-    
-    if (GameRenderer::GetSceneDrawSystem()) GameRenderer::GetSceneDrawSystem()->Update(deltaTime, context);
-    Shapes::OnFrame(scene, context, deltaTime);
-    ParticlesSystem::OnFrame(scene, context, deltaTime);
-    DebugDraw::OnFrame(scene, context, deltaTime);
-    FontSystem::OnFrame(scene, context, deltaTime);
-    SpriteDrawSystem::OnFrame(scene, context, deltaTime);
+    GameRenderer::SceneRenderPassOpaque(scene, context, deltaTime);
+    GameRenderer::SceneRenderPassTransparent(scene, context, deltaTime);
 
     GfxDevice::UnbindRenderTarget(renderTarget);
     
     GfxDevice::FreeTexture(lastFrame);
     lastFrame = GfxDevice::MakeResolvedTexture(renderTarget);
-    
-
 
     // Draw the rendered frame into the imgui window
 

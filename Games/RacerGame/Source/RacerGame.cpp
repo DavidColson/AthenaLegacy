@@ -127,8 +127,19 @@ int main(int argc, char *argv[])
 
 	GameRenderer::SetSceneDrawSystem(pDrawSystem);
 
+	Scene* pScene = new Scene();
+
+	EntityID cameraEnt = pScene->NewEntity("Camera");
+	pScene->Assign<CTransform>(cameraEnt);
+	pScene->Assign<CCamera>(cameraEnt)->projection = ProjectionMode::Perspective;
+
+	// Register systems
+	Engine::SetSceneCreateCallback([](Scene& newScene) {
+		newScene.RegisterSystem(SystemPhase::Update, CameraControlSystem);
+	});
+
 	// Run everything
-	Engine::Run(new Scene());
+	Engine::Run(pScene);
 
 	return 0;
 }

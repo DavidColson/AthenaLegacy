@@ -29,7 +29,7 @@ struct SceneDrawSystem : public ISystem
 
 	virtual void UnregisterComponent(IComponent* pComponent) override;
 
-	virtual void Update(float deltaTime, FrameContext& ctx) override;
+	virtual void Draw(float deltaTime, FrameContext& ctx) override;
 
 	eastl::vector<Renderable*> renderableComponents;
 };

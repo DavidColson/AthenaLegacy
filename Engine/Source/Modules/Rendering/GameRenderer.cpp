@@ -13,6 +13,7 @@
 #include "Editor/Editor.h"
 #include "Vec2.h"
 #include "Maths.h"
+#include "Systems.h"
 
 #include <Imgui/imgui.h>
 #include <Imgui/examples/imgui_impl_sdl.h>
@@ -36,6 +37,9 @@ namespace
     RenderTargetHandle gameRenderTarget;
     Vec2f gameWindowSize;
     SceneDrawSystem* pSceneDrawSystem;
+
+    eastl::vector<ISystem*> opaqueRenderPassSystems;
+    eastl::vector<ISystem*> transparentRenderPassSystems;
 }
 
 void GameRenderer::SetSceneDrawSystem(SceneDrawSystem* system)
@@ -60,6 +64,42 @@ void GameRenderer::Initialize(float width, float height)
     gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, Engine::GetConfig().multiSamples, "Game Render Target");
 
     gameWindowSize = Vec2f(width, height);
+}
+
+// ***********************************************************************
+
+void GameRenderer::RegisterRenderSystemOpaque(ISystem* pSystem)
+{
+    opaqueRenderPassSystems.push_back(pSystem);
+}
+
+// ***********************************************************************
+
+void GameRenderer::RegisterRenderSystemTransparent(ISystem* pSystem)
+{
+    transparentRenderPassSystems.push_back(pSystem);
+}
+
+// ***********************************************************************
+
+void GameRenderer::UnregisterRenderSystemOpaque(ISystem* pSystem)
+{
+    eastl::vector<ISystem*>::iterator found = eastl::find(opaqueRenderPassSystems.begin(), opaqueRenderPassSystems.end(), pSystem);
+	if (found != opaqueRenderPassSystems.end())
+	{
+		opaqueRenderPassSystems.erase(found);
+	}
+}
+
+// ***********************************************************************
+
+void GameRenderer::UnregisterRenderSystemTransparent(ISystem* pSystem)
+{
+    eastl::vector<ISystem*>::iterator found = eastl::find(transparentRenderPassSystems.begin(), transparentRenderPassSystems.end(), pSystem);
+	if (found != transparentRenderPassSystems.end())
+	{
+		transparentRenderPassSystems.erase(found);
+	}
 }
 
 // ***********************************************************************
@@ -104,15 +144,8 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 		    context.projection = Matrixf::Orthographic(0.f, gameWindowSize.x, 0.0f, gameWindowSize.y, -1.0f, 200.0f);
 	}
 
-    // Opaque things
-    if (pSceneDrawSystem) pSceneDrawSystem->Update(deltaTime, context);
-    Shapes::OnFrame(scene, context, deltaTime);
-    ParticlesSystem::OnFrame(scene, context, deltaTime);
-    DebugDraw::OnFrame(scene, context, deltaTime);
-
-    // Things that have transparency
-    FontSystem::OnFrame(scene, context, deltaTime);
-    SpriteDrawSystem::OnFrame(scene, context, deltaTime);
+    SceneRenderPassOpaque(scene, context, deltaTime);
+    SceneRenderPassTransparent(scene, context, deltaTime);
     
     // Post processing, always last
     PostProcessingSystem::OnFrame(scene, context, deltaTime);
@@ -124,6 +157,29 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
     resolvedGameFrame = GfxDevice::MakeResolvedTexture(gameRenderTarget);
 
     return resolvedGameFrame; 
+}
+
+// ***********************************************************************
+
+void GameRenderer::SceneRenderPassOpaque(Scene& scene, FrameContext& context, float deltaTime)
+{
+    // Opaque things
+    for (ISystem* pSystem : opaqueRenderPassSystems)
+    {
+        pSystem->Draw(deltaTime, context);
+    }
+    Shapes::OnFrame(scene, context, deltaTime);
+    ParticlesSystem::OnFrame(scene, context, deltaTime);
+    DebugDraw::OnFrame(scene, context, deltaTime);
+}
+
+// ***********************************************************************
+
+void GameRenderer::SceneRenderPassTransparent(Scene& scene, FrameContext& context, float deltaTime)
+{
+    // Things that have transparency
+    FontSystem::OnFrame(scene, context, deltaTime);
+    SpriteDrawSystem::OnFrame(scene, context, deltaTime);
 }
 
 // ***********************************************************************

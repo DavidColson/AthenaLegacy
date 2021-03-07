@@ -24,6 +24,7 @@ REFLECT_END()
 
 void SceneDrawSystem::Initialize()
 {
+	GameRenderer::RegisterRenderSystemOpaque(this);
 	g_transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "RenderableTransformBuffer");
 }
 
@@ -43,7 +44,7 @@ void SceneDrawSystem::UnregisterComponent(IComponent* pComponent)
 		renderableComponents.erase(found);
 	}
 }
-void SceneDrawSystem::Update(float deltaTime, FrameContext& ctx)
+void SceneDrawSystem::Draw(float deltaTime, FrameContext& ctx)
 {
 	GFX_SCOPED_EVENT("Scene Draw");
 	PROFILE();
