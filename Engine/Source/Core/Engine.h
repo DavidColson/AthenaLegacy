@@ -2,6 +2,7 @@
 
 #include "Vec2.h"
 
+class World;
 struct Scene;
 
 enum class ResolutionStretchMode
@@ -41,7 +42,7 @@ namespace Engine
 {
 	void Initialize(const EngineConfig& config);
 	void Initialize(const char* configFileName);
-	void Run(Scene* pInitialScene);
+	void Run(Scene* pInitialScene, World* pInitialWorld);
 	void StartShutdown();
 
 	void SetActiveScene(Scene* pScene);

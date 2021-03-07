@@ -7,7 +7,6 @@
 #include "PostProcessingSystem.h"
 #include "FontSystem.h"
 #include "DebugDraw.h"
-#include "ShapesSystem.h"
 #include "SceneDrawSystem.h"
 #include "SpriteDrawSystem.h"
 #include "Editor/Editor.h"
@@ -56,7 +55,6 @@ SceneDrawSystem* GameRenderer::GetSceneDrawSystem()
 
 void GameRenderer::Initialize(float width, float height)
 {
-    Shapes::Initialize();
 	DebugDraw::Initialize();
 	FontSystem::Initialize();
     SpriteDrawSystem::Initialize();
@@ -168,7 +166,6 @@ void GameRenderer::SceneRenderPassOpaque(Scene& scene, FrameContext& context, fl
     {
         pSystem->Draw(deltaTime, context);
     }
-    Shapes::OnFrame(scene, context, deltaTime);
     ParticlesSystem::OnFrame(scene, context, deltaTime);
     DebugDraw::OnFrame(scene, context, deltaTime);
 }
@@ -186,7 +183,6 @@ void GameRenderer::SceneRenderPassTransparent(Scene& scene, FrameContext& contex
 
 void GameRenderer::OnFrameEnd(Scene& scene, float deltaTime)
 {
-    Shapes::OnFrameEnd(scene, deltaTime);
     DebugDraw::OnFrameEnd(scene, deltaTime);
 }
 
@@ -197,7 +193,6 @@ void GameRenderer::Destroy()
     GfxDevice::FreeRenderTarget(gameRenderTarget);
     GfxDevice::FreeTexture(resolvedGameFrame);
     DebugDraw::Destroy();
-	Shapes::Destroy();
 	FontSystem::Destroy();
 	SpriteDrawSystem::Destroy();
 }

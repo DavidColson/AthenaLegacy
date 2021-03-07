@@ -1,4 +1,4 @@
-#include "Systems.h"
+#include "Systems_Old.h"
 
 #include "Asteroids.h"
 #include "Components.h"
@@ -7,7 +7,6 @@
 #include <Rendering/DebugDraw.h>
 #include <Rendering/FontSystem.h>
 #include <Rendering/ParticlesSystem.h>
-#include <Rendering/ShapesSystem.h>
 #include <Rendering/GameRenderer.h>
 #include <Input/Input.h>
 #include <Profiler.h>
@@ -223,18 +222,7 @@ void DrawPolyShapes(Scene& scene, float /* deltaTime */)
 		if (scene.Get<CVisibility>(shape)->visible == false)
 			continue;
 
-		CTransform* pTrans = scene.Get<CTransform>(shape);
-		Matrixf posMat = Matrixf::MakeTranslation(pTrans->localPos);
-		Matrixf rotMat = Matrixf::MakeRotation(Vec3f(0.0f, 0.0f, pTrans->localRot.z));
-		Matrixf scaMat = Matrixf::MakeScale(pTrans->localSca);
-		Matrixf pivotAdjust = Matrixf::MakeTranslation(Vec3f(-0.5f, -0.5f, 0.0f));
-		Matrixf world = posMat * rotMat * scaMat * pivotAdjust;
-
-		VertsVector transformedVerts;
-		for (const Vec2f& vert : scene.Get<CPolyShape>(shape)->points)
-			transformedVerts.push_back(Vec2f::Project4D(world * Vec4f::Embed2D(vert)));
-
-		Shapes::DrawPolyLine(scene, transformedVerts, scene.Get<CPolyShape>(shape)->thickness, Vec4f(1.0f, 1.0f, 1.0f, 1.0f), scene.Get<CPolyShape>(shape)->connected);
+		
 	}	
 }
 

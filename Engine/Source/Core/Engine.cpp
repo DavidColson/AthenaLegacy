@@ -16,6 +16,7 @@
 #include "Matrix.h"
 #include "Quat.h"
 #include "FileSystem.h"
+#include "World.h"
 
 REFLECT_ENUM_BEGIN(ResolutionStretchMode)
 REFLECT_ENUMERATOR(NoStretch)
@@ -165,7 +166,7 @@ void Engine::Initialize(const EngineConfig& _config)
 
 // ***********************************************************************
 
-void Engine::Run(Scene *pScene)
+void Engine::Run(Scene *pScene, World* pInitialWorld)
 {	
 	pCurrentScene = pScene;
 

@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 	});
 
 	// Run everything
-	Engine::Run(pScene);
+	Engine::Run(pScene, &world);
 
 	return 0;
 }

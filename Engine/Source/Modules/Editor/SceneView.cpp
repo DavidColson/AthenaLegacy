@@ -4,13 +4,8 @@
 #include "AppWindow.h"
 
 #include "SceneQueries.h"
-
-#include "Rendering/ParticlesSystem.h"
-#include "Rendering/FontSystem.h"
+#include "Rendering/GameRenderer.h"
 #include "Rendering/DebugDraw.h"
-#include "Rendering/ShapesSystem.h"
-#include "Rendering/SceneDrawSystem.h"
-#include "Rendering/SpriteDrawSystem.h"
 
 #include <ImGui/imgui.h>
 #include <SDL.h>

@@ -1,6 +1,7 @@
 #include "Asteroids.h"
-#include "Systems.h"
+#include "Systems_Old.h"
 #include "Components.h"
+#include "PolylineDrawSystem.h"
 
 #include <Vec4.h>
 #include <Matrix.h>
@@ -208,11 +209,27 @@ int main(int argc, char *argv[])
 	Engine::Initialize("Games/Asteroids/Asteroids.cfg");
 
 	World world;
-	Entity* pPlayer = world.NewEntity("Player");
+	Entity* pPlayer = world.NewEntity("Button Selector");
+
+	const float w = GameRenderer::GetWidth();
+	const float h = GameRenderer::GetHeight();
+
+	Vec2f verts[3] = {
+		Vec2f(0.f, 0.0f),
+		Vec2f(0.7f, 0.5f),
+		Vec2f(0.f, 1.f)
+	};
+	Polyline* pPolyline = pPlayer->AddNewComponent<Polyline>();
+	pPolyline->points.assign(verts, verts + 3);
+	pPolyline->SetLocalPosition(Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f));
+	pPolyline->SetLocalScale(Vec3f(30.f, 30.0f, 1.0f));
+
+	world.AddGlobalSystem<PolylineDrawSystem>();
+	
 	world.ActivateWorld();
 
 	// Run everything
-	Engine::Run(CreateMainMenuScene());
+	Engine::Run(CreateMainMenuScene(), &world);
 
 	return 0;
 }

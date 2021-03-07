@@ -19,8 +19,10 @@ target_sources(AsteroidsGame
         "Asteroids.cpp"
         "Components.h"
         "Components.cpp"
-        "Systems.h"
-        "Systems.cpp"
+        "Systems_Old.h"
+        "Systems_Old.cpp"
+        "PolylineDrawSystem.h"
+        "PolylineDrawSystem.cpp"
 )
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})

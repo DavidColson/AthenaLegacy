@@ -19,9 +19,7 @@ public:
 
 	// Loops through entities, updating them, then globals
 	void OnUpdate(float deltaTime);
-
-    void OnRender(float deltaTime);
-
+	
 	void DestroyWorld();
 
 	template<typename Type>

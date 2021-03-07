@@ -10,8 +10,6 @@ target_sources(Engine
         "ParticlesSystem.cpp"
         "PostProcessingSystem.h"
         "PostProcessingSystem.cpp"
-        "ShapesSystem.h"
-        "ShapesSystem.cpp"
         "FontSystem.h"
         "FontSystem.cpp"
         "RectPacking.h"

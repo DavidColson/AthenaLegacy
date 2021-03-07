@@ -58,7 +58,7 @@ void World::OnUpdate(float deltaTime)
     // Then global systems
     for (ISystem* pSystem : globalSystems)
     {
-        //pSystem->Update(deltaTime);
+        pSystem->Update(deltaTime);
     }
 }
 
