@@ -18,6 +18,6 @@ namespace DebugDraw
 
 	void Initialize();
 	void Destroy();
-	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
-	void OnFrameEnd(Scene& scene, float deltaTime);
+	void OnFrame(FrameContext& ctx, float deltaTime);
+	void OnFrameEnd(float deltaTime);
 }

@@ -90,7 +90,7 @@ void SpriteDrawSystem::Draw(float deltaTime, FrameContext& ctx)
     PROFILE();
 	
 	GFX_SCOPED_EVENT("Drawing sprites");
-
+ 
     GfxDevice::SetTopologyType(TopologyType::TriangleStrip);
     GfxDevice::BindProgram(program);
     GfxDevice::BindVertexBuffers(0, 1, &quadPrim.bufferHandle_vertices);

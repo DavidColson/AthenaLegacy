@@ -168,7 +168,7 @@ void GameRenderer::SceneRenderPassOpaque(Scene& scene, FrameContext& context, fl
         pSystem->Draw(deltaTime, context);
     }
     ParticlesSystem::OnFrame(scene, context, deltaTime);
-    DebugDraw::OnFrame(scene, context, deltaTime);
+    DebugDraw::OnFrame(context, deltaTime);
 }
 
 // ***********************************************************************
@@ -186,7 +186,7 @@ void GameRenderer::SceneRenderPassTransparent(Scene& scene, FrameContext& contex
 
 void GameRenderer::OnFrameEnd(Scene& scene, float deltaTime)
 {
-    DebugDraw::OnFrameEnd(scene, deltaTime);
+    DebugDraw::OnFrameEnd(deltaTime);
 }
 
 // ***********************************************************************
@@ -195,7 +195,7 @@ void GameRenderer::Destroy()
 {
     GfxDevice::FreeRenderTarget(gameRenderTarget);
     GfxDevice::FreeTexture(resolvedGameFrame);
-    
+
     DebugDraw::Destroy();
 
     if (postProcessing)

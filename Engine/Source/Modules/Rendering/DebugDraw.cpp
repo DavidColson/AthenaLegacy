@@ -138,7 +138,7 @@ void DebugDraw::Destroy()
 
 // ***********************************************************************
 
-void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
+void DebugDraw::OnFrame(FrameContext& ctx, float deltaTime)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing debug");
@@ -199,7 +199,7 @@ void DebugDraw::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 // ***********************************************************************
 
-void DebugDraw::OnFrameEnd(Scene& scene, float deltaTime)
+void DebugDraw::OnFrameEnd(float deltaTime)
 {
 	pState->drawQueue.clear();
 	pState->vertexList.clear();

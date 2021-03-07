@@ -2,7 +2,6 @@
 
 #include "Systems.h"
 
-
 REFLECT_BEGIN(IComponent)
 REFLECT_END()
 
@@ -38,6 +37,6 @@ void Entity::Update(float deltaTime)
 {
     for (ISystem* pSystem : systems)
     {
-        //pSystem->Update(deltaTime);
+        pSystem->Update(deltaTime);
     }
 }
