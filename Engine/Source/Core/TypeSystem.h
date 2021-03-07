@@ -104,6 +104,12 @@ struct TypeData_Struct : public TypeData
 	virtual Variant FromJson(const JsonValue& val);
 
 	/**
+	 * Is this type derived somehow from the given type?
+	 **/
+	template<typename Type>
+	bool IsDerivedFrom();
+
+	/**
 	 * Checks for existence of a member by name
 	 **/
 	bool MemberExists(const char* _name);
@@ -151,6 +157,7 @@ struct TypeData_Struct : public TypeData
 
 	eastl::map<size_t, Member*> members;
 	eastl::map<eastl::string, size_t> memberOffsets;
+	TypeData_Struct* pParentType{ nullptr };
 };
 
 struct Member
@@ -208,6 +215,22 @@ struct Member
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
 		selfTypeData->castableTo = TypeData::Struct;\
+		selfTypeData->members = {
+
+/**
+ * Used to specify the structure of a type for derived types, again used in cpp files
+ **/
+#define REFLECT_BEGIN_DERIVED(ReflectedStruct, ParentStruct)\
+	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
+	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
+		using XX = ReflectedStruct;\
+		TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
+		selfTypeData->id = Type::Index<XX>();\
+		selfTypeData->name = #ReflectedStruct;\
+		selfTypeData->size = sizeof(XX);\
+		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
+		selfTypeData->castableTo = TypeData::Struct;\
+		selfTypeData->pParentType = &ParentStruct::typeData;\
 		selfTypeData->members = {
 
 /**
@@ -536,3 +559,17 @@ struct TypeDataOps_Internal : public TypeDataOps
 		delete pData;
 	}
 };
+
+template<typename Type>
+bool TypeData_Struct::IsDerivedFrom()
+{
+	TypeData& testType = TypeDatabase::Get<Type>();
+	TypeData* pParent = pParentType;
+	while (pParent != nullptr)
+	{
+		if (*pParent == testType)
+			return true;
+		pParent = pParent->AsStruct().pParentType;
+	}
+	return false;
+}
