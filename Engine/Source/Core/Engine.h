@@ -26,6 +26,7 @@ struct EngineConfig
 	Vec2f windowResolution{ Vec2f( 1800.f, 1000.f ) };
 	Vec2f baseGameResolution{ Vec2f( 1800.f, 1000.f ) };
 	bool gameFramePointFilter{ true };
+	bool postProcessing{ false };
 	ResolutionStretchMode resolutionStretchMode{ ResolutionStretchMode::NoStretch };
 	int multiSamples{ 4 };
 	

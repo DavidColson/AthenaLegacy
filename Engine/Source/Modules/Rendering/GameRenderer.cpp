@@ -4,7 +4,7 @@
 #include "Scene.h"
 #include "GraphicsDevice.h"
 #include "ParticlesSystem.h"
-#include "PostProcessingSystem.h"
+#include "PostProcessing.h"
 #include "DebugDraw.h"
 #include "SceneDrawSystem.h"
 #include "SpriteDrawSystem.h"
@@ -36,6 +36,8 @@ namespace
     Vec2f gameWindowSize;
     SceneDrawSystem* pSceneDrawSystem;
 
+    bool postProcessing{ false };
+
     eastl::vector<ISystem*> opaqueRenderPassSystems;
     eastl::vector<ISystem*> transparentRenderPassSystems;
 }
@@ -52,14 +54,18 @@ SceneDrawSystem* GameRenderer::GetSceneDrawSystem()
 
 // ***********************************************************************
 
-void GameRenderer::Initialize(float width, float height)
+void GameRenderer::Initialize(float width, float height, bool postProcessingEnabled)
 {
 	DebugDraw::Initialize();
     SpriteDrawSystem::Initialize();
 
     gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, Engine::GetConfig().multiSamples, "Game Render Target");
-
     gameWindowSize = Vec2f(width, height);
+
+    if (postProcessingEnabled)
+        PostProcessing::Initialize();
+
+    postProcessing = postProcessingEnabled;
 }
 
 // ***********************************************************************
@@ -104,9 +110,6 @@ void GameRenderer::OnSceneCreate(Scene& scene)
 {
     scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
 	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnRemove, ParticlesSystem::OnRemoveEmitter);
-
-	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnAdd, PostProcessingSystem::OnAddPostProcessing);
-	scene.RegisterReactiveSystem<CPostProcessing>(Reaction::OnRemove, PostProcessingSystem::OnRemovePostProcessing);
 }
 
 // ***********************************************************************
@@ -144,7 +147,8 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
     SceneRenderPassTransparent(scene, context, deltaTime);
     
     // Post processing, always last
-    PostProcessingSystem::OnFrame(scene, context, deltaTime);
+    if (postProcessing)
+        PostProcessing::OnFrame(context, deltaTime);
 
     GfxDevice::UnbindRenderTarget(gameRenderTarget);
 
@@ -195,6 +199,9 @@ void GameRenderer::Destroy()
     GfxDevice::FreeTexture(resolvedGameFrame);
     DebugDraw::Destroy();
 	SpriteDrawSystem::Destroy();
+
+    if (postProcessing)
+        PostProcessing::Destroy();
 }
 
 // ***********************************************************************
@@ -271,7 +278,5 @@ void GameRenderer::ResizeGameFrame(float newWidth, float newHeight)
     gameWindowSize = Vec2f(newWidth, newHeight);
     GfxDevice::FreeRenderTarget(gameRenderTarget);
     gameRenderTarget = GfxDevice::CreateRenderTarget(gameWindowSize.x, gameWindowSize.y, Engine::GetConfig().multiSamples, "Game Render Target");
-
-    // TODO: Remove from the world system entirely
-    // PostProcessingSystem::OnWindowResize(scene, gameWindowSize.x, gameWindowSize.y);
+    PostProcessing::OnWindowResize(gameWindowSize.x, gameWindowSize.y);
 }

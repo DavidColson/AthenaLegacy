@@ -13,10 +13,6 @@
 
 #include "Imgui/imgui.h"
 
-REFLECT_COMPONENT_BEGIN(CText)
-REFLECT_MEMBER(text)
-REFLECT_END()
-
 REFLECT_COMPONENT_BEGIN(TextComponent)
 REFLECT_MEMBER(text)
 REFLECT_MEMBER(fontAsset)

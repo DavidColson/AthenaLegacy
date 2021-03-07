@@ -32,6 +32,7 @@ REFLECT_MEMBER(windowName)
 REFLECT_MEMBER(windowResolution)
 REFLECT_MEMBER(baseGameResolution)
 REFLECT_MEMBER(gameFramePointFilter)
+REFLECT_MEMBER(postProcessing)
 REFLECT_MEMBER(resolutionStretchMode)
 REFLECT_MEMBER(multiSamples)
 REFLECT_MEMBER(bootInEditor)
@@ -158,7 +159,7 @@ void Engine::Initialize(const EngineConfig& _config)
 	Log::SetLogLevel(Log::EDebug);
 
 	Vec2f ideal = GameRenderer::GetIdealFrameSize(AppWindow::GetWidth(), AppWindow::GetHeight());
-	GameRenderer::Initialize(ideal.x, ideal.y);
+	GameRenderer::Initialize(ideal.x, ideal.y, config.postProcessing);
 	AudioDevice::Initialize();
 	Input::CreateInputState();	
 	Editor::Initialize(config.bootInEditor);

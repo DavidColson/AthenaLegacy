@@ -64,8 +64,9 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 		pPlayerScore->score += 100;
 
 	AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->explosionSound, 1.0f, false);
-		
-	scene.Get<CText>(scoreEnt)->text.sprintf("%i", pPlayerScore->score);
+
+	// Doesn't compile for now. Fix later	
+	//scene.Get<CText>(scoreEnt)->text.sprintf("%i", pPlayerScore->score);
 
 	// Spawn death particles
 	EntityID particles = scene.NewEntity("Asteroid Particles");

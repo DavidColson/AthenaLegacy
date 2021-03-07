@@ -39,7 +39,7 @@ struct FrameContext
 
 namespace GameRenderer
 {
-    void Initialize(float width, float height);
+    void Initialize(float width, float height, bool postProcessingEnabled);
     void OnSceneCreate(Scene& scene);
     TextureHandle DrawFrame(Scene& scene, float deltaTime);
     void OnFrameEnd(Scene& scene, float deltaTime);

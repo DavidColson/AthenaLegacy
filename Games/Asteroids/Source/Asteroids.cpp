@@ -12,7 +12,6 @@
 #include <Profiler.h>
 #include <Rendering/FontSystem.h>
 #include <Rendering/ParticlesSystem.h>
-#include <Rendering/PostProcessingSystem.h>
 #include <Rendering/GameRenderer.h>
 #include <TypeSystem.h>
 #include <AudioDevice.h>
