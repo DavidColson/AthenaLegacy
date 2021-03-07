@@ -23,7 +23,7 @@ struct Renderable : public SpatialComponent
 
 struct SceneDrawSystem : public ISystem
 {
-    virtual void Initialize() override;
+    virtual void Activate() override;
 
 	virtual void RegisterComponent(IComponent* pComponent) override;
 

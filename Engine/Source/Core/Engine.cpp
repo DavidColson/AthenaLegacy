@@ -52,8 +52,8 @@ namespace
 
 	// Scene management
 	void (*pSceneCallBack)(Scene& scene);
-	Scene* pCurrentScene{ nullptr };
-	Scene* pPendingSceneLoad{ nullptr };
+	World* pCurrentWorld{ nullptr };
+	World* pPendingWorldSwap{ nullptr };
 }
 
 // ***********************************************************************
@@ -75,18 +75,18 @@ void Engine::StartShutdown()
 
 void Engine::NewSceneCreated(Scene& scene)
 {
-	GameRenderer::OnSceneCreate(scene);
+	// GameRenderer::OnSceneCreate(scene);
 
-	scene.RegisterSystem(SystemPhase::Update, TransformHeirarchy);
+	// scene.RegisterSystem(SystemPhase::Update, TransformHeirarchy);
 
 	// @Improvement consider allowing engine config files to change the update order of systems
 }
 
 // ***********************************************************************
 
-void Engine::SetActiveScene(Scene* pScene)
+void Engine::SetActiveWorld(World* pWorld)
 {
-	pPendingSceneLoad = pScene;
+	pPendingWorldSwap = pWorld;
 }
 
 // ***********************************************************************
@@ -166,12 +166,11 @@ void Engine::Initialize(const EngineConfig& _config)
 
 // ***********************************************************************
 
-void Engine::Run(Scene *pScene, World* pInitialWorld)
+void Engine::Run(World* pInitialWorld)
 {	
-	pCurrentScene = pScene;
+	pCurrentWorld = pInitialWorld;
 
-	if (pSceneCallBack)
-		pSceneCallBack(*pCurrentScene);
+	pCurrentWorld->ActivateWorld();
 
 	// Game update loop
 	double frameTime = 0.016f;
@@ -190,7 +189,7 @@ void Engine::Run(Scene *pScene, World* pInitialWorld)
 		while (SDL_PollEvent(&event))
 		{
 			// If editor handles this event, don't give it to game input
-			if (!Editor::ProcessEvent(*pCurrentScene, &event))
+			if (!Editor::ProcessEvent(&event))
 				Input::ProcessEvent(&event);
 
 			switch (event.type)
@@ -208,7 +207,7 @@ void Engine::Run(Scene *pScene, World* pInitialWorld)
 						else
 						{
 							Vec2f ideal = GameRenderer::GetIdealFrameSize(AppWindow::GetWidth(), AppWindow::GetHeight());
-							GameRenderer::ResizeGameFrame(*pCurrentScene, ideal.x, ideal.y);
+							GameRenderer::ResizeGameFrame(ideal.x, ideal.y);
 						}
 					}
 					break;
@@ -229,31 +228,29 @@ void Engine::Run(Scene *pScene, World* pInitialWorld)
 		Editor::PreUpdate();
 
 		// Simulate current game scene
-		pCurrentScene->SimulateScene((float)frameTime);
+		pCurrentWorld->OnUpdate((float)frameTime);
 		Profiler::ClearFrameData();
 
 		// Render the game
-		TextureHandle gameFrame = GameRenderer::DrawFrame(*pCurrentScene, (float)frameTime);
+		TextureHandle gameFrame = GameRenderer::DrawFrame(Scene(), (float)frameTime);
 
 		// Render the editor
-		TextureHandle editorFrame = Editor::DrawFrame(*pCurrentScene, (float)frameTime);
+		TextureHandle editorFrame = Editor::DrawFrame(Scene(), (float)frameTime);
 		
 		if (IsInEditor())
 			AppWindow::RenderToWindow(editorFrame);
 		else
 			AppWindow::RenderToWindow(gameFrame);
 
-		GameRenderer::OnFrameEnd(*pCurrentScene, (float)frameTime);
+		GameRenderer::OnFrameEnd(Scene(), (float)frameTime);
 
 		// Deal with scene loading
-		if (pPendingSceneLoad)
+		if (pPendingWorldSwap)
 		{
-			delete pCurrentScene;
+			delete pCurrentWorld;
 			AssetDB::CollectGarbage();
-			pCurrentScene = pPendingSceneLoad;
-			if (pSceneCallBack)
-				pSceneCallBack(*pCurrentScene);
-			pPendingSceneLoad = nullptr;
+			pCurrentWorld = pPendingWorldSwap;
+			pPendingWorldSwap = nullptr;
 		}
 
 		// Framerate counter
@@ -272,7 +269,7 @@ void Engine::Run(Scene *pScene, World* pInitialWorld)
 		g_observedFrameTime = double(SDL_GetPerformanceCounter() - frameStart) / SDL_GetPerformanceFrequency();
 	}
 
-	delete pCurrentScene;
+	delete pCurrentWorld;
 	AssetDB::CollectGarbage();
 
 	// Shutdown everything

@@ -6,7 +6,7 @@ void Font::Load(Path path, AssetHandle handleForThis)
 {   
     FT_Face face;
 
-    FT_Error err = FT_New_Face(FontSystem::GetFreeType(), path.AsRawString(), 0, &face);
+    FT_Error err = FT_New_Face(*FreeType::Get(), path.AsRawString(), 0, &face);
 	if (err)
 	{
 		Log::Warn("FreeType Error: %s", FT_Error_String(err));

@@ -25,211 +25,72 @@
 
 #include <SDL.h>
 
-Scene* CreateMainAsteroidsScene()
+World* CreateMainAsteroidsScene()
 {
-	Scene& scene = *(new Scene());
+	World& world = *(new World());
 
-	scene.RegisterSystem(SystemPhase::Update, ShipControlSystemUpdate);
-	scene.RegisterSystem(SystemPhase::Update, MovementSystemUpdate);
-	scene.RegisterSystem(SystemPhase::Update, CollisionSystemUpdate);
-	scene.RegisterSystem(SystemPhase::Update, AsteroidSpawning);
-	scene.RegisterSystem(SystemPhase::Update, InvincibilitySystemUpdate);
-	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
-
-	scene.RegisterReactiveSystem<CPlayerControl>(Reaction::OnRemove, OnPlayerControlRemoved);
-
-	srand(unsigned int(time(nullptr)));
-	auto randf = []() { return float(rand()) / float(RAND_MAX); };
-
-	// Create the ship
-	Vec2f verts[5] = {
-		Vec2f(0.f, 0.5f),
-		Vec2f(1.f, 0.8f),
-		Vec2f(0.9f, 0.7f),
-		Vec2f(0.9f, 0.3f),
-		Vec2f(1.0f, 0.2f)
-	};
-
-	EntityID ship = scene.NewEntity("Player Ship");
-	ASSERT(ship == PLAYER_ID, "Player must be spawned first");
-	CTransform* pShipTransform = scene.Assign<CTransform>(ship);
-
-	const float w = GameRenderer::GetWidth();
-	const float h = GameRenderer::GetHeight();
-	pShipTransform->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
-	pShipTransform->localSca = Vec3f(30.f, 35.f, 1.0f);
-	scene.Assign<CDynamics>(ship);
-
-	CPlayerControl* pPlayer = scene.Assign<CPlayerControl>(ship);
-	scene.Assign<CCollidable>(ship)->radius = 17.f;
-	scene.Assign<CVisibility>(ship);
-	CPlayerUI* pPlayerUI = scene.Assign<CPlayerUI>(ship);
-	scene.Assign<CPostProcessing>(ship);
-	scene.Assign<CInvincibility>(ship);
-	scene.Assign<CPolyShape>(ship)->points.assign(verts, verts + 5);
-
-	CSounds* pSounds = scene.Assign<CSounds>(ship);
-	pSounds->engineSound = AssetHandle("Audio/Engine.wav");
-	pSounds->shootSound = AssetHandle("Audio/Shoot.wav");
-	pSounds->explosionSound = AssetHandle("Audio/Explosion.wav");
-
-	pPlayer->enginePlayingSound = AudioDevice::PlaySound(pSounds->engineSound, 0.3f, true);
-	AudioDevice::PauseSound(pPlayer->enginePlayingSound);
-
-	// Create some asteroids
-	for (int i = 0; i < 10; i++)
-	{
-		Vec3f randomLocation = Vec3f(float(rand() % 1800), float(rand() % 1000), 0.0f);
-		Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
-		float randomRotation = randf() * 6.282f;
-		EntityID asteroid = scene.NewEntity("Asteroid");
-		scene.Assign<CCollidable>(asteroid);
-		CTransform* pTranform = scene.Assign<CTransform>(asteroid);
-		pTranform->localPos = randomLocation;
-		pTranform->localSca = Vec3f(90.0f, 90.0f, 1.0f);
-		pTranform->localRot = randomRotation;
-
-		scene.Assign<CDynamics>(asteroid)->vel = randomVelocity;
-
-		scene.Assign<CVisibility>(asteroid);
-		scene.Assign<CAsteroid>(asteroid);
-		scene.Assign<CPolyShape>(asteroid)->points = GetRandomAsteroidMesh();
-	}
-
-	scene.Assign<CAsteroidSpawner>(ship);
-
-	// Create the lives
-	float offset = 0.0f;
-	for (int i = 0; i < 3; ++i)
-	{
-		EntityID life = scene.NewEntity("Life");
-		
-		CTransform* pTransform = scene.Assign<CTransform>(life);
-		pTransform->localPos = Vec3f(150.f + offset, h - 85.0f, 0.0f);
-		pTransform->localSca = Vec3f(30.f, 35.f, 1.0f);
-		pTransform->localRot = -3.14159f / 2.0f;
-		offset += 30.0f;
-		
-		scene.Assign<CPolyShape>(life)->points.assign(verts, verts + 5);
-		scene.Assign<CVisibility>(life);
-		pPlayer->lifeEntities[i] = life;
-	}
-
-
-	// Create score counters
-	{
-		EntityID currentScoreEnt =scene.NewEntity("Current Score");
-		pPlayerUI->currentScoreEntity = currentScoreEnt;
-		scene.Assign<CTransform>(currentScoreEnt)->localPos = Vec3f(150.0f, h - 53.0f, 0.0f);
-		scene.Assign<CPlayerScore>(currentScoreEnt);
-		CText* pCurrScoreText = scene.Assign<CText>(currentScoreEnt);
-		pCurrScoreText->text = "0";
-		pCurrScoreText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
-
-		EntityID highScoreEnt = scene.NewEntity("High Score");
-		scene.Assign<CTransform>(highScoreEnt)->localPos = Vec3f(w - 150.f, h - 53.0f, 0.0f);
-		CText* pHiScoreText = scene.Assign<CText>(highScoreEnt);
-		pHiScoreText->text = "0";
-		pHiScoreText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
-	}
-
-	// Create game over text
-	{
-		EntityID gameOver = scene.NewEntity("Game Over");
-		pPlayerUI->gameOverEntity = gameOver;
-		scene.Assign<CTransform>(gameOver)->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
-		scene.Assign<CGameOver>(gameOver);
-		scene.Assign<CVisibility>(gameOver)->visible = false;
-		CText* pText = scene.Assign<CText>(gameOver);
-		pText->text = "Game Over";
-		pText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
-	}
-	return &scene;
+	return &world;
 }
 
-Scene* CreateMainMenuScene()
+World* CreateMainMenuScene()
 {
-	Scene& scene = *(new Scene());
-	scene.RegisterSystem(SystemPhase::Update, DrawPolyShapes);
-	scene.RegisterSystem(SystemPhase::Update, MenuInterationSystem);
+	World& world = *(new World());
 
 	const float w = GameRenderer::GetWidth();
 	const float h = GameRenderer::GetHeight();
 
-	EntityID titleText =scene.NewEntity("Main Menu Title");
-	CTransform* pTrans = scene.Assign<CTransform>(titleText);
-	pTrans->localPos = Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f);
-	pTrans->localSca = Vec3f(2.0f, 2.0f, 2.0f);
-	scene.Assign<CPostProcessing>(titleText);
-	CText* pTitleText = scene.Assign<CText>(titleText);
+	Entity* pTitle = world.NewEntity("Main Menu Title");
+	TextComponent* pTitleText = pTitle->AddNewComponent<TextComponent>();
+	pTitleText->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f + 200.0f, 0.0f));
+	pTitleText->SetLocalScale(Vec3f(2.0f, 2.0f, 2.0f));
 	pTitleText->text = "Asteroids!";
 	pTitleText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 
-	EntityID startOption =scene.NewEntity("Start Option");
-	scene.Assign<CTransform>(startOption)->localPos = Vec3f(w / 2.0f, h / 2.0f, 0.0f);
-	CText* pStartText = scene.Assign<CText>(startOption);
+	Entity* pStart = world.NewEntity("Start Option");
+	TextComponent* pStartText = pStart->AddNewComponent<TextComponent>();
+	pStartText->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f, 0.0f));
 	pStartText->text = "Start";
 	pStartText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
-
-	EntityID quitOption = scene.NewEntity("Quit Option");
-	scene.Assign<CTransform>(quitOption)->localPos = Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f);
-	CText* pQuitText = scene.Assign<CText>(quitOption);
+	
+	Entity* pQuit = world.NewEntity("Quit Option");
+	TextComponent* pQuitText = pQuit->AddNewComponent<TextComponent>();
+	pQuitText->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f - 80.0f, 0.0f));
 	pQuitText->text = "Quit";
 	pQuitText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 
-	EntityID buttonSelector =scene.NewEntity("Button Selector");
-	scene.Assign<CVisibility>(buttonSelector);
-	scene.Assign<CMenuInteraction>(buttonSelector);
-
+	Entity* pSelector = world.NewEntity("Button Selector");
 	Vec2f verts[3] = {
 		Vec2f(0.f, 0.0f),
 		Vec2f(0.7f, 0.5f),
 		Vec2f(0.f, 1.f)
 	};
-	scene.Assign<CPolyShape>(buttonSelector)->points.assign(verts, verts + 3);
-	CTransform* pTransform = scene.Assign<CTransform>(buttonSelector);
-	pTransform->localPos = Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f);
-	pTransform->localSca = Vec3f(30.f, 30.0f, 1.0f);
+	Polyline* pPolyline = pSelector->AddNewComponent<Polyline>();
+	pPolyline->points.assign(verts, verts + 3);
+	pPolyline->SetLocalPosition(Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f));
+	pPolyline->SetLocalScale(Vec3f(30.f, 30.0f, 1.0f));
 
-	return &scene;
+	world.AddGlobalSystem<PolylineDrawSystem>();
+	world.AddGlobalSystem<FontDrawSystem>();
+
+	return &world;
 }
 
 void LoadMainScene()
 {
-	Engine::SetActiveScene(CreateMainAsteroidsScene());
+	Engine::SetActiveWorld(CreateMainAsteroidsScene());
 }
 
 void LoadMenu()
 {
-	Engine::SetActiveScene(CreateMainMenuScene());
+	Engine::SetActiveWorld(CreateMainMenuScene());
 }
 
 int main(int argc, char *argv[])
 {
 	Engine::Initialize("Games/Asteroids/Asteroids.cfg");
 
-	World world;
-	Entity* pPlayer = world.NewEntity("Button Selector");
-
-	const float w = GameRenderer::GetWidth();
-	const float h = GameRenderer::GetHeight();
-
-	Vec2f verts[3] = {
-		Vec2f(0.f, 0.0f),
-		Vec2f(0.7f, 0.5f),
-		Vec2f(0.f, 1.f)
-	};
-	Polyline* pPolyline = pPlayer->AddNewComponent<Polyline>();
-	pPolyline->points.assign(verts, verts + 3);
-	pPolyline->SetLocalPosition(Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f));
-	pPolyline->SetLocalScale(Vec3f(30.f, 30.0f, 1.0f));
-
-	world.AddGlobalSystem<PolylineDrawSystem>();
-	
-	world.ActivateWorld();
-
 	// Run everything
-	Engine::Run(CreateMainMenuScene(), &world);
+	Engine::Run(CreateMainMenuScene());
 
 	return 0;
 }

@@ -97,7 +97,7 @@ void Editor::Initialize(bool enabled)
 
 // ***********************************************************************
 
-bool Editor::ProcessEvent(Scene& scene, SDL_Event* event)
+bool Editor::ProcessEvent(SDL_Event* event)
 {
 	switch (event->type)
 	{
@@ -109,7 +109,7 @@ bool Editor::ProcessEvent(Scene& scene, SDL_Event* event)
 			AppWindow::Resize(AppWindow::GetWidth(), AppWindow::GetHeight());
 			// When leaving editor mode, tell the game to resize itself to full screen, otherwise resize ourselves
 			if (!Editor::IsActive())
-				GameRenderer::ResizeGameFrame(scene, AppWindow::GetWidth(), AppWindow::GetHeight());
+				GameRenderer::ResizeGameFrame(AppWindow::GetWidth(), AppWindow::GetHeight());
 			else
 				Editor::ResizeEditorFrame(AppWindow::GetWidth(), AppWindow::GetHeight());
 		}
@@ -280,7 +280,10 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 		{
 			JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile(levelOpenModalFiles[selectedLevelFile]));
 			Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
-			Engine::SetActiveScene(pScene);
+			
+			// TODO: Fix at some point
+			//Engine::SetActiveWorld(pScene);
+
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();

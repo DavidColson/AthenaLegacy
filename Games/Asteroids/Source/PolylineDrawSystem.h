@@ -32,7 +32,7 @@ struct PolylineDrawSystem : public ISystem
 {
 	~PolylineDrawSystem();
 
-    virtual void Initialize() override;
+    virtual void Activate() override;
 
 	virtual void RegisterComponent(IComponent* pComponent) override;
 

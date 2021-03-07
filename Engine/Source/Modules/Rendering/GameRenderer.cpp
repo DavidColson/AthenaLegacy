@@ -5,7 +5,6 @@
 #include "GraphicsDevice.h"
 #include "ParticlesSystem.h"
 #include "PostProcessingSystem.h"
-#include "FontSystem.h"
 #include "DebugDraw.h"
 #include "SceneDrawSystem.h"
 #include "SpriteDrawSystem.h"
@@ -56,7 +55,6 @@ SceneDrawSystem* GameRenderer::GetSceneDrawSystem()
 void GameRenderer::Initialize(float width, float height)
 {
 	DebugDraw::Initialize();
-	FontSystem::Initialize();
     SpriteDrawSystem::Initialize();
 
     gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, Engine::GetConfig().multiSamples, "Game Render Target");
@@ -175,7 +173,10 @@ void GameRenderer::SceneRenderPassOpaque(Scene& scene, FrameContext& context, fl
 void GameRenderer::SceneRenderPassTransparent(Scene& scene, FrameContext& context, float deltaTime)
 {
     // Things that have transparency
-    FontSystem::OnFrame(scene, context, deltaTime);
+    for (ISystem* pSystem : transparentRenderPassSystems)
+    {
+        pSystem->Draw(deltaTime, context);
+    }
     SpriteDrawSystem::OnFrame(scene, context, deltaTime);
 }
 
@@ -193,7 +194,6 @@ void GameRenderer::Destroy()
     GfxDevice::FreeRenderTarget(gameRenderTarget);
     GfxDevice::FreeTexture(resolvedGameFrame);
     DebugDraw::Destroy();
-	FontSystem::Destroy();
 	SpriteDrawSystem::Destroy();
 }
 
@@ -266,11 +266,12 @@ Vec2f GameRenderer::GetIdealFrameSize(float parentWidth, float parentHeight)
 
 // ***********************************************************************
 
-void GameRenderer::ResizeGameFrame(Scene& scene, float newWidth, float newHeight)
+void GameRenderer::ResizeGameFrame(float newWidth, float newHeight)
 {
     gameWindowSize = Vec2f(newWidth, newHeight);
     GfxDevice::FreeRenderTarget(gameRenderTarget);
     gameRenderTarget = GfxDevice::CreateRenderTarget(gameWindowSize.x, gameWindowSize.y, Engine::GetConfig().multiSamples, "Game Render Target");
 
-    PostProcessingSystem::OnWindowResize(scene, gameWindowSize.x, gameWindowSize.y);
+    // TODO: Remove from the world system entirely
+    // PostProcessingSystem::OnWindowResize(scene, gameWindowSize.x, gameWindowSize.y);
 }

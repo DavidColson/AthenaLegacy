@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 	World world;
 
 	// Run everything
-	Engine::Run(pScene, &world);
+	Engine::Run(&world);
 
 	return 0;
 }

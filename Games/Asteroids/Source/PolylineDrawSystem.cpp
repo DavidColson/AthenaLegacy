@@ -70,7 +70,7 @@ void PolylineDrawSystem::AddPolyLine(const VertsVector& verts, float thickness, 
 
 // ***********************************************************************
 
-void PolylineDrawSystem::Initialize()
+void PolylineDrawSystem::Activate()
 {
 	GameRenderer::RegisterRenderSystemOpaque(this);
 

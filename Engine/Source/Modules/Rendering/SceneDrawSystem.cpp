@@ -22,7 +22,7 @@ REFLECT_MEMBER(shaderHandle)
 REFLECT_MEMBER(meshHandle)
 REFLECT_END()
 
-void SceneDrawSystem::Initialize()
+void SceneDrawSystem::Activate()
 {
 	GameRenderer::RegisterRenderSystemOpaque(this);
 	g_transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "RenderableTransformBuffer");

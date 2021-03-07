@@ -80,7 +80,7 @@ void GameView::Update(Scene& scene, float deltaTime)
         if (windowSizeCache.x > 0.0f && windowSizeCache.y > 0.0f)
 		{
 			gameSizeCache = GameRenderer::GetIdealFrameSize(windowSizeCache.x, windowSizeCache.y);
-			GameRenderer::ResizeGameFrame(scene, gameSizeCache.x, gameSizeCache.y);
+			GameRenderer::ResizeGameFrame(gameSizeCache.x, gameSizeCache.y);
 		}
 	}
 

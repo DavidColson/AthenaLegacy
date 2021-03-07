@@ -42,10 +42,10 @@ namespace Engine
 {
 	void Initialize(const EngineConfig& config);
 	void Initialize(const char* configFileName);
-	void Run(Scene* pInitialScene, World* pInitialWorld);
+	void Run(World* pInitialWorld);
 	void StartShutdown();
 
-	void SetActiveScene(Scene* pScene);
+	void SetActiveWorld(World* pWorld);
 	void SetSceneCreateCallback(void (*pCallBackFunc)(Scene&));
 	
 	void NewSceneCreated(Scene& scene);

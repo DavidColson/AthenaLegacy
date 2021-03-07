@@ -21,7 +21,7 @@ namespace Editor
 {
 	void Initialize(bool enabled);
 	void PreUpdate();
-	bool ProcessEvent(Scene& scene, SDL_Event* event);
+	bool ProcessEvent(SDL_Event* event);
 	TextureHandle DrawFrame(Scene& scene, float deltaTime);
 	void Destroy();
 	

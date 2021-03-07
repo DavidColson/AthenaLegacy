@@ -16,7 +16,7 @@ void World::ActivateWorld()
 {
     for (ISystem* pGlobalSystem : globalSystems)
     {
-        pGlobalSystem->Initialize();
+        pGlobalSystem->Activate();
     }
 
     for (Entity* pEntity : entities)

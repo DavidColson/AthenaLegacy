@@ -2,9 +2,13 @@
 
 #include "Matrix.h"
 #include "Vec2.h"
+#include "Vec4.h"
 #include "GraphicsDevice.h"
 #include "Scene.h"
 #include "AssetDatabase.h"
+
+#include "Systems.h"
+#include "SpatialComponent.h"
 
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -13,18 +17,6 @@
 
 struct Scene;
 struct FrameContext;
-
-// **********
-// Components
-// **********
-
-struct CText
-{
-	eastl::string text;
-	AssetHandle fontAsset;
-
-	REFLECT()
-};
 
 struct Character
 {
@@ -35,11 +27,47 @@ struct Character
 	int advance;
 };
 
-namespace FontSystem
+struct TextComponent : public SpatialComponent
 {
-	void Initialize();
-	void Destroy();
-	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
+	eastl::string text;
+	AssetHandle fontAsset;
+	
+	REFLECT_DERIVED();
+};
 
-	FT_Library GetFreeType();
+namespace FreeType
+{
+	FT_Library* Get();
 }
+
+struct FontDrawSystem : public ISystem
+{
+	~FontDrawSystem();
+
+    virtual void Activate() override;
+
+	virtual void RegisterComponent(IComponent* pComponent) override;
+
+	virtual void UnregisterComponent(IComponent* pComponent) override;
+
+	virtual void Draw(float deltaTime, FrameContext& ctx) override;
+
+	static FT_Library GetFreeType();
+
+private:
+	eastl::vector<TextComponent*> textComponents;
+
+	ProgramHandle fontShaderProgram;
+	ConstBufferHandle constBuffer;
+	BlendStateHandle blendState;
+	VertexBufferHandle vertexBuffer;
+	VertexBufferHandle texcoordsBuffer;
+	IndexBufferHandle indexBuffer;
+	SamplerHandle charTextureSampler;
+
+	struct FontUniforms
+	{
+		Matrixf projection;
+		Vec4f color;
+	};
+};

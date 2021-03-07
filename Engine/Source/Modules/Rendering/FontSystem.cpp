@@ -17,46 +17,31 @@ REFLECT_COMPONENT_BEGIN(CText)
 REFLECT_MEMBER(text)
 REFLECT_END()
 
-struct FontSystemState
-{
-	ProgramHandle fontShaderProgram;
-	ConstBufferHandle constBuffer;
-	BlendStateHandle blendState;
-	VertexBufferHandle vertexBuffer;
-	VertexBufferHandle texcoordsBuffer;
-	IndexBufferHandle indexBuffer;
-	SamplerHandle charTextureSampler;
-
-	struct FontUniforms
-	{
-		Matrixf projection;
-		Vec4f color;
-	};
-
-	FT_Library freetype;
-};
-
-namespace 
-{
-	FontSystemState* pState = nullptr;
-}
-
-// ***********************************************************************
-
-FT_Library FontSystem::GetFreeType()
-{
-	return pState->freetype;
-}
+REFLECT_COMPONENT_BEGIN(TextComponent)
+REFLECT_MEMBER(text)
+REFLECT_MEMBER(fontAsset)
+REFLECT_END()
 
 #define CHARS_PER_DRAW_CALL 500
 
+namespace
+{
+	FT_Library* pFreetype;
+}
+
+FT_Library* FreeType::Get()
+{
+	return pFreetype;
+}
+
 // ***********************************************************************
 
-void FontSystem::Initialize()
+void FontDrawSystem::Activate()
 {
-	pState = new FontSystemState();
+	GameRenderer::RegisterRenderSystemTransparent(this);
 
-	FT_Init_FreeType(&(pState->freetype));
+	pFreetype = new FT_Library();
+	FT_Init_FreeType(pFreetype);
 
 	// FONT ASSET
 	// Font asset will call this New_Face function, and store the resultant font face
@@ -94,7 +79,7 @@ void FontSystem::Initialize()
 
 	VertexShaderHandle vertShader = GfxDevice::CreateVertexShader(fontShaderSrc, "VSMain", "Fonts");
 	PixelShaderHandle pixShader = GfxDevice::CreatePixelShader(fontShaderSrc, "PSMain", "Fonts");
-	pState->fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
+	fontShaderProgram = GfxDevice::CreateProgram(vertShader, pixShader);
 
 	BlendingInfo blender;
 	blender.enabled = true;
@@ -102,38 +87,59 @@ void FontSystem::Initialize()
 	blender.destination = Blend::InverseSrcAlpha;
 	blender.sourceAlpha = Blend::InverseSrcAlpha;
 	blender.destinationAlpha = Blend::One;
-	pState->blendState = GfxDevice::CreateBlendState(blender);
+	blendState = GfxDevice::CreateBlendState(blender);
 
 	// Create vertex buffers
 	// ********************
 
-	pState->vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vec3f), "Font Render Vert Buffer");
-	pState->texcoordsBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vec2f), "Font Render Texcoords Buffer");
-	pState->indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, IndexFormat::UInt, "Font Render Index Buffer");
+	vertexBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vec3f), "Font Render Vert Buffer");
+	texcoordsBuffer = GfxDevice::CreateDynamicVertexBuffer(CHARS_PER_DRAW_CALL * 4, sizeof(Vec2f), "Font Render Texcoords Buffer");
+	indexBuffer = GfxDevice::CreateDynamicIndexBuffer(CHARS_PER_DRAW_CALL * 6, IndexFormat::UInt, "Font Render Index Buffer");
 
 	// Create a constant buffer for the WVP
 	// **********************************************
 
-	pState->constBuffer = GfxDevice::CreateConstantBuffer(sizeof(FontSystemState::FontUniforms), "Font Uniforms");
-	pState->charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
+	constBuffer = GfxDevice::CreateConstantBuffer(sizeof(FontUniforms), "Font Uniforms");
+	charTextureSampler = GfxDevice::CreateSampler(Filter::Linear, WrapMode::Clamp, "Font char");
 }
 
 // ***********************************************************************
 
-void FontSystem::Destroy()
+void FontDrawSystem::RegisterComponent(IComponent* pComponent)
 {
-	GfxDevice::FreeProgram(pState->fontShaderProgram);
-	GfxDevice::FreeVertexBuffer(pState->vertexBuffer);
-	GfxDevice::FreeVertexBuffer(pState->texcoordsBuffer);
-	GfxDevice::FreeIndexBuffer(pState->indexBuffer);
-	GfxDevice::FreeSampler(pState->charTextureSampler);
-	GfxDevice::FreeConstBuffer(pState->constBuffer);
-	GfxDevice::FreeBlendState(pState->blendState);
+	if (pComponent->GetTypeData() == TypeDatabase::Get<TextComponent>())
+	{
+		textComponents.push_back(static_cast<TextComponent*>(pComponent));
+	}
 }
 
 // ***********************************************************************
 
-void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
+void FontDrawSystem::UnregisterComponent(IComponent* pComponent)
+{
+	eastl::vector<TextComponent*>::iterator found = eastl::find(textComponents.begin(), textComponents.end(), pComponent);
+	if (found != textComponents.end())
+	{
+		textComponents.erase(found);
+	}
+}
+
+// ***********************************************************************
+
+FontDrawSystem::~FontDrawSystem()
+{
+	GfxDevice::FreeProgram(fontShaderProgram);
+	GfxDevice::FreeVertexBuffer(vertexBuffer);
+	GfxDevice::FreeVertexBuffer(texcoordsBuffer);
+	GfxDevice::FreeIndexBuffer(indexBuffer);
+	GfxDevice::FreeSampler(charTextureSampler);
+	GfxDevice::FreeConstBuffer(constBuffer);
+	GfxDevice::FreeBlendState(blendState);
+}
+
+// ***********************************************************************
+
+void FontDrawSystem::Draw(float deltaTime, FrameContext& ctx)
 {
 	PROFILE();
 	
@@ -141,31 +147,27 @@ void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 
 	// Set graphics state correctly
 	GfxDevice::SetTopologyType(TopologyType::TriangleList);
-	GfxDevice::BindProgram(pState->fontShaderProgram);
-	GfxDevice::SetBlending(pState->blendState);
-	GfxDevice::BindSampler(pState->charTextureSampler, ShaderType::Pixel, 0);
+	GfxDevice::BindProgram(fontShaderProgram);
+	GfxDevice::SetBlending(blendState);
+	GfxDevice::BindSampler(charTextureSampler, ShaderType::Pixel, 0);
 
-	for (EntityID ent : SceneIterator<CText, CTransform>(scene))
+	for(TextComponent* pText : textComponents)
 	{
-		// Skip if these entity has a visiblity component set to false
-		if (scene.Has<CVisibility>(ent))
-		{
-			if (scene.Get<CVisibility>(ent)->visible == false)
-				continue;
-		}
-
-		CText* pText = scene.Get<CText>(ent);
-		CTransform* pTransform = scene.Get<CTransform>(ent);
 		Font* pFont = AssetDB::GetAsset<Font>(pText->fontAsset);
 
+		Vec3f position;
+		Vec3f rotation;
+		Vec3f scale;
+		pText->GetWorldTransform().ToTRS(position, rotation, scale);
+
 		float textWidth = 0.0f;
-		float x = pTransform->localPos.x;
-		float y = pTransform->localPos.y;
+		float x = position.x;
+		float y = position.y;
 
 		for (char const& c : pText->text)
 		{
 			Character ch = pFont->characters[c];
-			textWidth += ch.advance * pTransform->localSca.x;
+			textWidth += ch.advance * scale.x;
 		}
 
 		eastl::fixed_vector<Vec3f, CHARS_PER_DRAW_CALL * 4> vertexList;
@@ -176,10 +178,10 @@ void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		for (char const& c : pText->text) {
 			Character ch = pFont->characters[c];
 
-			float xpos = (x + ch.bearing.x * pTransform->localSca.x) - textWidth * 0.5f;
-			float ypos = y - (ch.size.y - ch.bearing.y) * pTransform->localSca.y;
-			float w = (float)ch.size.x * pTransform->localSca.x;
-			float h = (float)ch.size.y * pTransform->localSca.y;
+			float xpos = (x + ch.bearing.x * scale.x) - textWidth * 0.5f;
+			float ypos = y - (ch.size.y - ch.bearing.y) * scale.y;
+			float w = (float)ch.size.x * scale.x;
+			float h = (float)ch.size.y * scale.y;
 	
 			vertexList.push_back( Vec3f( xpos, ypos, 0.0f));
 			texcoordsList.push_back( Vec2f(ch.UV0.x, ch.UV1.y));
@@ -204,23 +206,23 @@ void FontSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 			indexList.push_back(currentIndex + 1);
 			currentIndex += 4; // move along by 4 vertices for the next character
 
-			x += ch.advance * pTransform->localSca.x;
+			x += ch.advance * scale.x;
 		}
 	
 		// Update buffers
-		GfxDevice::UpdateDynamicVertexBuffer(pState->vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vec3f));
-		GfxDevice::UpdateDynamicVertexBuffer(pState->texcoordsBuffer, texcoordsList.data(), texcoordsList.size() * sizeof(Vec2f));
-		GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, indexList.data(), indexList.size() * sizeof(uint32_t));
+		GfxDevice::UpdateDynamicVertexBuffer(vertexBuffer, vertexList.data(), vertexList.size() * sizeof(Vec3f));
+		GfxDevice::UpdateDynamicVertexBuffer(texcoordsBuffer, texcoordsList.data(), texcoordsList.size() * sizeof(Vec2f));
+		GfxDevice::UpdateDynamicIndexBuffer(indexBuffer, indexList.data(), indexList.size() * sizeof(uint32_t));
 
-		GfxDevice::BindVertexBuffers(0, 1, &pState->vertexBuffer);
-		GfxDevice::BindVertexBuffers(1, 1, &pState->texcoordsBuffer);
-		GfxDevice::BindIndexBuffer(pState->indexBuffer);
+		GfxDevice::BindVertexBuffers(0, 1, &vertexBuffer);
+		GfxDevice::BindVertexBuffers(1, 1, &texcoordsBuffer);
+		GfxDevice::BindIndexBuffer(indexBuffer);
 		
 		GfxDevice::BindTexture(pFont->fontTexture, ShaderType::Pixel, 0);
 
-		FontSystemState::FontUniforms uniformData{ ctx.projection * ctx.view, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
-		GfxDevice::BindConstantBuffer(pState->constBuffer, &uniformData, ShaderType::Vertex, 0);
-		GfxDevice::BindConstantBuffer(pState->constBuffer, &uniformData, ShaderType::Pixel, 0);
+		FontUniforms uniformData{ ctx.projection * ctx.view, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
+		GfxDevice::BindConstantBuffer(constBuffer, &uniformData, ShaderType::Vertex, 0);
+		GfxDevice::BindConstantBuffer(constBuffer, &uniformData, ShaderType::Pixel, 0);
 		
 		// Do draw call for this text
 		GfxDevice::DrawIndexed((int)indexList.size(), 0, 0);
