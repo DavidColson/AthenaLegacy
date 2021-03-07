@@ -199,14 +199,16 @@ struct Member
  * Used to define a type as reflectable struct during type declaration 
  **/
 #define REFLECT()                               \
-	static TypeData_Struct typeData;                \
-	static void initReflection(TypeData_Struct* type);
+	static TypeData_Struct staticTypeData;                \
+	static void initReflection(TypeData_Struct* type); \
+	virtual TypeData_Struct& GetTypeData();
 
 /**
  * Used to specify the structure of a type, use in cpp files
  **/
 #define REFLECT_BEGIN(ReflectedStruct)\
-	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
+	TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
+	TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
 	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
 		using XX = ReflectedStruct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
@@ -221,7 +223,8 @@ struct Member
  * Used to specify the structure of a type for derived types, again used in cpp files
  **/
 #define REFLECT_BEGIN_DERIVED(ReflectedStruct, ParentStruct)\
-	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
+	TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
+	TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
 	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
 		using XX = ReflectedStruct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
@@ -230,7 +233,7 @@ struct Member
 		selfTypeData->size = sizeof(XX);\
 		selfTypeData->pTypeOps = new TypeDataOps_Internal<XX>;\
 		selfTypeData->castableTo = TypeData::Struct;\
-		selfTypeData->pParentType = &ParentStruct::typeData;\
+		selfTypeData->pParentType = &ParentStruct::staticTypeData;\
 		selfTypeData->members = {
 
 /**
@@ -252,7 +255,8 @@ struct Member
  *  Special version of the begin macro for types that are template specializations, such as Vec<float>
  **/
 #define REFLECT_TEMPLATED_BEGIN(ReflectedStruct)\
-	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
+	TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
+	TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
 	template<>\
 	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
 		using XX = ReflectedStruct;\
@@ -269,7 +273,8 @@ struct Member
  * Intend to replace with proper type attributes at some point
  **/
 #define REFLECT_COMPONENT_BEGIN(ReflectedStruct)\
-	TypeData_Struct ReflectedStruct::typeData{ReflectedStruct::initReflection};\
+	TypeData_Struct ReflectedStruct::staticTypeData{ReflectedStruct::initReflection};\
+	TypeData_Struct& ReflectedStruct::GetTypeData() { return ReflectedStruct::staticTypeData; }\
 	void ReflectedStruct::initReflection(TypeData_Struct* selfTypeData) {\
 		using XX = ReflectedStruct;\
 		TypeDatabase::Data::Get().typeNames.emplace(#ReflectedStruct, selfTypeData);\
