@@ -1,10 +1,7 @@
 #include "Pigeons.h"
-#include "Systems.h"
-#include "Components.h"
-#include "Json.h"
-#include "SceneSerializer.h"
-#include "FileSystem.h"
 #include "World.h"
+#include "Entity.h"
+#include "Rendering/SpriteDrawSystem.h"
 
 #include <SDL.h>
 
@@ -12,13 +9,18 @@ int main(int argc, char *argv[])
 {
 	Engine::Initialize("Games/Pigeons/Pigeons.cfg");
 
-	JsonValue jsonScene = ParseJsonFile(FileSys::ReadWholeFile("Games/PigeonGame/Resources/Levels/PigeonScene.lvl"));
-	Scene* pScene = SceneSerializer::NewSceneFromJson(jsonScene);
+	World* pWorld = new World();
 
-	World world;
+	Entity* pEntity = pWorld->NewEntity("Pigeon");
+	Sprite* pSprite = pEntity->AddNewComponent<Sprite>();
+	pSprite->SetLocalPosition(Vec3f(612.0f, 378.0f, 0.0f));
+	pSprite->SetLocalScale(Vec3f(200.0f, 200.0f, 0.0f));
+	pSprite->spriteHandle = AssetHandle("Images/pigeon.png");
+
+	pWorld->AddGlobalSystem<SpriteDrawSystem>();
 
 	// Run everything
-	Engine::Run(&world);
+	Engine::Run(pWorld);
 
 	return 0;
 }

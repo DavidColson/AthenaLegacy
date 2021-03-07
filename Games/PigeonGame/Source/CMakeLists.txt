@@ -13,10 +13,6 @@ target_sources(PigeonGame
     PRIVATE
         "Pigeons.h"
         "Pigeons.cpp"
-        "Components.h"
-        "Components.cpp"
-        "Systems.h"
-        "Systems.cpp"
 )
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})

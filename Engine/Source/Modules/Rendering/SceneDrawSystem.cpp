@@ -22,6 +22,11 @@ REFLECT_MEMBER(shaderHandle)
 REFLECT_MEMBER(meshHandle)
 REFLECT_END()
 
+SceneDrawSystem::~SceneDrawSystem()
+{
+	GameRenderer::UnregisterRenderSystemOpaque(this);
+}
+
 void SceneDrawSystem::Activate()
 {
 	GameRenderer::RegisterRenderSystemOpaque(this);

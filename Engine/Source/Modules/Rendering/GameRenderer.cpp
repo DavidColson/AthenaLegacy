@@ -57,7 +57,6 @@ SceneDrawSystem* GameRenderer::GetSceneDrawSystem()
 void GameRenderer::Initialize(float width, float height, bool postProcessingEnabled)
 {
 	DebugDraw::Initialize();
-    SpriteDrawSystem::Initialize();
 
     gameRenderTarget = GfxDevice::CreateRenderTarget(width, height, Engine::GetConfig().multiSamples, "Game Render Target");
     gameWindowSize = Vec2f(width, height);
@@ -181,7 +180,6 @@ void GameRenderer::SceneRenderPassTransparent(Scene& scene, FrameContext& contex
     {
         pSystem->Draw(deltaTime, context);
     }
-    SpriteDrawSystem::OnFrame(scene, context, deltaTime);
 }
 
 // ***********************************************************************
@@ -197,8 +195,8 @@ void GameRenderer::Destroy()
 {
     GfxDevice::FreeRenderTarget(gameRenderTarget);
     GfxDevice::FreeTexture(resolvedGameFrame);
+    
     DebugDraw::Destroy();
-	SpriteDrawSystem::Destroy();
 
     if (postProcessing)
         PostProcessing::Destroy();

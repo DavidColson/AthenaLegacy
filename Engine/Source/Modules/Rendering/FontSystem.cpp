@@ -124,6 +124,8 @@ void FontDrawSystem::UnregisterComponent(IComponent* pComponent)
 
 FontDrawSystem::~FontDrawSystem()
 {
+	GameRenderer::UnregisterRenderSystemTransparent(this);
+
 	GfxDevice::FreeProgram(fontShaderProgram);
 	GfxDevice::FreeVertexBuffer(vertexBuffer);
 	GfxDevice::FreeVertexBuffer(texcoordsBuffer);

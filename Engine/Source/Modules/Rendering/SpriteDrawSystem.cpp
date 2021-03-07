@@ -2,7 +2,6 @@
 
 #include "Scene.h"
 #include "GameRenderer.h"
-#include "Mesh.h"
 #include "AssetDatabase.h"
 #include "Image.h"
 #include "Profiler.h"
@@ -12,26 +11,16 @@ struct SpriteUniforms
     Matrixf wvp;
 };
 
-namespace
-{
-    ConstBufferHandle transformBufferHandle;
-    SamplerHandle spriteSampler;
-    VertexShaderHandle vertShader;
-    PixelShaderHandle pixelShader;
-    ProgramHandle program;
-    BlendStateHandle blendState;
-
-    Primitive quadPrim;
-}
-
-REFLECT_COMPONENT_BEGIN(CSprite)
+REFLECT_COMPONENT_BEGIN(Sprite)
 REFLECT_MEMBER(spriteHandle)
 REFLECT_END()
 
 // ***********************************************************************
 
-void SpriteDrawSystem::Initialize()
+void SpriteDrawSystem::Activate()
 {
+    GameRenderer::RegisterRenderSystemTransparent(this);
+
     quadPrim = Primitive::NewPlainQuad();
 	transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(SpriteUniforms), "Sprite Transform Buffer");
     spriteSampler = GfxDevice::CreateSampler(Filter::Point, WrapMode::Wrap, "Sprite sampler");
@@ -75,7 +64,28 @@ void SpriteDrawSystem::Initialize()
 
 // ***********************************************************************
 
-void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
+void SpriteDrawSystem::RegisterComponent(IComponent* pComponent)
+{
+    if (pComponent->GetTypeData() == TypeDatabase::Get<Sprite>())
+	{
+		spriteComponents.push_back(static_cast<Sprite*>(pComponent));
+	}
+}
+
+// ***********************************************************************
+
+void SpriteDrawSystem::UnregisterComponent(IComponent* pComponent)
+{
+    eastl::vector<Sprite*>::iterator found = eastl::find(spriteComponents.begin(), spriteComponents.end(), pComponent);
+	if (found != spriteComponents.end())
+	{
+		spriteComponents.erase(found);
+	}
+}
+
+// ***********************************************************************
+
+void SpriteDrawSystem::Draw(float deltaTime, FrameContext& ctx)
 {
     PROFILE();
 	
@@ -88,15 +98,13 @@ void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 	GfxDevice::SetBlending(blendState);
 	GfxDevice::BindSampler(spriteSampler, ShaderType::Pixel, 0);
     
-    for (EntityID ent : SceneIterator<CSprite, CTransform>(scene))
+    for (Sprite* pSprite : spriteComponents)
     {
-        CSprite* pSprite = scene.Get<CSprite>(ent);
         Image* pImage = AssetDB::GetAsset<Image>(pSprite->spriteHandle);
         if (pImage == nullptr)
             continue;
 
-        CTransform* pTrans = scene.Get<CTransform>(ent);
-        Matrixf wvp = ctx.projection * ctx.view * pTrans->globalTransform;
+        Matrixf wvp = ctx.projection * ctx.view * pSprite->GetWorldTransform();
 		SpriteUniforms uniformData{ wvp };
 		GfxDevice::BindConstantBuffer(transformBufferHandle, &uniformData, ShaderType::Vertex, 0);
 
@@ -108,8 +116,12 @@ void SpriteDrawSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
     GfxDevice::SetBlending(INVALID_HANDLE);
 }
 
-void SpriteDrawSystem::Destroy()
+// ***********************************************************************
+
+SpriteDrawSystem::~SpriteDrawSystem()
 {
+    GameRenderer::UnregisterRenderSystemTransparent(this);
+
     GfxDevice::FreeBlendState(blendState);
     GfxDevice::FreeConstBuffer(transformBufferHandle);
     GfxDevice::FreeSampler(spriteSampler);
