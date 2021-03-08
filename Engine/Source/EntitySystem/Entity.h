@@ -30,6 +30,14 @@ public:
         return pComponent;
     }
 
+	template<typename Type>
+    Type* AddNewSystem()
+    {
+        Type* pSystem = new Type();
+        systems.push_back(static_cast<ISystem*>(pSystem));
+        return pSystem;
+    }
+
 	eastl::string name;
 
 private:

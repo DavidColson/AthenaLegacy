@@ -25,6 +25,8 @@ target_sources(AsteroidsGame
         "PolylineDrawSystem.cpp"
         "AsteroidPhysicsSystem.h"
         "AsteroidPhysicsSystem.cpp"
+        "PlayerController.h"
+        "PlayerController.cpp"
 )
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})

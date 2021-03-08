@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "AsteroidPhysicsSystem.h"
 #include "PolylineDrawSystem.h"
+#include "PlayerController.h"
 
 #include <Vec4.h>
 #include <Matrix.h>
@@ -44,12 +45,17 @@ World* CreateMainAsteroidsScene()
 		Vec2f(1.0f, 0.2f)
 	};
 	Entity* pPlayerEnt = world.NewEntity("Player Ship");
+	pPlayerEnt->AddNewSystem<PlayerController>();
+	pPlayerEnt->AddNewComponent<PlayerComponent>();
 	SpatialComponent* pRoot = pPlayerEnt->AddNewComponent<SpatialComponent>();
+	AsteroidPhysics* pRootPhysics = pPlayerEnt->AddNewComponent<AsteroidPhysics>();
+	pRootPhysics->SetParent(pRoot);
+	pRootPhysics->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f, 0.0f));
+	pRootPhysics->SetLocalScale(Vec3f(30.f, 35.f, 1.0f));
+
 	Polyline* pPlayerPolyline = pPlayerEnt->AddNewComponent<Polyline>();
-	pPlayerPolyline->SetParent(pRoot);
+	pPlayerPolyline->SetParent(pRootPhysics);
 	pPlayerPolyline->points.assign(playerVerts, playerVerts + 5);
-	pPlayerPolyline->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f, 0.0f));
-	pPlayerPolyline->SetLocalScale(Vec3f(30.f, 35.f, 1.0f));
 
 	// Create the lives
 	float offset = 0.0f;
