@@ -7,7 +7,6 @@ struct SpatialComponent : public IComponent
 {
     REFLECT_DERIVED()
 
-    // This needs to update the children, and our world transform if we have a parent
     void SetLocalPosition(const Vec3f& position);
 
     void SetLocalRotation(const Vec3f& rotation);
@@ -19,8 +18,8 @@ struct SpatialComponent : public IComponent
     void SetParent(SpatialComponent* pDesiredParent);
 
 private:
-    Matrixf localTransform;
-    Matrixf worldTransform;
+    Matrixf localTransform{ Matrixf::Identity() };
+    Matrixf worldTransform{ Matrixf::Identity() };
 
     void UpdateParentAndChildTransforms();
 

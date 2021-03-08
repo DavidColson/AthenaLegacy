@@ -27,6 +27,9 @@ void PolylineDrawSystem::AddPolyLine(const VertsVector& verts, float thickness, 
 	// Vector manipulation here is slow, can do better
 	// I recommend using a single frame allocator, or some other with a custom container
 	
+	if (verts.empty())
+		return;
+
     VertsVector normals;
     for (int i = 0; i < verts.size(); i++)
     {

@@ -28,6 +28,75 @@ World* CreateMainAsteroidsScene()
 {
 	World& world = *(new World());
 
+	const float w = GameRenderer::GetWidth();
+	const float h = GameRenderer::GetHeight();
+
+	srand(unsigned int(time(nullptr)));
+	auto randf = []() { return float(rand()) / float(RAND_MAX); };
+
+	// Create the ship
+	Vec2f playerVerts[5] = {
+		Vec2f(0.f, 0.5f),
+		Vec2f(1.f, 0.8f),
+		Vec2f(0.9f, 0.7f),
+		Vec2f(0.9f, 0.3f),
+		Vec2f(1.0f, 0.2f)
+	};
+	Entity* pPlayerEnt = world.NewEntity("Player Ship");
+	SpatialComponent* pRoot = pPlayerEnt->AddNewComponent<SpatialComponent>();
+	Polyline* pPlayerPolyline = pPlayerEnt->AddNewComponent<Polyline>();
+	pPlayerPolyline->SetParent(pRoot);
+	pPlayerPolyline->points.assign(playerVerts, playerVerts + 5);
+	pPlayerPolyline->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f, 0.0f));
+	pPlayerPolyline->SetLocalScale(Vec3f(30.f, 35.f, 1.0f));
+
+	// Create the lives
+	float offset = 0.0f;
+	for (int i = 0; i < 3; ++i)
+	{
+		Polyline* pLifePolyline = pPlayerEnt->AddNewComponent<Polyline>();
+		pLifePolyline->SetParent(pRoot);
+		pLifePolyline->points.assign(playerVerts, playerVerts + 5);
+		pLifePolyline->SetLocalPosition(Vec3f(150.f + offset, h - 85.0f, 0.0f));
+		pLifePolyline->SetLocalScale(Vec3f(30.f, 35.f, 1.0f));
+		pLifePolyline->SetLocalRotation(Vec3f(0.0f, 0.0f, -3.14159f / 2.0f));
+		offset += 30.0f;
+	}
+
+	// Create some asteroids
+	for (int i = 0; i < 10; i++)
+	{
+		Vec3f randomLocation = Vec3f(float(rand() % 1800), float(rand() % 1000), 0.0f);
+		Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
+		float randomRotation = randf() * 6.282f;
+		Entity* pAsteroid = world.NewEntity("Asteroid");
+		Polyline* pAsteroidPoly = pAsteroid->AddNewComponent<Polyline>();
+		pAsteroidPoly->SetLocalPosition(randomLocation);
+		pAsteroidPoly->SetLocalScale(Vec3f(90.0f, 90.0f, 1.0f));
+		pAsteroidPoly->SetLocalRotation(Vec3f(0.0f, 0.0f, randomRotation));
+		pAsteroidPoly->points = GetRandomAsteroidMesh();
+	}
+
+	// Create the UI entity
+	{
+		Entity* pUIEntity = world.NewEntity("UI");
+		SpatialComponent* pRoot = pUIEntity->AddNewComponent<SpatialComponent>();
+		TextComponent* pScore = pPlayerEnt->AddNewComponent<TextComponent>();
+		pScore->SetParent(pRoot);
+		pScore->SetLocalPosition(Vec3f(150.0f, h - 53.0f, 0.0f));
+		pScore->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
+		pScore->text = "0";
+
+		TextComponent* pHighScore = pPlayerEnt->AddNewComponent<TextComponent>();
+		pHighScore->SetParent(pRoot);
+		pHighScore->SetLocalPosition(Vec3f(w - 150.f, h - 53.0f, 0.0f));
+		pHighScore->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
+		pHighScore->text = "0";
+	}
+
+	world.AddGlobalSystem<PolylineDrawSystem>();
+	world.AddGlobalSystem<FontDrawSystem>();
+
 	return &world;
 }
 
@@ -89,7 +158,7 @@ int main(int argc, char *argv[])
 	Engine::Initialize("Games/Asteroids/Asteroids.cfg");
 
 	// Run everything
-	Engine::Run(CreateMainMenuScene());
+	Engine::Run(CreateMainAsteroidsScene());
 
 	return 0;
 }
