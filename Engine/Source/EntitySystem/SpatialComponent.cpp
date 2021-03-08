@@ -5,40 +5,37 @@
 REFLECT_BEGIN_DERIVED(SpatialComponent, IComponent)
 REFLECT_END()
 
-void SpatialComponent::SetLocalPosition(const Vec3f& position)
+void SpatialComponent::SetLocalPosition(const Vec3f& _position)
 {
-    Vec3f trans;
-    Vec3f rot;
-    Vec3f sca;
-    localTransform.ToTRS(trans, rot, sca);
-    trans = position;
-    localTransform = Matrixf::MakeTRS(trans, rot, sca);
-
-    UpdateParentAndChildTransforms();
+    position = _position;
+    UpdateTransforms();
 }
 
-void SpatialComponent::SetLocalRotation(const Vec3f& rotation)
+Vec3f SpatialComponent::GetLocalPosition()
 {
-    Vec3f trans;
-    Vec3f rot;
-    Vec3f sca;
-    localTransform.ToTRS(trans, rot, sca);
-    rot = rotation;
-    localTransform = Matrixf::MakeTRS(trans, rot, sca);
-    
-    UpdateParentAndChildTransforms();
+    return position;
 }
 
-void SpatialComponent::SetLocalScale(const Vec3f& scale)
+void SpatialComponent::SetLocalRotation(const Vec3f& _rotation)
 {
-    Vec3f trans;
-    Vec3f rot;
-    Vec3f sca;
-    localTransform.ToTRS(trans, rot, sca);
-    sca = scale;
-    localTransform = Matrixf::MakeTRS(trans, rot, sca);
-    
-    UpdateParentAndChildTransforms();
+    rotation = _rotation;
+    UpdateTransforms();
+}
+
+Vec3f SpatialComponent::GetLocalRotation()
+{
+    return rotation;
+}
+
+void SpatialComponent::SetLocalScale(const Vec3f& _scale)
+{
+    scale = _scale;
+    UpdateTransforms();
+}
+
+Vec3f SpatialComponent::GetLocalScale()
+{
+    return scale;
 }
 
 Matrixf SpatialComponent::GetWorldTransform()
@@ -48,13 +45,16 @@ Matrixf SpatialComponent::GetWorldTransform()
 
 void SpatialComponent::SetParent(SpatialComponent* pDesiredParent)
 {
+    // TODO: Check to make sure the desired parent even belongs to this entity
     pParent = pDesiredParent;
     pParent->children.push_back(this);
-    UpdateParentAndChildTransforms();
+    UpdateTransforms();
 }
 
-void SpatialComponent::UpdateParentAndChildTransforms()
+void SpatialComponent::UpdateTransforms()
 {
+    localTransform = Matrixf::MakeTRS(position, rotation, scale);
+
     if (pParent)
     {
         worldTransform = pParent->worldTransform * localTransform;

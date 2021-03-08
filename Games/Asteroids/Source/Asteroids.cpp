@@ -1,6 +1,7 @@
 #include "Asteroids.h"
 #include "Systems_Old.h"
 #include "Components.h"
+#include "AsteroidPhysicsSystem.h"
 #include "PolylineDrawSystem.h"
 
 #include <Vec4.h>
@@ -70,31 +71,36 @@ World* CreateMainAsteroidsScene()
 		Vec3f randomVelocity = Vec3f(randf() * 2.0f - 1.0f, randf() * 2.0f - 1.0f, 0.0f)  * 40.0f;
 		float randomRotation = randf() * 6.282f;
 		Entity* pAsteroid = world.NewEntity("Asteroid");
+		AsteroidPhysics* pPhysics = pAsteroid->AddNewComponent<AsteroidPhysics>();
+		pPhysics->velocity = randomVelocity;
+		pPhysics->SetLocalPosition(randomLocation);
+		pPhysics->SetLocalScale(Vec3f(90.0f, 90.0f, 1.0f));
+		pPhysics->SetLocalRotation(Vec3f(0.0f, 0.0f, randomRotation));
+
 		Polyline* pAsteroidPoly = pAsteroid->AddNewComponent<Polyline>();
-		pAsteroidPoly->SetLocalPosition(randomLocation);
-		pAsteroidPoly->SetLocalScale(Vec3f(90.0f, 90.0f, 1.0f));
-		pAsteroidPoly->SetLocalRotation(Vec3f(0.0f, 0.0f, randomRotation));
+		pAsteroidPoly->SetParent(pPhysics);
 		pAsteroidPoly->points = GetRandomAsteroidMesh();
 	}
 
 	// Create the UI entity
 	{
 		Entity* pUIEntity = world.NewEntity("UI");
-		SpatialComponent* pRoot = pUIEntity->AddNewComponent<SpatialComponent>();
-		TextComponent* pScore = pPlayerEnt->AddNewComponent<TextComponent>();
-		pScore->SetParent(pRoot);
+		SpatialComponent* pUIRoot = pUIEntity->AddNewComponent<SpatialComponent>();
+		TextComponent* pScore = pUIEntity->AddNewComponent<TextComponent>();
+		pScore->SetParent(pUIRoot);
 		pScore->SetLocalPosition(Vec3f(150.0f, h - 53.0f, 0.0f));
 		pScore->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 		pScore->text = "0";
 
-		TextComponent* pHighScore = pPlayerEnt->AddNewComponent<TextComponent>();
-		pHighScore->SetParent(pRoot);
+		TextComponent* pHighScore = pUIEntity->AddNewComponent<TextComponent>();
+		pHighScore->SetParent(pUIRoot);
 		pHighScore->SetLocalPosition(Vec3f(w - 150.f, h - 53.0f, 0.0f));
 		pHighScore->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 		pHighScore->text = "0";
 	}
 
 	world.AddGlobalSystem<PolylineDrawSystem>();
+	world.AddGlobalSystem<AsteroidPhysicsSystem>();
 	world.AddGlobalSystem<FontDrawSystem>();
 
 	return &world;

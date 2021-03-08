@@ -1,14 +1,13 @@
 #pragma once
 
-#include "Vec2.h"
-#include "Vec4.h"
-#include "Matrix.h"
-#include "GraphicsDevice.h"
-#include "Scene.h"
-
-#include "Systems.h"
-#include "Entity.h"
-#include "SpatialComponent.h"
+#include <Vec2.h>
+#include <Vec4.h>
+#include <Matrix.h>
+#include <GraphicsDevice.h>
+#include <Scene.h>
+#include <Systems.h>
+#include <Entity.h>
+#include <SpatialComponent.h>
 
 typedef eastl::fixed_vector<Vec2f, 50> VertsVector;
 struct FrameContext;
@@ -25,7 +24,7 @@ struct Polyline : public SpatialComponent
 	float thickness = 5.0f;
 	bool connected = true;
 	
-	REFLECT_DERIVED();
+	REFLECT_DERIVED()
 };
 
 struct PolylineDrawSystem : public ISystem
