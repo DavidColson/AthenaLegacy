@@ -22,7 +22,7 @@ struct PlayerComponent : public IComponent
     REFLECT_DERIVED()
 };
 
-struct PlayerController : public ISystem
+struct PlayerController : public IEntitySystem
 {
     virtual void Activate() override;
 

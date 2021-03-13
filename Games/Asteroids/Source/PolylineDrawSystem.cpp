@@ -117,7 +117,7 @@ void PolylineDrawSystem::Activate()
 
 // ***********************************************************************
 
-void PolylineDrawSystem::RegisterComponent(IComponent* pComponent)
+void PolylineDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	if (pComponent->GetTypeData() == TypeDatabase::Get<Polyline>())
 	{
@@ -127,7 +127,7 @@ void PolylineDrawSystem::RegisterComponent(IComponent* pComponent)
 
 // ***********************************************************************
 
-void PolylineDrawSystem::UnregisterComponent(IComponent* pComponent)
+void PolylineDrawSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	eastl::vector<Polyline*>::iterator found = eastl::find(polylineComponents.begin(), polylineComponents.end(), pComponent);
 	if (found != polylineComponents.end())

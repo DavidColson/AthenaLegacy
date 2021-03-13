@@ -27,15 +27,15 @@ struct Polyline : public SpatialComponent
 	REFLECT_DERIVED()
 };
 
-struct PolylineDrawSystem : public ISystem
+struct PolylineDrawSystem : public IWorldSystem
 {
 	~PolylineDrawSystem();
 
     virtual void Activate() override;
 
-	virtual void RegisterComponent(IComponent* pComponent) override;
+	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
-	virtual void UnregisterComponent(IComponent* pComponent) override;
+	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
 	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) override;
 

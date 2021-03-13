@@ -3,7 +3,7 @@
 #include "EASTL/vector.h"
 #include "EASTL/string.h"
 
-class ISystem;
+class IEntitySystem;
 struct UpdateContext;
 
 struct IComponent
@@ -35,7 +35,7 @@ public:
     Type* AddNewSystem()
     {
         Type* pSystem = new Type();
-        systems.push_back(static_cast<ISystem*>(pSystem));
+        systems.push_back(static_cast<IEntitySystem*>(pSystem));
         return pSystem;
     }
 
@@ -43,5 +43,5 @@ public:
 
 private:
 	eastl::vector<IComponent*> components;
-	eastl::vector<ISystem*> systems;
+	eastl::vector<IEntitySystem*> systems;
 };

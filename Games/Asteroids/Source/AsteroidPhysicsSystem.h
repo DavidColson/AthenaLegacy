@@ -20,13 +20,13 @@ struct AsteroidPhysics : public SpatialComponent
 	REFLECT_DERIVED()
 };
 
-struct AsteroidPhysicsSystem : public ISystem
+struct AsteroidPhysicsSystem : public IWorldSystem
 {
     virtual void Activate() override;
 
-	virtual void RegisterComponent(IComponent* pComponent) override;
+	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
-	virtual void UnregisterComponent(IComponent* pComponent) override;
+	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
 	virtual void Update(UpdateContext& ctx) override;
 

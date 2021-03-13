@@ -4,7 +4,7 @@
 #include "EASTL/vector.h"
 
 class Entity;
-class ISystem;
+class IWorldSystem;
 struct UpdateContext;
 
 class World
@@ -24,7 +24,7 @@ public:
 	void DestroyWorld();
 
 	template<typename Type>
-    ISystem* AddGlobalSystem()
+    IWorldSystem* AddGlobalSystem()
 	{
     	globalSystems.push_back(new Type());
 		return globalSystems.back();
@@ -36,5 +36,5 @@ private:
 	eastl::vector<Entity*> entitiesToAddQueue;
 
 	eastl::vector<Entity*> entities;
-	eastl::vector<ISystem*> globalSystems;
+	eastl::vector<IWorldSystem*> globalSystems;
 };

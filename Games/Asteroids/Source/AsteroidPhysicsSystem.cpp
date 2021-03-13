@@ -14,7 +14,7 @@ void AsteroidPhysicsSystem::Activate()
 
 }
 
-void AsteroidPhysicsSystem::RegisterComponent(IComponent* pComponent)
+void AsteroidPhysicsSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
     if (pComponent->GetTypeData() == TypeDatabase::Get<AsteroidPhysics>())
 	{
@@ -22,7 +22,7 @@ void AsteroidPhysicsSystem::RegisterComponent(IComponent* pComponent)
 	}
 }
 
-void AsteroidPhysicsSystem::UnregisterComponent(IComponent* pComponent)
+void AsteroidPhysicsSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
 {
     eastl::vector<AsteroidPhysics*>::iterator found = eastl::find(physicsComponents.begin(), physicsComponents.end(), pComponent);
 	if (found != physicsComponents.end())

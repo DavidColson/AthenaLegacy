@@ -18,7 +18,7 @@ Entity* World::NewEntity(eastl::string name)
 
 void World::ActivateWorld()
 {
-    for (ISystem* pGlobalSystem : globalSystems)
+    for (IWorldSystem* pGlobalSystem : globalSystems)
     {
         pGlobalSystem->Activate();
     }
@@ -28,9 +28,9 @@ void World::ActivateWorld()
         eastl::vector<IComponent*> comps = pEntity->Activate();
         for (IComponent* pComponent : comps)
         {
-            for (ISystem* pGlobalSystem : globalSystems)
+            for (IWorldSystem* pGlobalSystem : globalSystems)
             {
-                pGlobalSystem->RegisterComponent(pComponent);
+                pGlobalSystem->RegisterComponent(pEntity, pComponent);
             }
         }
     }
@@ -44,9 +44,9 @@ void World::DeactivateWorld()
         eastl::vector<IComponent*> comps = pEntity->Deactivate();
         for (IComponent* pComponent : comps)
         {
-            for (ISystem* pGlobalSystem : globalSystems)
+            for (IWorldSystem* pGlobalSystem : globalSystems)
             {
-                pGlobalSystem->UnregisterComponent(pComponent);
+                pGlobalSystem->UnregisterComponent(pEntity, pComponent);
             }
         }
     }
@@ -60,9 +60,9 @@ void World::OnUpdate(UpdateContext& ctx)
         eastl::vector<IComponent*> comps = pEntityToAdd->Activate();
         for (IComponent* pComponent : comps)
         {
-            for (ISystem* pGlobalSystem : globalSystems)
+            for (IWorldSystem* pGlobalSystem : globalSystems)
             {
-                pGlobalSystem->RegisterComponent(pComponent);
+                pGlobalSystem->RegisterComponent(pEntityToAdd, pComponent);
             }
         }
         entities.push_back(pEntityToAdd);
@@ -76,7 +76,7 @@ void World::OnUpdate(UpdateContext& ctx)
     }
 
     // Then global systems
-    for (ISystem* pSystem : globalSystems)
+    for (IWorldSystem* pSystem : globalSystems)
     {
         pSystem->Update(ctx);
     }

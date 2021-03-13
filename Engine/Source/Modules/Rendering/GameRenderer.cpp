@@ -38,8 +38,8 @@ namespace
 
     bool postProcessing{ false };
 
-    eastl::vector<ISystem*> opaqueRenderPassSystems;
-    eastl::vector<ISystem*> transparentRenderPassSystems;
+    eastl::vector<IWorldSystem*> opaqueRenderPassSystems;
+    eastl::vector<IWorldSystem*> transparentRenderPassSystems;
 }
 
 void GameRenderer::SetSceneDrawSystem(SceneDrawSystem* system)
@@ -69,23 +69,23 @@ void GameRenderer::Initialize(float width, float height, bool postProcessingEnab
 
 // ***********************************************************************
 
-void GameRenderer::RegisterRenderSystemOpaque(ISystem* pSystem)
+void GameRenderer::RegisterRenderSystemOpaque(IWorldSystem* pSystem)
 {
     opaqueRenderPassSystems.push_back(pSystem);
 }
 
 // ***********************************************************************
 
-void GameRenderer::RegisterRenderSystemTransparent(ISystem* pSystem)
+void GameRenderer::RegisterRenderSystemTransparent(IWorldSystem* pSystem)
 {
     transparentRenderPassSystems.push_back(pSystem);
 }
 
 // ***********************************************************************
 
-void GameRenderer::UnregisterRenderSystemOpaque(ISystem* pSystem)
+void GameRenderer::UnregisterRenderSystemOpaque(IWorldSystem* pSystem)
 {
-    eastl::vector<ISystem*>::iterator found = eastl::find(opaqueRenderPassSystems.begin(), opaqueRenderPassSystems.end(), pSystem);
+    eastl::vector<IWorldSystem*>::iterator found = eastl::find(opaqueRenderPassSystems.begin(), opaqueRenderPassSystems.end(), pSystem);
 	if (found != opaqueRenderPassSystems.end())
 	{
 		opaqueRenderPassSystems.erase(found);
@@ -94,9 +94,9 @@ void GameRenderer::UnregisterRenderSystemOpaque(ISystem* pSystem)
 
 // ***********************************************************************
 
-void GameRenderer::UnregisterRenderSystemTransparent(ISystem* pSystem)
+void GameRenderer::UnregisterRenderSystemTransparent(IWorldSystem* pSystem)
 {
-    eastl::vector<ISystem*>::iterator found = eastl::find(transparentRenderPassSystems.begin(), transparentRenderPassSystems.end(), pSystem);
+    eastl::vector<IWorldSystem*>::iterator found = eastl::find(transparentRenderPassSystems.begin(), transparentRenderPassSystems.end(), pSystem);
 	if (found != transparentRenderPassSystems.end())
 	{
 		transparentRenderPassSystems.erase(found);
@@ -163,7 +163,7 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, UpdateContext& ctx)
 void GameRenderer::SceneRenderPassOpaque(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx)
 {
     // Opaque things
-    for (ISystem* pSystem : opaqueRenderPassSystems)
+    for (IWorldSystem* pSystem : opaqueRenderPassSystems)
     {
         pSystem->Draw(ctx, frameCtx);
     }
@@ -176,7 +176,7 @@ void GameRenderer::SceneRenderPassOpaque(Scene& scene, UpdateContext& ctx, Frame
 void GameRenderer::SceneRenderPassTransparent(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx)
 {
     // Things that have transparency
-    for (ISystem* pSystem : transparentRenderPassSystems)
+    for (IWorldSystem* pSystem : transparentRenderPassSystems)
     {
         pSystem->Draw(ctx, frameCtx);
     }

@@ -22,15 +22,15 @@ struct Renderable : public SpatialComponent
 	REFLECT_DERIVED();
 };
 
-struct SceneDrawSystem : public ISystem
+struct SceneDrawSystem : public IWorldSystem
 {
 	~SceneDrawSystem();
 
     virtual void Activate() override;
 
-	virtual void RegisterComponent(IComponent* pComponent) override;
+	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
-	virtual void UnregisterComponent(IComponent* pComponent) override;
+	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
 	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) override;
 

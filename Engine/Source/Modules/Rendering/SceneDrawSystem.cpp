@@ -33,7 +33,7 @@ void SceneDrawSystem::Activate()
 	g_transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "RenderableTransformBuffer");
 }
 
-void SceneDrawSystem::RegisterComponent(IComponent* pComponent)
+void SceneDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	if (pComponent->GetTypeData() == TypeDatabase::Get<Renderable>())
 	{
@@ -41,7 +41,7 @@ void SceneDrawSystem::RegisterComponent(IComponent* pComponent)
 	}
 }
 
-void SceneDrawSystem::UnregisterComponent(IComponent* pComponent)
+void SceneDrawSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	eastl::vector<Renderable*>::iterator found = eastl::find(renderableComponents.begin(), renderableComponents.end(), pComponent);
 	if (found != renderableComponents.end())

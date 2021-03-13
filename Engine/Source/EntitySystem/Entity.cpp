@@ -11,7 +11,7 @@ eastl::vector<IComponent*> Entity::Activate()
     for (IComponent* pComponent : components)
     {
         componentsToReturn.push_back(pComponent);
-        for (ISystem* pSystem : systems)
+        for (IEntitySystem* pSystem : systems)
         {
             pSystem->RegisterComponent(pComponent);
         }
@@ -25,7 +25,7 @@ eastl::vector<IComponent*> Entity::Deactivate()
     for (IComponent* pComponent : components)
     {
         componentsToReturn.push_back(pComponent);
-        for (ISystem* pSystem : systems)
+        for (IEntitySystem* pSystem : systems)
         {
             pSystem->UnregisterComponent(pComponent);
         }
@@ -35,7 +35,7 @@ eastl::vector<IComponent*> Entity::Deactivate()
 
 void Entity::Update(UpdateContext& ctx)
 {
-    for (ISystem* pSystem : systems)
+    for (IEntitySystem* pSystem : systems)
     {
         pSystem->Update(ctx);
     }

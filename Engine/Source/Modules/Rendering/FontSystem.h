@@ -40,15 +40,15 @@ namespace FreeType
 	FT_Library* Get();
 }
 
-struct FontDrawSystem : public ISystem
+struct FontDrawSystem : public IWorldSystem
 {
 	~FontDrawSystem();
 
     virtual void Activate() override;
 
-	virtual void RegisterComponent(IComponent* pComponent) override;
+	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
-	virtual void UnregisterComponent(IComponent* pComponent) override;
+	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
 	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) override;
 

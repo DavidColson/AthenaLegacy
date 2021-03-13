@@ -64,7 +64,7 @@ void SpriteDrawSystem::Activate()
 
 // ***********************************************************************
 
-void SpriteDrawSystem::RegisterComponent(IComponent* pComponent)
+void SpriteDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
     if (pComponent->GetTypeData() == TypeDatabase::Get<Sprite>())
 	{
@@ -74,7 +74,7 @@ void SpriteDrawSystem::RegisterComponent(IComponent* pComponent)
 
 // ***********************************************************************
 
-void SpriteDrawSystem::UnregisterComponent(IComponent* pComponent)
+void SpriteDrawSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
 {
     eastl::vector<Sprite*>::iterator found = eastl::find(spriteComponents.begin(), spriteComponents.end(), pComponent);
 	if (found != spriteComponents.end())

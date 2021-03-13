@@ -101,7 +101,7 @@ void FontDrawSystem::Activate()
 
 // ***********************************************************************
 
-void FontDrawSystem::RegisterComponent(IComponent* pComponent)
+void FontDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	if (pComponent->GetTypeData() == TypeDatabase::Get<TextComponent>())
 	{
@@ -111,7 +111,7 @@ void FontDrawSystem::RegisterComponent(IComponent* pComponent)
 
 // ***********************************************************************
 
-void FontDrawSystem::UnregisterComponent(IComponent* pComponent)
+void FontDrawSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	eastl::vector<TextComponent*>::iterator found = eastl::find(textComponents.begin(), textComponents.end(), pComponent);
 	if (found != textComponents.end())
