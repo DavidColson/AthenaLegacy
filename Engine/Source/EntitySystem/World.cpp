@@ -55,6 +55,7 @@ void World::DeactivateWorld()
             }
         }
     }
+    isActive = false;
 }
 
 void World::OnUpdate(UpdateContext& ctx)
@@ -108,6 +109,9 @@ void World::OnUpdate(UpdateContext& ctx)
 
 void World::DestroyWorld()
 {
+    if (isActive)
+        DeactivateWorld();
+        
     // Delete entities
     for(Entity* pEntity : entities)
     {

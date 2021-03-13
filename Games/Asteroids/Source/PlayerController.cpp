@@ -52,6 +52,7 @@ void PlayerController::SpawnBullet(World* pWorld)
     pPhysics->SetLocalPosition(pRootPhysics->GetLocalPosition());
     pPhysics->SetLocalRotation(pRootPhysics->GetLocalRotation());
     pPhysics->SetLocalScale(Vec3f(7.0f));
+    pPhysics->type = CollisionType::Bullet;
 
 	Vec3f travelDir = Vec3f(-cosf(pRootPhysics->GetLocalRotation().z), -sinf(pRootPhysics->GetLocalRotation().z), 0.0f);
 

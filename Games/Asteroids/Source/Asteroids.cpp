@@ -4,6 +4,7 @@
 #include "AsteroidPhysicsSystem.h"
 #include "PolylineDrawSystem.h"
 #include "PlayerController.h"
+#include "CollisionSystem.h"
 
 #include <Vec4.h>
 #include <Matrix.h>
@@ -52,6 +53,8 @@ World* CreateMainAsteroidsScene()
 	pRootPhysics->SetParent(pRoot);
 	pRootPhysics->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f, 0.0f));
 	pRootPhysics->SetLocalScale(Vec3f(30.f, 35.f, 1.0f));
+	pRootPhysics->type = CollisionType::Player;
+	pRootPhysics->collisionRadius = 17.0f;
 
 	Polyline* pPlayerPolyline = pPlayerEnt->AddNewComponent<Polyline>();
 	pPlayerPolyline->SetParent(pRootPhysics);
@@ -82,6 +85,7 @@ World* CreateMainAsteroidsScene()
 		pPhysics->SetLocalPosition(randomLocation);
 		pPhysics->SetLocalScale(Vec3f(90.0f, 90.0f, 1.0f));
 		pPhysics->SetLocalRotation(Vec3f(0.0f, 0.0f, randomRotation));
+		pPhysics->collisionRadius = 40.0f;
 
 		Polyline* pAsteroidPoly = pAsteroid->AddNewComponent<Polyline>();
 		pAsteroidPoly->SetParent(pPhysics);
@@ -108,6 +112,7 @@ World* CreateMainAsteroidsScene()
 	world.AddGlobalSystem<PolylineDrawSystem>();
 	world.AddGlobalSystem<AsteroidPhysicsSystem>();
 	world.AddGlobalSystem<FontDrawSystem>();
+	world.AddGlobalSystem<CollisionSystem>();
 
 	return &world;
 }
