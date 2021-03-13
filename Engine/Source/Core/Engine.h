@@ -39,6 +39,12 @@ struct EngineConfig
 	eastl::string engineResourcesPath{ "Engine/Resources/" };
 };
 
+struct UpdateContext
+{
+	World* pWorld{ nullptr };
+	float deltaTime{ 0.0f };
+};
+
 namespace Engine
 {
 	void Initialize(const EngineConfig& config);

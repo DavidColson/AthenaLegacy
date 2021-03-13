@@ -137,7 +137,7 @@ FontDrawSystem::~FontDrawSystem()
 
 // ***********************************************************************
 
-void FontDrawSystem::Draw(float deltaTime, FrameContext& ctx)
+void FontDrawSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
 {
 	PROFILE();
 	
@@ -218,7 +218,7 @@ void FontDrawSystem::Draw(float deltaTime, FrameContext& ctx)
 		
 		GfxDevice::BindTexture(pFont->fontTexture, ShaderType::Pixel, 0);
 
-		FontUniforms uniformData{ ctx.projection * ctx.view, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
+		FontUniforms uniformData{ frameCtx.projection * frameCtx.view, Vec4f(1.0f, 1.0f, 1.0f, 1.0f) };
 		GfxDevice::BindConstantBuffer(constBuffer, &uniformData, ShaderType::Vertex, 0);
 		GfxDevice::BindConstantBuffer(constBuffer, &uniformData, ShaderType::Pixel, 0);
 		

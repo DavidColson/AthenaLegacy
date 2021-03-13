@@ -149,7 +149,7 @@ PolylineDrawSystem::~PolylineDrawSystem()
 
 // ***********************************************************************
 
-void PolylineDrawSystem::Draw(float deltaTime, FrameContext& ctx)
+void PolylineDrawSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing Shapes");
@@ -196,7 +196,7 @@ void PolylineDrawSystem::Draw(float deltaTime, FrameContext& ctx)
 	GfxDevice::UpdateDynamicIndexBuffer(indexBuffer, indexList.data(), indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
-	TransformData trans{ ctx.projection * ctx.view, 5.0f };
+	TransformData trans{ frameCtx.projection * frameCtx.view, 5.0f };
 	GfxDevice::BindConstantBuffer(transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders

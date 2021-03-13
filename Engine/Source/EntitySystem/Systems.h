@@ -2,6 +2,7 @@
 
 struct IComponent;
 struct FrameContext;
+struct UpdateContext;
 
 class ISystem
 {
@@ -10,6 +11,6 @@ public:
 	virtual void RegisterComponent(IComponent* pComponent) = 0;
 	virtual void UnregisterComponent(IComponent* pComponent) = 0;
 
-	virtual void Update(float deltaTime) {};
-	virtual void Draw(float deltaTime, FrameContext& ctx) {};
+	virtual void Update(UpdateContext& ctx) {};
+	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) {};
 };

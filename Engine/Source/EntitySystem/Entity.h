@@ -4,6 +4,7 @@
 #include "EASTL/string.h"
 
 class ISystem;
+struct UpdateContext;
 
 struct IComponent
 {
@@ -20,7 +21,7 @@ public:
 	[[nodiscard]] eastl::vector<IComponent*> Deactivate();
 
 	// Loops through systems updating them
-	void Update(float deltaTime);
+	void Update(UpdateContext& ctx);
     
     template<typename Type>
     Type* AddNewComponent()

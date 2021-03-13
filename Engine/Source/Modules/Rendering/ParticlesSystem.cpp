@@ -77,7 +77,7 @@ void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
 
 // ***********************************************************************
 
-void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
+void ParticlesSystem::OnFrame(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx)
 {
 	PROFILE();
 
@@ -105,14 +105,14 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 			if (!pParticle->isAlive)
 				continue;
 
-			pParticle->lifeRemaining -= deltaTime;
+			pParticle->lifeRemaining -= ctx.deltaTime;
 			if (pParticle->lifeRemaining < 0.0f)
 			{
 				pEmitter->particlePool->KillParticle(pParticle);
 				continue;
 			}
 
-			pParticle->position += pParticle->velocity * deltaTime;
+			pParticle->position += pParticle->velocity * ctx.deltaTime;
 
 			Matrixf posMat = Matrixf::MakeTranslation(Vec3f::Embed2D(pParticle->position));
 			Matrixf rotMat = Matrixf::MakeRotation(Vec3f(0.0f, 0.0f, pParticle->rotation));
@@ -136,7 +136,7 @@ void ParticlesSystem::OnFrame(Scene& scene, FrameContext& ctx, float deltaTime)
 		// Render particles
 		// ****************
 
-		Matrixf vp = ctx.projection * ctx.view;
+		Matrixf vp = frameCtx.projection * frameCtx.view;
 		ParticlesTransform trans{ vp };
 		GfxDevice::BindConstantBuffer(pEmitter->transBuffer, &trans, ShaderType::Vertex, 0);
 		GfxDevice::BindConstantBuffer(pEmitter->instanceDataBuffer, particleTransforms.data(), ShaderType::Vertex, 1);

@@ -8,6 +8,9 @@
 
 #include "AsteroidPhysicsSystem.h"
 
+class World;
+struct UpdateContext;
+
 struct PlayerComponent : public IComponent
 {
     float thrust{ 160.f };
@@ -27,7 +30,9 @@ struct PlayerController : public ISystem
 
 	virtual void UnregisterComponent(IComponent* pComponent) override;
 
-	virtual void Update(float deltaTime) override;
+	virtual void Update(UpdateContext& ctx) override;
+
+	void SpawnBullet(World* pWorld);
 
 private:
     AsteroidPhysics* pRootPhysics;

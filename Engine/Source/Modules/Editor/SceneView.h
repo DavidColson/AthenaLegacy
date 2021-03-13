@@ -14,7 +14,7 @@ struct SceneView : public EditorTool
 
     virtual ~SceneView() override;
 
-	virtual void Update(Scene& scene, float deltaTime) override;
+	virtual void Update(Scene& scene, UpdateContext& ctx) override;
 
     virtual void OnEditorResize(Vec2f newSize) override;
 

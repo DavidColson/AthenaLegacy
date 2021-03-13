@@ -138,7 +138,7 @@ void DebugDraw::Destroy()
 
 // ***********************************************************************
 
-void DebugDraw::OnFrame(FrameContext& ctx, float deltaTime)
+void DebugDraw::OnFrame(UpdateContext& ctx, FrameContext& frameCtx)
 {
 	PROFILE();
 	GFX_SCOPED_EVENT("Drawing debug");
@@ -173,7 +173,7 @@ void DebugDraw::OnFrame(FrameContext& ctx, float deltaTime)
 	GfxDevice::UpdateDynamicIndexBuffer(pState->indexBuffer, pState->indexList.data(), pState->indexList.size() * sizeof(uint32_t));
 
 	// Update constant buffer data
-	TransformData trans{ ctx.projection * ctx.view };
+	TransformData trans{ frameCtx.projection * frameCtx.view };
 	GfxDevice::BindConstantBuffer(pState->transformDataBuffer, &trans, ShaderType::Vertex, 0);
 
 	// Bind shaders

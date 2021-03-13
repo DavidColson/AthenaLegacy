@@ -85,7 +85,7 @@ void SpriteDrawSystem::UnregisterComponent(IComponent* pComponent)
 
 // ***********************************************************************
 
-void SpriteDrawSystem::Draw(float deltaTime, FrameContext& ctx)
+void SpriteDrawSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
 {
     PROFILE();
 	
@@ -104,7 +104,7 @@ void SpriteDrawSystem::Draw(float deltaTime, FrameContext& ctx)
         if (pImage == nullptr)
             continue;
 
-        Matrixf wvp = ctx.projection * ctx.view * pSprite->GetWorldTransform();
+        Matrixf wvp = frameCtx.projection * frameCtx.view * pSprite->GetWorldTransform();
 		SpriteUniforms uniformData{ wvp };
 		GfxDevice::BindConstantBuffer(transformBufferHandle, &uniformData, ShaderType::Vertex, 0);
 

@@ -33,10 +33,10 @@ eastl::vector<IComponent*> Entity::Deactivate()
     return componentsToReturn;
 }
 
-void Entity::Update(float deltaTime)
+void Entity::Update(UpdateContext& ctx)
 {
     for (ISystem* pSystem : systems)
     {
-        pSystem->Update(deltaTime);
+        pSystem->Update(ctx);
     }
 }

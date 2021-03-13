@@ -89,5 +89,5 @@ namespace ParticlesSystem
 {
 	void OnAddEmitter(Scene& scene, EntityID entity);
 	void OnRemoveEmitter(Scene& scene, EntityID entity);
-	void OnFrame(Scene& scene, FrameContext& ctx, float deltaTime);
+	void OnFrame(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx);
 }

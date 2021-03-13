@@ -50,7 +50,7 @@ struct FontDrawSystem : public ISystem
 
 	virtual void UnregisterComponent(IComponent* pComponent) override;
 
-	virtual void Draw(float deltaTime, FrameContext& ctx) override;
+	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) override;
 
 	static FT_Library GetFreeType();
 

@@ -37,7 +37,7 @@ struct PolylineDrawSystem : public ISystem
 
 	virtual void UnregisterComponent(IComponent* pComponent) override;
 
-	virtual void Draw(float deltaTime, FrameContext& ctx) override;
+	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) override;
 
 private:
 	void AddPolyLine(const VertsVector& verts, float thickness, Vec4f color, bool connected);

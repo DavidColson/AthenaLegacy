@@ -8,6 +8,7 @@
 #include "Scene.h"
 
 struct FrameContext;
+struct UpdateContext;
 
 namespace DebugDraw
 {	
@@ -18,6 +19,6 @@ namespace DebugDraw
 
 	void Initialize();
 	void Destroy();
-	void OnFrame(FrameContext& ctx, float deltaTime);
+	void OnFrame(UpdateContext& ctx, FrameContext& frameCtx);
 	void OnFrameEnd(float deltaTime);
 }

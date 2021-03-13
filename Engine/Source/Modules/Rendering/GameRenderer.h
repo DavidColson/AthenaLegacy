@@ -10,6 +10,7 @@ class ISystem;
 struct SceneDrawSystem;
 struct Scene;
 struct TextureHandle;
+struct UpdateContext;
 
 enum class ProjectionMode
 {
@@ -41,7 +42,7 @@ namespace GameRenderer
 {
     void Initialize(float width, float height, bool postProcessingEnabled);
     void OnSceneCreate(Scene& scene);
-    TextureHandle DrawFrame(Scene& scene, float deltaTime);
+    TextureHandle DrawFrame(Scene& scene, UpdateContext& ctx);
     void OnFrameEnd(Scene& scene, float deltaTime);
     void Destroy();
 
@@ -51,8 +52,8 @@ namespace GameRenderer
     void UnregisterRenderSystemOpaque(ISystem* pSystem);
     void UnregisterRenderSystemTransparent(ISystem* pSystem);
 
-    void SceneRenderPassOpaque(Scene& scene, FrameContext& ctx, float deltaTime);
-    void SceneRenderPassTransparent(Scene& scene, FrameContext& ctx, float deltaTime);
+    void SceneRenderPassOpaque(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx);
+    void SceneRenderPassTransparent(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx);
 
     void SetSceneDrawSystem(SceneDrawSystem* system);
     SceneDrawSystem* GetSceneDrawSystem();

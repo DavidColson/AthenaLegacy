@@ -6,12 +6,16 @@
 #include <Entity.h>
 #include <Systems.h>
 
+struct UpdateContext;
+
 struct AsteroidPhysics : public SpatialComponent
 {
 	Vec3f velocity;
 	Vec3f acceleration;
 
-    float collisionRadius;
+    float collisionRadius{ 1.0f };
+
+	bool wrapAtEdge{ false };
 	
 	REFLECT_DERIVED()
 };
@@ -24,7 +28,7 @@ struct AsteroidPhysicsSystem : public ISystem
 
 	virtual void UnregisterComponent(IComponent* pComponent) override;
 
-	virtual void Update(float deltaTime) override;
+	virtual void Update(UpdateContext& ctx) override;
 
 private:
 

@@ -12,6 +12,7 @@ struct IComponent;
 struct Scene;
 struct Mesh;
 struct FrameContext;
+struct UpdateContext;
 
 struct Renderable : public SpatialComponent
 {
@@ -31,7 +32,7 @@ struct SceneDrawSystem : public ISystem
 
 	virtual void UnregisterComponent(IComponent* pComponent) override;
 
-	virtual void Draw(float deltaTime, FrameContext& ctx) override;
+	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) override;
 
 	eastl::vector<Renderable*> renderableComponents;
 };

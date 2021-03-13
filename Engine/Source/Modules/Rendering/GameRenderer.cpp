@@ -113,18 +113,18 @@ void GameRenderer::OnSceneCreate(Scene& scene)
 
 // ***********************************************************************
 
-TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
+TextureHandle GameRenderer::DrawFrame(Scene& scene, UpdateContext& ctx)
 {
     GfxDevice::BindRenderTarget(gameRenderTarget);
     GfxDevice::ClearRenderTarget(gameRenderTarget, { 0.0f, 0.f, 0.f, 1.0f }, true, true);
     GfxDevice::SetViewport(0.0f, 0.0f, gameWindowSize.x, gameWindowSize.y);
 
-    FrameContext context;
-    context.backBuffer = gameRenderTarget;
-    context.view = Matrixf::Identity();
-    context.screenDimensions = gameWindowSize;
-    context.projection = Matrixf::Orthographic(0.f, gameWindowSize.x, 0.0f, gameWindowSize.y, -1.0f, 200.0f);
-    context.camWorldPosition = Vec3f(0.0f);
+    FrameContext frameCtx;
+    frameCtx.backBuffer = gameRenderTarget;
+    frameCtx.view = Matrixf::Identity();
+    frameCtx.screenDimensions = gameWindowSize;
+    frameCtx.projection = Matrixf::Orthographic(0.f, gameWindowSize.x, 0.0f, gameWindowSize.y, -1.0f, 200.0f);
+    frameCtx.camWorldPosition = Vec3f(0.0f);
 
 	for (EntityID cams : SceneIterator<CCamera, CTransform>(scene))
 	{
@@ -133,21 +133,21 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 		CTransform* pTrans = scene.Get<CTransform>(cams);
 		Matrixf translate = Matrixf::MakeTranslation(-pTrans->localPos);
 		Quatf rotation = Quatf::MakeFromEuler(pTrans->localRot);
-		context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
-        context.camWorldPosition = Vec3f(pTrans->localPos);
+		frameCtx.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
+        frameCtx.camWorldPosition = Vec3f(pTrans->localPos);
 
         if (pCam->projection == ProjectionMode::Perspective)
-		    context.projection = Matrixf::Perspective(gameWindowSize.x, gameWindowSize.y, 0.1f, 100.0f, pCam->fov);
+		    frameCtx.projection = Matrixf::Perspective(gameWindowSize.x, gameWindowSize.y, 0.1f, 100.0f, pCam->fov);
         else if (pCam->projection == ProjectionMode::Orthographic)
-		    context.projection = Matrixf::Orthographic(0.f, gameWindowSize.x, 0.0f, gameWindowSize.y, -1.0f, 200.0f);
+		    frameCtx.projection = Matrixf::Orthographic(0.f, gameWindowSize.x, 0.0f, gameWindowSize.y, -1.0f, 200.0f);
 	}
 
-    SceneRenderPassOpaque(scene, context, deltaTime);
-    SceneRenderPassTransparent(scene, context, deltaTime);
+    SceneRenderPassOpaque(scene, ctx, frameCtx);
+    SceneRenderPassTransparent(scene, ctx, frameCtx);
     
     // Post processing, always last
     if (postProcessing)
-        PostProcessing::OnFrame(context, deltaTime);
+        PostProcessing::OnFrame(frameCtx, ctx.deltaTime);
 
     GfxDevice::UnbindRenderTarget(gameRenderTarget);
 
@@ -160,25 +160,25 @@ TextureHandle GameRenderer::DrawFrame(Scene& scene, float deltaTime)
 
 // ***********************************************************************
 
-void GameRenderer::SceneRenderPassOpaque(Scene& scene, FrameContext& context, float deltaTime)
+void GameRenderer::SceneRenderPassOpaque(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx)
 {
     // Opaque things
     for (ISystem* pSystem : opaqueRenderPassSystems)
     {
-        pSystem->Draw(deltaTime, context);
+        pSystem->Draw(ctx, frameCtx);
     }
-    ParticlesSystem::OnFrame(scene, context, deltaTime);
-    DebugDraw::OnFrame(context, deltaTime);
+    ParticlesSystem::OnFrame(scene, ctx, frameCtx);
+    DebugDraw::OnFrame(ctx, frameCtx);
 }
 
 // ***********************************************************************
 
-void GameRenderer::SceneRenderPassTransparent(Scene& scene, FrameContext& context, float deltaTime)
+void GameRenderer::SceneRenderPassTransparent(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx)
 {
     // Things that have transparency
     for (ISystem* pSystem : transparentRenderPassSystems)
     {
-        pSystem->Draw(deltaTime, context);
+        pSystem->Draw(ctx, frameCtx);
     }
 }
 

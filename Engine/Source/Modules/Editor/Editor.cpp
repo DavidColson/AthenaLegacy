@@ -48,7 +48,7 @@ namespace {
 struct ImGuiDemoTool : public EditorTool
 {
 	ImGuiDemoTool() { menuName = "Imgui Demo"; open = false; }
-	virtual void Update(Scene& scene, float deltaTime) override { ImGui::ShowDemoWindow(&open); }
+	virtual void Update(Scene& scene, UpdateContext& ctx) override { ImGui::ShowDemoWindow(&open); }
 };
 
 // ***********************************************************************
@@ -150,7 +150,7 @@ void Editor::PreUpdate()
 
 // ***********************************************************************
 
-TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
+TextureHandle Editor::DrawFrame(Scene& scene, UpdateContext& ctx)
 {
 	if (!showEditor)
 	{
@@ -298,7 +298,7 @@ TextureHandle Editor::DrawFrame(Scene& scene, float deltaTime)
 	for (eastl::unique_ptr<EditorTool>& tool : tools)
 	{
 		if (tool->open)
-			tool->Update(scene, deltaTime);
+			tool->Update(scene, ctx);
 	}
 
 	// Render editor to our render target

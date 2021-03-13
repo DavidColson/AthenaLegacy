@@ -40,7 +40,7 @@ void RecurseDrawEntityTree(Scene& scene, EntityID parent)
 
 // ***********************************************************************
 
-void SceneHeirarchy::Update(Scene& scene, float deltaTime)
+void SceneHeirarchy::Update(Scene& scene, UpdateContext& ctx)
 {
 	ImGui::Begin("Scene Heirarchy", &open);
 

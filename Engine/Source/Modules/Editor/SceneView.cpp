@@ -2,6 +2,7 @@
 
 #include "Input/Input.h"
 #include "AppWindow.h"
+#include "Engine.h"
 
 #include "SceneQueries.h"
 #include "Rendering/GameRenderer.h"
@@ -248,7 +249,7 @@ void SceneView::DrawSceneViewHelpers2D(Scene& scene)
     }
 }
 
-void SceneView::Update(Scene& scene, float deltaTime)
+void SceneView::Update(Scene& scene, UpdateContext& ctx)
 {
     if (!ImGui::Begin("Scene", &open))
 	{
@@ -258,7 +259,7 @@ void SceneView::Update(Scene& scene, float deltaTime)
 		return;
 	}
 
-    UpdateCameraControls(deltaTime);
+    UpdateCameraControls(ctx.deltaTime);
 
     if (bPendingLeftClickRay)
     {
@@ -300,7 +301,7 @@ void SceneView::Update(Scene& scene, float deltaTime)
         ImGui::SameLine();
     }
     ImGui::PushItemWidth(150);
-    ImGui::DragFloat("Camera Fly Speed", &cameraSpeed, deltaTime, 0.0f, 100.0f);
+    ImGui::DragFloat("Camera Fly Speed", &cameraSpeed, ctx.deltaTime, 0.0f, 100.0f);
 
 
 
@@ -322,31 +323,31 @@ void SceneView::Update(Scene& scene, float deltaTime)
     GfxDevice::ClearRenderTarget(renderTarget, { 0.25f, 0.25f, 0.25f, 1.0f }, true, true);
     GfxDevice::SetViewport(0.0f, 0.0f, windowSize.x, windowSize.y);
 
-    FrameContext context;
-    context.backBuffer = renderTarget;
-    context.view = Matrixf::Identity();
-    context.screenDimensions = windowSize;
+    FrameContext frameContext;
+    frameContext.backBuffer = renderTarget;
+    frameContext.view = Matrixf::Identity();
+    frameContext.screenDimensions = windowSize;
 
     CTransform activeCamTransform;
     if (isIn2DMode)
     {
         activeCamTransform = cameraTransform2D;
-        context.projection = Matrixf::Orthographic(0.f, windowSize.x * pixelZoomLevel, 0.0f, windowSize.y * pixelZoomLevel, -1.0f, 2000.0f);
+        frameContext.projection = Matrixf::Orthographic(0.f, windowSize.x * pixelZoomLevel, 0.0f, windowSize.y * pixelZoomLevel, -1.0f, 2000.0f);
     }
     else
     {
         activeCamTransform = cameraTransform3D;
-        context.projection = Matrixf::Perspective(windowSize.x, windowSize.y, 0.1f, 100.0f, camera.fov);
+        frameContext.projection = Matrixf::Perspective(windowSize.x, windowSize.y, 0.1f, 100.0f, camera.fov);
     }
 
     // BUG: Not correct if camera parented to something
     Matrixf translate = Matrixf::MakeTranslation(-activeCamTransform.localPos);
     Quatf rotation = Quatf::MakeFromEuler(activeCamTransform.localRot);
-    context.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
-    context.camWorldPosition = Vec3f(activeCamTransform.localPos);
+    frameContext.view = Matrixf::MakeLookAt(rotation.GetForwardVector(), rotation.GetUpVector()) * translate;
+    frameContext.camWorldPosition = Vec3f(activeCamTransform.localPos);
 
-    GameRenderer::SceneRenderPassOpaque(scene, context, deltaTime);
-    GameRenderer::SceneRenderPassTransparent(scene, context, deltaTime);
+    GameRenderer::SceneRenderPassOpaque(scene, ctx, frameContext);
+    GameRenderer::SceneRenderPassTransparent(scene, ctx, frameContext);
 
     GfxDevice::UnbindRenderTarget(renderTarget);
     

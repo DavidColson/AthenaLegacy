@@ -57,7 +57,7 @@ bool GameView::OnEvent(SDL_Event* event)
 
 // ***********************************************************************
 
-void GameView::Update(Scene& scene, float deltaTime)
+void GameView::Update(Scene& scene, UpdateContext& ctx)
 {
 	if (!ImGui::Begin("Game", &open))
 	{

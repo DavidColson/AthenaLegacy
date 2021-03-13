@@ -49,7 +49,7 @@ void SceneDrawSystem::UnregisterComponent(IComponent* pComponent)
 		renderableComponents.erase(found);
 	}
 }
-void SceneDrawSystem::Draw(float deltaTime, FrameContext& ctx)
+void SceneDrawSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
 {
 	GFX_SCOPED_EVENT("Scene Draw");
 	PROFILE();
@@ -61,7 +61,7 @@ void SceneDrawSystem::Draw(float deltaTime, FrameContext& ctx)
 		if (pShader == nullptr || pMesh == nullptr)
 			return;
 
-		Matrixf wvp = ctx.projection * ctx.view * pRenderable->GetWorldTransform();
+		Matrixf wvp = frameCtx.projection * frameCtx.view * pRenderable->GetWorldTransform();
 		cbTransformBuf trans{ wvp };
 		GfxDevice::BindConstantBuffer(g_transformBufferHandle, &trans, ShaderType::Vertex, 0);
 

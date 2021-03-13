@@ -8,7 +8,11 @@ Entity* World::NewEntity(eastl::string name)
     Entity* pNewEnt = new Entity();
     pNewEnt->name = name;
 
-    entities.push_back(pNewEnt);
+    if (!isActive)
+        entities.push_back(pNewEnt);
+    else
+        entitiesToAddQueue.push_back(pNewEnt);
+
     return pNewEnt;
 }
 
@@ -30,6 +34,7 @@ void World::ActivateWorld()
             }
         }
     }
+    isActive = true;
 }
 
 void World::DeactivateWorld()
@@ -47,18 +52,33 @@ void World::DeactivateWorld()
     }
 }
 
-void World::OnUpdate(float deltaTime)
+void World::OnUpdate(UpdateContext& ctx)
 {
+    // Process entities wanting to be added
+    for (Entity* pEntityToAdd : entitiesToAddQueue)
+    {
+        eastl::vector<IComponent*> comps = pEntityToAdd->Activate();
+        for (IComponent* pComponent : comps)
+        {
+            for (ISystem* pGlobalSystem : globalSystems)
+            {
+                pGlobalSystem->RegisterComponent(pComponent);
+            }
+        }
+        entities.push_back(pEntityToAdd);
+    }
+    entitiesToAddQueue.clear();
+
     // First update entities
     for (Entity* pEntity : entities)
     {
-        pEntity->Update(deltaTime);
+        pEntity->Update(ctx);
     }
 
     // Then global systems
     for (ISystem* pSystem : globalSystems)
     {
-        pSystem->Update(deltaTime);
+        pSystem->Update(ctx);
     }
 }
 

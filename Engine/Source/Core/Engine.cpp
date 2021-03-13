@@ -225,18 +225,22 @@ void Engine::Run(World* pInitialWorld)
 			}
 		}
 
+		UpdateContext ctx;
+		ctx.pWorld = pCurrentWorld;
+		ctx.deltaTime = (float)frameTime;
+
 		// Preparing editor code now allows game code to define it's own editors 
 		Editor::PreUpdate();
 
 		// Simulate current game scene
-		pCurrentWorld->OnUpdate((float)frameTime);
+		pCurrentWorld->OnUpdate(ctx);
 		Profiler::ClearFrameData();
 
 		// Render the game
-		TextureHandle gameFrame = GameRenderer::DrawFrame(Scene(), (float)frameTime);
+		TextureHandle gameFrame = GameRenderer::DrawFrame(Scene(), ctx);
 
 		// Render the editor
-		TextureHandle editorFrame = Editor::DrawFrame(Scene(), (float)frameTime);
+		TextureHandle editorFrame = Editor::DrawFrame(Scene(), ctx);
 		
 		if (IsInEditor())
 			AppWindow::RenderToWindow(editorFrame);

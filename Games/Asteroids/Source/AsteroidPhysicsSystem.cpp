@@ -1,5 +1,6 @@
 #include "AsteroidPhysicsSystem.h"
 
+#include "Engine.h"
 #include <Rendering/GameRenderer.h>
 
 REFLECT_BEGIN_DERIVED(AsteroidPhysics, SpatialComponent)
@@ -30,12 +31,12 @@ void AsteroidPhysicsSystem::UnregisterComponent(IComponent* pComponent)
 	}
 }
 
-void AsteroidPhysicsSystem::Update(float deltaTime)
+void AsteroidPhysicsSystem::Update(UpdateContext& ctx)
 {
     for (AsteroidPhysics* pPhysics : physicsComponents)
     {
-		pPhysics->velocity = pPhysics->velocity + pPhysics->acceleration * deltaTime;
-		pPhysics->SetLocalPosition(pPhysics->GetLocalPosition() + pPhysics->velocity * deltaTime);
+		pPhysics->velocity = pPhysics->velocity + pPhysics->acceleration * ctx.deltaTime;
+		pPhysics->SetLocalPosition(pPhysics->GetLocalPosition() + pPhysics->velocity * ctx.deltaTime);
 
         Vec3f localPos = pPhysics->GetLocalPosition();
 		if (localPos.x < 0.0f)

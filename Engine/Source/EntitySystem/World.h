@@ -5,6 +5,7 @@
 
 class Entity;
 class ISystem;
+struct UpdateContext;
 
 class World
 {
@@ -18,7 +19,7 @@ public:
 	void DeactivateWorld();
 
 	// Loops through entities, updating them, then globals
-	void OnUpdate(float deltaTime);
+	void OnUpdate(UpdateContext& ctx);
 	
 	void DestroyWorld();
 
@@ -30,6 +31,9 @@ public:
 	}
 
 private:
+	bool isActive{ false };
+
+	eastl::vector<Entity*> entitiesToAddQueue;
 
 	eastl::vector<Entity*> entities;
 	eastl::vector<ISystem*> globalSystems;

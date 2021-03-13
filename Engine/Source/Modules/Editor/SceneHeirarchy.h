@@ -6,5 +6,5 @@ struct SceneHeirarchy : public EditorTool
 {
 	SceneHeirarchy();
 
-	virtual void Update(Scene& scene, float deltaTime) override;
+	virtual void Update(Scene& scene, UpdateContext& ctx) override;
 };
