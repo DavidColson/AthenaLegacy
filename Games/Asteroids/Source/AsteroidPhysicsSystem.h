@@ -15,7 +15,7 @@ struct AsteroidPhysics : public SpatialComponent
 
     float collisionRadius{ 1.0f };
 
-	bool wrapAtEdge{ false };
+	bool wrapAtEdge{ true };
 	
 	REFLECT_DERIVED()
 };
@@ -32,5 +32,6 @@ struct AsteroidPhysicsSystem : public IWorldSystem
 
 private:
 
-    eastl::vector<AsteroidPhysics*> physicsComponents;
+	using PhysicsComponent = eastl::pair<Entity*, AsteroidPhysics*>;
+    eastl::vector<PhysicsComponent> physicsComponents;
 };

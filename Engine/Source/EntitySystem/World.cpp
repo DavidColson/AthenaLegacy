@@ -16,6 +16,11 @@ Entity* World::NewEntity(eastl::string name)
     return pNewEnt;
 }
 
+void World::DestroyEntity(Entity* pEntity)
+{
+    entitiesToDeleteQueue.push_back(pEntity);
+}
+
 void World::ActivateWorld()
 {
     for (IWorldSystem* pGlobalSystem : globalSystems)
@@ -54,6 +59,25 @@ void World::DeactivateWorld()
 
 void World::OnUpdate(UpdateContext& ctx)
 {
+    // Process entities wanting to be deleted
+    for (Entity* pEntityToDelete : entitiesToDeleteQueue)
+    {
+        eastl::vector<IComponent*> comps = pEntityToDelete->Deactivate();
+        for (IComponent* pComponent : comps)
+        {
+            for (IWorldSystem* pGlobalSystem : globalSystems)
+            {
+                pGlobalSystem->UnregisterComponent(pEntityToDelete, pComponent);
+            }
+        }
+        eastl::vector<Entity*>::iterator found = eastl::find(entities.begin(), entities.end(), pEntityToDelete);
+        if (found != entities.end())
+        {
+            entities.erase(found);
+        }
+    }
+    entitiesToDeleteQueue.clear();
+
     // Process entities wanting to be added
     for (Entity* pEntityToAdd : entitiesToAddQueue)
     {

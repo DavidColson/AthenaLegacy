@@ -57,6 +57,7 @@ void PlayerController::SpawnBullet(World* pWorld)
 
     pPhysics->velocity = pRootPhysics->velocity + travelDir * 700.0f;
     pPhysics->collisionRadius = 4.0f;
+    pPhysics->wrapAtEdge = false;
 
     Polyline* pPolyline = pBullet->AddNewComponent<Polyline>();
     pPolyline->SetParent(pPhysics);

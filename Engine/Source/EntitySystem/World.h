@@ -13,6 +13,8 @@ public:
 	// This will create new element in array and return it to you.
 	Entity* NewEntity(eastl::string name);
 
+	void DestroyEntity(Entity* pEntity);
+
 	// Registers things and turns everything on
 	void ActivateWorld();
 
@@ -34,6 +36,7 @@ private:
 	bool isActive{ false };
 
 	eastl::vector<Entity*> entitiesToAddQueue;
+	eastl::vector<Entity*> entitiesToDeleteQueue;
 
 	eastl::vector<Entity*> entities;
 	eastl::vector<IWorldSystem*> globalSystems;
