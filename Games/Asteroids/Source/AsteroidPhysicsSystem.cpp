@@ -43,25 +43,33 @@ void AsteroidPhysicsSystem::Update(UpdateContext& ctx)
         Vec3f localPos = pPhysics->GetLocalPosition();
 		if (localPos.x < 0.0f)
 		{
-			pPhysics->SetLocalPosition(Vec3f(GameRenderer::GetWidth(), localPos.y, localPos.z));
-			if (!pPhysics->wrapAtEdge) ctx.pWorld->DestroyEntity(compPair.first);
+			if (pPhysics->wrapAtEdge) 
+				pPhysics->SetLocalPosition(Vec3f(GameRenderer::GetWidth(), localPos.y, localPos.z));
+			else
+				ctx.pWorld->DestroyEntity(compPair.first);
 		}
 		else if (localPos.x > GameRenderer::GetWidth())
 		{
-			pPhysics->SetLocalPosition(Vec3f(0.0f, localPos.y, localPos.z));
-			if (!pPhysics->wrapAtEdge) ctx.pWorld->DestroyEntity(compPair.first);
+			if (pPhysics->wrapAtEdge)
+				pPhysics->SetLocalPosition(Vec3f(0.0f, localPos.y, localPos.z));
+			else
+				ctx.pWorld->DestroyEntity(compPair.first);
 		}
 
         localPos = pPhysics->GetLocalPosition();
 		if (localPos.y < 0.0f)
 		{
-			pPhysics->SetLocalPosition(Vec3f(localPos.x, GameRenderer::GetHeight(), localPos.z));
-			if (!pPhysics->wrapAtEdge) ctx.pWorld->DestroyEntity(compPair.first);
+			if (pPhysics->wrapAtEdge) 
+				pPhysics->SetLocalPosition(Vec3f(localPos.x, GameRenderer::GetHeight(), localPos.z));
+			else 
+				ctx.pWorld->DestroyEntity(compPair.first);
 		}
 		else if (localPos.y > GameRenderer::GetHeight())
 		{
-			pPhysics->SetLocalPosition(Vec3f(localPos.x, 0.0f, localPos.z));
-			if (!pPhysics->wrapAtEdge) ctx.pWorld->DestroyEntity(compPair.first);
+			if (pPhysics->wrapAtEdge)
+				pPhysics->SetLocalPosition(Vec3f(localPos.x, 0.0f, localPos.z));
+			else
+				ctx.pWorld->DestroyEntity(compPair.first);
 		}
     }
 }
