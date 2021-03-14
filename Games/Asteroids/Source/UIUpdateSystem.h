@@ -1,8 +1,5 @@
 #pragma once
 
-#include <Vec2.h>
-#include <Vec4.h>
-#include <SpatialComponent.h>
 #include <Entity.h>
 #include <Systems.h>
 
@@ -24,6 +21,7 @@ struct CollisionSystem : public IWorldSystem
 	virtual void Update(UpdateContext& ctx) override;
 
 	void OnBulletAsteroidCollision(World& world, Uuid bulletEntity, Uuid asteroidEntity);
+    
 	void OnPlayerAsteroidCollision(World& world, Uuid asteroidEntity);
 
 private:

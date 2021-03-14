@@ -6,13 +6,13 @@
 #include <Entity.h>
 #include <Systems.h>
 
-
 class World;
 struct UpdateContext;
-struct AsteroidPhysics;
 struct PlayerComponent;
+struct AsteroidPhysics;
+struct Polyline;
 
-struct PlayerController : public IEntitySystem
+struct PlayerDeathSystem : public IEntitySystem
 {
     virtual void Activate() override;
 
@@ -22,9 +22,9 @@ struct PlayerController : public IEntitySystem
 
 	virtual void Update(UpdateContext& ctx) override;
 
-	void SpawnBullet(World* pWorld);
-
 private:
-    AsteroidPhysics* pRootPhysics;
     PlayerComponent* pPlayerComponent;
+    AsteroidPhysics* pPlayerPhysics;
+
+    eastl::map<Uuid, Polyline*> polylineComponents;
 };

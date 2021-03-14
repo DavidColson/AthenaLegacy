@@ -2,6 +2,7 @@
 
 #include "EASTL/string.h"
 #include "EASTL/vector.h"
+#include "UUID.h"
 
 class Entity;
 class IWorldSystem;
@@ -13,7 +14,7 @@ public:
 	// This will create new element in array and return it to you.
 	Entity* NewEntity(eastl::string name);
 
-	void DestroyEntity(Entity* pEntity);
+	void DestroyEntity(Uuid entityId);
 
 	// Registers things and turns everything on
 	void ActivateWorld();

@@ -35,12 +35,22 @@ eastl::string Uuid::ToString()
     return output;
 }
 
-bool Uuid::operator==(const Uuid& other)
+bool Uuid::IsNill()
+{
+    return data.u64[0] == 0 && data.u64[1] == 0;
+}   
+
+bool Uuid::operator==(const Uuid& other) const
 {
     return data.u64[0] == other.data.u64[0] && data.u64[1] == other.data.u64[1];
 }
 
-bool Uuid::operator!=(const Uuid& other)
+bool Uuid::operator!=(const Uuid& other) const
 {
     return data.u64[0] != other.data.u64[0] && data.u64[1] != other.data.u64[1];
+}
+
+bool Uuid::operator<(const Uuid& other) const
+{
+    return data.u64[0] < other.data.u64[0];
 }

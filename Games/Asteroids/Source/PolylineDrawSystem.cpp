@@ -1,15 +1,12 @@
 #include "PolylineDrawSystem.h"
 
-#include "Profiler.h"
-#include "Vec4.h"
-#include "Maths.h"
-#include "Mesh.h"
-#include "Rendering/GameRenderer.h"
+#include <Profiler.h>
+#include <Vec4.h>
+#include <Maths.h>
+#include <Mesh.h>
+#include <Rendering/GameRenderer.h>
 
-REFLECT_BEGIN_DERIVED(Polyline, SpatialComponent)
-REFLECT_MEMBER(thickness)
-REFLECT_MEMBER(connected)
-REFLECT_END()
+#include "Components.h"
 
 struct TransformData
 {
@@ -156,6 +153,9 @@ void PolylineDrawSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
 
 	for (Polyline* pPolyline : polylineComponents)
 	{
+		if (!pPolyline->visible)
+			continue;
+
 		Matrixf pivotAdjust = Matrixf::MakeTranslation(Vec3f(-0.5f, -0.5f, 0.0f));
 		Matrixf world = pPolyline->GetWorldTransform() * pivotAdjust;
 

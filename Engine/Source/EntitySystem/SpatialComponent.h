@@ -5,6 +5,8 @@
 
 struct SpatialComponent : public IComponent
 {
+    friend class Entity;
+
     REFLECT_DERIVED()
 
     SpatialComponent() : IComponent() {}
@@ -26,9 +28,9 @@ struct SpatialComponent : public IComponent
 
     Matrixf GetWorldTransform();
 
+private:
     void SetParent(SpatialComponent* pDesiredParent);
 
-private:
     Vec3f position{ Vec3f(0.0f) };
     Vec3f rotation{ Vec3f(0.0f) };
     Vec3f scale{ Vec3f(1.0f) };

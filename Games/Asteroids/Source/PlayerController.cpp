@@ -7,12 +7,7 @@
 #include <SDL_scancode.h>
 
 #include "PolylineDrawSystem.h"
-
-REFLECT_BEGIN_DERIVED(PlayerComponent, IComponent)
-REFLECT_MEMBER(thrust)
-REFLECT_MEMBER(rotateSpeed)
-REFLECT_MEMBER(dampening)
-REFLECT_END()
+#include "Components.h"
 
 void PlayerController::Activate()
 {
@@ -60,8 +55,7 @@ void PlayerController::SpawnBullet(World* pWorld)
     pPhysics->collisionRadius = 4.0f;
     pPhysics->wrapAtEdge = false;
 
-    Polyline* pPolyline = pBullet->AddNewComponent<Polyline>();
-    pPolyline->SetParent(pPhysics);
+    Polyline* pPolyline = pBullet->AddNewComponent<Polyline>(pPhysics->GetId());
     pPolyline->points = {
 		Vec2f(0.f, 0.0f),
 		Vec2f(0.f, 1.0f)
@@ -74,6 +68,11 @@ void PlayerController::Update(UpdateContext& ctx)
 {
     if (pRootPhysics && pPlayerComponent)
     {
+        if (pPlayerComponent->respawnTimer > 0.0f)
+        {
+            return;
+        }
+
         Vec3f accel(0.0f, 0.0f, 0.0f);
 
 		if (Input::GetKeyHeld(SDL_SCANCODE_UP))

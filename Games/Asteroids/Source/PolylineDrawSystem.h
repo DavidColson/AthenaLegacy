@@ -11,23 +11,8 @@
 
 typedef eastl::fixed_vector<Vec2f, 50> VertsVector;
 struct FrameContext;
-
 struct IComponent;
-
-struct Scene;
-struct Mesh;
-struct FrameContext;
-
-struct Polyline : public SpatialComponent
-{
-    Polyline() : SpatialComponent() {}
-
-	eastl::fixed_vector<Vec2f, 15> points;
-	float thickness = 5.0f;
-	bool connected = true;
-	
-	REFLECT_DERIVED()
-};
+struct Polyline;
 
 struct PolylineDrawSystem : public IWorldSystem
 {

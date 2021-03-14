@@ -1,21 +1,15 @@
-#include "AsteroidPhysicsSystem.h"
+#include "MovementSystem.h"
 
 #include "Engine.h"
 #include <Rendering/GameRenderer.h>
 #include "World.h"
 
-REFLECT_BEGIN_DERIVED(AsteroidPhysics, SpatialComponent)
-REFLECT_MEMBER(velocity)
-REFLECT_MEMBER(acceleration)
-REFLECT_MEMBER(collisionRadius)
-REFLECT_END()
-
-void AsteroidPhysicsSystem::Activate()
+void MovementSystem::Activate()
 {
 
 }
 
-void AsteroidPhysicsSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
+void MovementSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
     if (pComponent->GetTypeData() == TypeDatabase::Get<AsteroidPhysics>())
 	{
@@ -23,7 +17,7 @@ void AsteroidPhysicsSystem::RegisterComponent(Entity* pEntity, IComponent* pComp
 	}
 }
 
-void AsteroidPhysicsSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
+void MovementSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
 {
     eastl::vector<PhysicsComponent>::iterator found = eastl::find(physicsComponents.begin(), physicsComponents.end(), PhysicsComponent(pEntity, static_cast<AsteroidPhysics*>(pComponent)));
 	if (found != physicsComponents.end())
@@ -32,10 +26,11 @@ void AsteroidPhysicsSystem::UnregisterComponent(Entity* pEntity, IComponent* pCo
 	}
 }
 
-void AsteroidPhysicsSystem::Update(UpdateContext& ctx)
+void MovementSystem::Update(UpdateContext& ctx)
 {
     for (PhysicsComponent compPair : physicsComponents)
     {
+		Uuid entityId = compPair.first->GetId();
 		AsteroidPhysics* pPhysics = compPair.second;
 		pPhysics->velocity = pPhysics->velocity + pPhysics->acceleration * ctx.deltaTime;
 		pPhysics->SetLocalPosition(pPhysics->GetLocalPosition() + pPhysics->velocity * ctx.deltaTime);
@@ -46,14 +41,14 @@ void AsteroidPhysicsSystem::Update(UpdateContext& ctx)
 			if (pPhysics->wrapAtEdge) 
 				pPhysics->SetLocalPosition(Vec3f(GameRenderer::GetWidth(), localPos.y, localPos.z));
 			else
-				ctx.pWorld->DestroyEntity(compPair.first);
+				ctx.pWorld->DestroyEntity(entityId);
 		}
 		else if (localPos.x > GameRenderer::GetWidth())
 		{
 			if (pPhysics->wrapAtEdge)
 				pPhysics->SetLocalPosition(Vec3f(0.0f, localPos.y, localPos.z));
 			else
-				ctx.pWorld->DestroyEntity(compPair.first);
+				ctx.pWorld->DestroyEntity(entityId);
 		}
 
         localPos = pPhysics->GetLocalPosition();
@@ -62,14 +57,14 @@ void AsteroidPhysicsSystem::Update(UpdateContext& ctx)
 			if (pPhysics->wrapAtEdge) 
 				pPhysics->SetLocalPosition(Vec3f(localPos.x, GameRenderer::GetHeight(), localPos.z));
 			else 
-				ctx.pWorld->DestroyEntity(compPair.first);
+				ctx.pWorld->DestroyEntity(entityId);
 		}
 		else if (localPos.y > GameRenderer::GetHeight())
 		{
 			if (pPhysics->wrapAtEdge)
 				pPhysics->SetLocalPosition(Vec3f(localPos.x, 0.0f, localPos.z));
 			else
-				ctx.pWorld->DestroyEntity(compPair.first);
+				ctx.pWorld->DestroyEntity(entityId);
 		}
     }
 }

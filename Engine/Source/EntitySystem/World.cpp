@@ -3,6 +3,7 @@
 #include "Entity.h"
 #include "Systems.h"
 
+
 Entity* World::NewEntity(eastl::string name)
 {
     Entity* pNewEnt = new Entity();
@@ -16,9 +17,13 @@ Entity* World::NewEntity(eastl::string name)
     return pNewEnt;
 }
 
-void World::DestroyEntity(Entity* pEntity)
+void World::DestroyEntity(Uuid entityId)
 {
-    entitiesToDeleteQueue.push_back(pEntity);
+    eastl::vector<Entity*>::iterator found = eastl::find_if(entities.begin(), entities.end(), [&entityId](const Entity* pEntity) { return entityId == pEntity->GetId(); });
+    if (found != entities.end())
+    {
+        entitiesToDeleteQueue.push_back(*found);
+    }
 }
 
 void World::ActivateWorld()
@@ -111,7 +116,7 @@ void World::DestroyWorld()
 {
     if (isActive)
         DeactivateWorld();
-        
+
     // Delete entities
     for(Entity* pEntity : entities)
     {

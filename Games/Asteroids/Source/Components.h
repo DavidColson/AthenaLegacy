@@ -7,6 +7,81 @@
 #include <Scene.h>
 #include <AudioDevice.h>
 #include <EASTL/fixed_vector.h>
+#include <IComponent.h>
+#include <SpatialComponent.h>
+
+struct AsteroidComponent : public IComponent
+{
+	AsteroidComponent() : IComponent() {}
+
+	REFLECT_DERIVED();
+
+	int hitCount{ 0 };
+};
+
+enum class CollisionType
+{
+	Player,
+	Asteroid,
+	Bullet
+};
+
+struct AsteroidPhysics : public SpatialComponent
+{
+    AsteroidPhysics() : SpatialComponent() {}
+
+	Vec3f velocity;
+	Vec3f acceleration;
+    float collisionRadius{ 1.0f };
+	bool wrapAtEdge{ true };
+	CollisionType type{ CollisionType::Asteroid };
+	
+	REFLECT_DERIVED()
+};
+
+struct Polyline : public SpatialComponent
+{
+    Polyline() : SpatialComponent() {}
+
+	eastl::fixed_vector<Vec2f, 15> points;
+	float thickness{ 5.0f };
+	bool connected{ true };
+	bool visible{ true };
+	
+	REFLECT_DERIVED()
+};
+
+struct PlayerComponent : public IComponent
+{
+    PlayerComponent() : IComponent() {}
+
+    float thrust{ 160.f };
+	float rotateSpeed{ 5.0f };
+	float dampening{ 0.f };
+
+	eastl::vector<Uuid> lives;
+	Uuid playerPolylineComponent;
+	
+	bool hasCollidedWithAsteroid{ false };
+
+	float respawnTimer{ 0.0f };
+	float invicibilityTimer{ 0.0f };
+	float flashTimer{ 0.3f };
+
+	int currentScore{ 0 };
+
+    REFLECT_DERIVED()
+};
+
+
+
+
+
+
+
+
+// LEGACY
+/////////
 
 struct CDynamics
 {

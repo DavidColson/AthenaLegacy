@@ -577,6 +577,9 @@ template<typename Type>
 bool TypeData_Struct::IsDerivedFrom()
 {
 	TypeData& testType = TypeDatabase::Get<Type>();
+	if (testType.id == this->id)
+		return true;
+
 	TypeData* pParent = pParentType;
 	while (pParent != nullptr)
 	{

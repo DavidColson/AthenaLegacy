@@ -6,7 +6,6 @@
 
 // Utilities
 
-eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh();
 
 // Systems
 

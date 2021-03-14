@@ -6,29 +6,11 @@
 #include <Entity.h>
 #include <Systems.h>
 
+#include "Components.h"
+
 struct UpdateContext;
 
-enum class CollisionType
-{
-	Player,
-	Asteroid,
-	Bullet
-};
-
-struct AsteroidPhysics : public SpatialComponent
-{
-    AsteroidPhysics() : SpatialComponent() {}
-
-	Vec3f velocity;
-	Vec3f acceleration;
-    float collisionRadius{ 1.0f };
-	bool wrapAtEdge{ true };
-	CollisionType type{ CollisionType::Asteroid };
-	
-	REFLECT_DERIVED()
-};
-
-struct AsteroidPhysicsSystem : public IWorldSystem
+struct MovementSystem : public IWorldSystem
 {
     virtual void Activate() override;
 

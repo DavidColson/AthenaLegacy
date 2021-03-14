@@ -141,75 +141,6 @@ void OnPlayerAsteroidCollision(Scene& scene, EntityID player, EntityID asteroid)
 	pDynamics->accel = Vec3f(0.0f, 0.0f, 0.0f);
 }
 
-eastl::fixed_vector<Vec2f, 15> GetRandomAsteroidMesh()
-{
-	static Vec2f asteroidMesh1[] = {
-		Vec2f(0.03f, 0.379f),
-		Vec2f(0.03f, 0.64f),
-		Vec2f(0.314f, 0.69f),
-		Vec2f(0.348f, 0.96f),
-		Vec2f(0.673f, 0.952f),
-		Vec2f(0.698f, 0.724f),
-		Vec2f(0.97f, 0.645f),
-		Vec2f(0.936f, 0.228f),
-		Vec2f(0.555f, 0.028f),
-		Vec2f(0.22f, 0.123f)
-	};
-	static Vec2f asteroidMesh2[] = {
-		Vec2f(0.05f, 0.54f),
-		Vec2f(0.213f, 0.78f),
-		Vec2f(0.37f, 0.65f),
-		Vec2f(0.348f, 0.96f),
-		Vec2f(0.673f, 0.952f),
-		Vec2f(0.64f, 0.75f),
-		Vec2f(0.83f, 0.85f),
-		Vec2f(0.974f, 0.65f),
-		Vec2f(0.943f, 0.298f),
-		Vec2f(0.683f, 0.086f),
-		Vec2f(0.312f, 0.074f),
-		Vec2f(0.056f, 0.265f)
-	};
-	static Vec2f asteroidMesh3[] = {
-		Vec2f(0.066f, 0.335f),
-		Vec2f(0.077f, 0.683f),
-		Vec2f(0.3f, 0.762f),
-		Vec2f(0.348f, 0.96f),
-		Vec2f(0.673f, 0.952f),
-		Vec2f(0.724f, 0.752f),
-		Vec2f(0.967f, 0.63f),
-		Vec2f(0.946f, 0.312f),
-		Vec2f(0.706f, 0.353f),
-		Vec2f(0.767f, 0.07f),
-		Vec2f(0.37f, 0.07f),
-		Vec2f(0.21f, 0.33f)
-	};
-	static Vec2f asteroidMesh4[] = {
-		Vec2f(0.056f, 0.284f),
-		Vec2f(0.064f, 0.752f),
-		Vec2f(0.353f, 0.762f),
-		Vec2f(0.286f, 0.952f),
-		Vec2f(0.72f, 0.944f),
-		Vec2f(0.928f, 0.767f),
-		Vec2f(0.962f, 0.604f),
-		Vec2f(0.568f, 0.501f),
-		Vec2f(0.967f, 0.366f),
-		Vec2f(0.857f, 0.16f),
-		Vec2f(0.563f, 0.217f),
-		Vec2f(0.358f, 0.043f)
-	};
-
-	eastl::fixed_vector<Vec2f, 15> vec;
-	switch (rand() % 4)
-	{
-	case 0: vec.assign(asteroidMesh1, asteroidMesh1 + 10); break;
-	case 1: vec.assign(asteroidMesh2, asteroidMesh2 + 12); break;
-	case 2: vec.assign(asteroidMesh3, asteroidMesh3 + 12); break;
-	case 3: vec.assign(asteroidMesh4, asteroidMesh4 + 12); break;
-	default: break;
-	}
-	return vec;
-}
-
 // **********
 // SYSTEMS
 // **********
@@ -324,6 +255,7 @@ void CollisionSystemUpdate(Scene& scene, float /* deltaTime */)
 		if (!scene.Has<CInvincibility>(PLAYER_ID))
 		{
 			float playerRad = scene.Get<CCollidable>(PLAYER_ID)->radius;
+
 			float distance = (scene.Get<CTransform>(asteroid)->localPos - scene.Get<CTransform>(PLAYER_ID)->localPos).GetLength();
 			float collisionDistance = asteroidRad + playerRad;
 			

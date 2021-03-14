@@ -5,6 +5,7 @@ target_sources(Engine
         "Systems.h"
         "Entity.h"
         "Entity.cpp"
+        "IComponent.h"
         "SpatialComponent.h"
         "SpatialComponent.cpp"
 )

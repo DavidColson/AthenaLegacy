@@ -11,9 +11,13 @@ public:
 
     eastl::string ToString();
 
-    bool operator==(const Uuid& other);
+    bool IsNill();
 
-    bool operator!=(const Uuid& other);
+    bool operator==(const Uuid& other) const;
+
+    bool operator!=(const Uuid& other) const;
+
+    bool operator<(const Uuid& other) const;
 
 private:
     union{

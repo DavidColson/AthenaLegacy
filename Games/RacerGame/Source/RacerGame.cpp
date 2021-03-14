@@ -99,15 +99,13 @@ int main(int argc, char *argv[])
 		pCubeRenderable->SetLocalScale(Vec3f(0.5f, 0.5f, 0.5f));
 
 		Entity* pEntity2 = pWorld->NewEntity("Cube2");
-		Renderable* pCube2Renderable = pEntity->AddNewComponent<Renderable>();
-		pCube2Renderable->SetParent(pCubeRenderable);
+		Renderable* pCube2Renderable = pEntity->AddNewComponent<Renderable>(pCubeRenderable->GetId());
 		pCube2Renderable->meshHandle = AssetHandle("cube");
 		pCube2Renderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
 		pCube2Renderable->SetLocalPosition(Vec3f(1.0f, 0.0f, -5.0f));
 	
 		Entity* pEntity3 = pWorld->NewEntity("Cube3");
-		Renderable* pRenderable = pEntity->AddNewComponent<Renderable>();
-		pRenderable->SetParent(pCube2Renderable);
+		Renderable* pRenderable = pEntity->AddNewComponent<Renderable>(pCube2Renderable->GetId());
 		pRenderable->meshHandle = AssetHandle("cube");
 		pRenderable->shaderHandle = AssetHandle("Shaders/VertColor.hlsl");
 		pRenderable->SetLocalPosition(Vec3f(1.0f, 0.0f, -5.0f));
