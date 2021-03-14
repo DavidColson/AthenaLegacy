@@ -7,6 +7,8 @@ struct SpatialComponent : public IComponent
 {
     REFLECT_DERIVED()
 
+    SpatialComponent() : IComponent() {}
+
     void SetLocalPosition(const Vec3f& position);
 
     Vec3f GetLocalPosition();

@@ -13,6 +13,8 @@ struct UpdateContext;
 
 struct PlayerComponent : public IComponent
 {
+    PlayerComponent() : IComponent() {}
+
     float thrust{ 160.f };
 	float rotateSpeed{ 5.0f };
 	float dampening{ 0.f };

@@ -20,6 +20,8 @@ struct FrameContext;
 
 struct Polyline : public SpatialComponent
 {
+    Polyline() : SpatialComponent() {}
+
 	eastl::fixed_vector<Vec2f, 15> points;
 	float thickness = 5.0f;
 	bool connected = true;

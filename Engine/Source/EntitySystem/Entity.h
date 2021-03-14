@@ -2,19 +2,27 @@
 
 #include "EASTL/vector.h"
 #include "EASTL/string.h"
+#include "UUID.h"
 
 class IEntitySystem;
 struct UpdateContext;
 
 struct IComponent
 {
+    IComponent() : id(Uuid::New()) {}
+
+    Uuid id;
     REFLECT_DERIVED()
 };
 
 class Entity
 {
 public:
-	// This function will loop through components and register them with the systems
+	Entity() : id(Uuid::New()) {}
+
+    Uuid GetId() { return id; }
+
+    // This function will loop through components and register them with the systems
 	[[nodiscard]] eastl::vector<IComponent*> Activate();
 
 	// Loop through components and unregister them with systems
@@ -42,6 +50,8 @@ public:
 	eastl::string name;
 
 private:
+    Uuid id;
+
 	eastl::vector<IComponent*> components;
 	eastl::vector<IEntitySystem*> systems;
 };

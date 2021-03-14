@@ -17,6 +17,8 @@ enum class CollisionType
 
 struct AsteroidPhysics : public SpatialComponent
 {
+    AsteroidPhysics() : SpatialComponent() {}
+
 	Vec3f velocity;
 	Vec3f acceleration;
     float collisionRadius{ 1.0f };

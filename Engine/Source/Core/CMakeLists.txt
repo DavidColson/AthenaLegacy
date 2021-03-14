@@ -52,4 +52,6 @@ target_sources(Engine
         "IntersectionTests.cpp"
         "SceneQueries.h"
         "SceneQueries.cpp"
+        "UUID.h"
+        "UUID.cpp"
 )
