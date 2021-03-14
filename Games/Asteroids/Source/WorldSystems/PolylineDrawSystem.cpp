@@ -6,7 +6,7 @@
 #include <Mesh.h>
 #include <Rendering/GameRenderer.h>
 
-#include "Components.h"
+#include "../Components.h"
 
 struct TransformData
 {

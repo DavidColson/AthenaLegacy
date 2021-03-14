@@ -3,9 +3,9 @@
 #include <Engine.h>
 #include <World.h>
 
-#include "PlayerController.h"
-#include "Components.h"
-#include "Asteroids.h"
+#include "../EntitySystems/PlayerController.h"
+#include "../Components.h"
+#include "../Asteroids.h"
 
 void CollisionSystem::Activate()
 {

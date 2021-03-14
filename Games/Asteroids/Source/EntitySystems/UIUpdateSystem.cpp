@@ -1,6 +1,6 @@
 #include "UIUpdateSystem.h"
 
-#include "Components.h"
+#include "../Components.h"
 
 void UIUpdateSystem::Activate()
 {

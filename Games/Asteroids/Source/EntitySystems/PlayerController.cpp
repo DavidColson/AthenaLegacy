@@ -6,9 +6,8 @@
 
 #include <SDL_scancode.h>
 
-#include "Asteroids.h"
-#include "PolylineDrawSystem.h"
-#include "Components.h"
+#include "../Asteroids.h"
+#include "../Components.h"
 
 void PlayerController::Activate()
 {

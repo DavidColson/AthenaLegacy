@@ -4,7 +4,7 @@
 #include <Engine.h>
 #include <Rendering/GameRenderer.h>
 
-#include "Components.h"
+#include "../Components.h"
 
 void PlayerDeathSystem::Activate()
 {

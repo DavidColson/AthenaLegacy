@@ -6,7 +6,7 @@
 #include <Entity.h>
 #include <Systems.h>
 
-#include "Components.h"
+#include "../Components.h"
 
 struct UpdateContext;
 

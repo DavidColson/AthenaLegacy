@@ -1,12 +1,12 @@
 #include "Asteroids.h"
 #include "Systems_Old.h"
 #include "Components.h"
-#include "MovementSystem.h"
-#include "PolylineDrawSystem.h"
-#include "PlayerController.h"
-#include "PlayerDeathSystem.h"
-#include "CollisionSystem.h"
-#include "UIUpdateSystem.h"
+#include "WorldSystems/MovementSystem.h"
+#include "WorldSystems/PolylineDrawSystem.h"
+#include "WorldSystems/CollisionSystem.h"
+#include "EntitySystems/PlayerController.h"
+#include "EntitySystems/PlayerDeathSystem.h"
+#include "EntitySystems/UIUpdateSystem.h"
 
 #include <Vec4.h>
 #include <Matrix.h>
