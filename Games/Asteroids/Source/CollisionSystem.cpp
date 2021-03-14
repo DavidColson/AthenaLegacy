@@ -40,6 +40,11 @@ void CollisionSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
     {
         pPlayerComponent = static_cast<PlayerComponent*>(pComponent);
     }
+
+    if (pComponent->GetTypeData() == TypeDatabase::Get<Score>())
+    {
+        pScoreComponent = static_cast<Score*>(pComponent);
+    }
 }
 
 void CollisionSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
@@ -121,11 +126,12 @@ void CollisionSystem::OnBulletAsteroidCollision(World& world, Uuid bulletEntity,
 
     switch (pAsteroidComponent->hitCount)
     {
-        case 0: pPlayerComponent->currentScore += 20; break;
-        case 1: pPlayerComponent->currentScore += 50; break;
-        case 2: pPlayerComponent->currentScore += 100; break;
+        case 0: pScoreComponent->currentScore += 20; break;
+        case 1: pScoreComponent->currentScore += 50; break;
+        case 2: pScoreComponent->currentScore += 100; break;
         default: break;
     }
+    pScoreComponent->update = true;
 
     // TODO: Spawn particles
 

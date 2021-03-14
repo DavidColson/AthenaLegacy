@@ -68,11 +68,23 @@ struct PlayerComponent : public IComponent
 	float invicibilityTimer{ 0.0f };
 	float flashTimer{ 0.3f };
 
-	int currentScore{ 0 };
-
     REFLECT_DERIVED()
 };
 
+struct Score : public IComponent
+{
+    Score() : IComponent() {}
+
+	int currentScore{ 0 };
+	int highScore{ 0 };
+
+	bool update{ false };
+
+	Uuid currentScoreTextElement;
+	Uuid highScoreTextElement;
+
+	REFLECT_DERIVED()
+};
 
 
 

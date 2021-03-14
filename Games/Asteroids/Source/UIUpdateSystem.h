@@ -2,34 +2,25 @@
 
 #include <Entity.h>
 #include <Systems.h>
+#include <Rendering/FontSystem.h>
 
-struct AsteroidPhysics;
-struct AsteroidComponent;
-struct PlayerComponent;
 struct UpdateContext;
+struct Score;
 
 class World;
 
-struct CollisionSystem : public IWorldSystem
+struct UIUpdateSystem : public IEntitySystem
 {
     virtual void Activate() override;
 
-	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) override;
+	virtual void RegisterComponent(IComponent* pComponent) override;
 
-	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) override;
+	virtual void UnregisterComponent(IComponent* pComponent) override;
 
 	virtual void Update(UpdateContext& ctx) override;
 
-	void OnBulletAsteroidCollision(World& world, Uuid bulletEntity, Uuid asteroidEntity);
-    
-	void OnPlayerAsteroidCollision(World& world, Uuid asteroidEntity);
-
 private:
-	eastl::map<Uuid, AsteroidPhysics*> asteroidPhysics;
-	eastl::map<Uuid, AsteroidComponent*> asteroids;
+	eastl::map<Uuid, TextComponent*> textElements;
 
-    eastl::vector<AsteroidPhysics*> bullets;
-
-	AsteroidPhysics* pPlayerPhysics;
-	PlayerComponent* pPlayerComponent;
+    Score* pScoreComponent;
 };

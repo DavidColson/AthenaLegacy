@@ -10,6 +10,7 @@ struct AsteroidPhysics;
 struct AsteroidComponent;
 struct PlayerComponent;
 struct UpdateContext;
+struct Score;
 
 class World;
 
@@ -34,4 +35,6 @@ private:
 
 	AsteroidPhysics* pPlayerPhysics;
 	PlayerComponent* pPlayerComponent;
+
+	Score* pScoreComponent;
 };

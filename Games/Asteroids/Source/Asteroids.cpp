@@ -6,6 +6,7 @@
 #include "PlayerController.h"
 #include "PlayerDeathSystem.h"
 #include "CollisionSystem.h"
+#include "UIUpdateSystem.h"
 
 #include <Vec4.h>
 #include <Matrix.h>
@@ -173,18 +174,23 @@ World* CreateMainAsteroidsScene()
 	// Create the UI entity
 	{
 		Entity* pUIEntity = world.NewEntity("UI");
+		pUIEntity->AddNewSystem<UIUpdateSystem>();
+
+		Score* pScore = pUIEntity->AddNewComponent<Score>();
 
 		SpatialComponent* pUIRoot = pUIEntity->AddNewComponent<SpatialComponent>();
 
-		TextComponent* pScore = pUIEntity->AddNewComponent<TextComponent>(pUIRoot->GetId());
-		pScore->SetLocalPosition(Vec3f(150.0f, h - 53.0f, 0.0f));
-		pScore->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
-		pScore->text = "0";
+		TextComponent* pScoreElement = pUIEntity->AddNewComponent<TextComponent>(pUIRoot->GetId());
+		pScoreElement->SetLocalPosition(Vec3f(150.0f, h - 53.0f, 0.0f));
+		pScoreElement->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
+		pScoreElement->text = "0";
+		pScore->currentScoreTextElement = pScoreElement->GetId();
 
-		TextComponent* pHighScore = pUIEntity->AddNewComponent<TextComponent>(pUIRoot->GetId());
-		pHighScore->SetLocalPosition(Vec3f(w - 150.f, h - 53.0f, 0.0f));
-		pHighScore->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
-		pHighScore->text = "0";
+		TextComponent* pHighScoreElement = pUIEntity->AddNewComponent<TextComponent>(pUIRoot->GetId());
+		pHighScoreElement->SetLocalPosition(Vec3f(w - 150.f, h - 53.0f, 0.0f));
+		pHighScoreElement->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
+		pHighScoreElement->text = "0";
+		pScore->highScoreTextElement = pHighScoreElement->GetId();
 	}
 
 	world.AddGlobalSystem<PolylineDrawSystem>();
