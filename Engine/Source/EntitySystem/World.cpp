@@ -4,6 +4,24 @@
 #include "Systems.h"
 
 
+
+World::~World()
+{
+    if (isActive)
+        DeactivateWorld();
+
+    // Delete entities
+    for(Entity* pEntity : entities)
+    {
+        delete pEntity;
+    }
+
+    for(IWorldSystem* pSystem : globalSystems)
+    {
+        delete pSystem;
+    }
+}
+
 Entity* World::NewEntity(eastl::string name)
 {
     Entity* pNewEnt = new Entity();
@@ -60,6 +78,11 @@ void World::DeactivateWorld()
             }
         }
     }
+
+    for (IWorldSystem* pGlobalSystem : globalSystems)
+    {
+        pGlobalSystem->Deactivate();
+    }
     isActive = false;
 }
 
@@ -109,17 +132,5 @@ void World::OnUpdate(UpdateContext& ctx)
     for (IWorldSystem* pSystem : globalSystems)
     {
         pSystem->Update(ctx);
-    }
-}
-
-void World::DestroyWorld()
-{
-    if (isActive)
-        DeactivateWorld();
-
-    // Delete entities
-    for(Entity* pEntity : entities)
-    {
-        delete pEntity;
     }
 }

@@ -14,6 +14,8 @@ class Entity
 public:
 	Entity() : id(Uuid::New()) {}
 
+    ~Entity();
+
     Uuid GetId() const { return id; }
 
     // This function will loop through components and register them with the systems

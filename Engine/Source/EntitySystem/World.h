@@ -11,6 +11,8 @@ struct UpdateContext;
 class World
 {
 public:
+	~World();
+
 	// This will create new element in array and return it to you.
 	Entity* NewEntity(eastl::string name);
 
@@ -23,8 +25,6 @@ public:
 
 	// Loops through entities, updating them, then globals
 	void OnUpdate(UpdateContext& ctx);
-	
-	void DestroyWorld();
 
 	template<typename Type>
     IWorldSystem* AddGlobalSystem()

@@ -33,6 +33,11 @@ void SceneDrawSystem::Activate()
 	g_transformBufferHandle = GfxDevice::CreateConstantBuffer(sizeof(cbTransformBuf), "RenderableTransformBuffer");
 }
 
+void SceneDrawSystem::Deactivate()
+{
+	GameRenderer::UnregisterRenderSystemOpaque(this);
+}
+
 void SceneDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	if (pComponent->GetTypeData() == TypeDatabase::Get<Renderable>())

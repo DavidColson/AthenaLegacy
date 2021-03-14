@@ -65,7 +65,7 @@ struct PlayerComponent : public IComponent
 	bool hasCollidedWithAsteroid{ false };
 
 	float respawnTimer{ 0.0f };
-	float invicibilityTimer{ 0.0f };
+	float invicibilityTimer{ 5.0f };
 	float flashTimer{ 0.3f };
 
     REFLECT_DERIVED()
@@ -82,6 +82,9 @@ struct Score : public IComponent
 
 	Uuid currentScoreTextElement;
 	Uuid highScoreTextElement;
+	Uuid gameOverTextElement;
+
+	bool gameOver{ false };
 
 	REFLECT_DERIVED()
 };

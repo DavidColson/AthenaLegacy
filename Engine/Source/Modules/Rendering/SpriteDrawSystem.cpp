@@ -62,6 +62,11 @@ void SpriteDrawSystem::Activate()
 	blendState = GfxDevice::CreateBlendState(blender);
 }
 
+void SpriteDrawSystem::Deactivate()
+{
+    GameRenderer::UnregisterRenderSystemTransparent(this);
+}
+
 // ***********************************************************************
 
 void SpriteDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
@@ -120,8 +125,6 @@ void SpriteDrawSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
 
 SpriteDrawSystem::~SpriteDrawSystem()
 {
-    GameRenderer::UnregisterRenderSystemTransparent(this);
-
     GfxDevice::FreeBlendState(blendState);
     GfxDevice::FreeConstBuffer(transformBufferHandle);
     GfxDevice::FreeSampler(spriteSampler);

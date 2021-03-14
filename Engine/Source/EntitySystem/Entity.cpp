@@ -5,6 +5,20 @@
 REFLECT_BEGIN(IComponent)
 REFLECT_END()
 
+Entity::~Entity()
+{
+    // Delete entities
+    for(IComponent* pComponent : components)
+    {
+        delete pComponent;
+    }
+
+    for(IEntitySystem* pSystem : systems)
+    {
+        delete pSystem;
+    }
+}
+
 eastl::vector<IComponent*> Entity::Activate()
 {
     eastl::vector<IComponent*> componentsToReturn;

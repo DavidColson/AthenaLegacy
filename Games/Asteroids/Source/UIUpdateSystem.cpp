@@ -37,8 +37,14 @@ void UIUpdateSystem::Update(UpdateContext& ctx)
 {
     if (pScoreComponent)
     {
+
         if (pScoreComponent->update)
         {
+            if (pScoreComponent->gameOver)
+            {
+                textElements[pScoreComponent->gameOverTextElement]->visible = true;
+            }
+
             pScoreComponent->update = false;
 
             if (pScoreComponent->currentScore > pScoreComponent->highScore)

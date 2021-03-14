@@ -28,6 +28,8 @@ struct SceneDrawSystem : public IWorldSystem
 
     virtual void Activate() override;
 
+    virtual void Deactivate() override;
+
 	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) override;
 
 	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) override;

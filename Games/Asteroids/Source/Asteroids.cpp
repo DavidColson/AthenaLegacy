@@ -191,6 +191,13 @@ World* CreateMainAsteroidsScene()
 		pHighScoreElement->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 		pHighScoreElement->text = "0";
 		pScore->highScoreTextElement = pHighScoreElement->GetId();
+
+		TextComponent* pGameOverElement = pUIEntity->AddNewComponent<TextComponent>(pUIRoot->GetId());
+		pGameOverElement->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f, 0.0f));
+		pGameOverElement->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
+		pGameOverElement->text = "Game Over";
+		pGameOverElement->visible = false;
+		pScore->gameOverTextElement = pGameOverElement->GetId();
 	}
 
 	world.AddGlobalSystem<PolylineDrawSystem>();

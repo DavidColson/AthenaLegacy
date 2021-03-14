@@ -114,6 +114,13 @@ void PolylineDrawSystem::Activate()
 
 // ***********************************************************************
 
+void PolylineDrawSystem::Deactivate()
+{
+	GameRenderer::UnregisterRenderSystemOpaque(this);
+}
+
+// ***********************************************************************
+
 void PolylineDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	if (pComponent->GetTypeData() == TypeDatabase::Get<Polyline>())

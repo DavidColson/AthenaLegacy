@@ -6,6 +6,7 @@
 
 #include <SDL_scancode.h>
 
+#include "Asteroids.h"
 #include "PolylineDrawSystem.h"
 #include "Components.h"
 
@@ -66,6 +67,11 @@ void PlayerController::SpawnBullet(World* pWorld)
 
 void PlayerController::Update(UpdateContext& ctx)
 {
+    if (Input::GetKeyDown(SDL_SCANCODE_ESCAPE))
+    {
+        LoadMenu();
+    }
+
     if (pRootPhysics && pPlayerComponent)
     {
         if (pPlayerComponent->respawnTimer > 0.0f)

@@ -16,6 +16,7 @@
 REFLECT_COMPONENT_BEGIN(TextComponent)
 REFLECT_MEMBER(text)
 REFLECT_MEMBER(fontAsset)
+REFLECT_MEMBER(visible)
 REFLECT_END()
 
 #define CHARS_PER_DRAW_CALL 500
@@ -101,6 +102,13 @@ void FontDrawSystem::Activate()
 
 // ***********************************************************************
 
+void FontDrawSystem::Deactivate()
+{
+	GameRenderer::UnregisterRenderSystemTransparent(this);
+}
+
+// ***********************************************************************
+
 void FontDrawSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
 {
 	if (pComponent->GetTypeData() == TypeDatabase::Get<TextComponent>())
@@ -124,8 +132,6 @@ void FontDrawSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent
 
 FontDrawSystem::~FontDrawSystem()
 {
-	GameRenderer::UnregisterRenderSystemTransparent(this);
-
 	GfxDevice::FreeProgram(fontShaderProgram);
 	GfxDevice::FreeVertexBuffer(vertexBuffer);
 	GfxDevice::FreeVertexBuffer(texcoordsBuffer);
@@ -151,6 +157,9 @@ void FontDrawSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
 
 	for(TextComponent* pText : textComponents)
 	{
+		if (!pText->visible)
+			continue;
+
 		Font* pFont = AssetDB::GetAsset<Font>(pText->fontAsset);
 
 		Vec3f position;

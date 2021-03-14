@@ -256,6 +256,7 @@ void Engine::Run(World* pInitialWorld)
 			AssetDB::CollectGarbage();
 			pCurrentWorld = pPendingWorldSwap;
 			pPendingWorldSwap = nullptr;
+			pCurrentWorld->ActivateWorld();
 		}
 
 		// Framerate counter

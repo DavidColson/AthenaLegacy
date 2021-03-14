@@ -20,6 +20,7 @@ class IWorldSystem
 {
 public:
     virtual void Activate() = 0;
+    virtual void Deactivate() = 0;
 	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) = 0;
 	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) = 0;
 

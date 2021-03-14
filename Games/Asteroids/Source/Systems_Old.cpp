@@ -343,11 +343,6 @@ void ShipControlSystemUpdate(Scene& scene, float deltaTime)
 		CDynamics* pDynamics = scene.Get<CDynamics>(id);
 		CPlayerControl* pControl = scene.Get<CPlayerControl>(id);
 
-		if (Input::GetKeyDown(SDL_SCANCODE_ESCAPE))
-		{
-			LoadMenu();
-		}
-
 		// If player isn't visible we consider them dead
 		if (scene.Get<CVisibility>(id)->visible == false && !scene.Has<CInvincibility>(id))
 		{

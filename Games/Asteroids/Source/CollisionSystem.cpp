@@ -175,6 +175,13 @@ void CollisionSystem::OnPlayerAsteroidCollision(World& world, Uuid asteroidEntit
     if (pPlayerComponent)
     {
         pPlayerComponent->hasCollidedWithAsteroid = true;
+
+        if (pScoreComponent)
+        {
+            if (pPlayerComponent->lives.size() == 1)
+                pScoreComponent->gameOver = true;
+            pScoreComponent->update = true;
+        }
     }
 
     world.DestroyEntity(asteroidEntity);

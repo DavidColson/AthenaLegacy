@@ -69,6 +69,9 @@ void PlayerDeathSystem::Update(UpdateContext& ctx)
             polylineComponents[lifeId]->visible = false;
         }
 
+        if (pPlayerComponent->lives.empty())
+            return;
+            
         if (pPlayerComponent->respawnTimer > 0.0f)
         {
             pPlayerComponent->respawnTimer -= ctx.deltaTime;
