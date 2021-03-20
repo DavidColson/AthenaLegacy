@@ -51,7 +51,7 @@ void PlayerDeathSystem::Update(UpdateContext& ctx)
 {
     if (pPlayerComponent)
     {
-        if (pPlayerComponent->hasCollidedWithAsteroid && pPlayerComponent->invicibilityTimer <= 0.0f)
+        if (pPlayerComponent->hasCollidedWithAsteroid && pPlayerComponent->invicibilityTimer <= 0.0f && pPlayerComponent->respawnTimer <= 0.0f)
         {
             pPlayerComponent->hasCollidedWithAsteroid = false;
             pPlayerComponent->respawnTimer = 5.0f; // This being above 0 means the player is dead effectively

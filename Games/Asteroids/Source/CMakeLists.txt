@@ -27,6 +27,8 @@ target_sources(AsteroidsGame
         "WorldSystems/MovementSystem.cpp"
         "WorldSystems/CollisionSystem.h"
         "WorldSystems/CollisionSystem.cpp"
+        "WorldSystems/AsteroidSpawner.h"
+        "WorldSystems/AsteroidSpawner.cpp"
         "EntitySystems/PlayerController.h"
         "EntitySystems/PlayerController.cpp"
         "EntitySystems/PlayerDeathSystem.h"

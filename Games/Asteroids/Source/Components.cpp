@@ -29,6 +29,12 @@ REFLECT_MEMBER(currentScore)
 REFLECT_MEMBER(highScore)
 REFLECT_END()
 
+REFLECT_BEGIN_DERIVED(AsteroidSpawnData, IComponent)
+REFLECT_MEMBER(timer)
+REFLECT_MEMBER(timeBetweenSpawns)
+REFLECT_MEMBER(decay)
+REFLECT_END()
+
 // LEGACY
 /////////
 

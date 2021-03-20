@@ -4,6 +4,7 @@
 #include "WorldSystems/MovementSystem.h"
 #include "WorldSystems/PolylineDrawSystem.h"
 #include "WorldSystems/CollisionSystem.h"
+#include "WorldSystems/AsteroidSpawner.h"
 #include "EntitySystems/PlayerController.h"
 #include "EntitySystems/PlayerDeathSystem.h"
 #include "EntitySystems/UIUpdateSystem.h"
@@ -121,6 +122,7 @@ World* CreateMainAsteroidsScene()
 	pPlayerEnt->AddNewSystem<PlayerController>();
 	pPlayerEnt->AddNewSystem<PlayerDeathSystem>();
 
+	pPlayerEnt->AddNewComponent<AsteroidSpawnData>();
 	PlayerComponent* pPlayer = pPlayerEnt->AddNewComponent<PlayerComponent>();
 
 	SpatialComponent* pRoot = pPlayerEnt->AddNewComponent<SpatialComponent>();
@@ -204,6 +206,7 @@ World* CreateMainAsteroidsScene()
 	world.AddGlobalSystem<MovementSystem>();
 	world.AddGlobalSystem<FontDrawSystem>();
 	world.AddGlobalSystem<CollisionSystem>();
+	world.AddGlobalSystem<AsteroidSpawner>();
 
 	return &world;
 }

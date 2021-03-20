@@ -89,6 +89,16 @@ struct Score : public IComponent
 	REFLECT_DERIVED()
 };
 
+struct AsteroidSpawnData : public IComponent
+{
+	AsteroidSpawnData() : IComponent() {}
+
+	float timer = 30.0f;
+	float timeBetweenSpawns = 3.0f;
+	float decay = 0.98f;
+
+	REFLECT_DERIVED()
+};
 
 
 
