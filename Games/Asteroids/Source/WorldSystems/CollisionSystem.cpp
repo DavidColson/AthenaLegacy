@@ -133,6 +133,8 @@ void CollisionSystem::OnBulletAsteroidCollision(World& world, Uuid bulletEntity,
     }
     pScoreComponent->update = true;
 
+	AudioDevice::PlaySound(pPlayerComponent->explosionSound, 1.0f, false);
+
     // TODO: Spawn particles
 
     if (pAsteroidComponent->hitCount >= 2)

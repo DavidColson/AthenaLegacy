@@ -68,6 +68,12 @@ struct PlayerComponent : public IComponent
 	float invicibilityTimer{ 5.0f };
 	float flashTimer{ 0.3f };
 
+	AssetHandle shootSound;
+	AssetHandle explosionSound;
+	AssetHandle engineSound;
+
+	SoundID enginePlayingSound{ SoundID(-1) };
+
     REFLECT_DERIVED()
 };
 

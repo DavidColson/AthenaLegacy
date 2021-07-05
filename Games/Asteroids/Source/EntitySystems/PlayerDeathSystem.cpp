@@ -56,6 +56,7 @@ void PlayerDeathSystem::Update(UpdateContext& ctx)
             pPlayerComponent->hasCollidedWithAsteroid = false;
             pPlayerComponent->respawnTimer = 5.0f; // This being above 0 means the player is dead effectively
             polylineComponents[pPlayerComponent->playerPolylineComponent]->visible = false;
+	        AudioDevice::PauseSound(pPlayerComponent->enginePlayingSound);
 
             float w = GameRenderer::GetWidth();
 	        float h = GameRenderer::GetHeight();

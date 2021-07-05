@@ -124,6 +124,11 @@ World* CreateMainAsteroidsScene()
 
 	pPlayerEnt->AddNewComponent<AsteroidSpawnData>();
 	PlayerComponent* pPlayer = pPlayerEnt->AddNewComponent<PlayerComponent>();
+	pPlayer->engineSound = AssetHandle("Audio/Engine.wav");
+	pPlayer->shootSound = AssetHandle("Audio/Shoot.wav");
+	pPlayer->explosionSound = AssetHandle("Audio/Explosion.wav");
+	pPlayer->enginePlayingSound = AudioDevice::PlaySound(pPlayer->engineSound, 0.3f, true);
+	AudioDevice::PauseSound(pPlayer->enginePlayingSound);
 
 	SpatialComponent* pRoot = pPlayerEnt->AddNewComponent<SpatialComponent>();
 

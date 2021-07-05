@@ -87,6 +87,11 @@ void PlayerController::Update(UpdateContext& ctx)
 			accel = accel * -pPlayerComponent->thrust;
 		}
 
+        if (Input::GetKeyDown(SDL_SCANCODE_UP))
+			AudioDevice::UnPauseSound(pPlayerComponent->enginePlayingSound);
+		else if (Input::GetKeyUp(SDL_SCANCODE_UP))
+			AudioDevice::PauseSound(pPlayerComponent->enginePlayingSound);
+
 		pRootPhysics->acceleration = accel - pRootPhysics->velocity * pPlayerComponent->dampening;
 
         Vec3f localRotation = pRootPhysics->GetLocalRotation();
@@ -101,7 +106,7 @@ void PlayerController::Update(UpdateContext& ctx)
         if (Input::GetKeyDown(SDL_SCANCODE_SPACE))
 		{
 			SpawnBullet(ctx.pWorld);
-			//AudioDevice::PlaySound(scene.Get<CSounds>(PLAYER_ID)->shootSound, 1.0f, false);
+			AudioDevice::PlaySound(pPlayerComponent->shootSound, 1.0f, false);
 		}
     }
 }
