@@ -33,6 +33,8 @@ public:
 		return globalSystems.back();
 	}
 
+	Entity* FindEntity(Uuid entityId);
+
 	/**
 	 * Defines a forward iterator on the entities in this world
 	 * 

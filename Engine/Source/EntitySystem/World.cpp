@@ -137,6 +137,18 @@ void World::OnUpdate(UpdateContext& ctx)
 
 // ***********************************************************************
 
+Entity* World::FindEntity(Uuid entityId)
+{
+    eastl::vector<Entity*>::iterator found = eastl::find_if(entities.begin(), entities.end(), [&entityId](const Entity* pEntity) { return entityId == pEntity->GetId(); });
+    if (found != entities.end())
+    {
+        return *found;
+    }
+    return nullptr;
+}
+
+// ***********************************************************************
+
 Entity* World::EntityIterator::operator*() const 
 { 
 	return *it;

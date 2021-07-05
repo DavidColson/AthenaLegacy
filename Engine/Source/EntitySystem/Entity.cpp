@@ -54,3 +54,14 @@ void Entity::Update(UpdateContext& ctx)
         pSystem->Update(ctx);
     }
 }
+
+void Entity::DestroyComponent(Uuid componentId)
+{
+    eastl::vector<IComponent*>::iterator found = eastl::find_if(components.begin(), components.end(),
+    [&componentId] (const IComponent* pComp) { return pComp->GetId() == componentId; });
+
+    if (found != components.end())
+    {
+        components.erase(found);
+    }
+}

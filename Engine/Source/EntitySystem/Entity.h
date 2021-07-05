@@ -68,6 +68,10 @@ public:
         return pSystem;
     }
 
+    void DestroyComponent(Uuid componentId);
+
+    eastl::vector<IComponent*> const& GetComponents() const { return components; }
+
 	eastl::string name;
 
 private:

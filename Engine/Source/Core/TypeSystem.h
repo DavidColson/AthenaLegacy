@@ -188,6 +188,19 @@ struct Member
 	 * Set the member of instance to newValue
 	 **/
 	virtual void Set(Variant& instance, Variant newValue) = 0;
+
+	// TODO: Don't love what's happening here, seems like it's prone to error. Think of something else
+
+	/**
+	 * Get an instance of a member from a pointer to a base class of it's owning type
+	 * Note that the return value will have copied the value into the variant
+	 **/
+	virtual Variant GetFromBase(void* pInstance) = 0;
+
+	/**
+	 * Set the member of base class instance to newValue
+	 **/
+	virtual void SetOnBase(void* pInstance, Variant value) = 0;
 	
 	/**
 	 *	Constructor, for internal use in REFLEC_* macros, do not use elsewhere
@@ -519,10 +532,21 @@ struct Member_Internal : public Member
 		return Variant(instance.GetValue<ClassType>().*memberPointer);
 	}
 
+	virtual Variant GetFromBase(void* pInstance) override
+	{
+		return Variant(static_cast<ClassType*>(pInstance)->*memberPointer);
+	}
+
 	// Copy happening on value, consider replacing with argument wrapper
 	virtual void Set(Variant& instance, Variant value) override
 	{
 		instance.GetValue<ClassType>().*memberPointer = value.GetValue<MemberType>();
+	}
+
+	// Copy happening on value, consider replacing with argument wrapper
+	virtual void SetOnBase(void* pInstance, Variant value) override
+	{
+		static_cast<ClassType*>(pInstance)->*memberPointer = value.GetValue<MemberType>();
 	}
 
 	MemberType ClassType::* memberPointer;
