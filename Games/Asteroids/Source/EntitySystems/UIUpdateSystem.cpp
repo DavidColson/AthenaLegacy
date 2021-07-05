@@ -43,6 +43,7 @@ void UIUpdateSystem::Update(UpdateContext& ctx)
             if (pScoreComponent->gameOver)
             {
                 textElements[pScoreComponent->gameOverTextElement]->visible = true;
+                textElements[pScoreComponent->restartTextElement]->visible = true;
             }
 
             pScoreComponent->update = false;

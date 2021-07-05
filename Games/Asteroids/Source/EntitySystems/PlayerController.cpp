@@ -73,6 +73,11 @@ void PlayerController::Update(UpdateContext& ctx)
 
     if (pRootPhysics && pPlayerComponent)
     {
+        if (pPlayerComponent->lives.empty() && Input::GetKeyDown(SDL_SCANCODE_RETURN))
+        {
+            LoadMainScene();
+        }
+
         if (pPlayerComponent->respawnTimer > 0.0f)
         {
             return;

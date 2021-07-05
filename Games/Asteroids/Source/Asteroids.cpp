@@ -201,11 +201,19 @@ World* CreateMainAsteroidsScene()
 		pScore->highScoreTextElement = pHighScoreElement->GetId();
 
 		TextComponent* pGameOverElement = pUIEntity->AddNewComponent<TextComponent>(pUIRoot->GetId());
-		pGameOverElement->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f, 0.0f));
+		pGameOverElement->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f + 20.0f, 0.0f));
 		pGameOverElement->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 		pGameOverElement->text = "Game Over";
 		pGameOverElement->visible = false;
 		pScore->gameOverTextElement = pGameOverElement->GetId();
+
+		TextComponent* pRestartElement = pUIEntity->AddNewComponent<TextComponent>(pUIRoot->GetId());
+		pRestartElement->SetLocalPosition(Vec3f(w / 2.0f, h / 2.0f - 25.0f, 0.0f));
+		pRestartElement->SetLocalScale(Vec3f(0.7f, 0.7f, 1.0f));
+		pRestartElement->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
+		pRestartElement->text = "Press Enter To Restart";
+		pRestartElement->visible = false;
+		pScore->restartTextElement = pRestartElement->GetId();
 	}
 
 	world.AddGlobalSystem<PolylineDrawSystem>();

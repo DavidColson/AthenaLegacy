@@ -79,6 +79,7 @@ struct Score : public IComponent
 	Uuid currentScoreTextElement;
 	Uuid highScoreTextElement;
 	Uuid gameOverTextElement;
+	Uuid restartTextElement;
 
 	bool gameOver{ false };
 
