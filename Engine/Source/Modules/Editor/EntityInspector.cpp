@@ -8,6 +8,7 @@
 #include "Entity.h"
 
 #include <ImGui/imgui.h>
+#include <Imgui/imgui_internal.h>
 #include <Imgui/misc/cpp/imgui_stdlib.h>
 
 EntityInspector::EntityInspector()
@@ -23,38 +24,50 @@ void EntityInspector::Update(Scene& scene, UpdateContext& ctx)
 
 	ImGui::Begin("Entity Inspector", &open);
 
-	// if (ImGui::Button("Add Component", Vec2f(ImGui::GetContentRegionAvailWidth(), 0.0f)))
-	// 	ImGui::OpenPopup("Select Component");
-	// if (ImGui::BeginPopup("Select Component"))
-	// {
-	// 	ImGui::Text("Aquarium");
-	// 	ImGui::Separator();
-
-	// 	for (eastl::pair<eastl::string, TypeData*> type : TypeDatabase::Data::Get().typeNames)
-	// 	{
-	// 		if (type.second->isComponent)
-	// 		{
-	// 			if (ImGui::Selectable(type.first.c_str()))
-	// 			{
-	// 				Log::Info("Create component of type %s", type.first.c_str());
-	// 				scene.Assign(selectedEntity, *type.second);
-	// 			}
-	// 		}
-	// 	}
-	// 	ImGui::EndPopup();
-	// }
-    ImGui::NewLine();
-    ImGui::NewLine();
-
 	Entity* pEntity = ctx.pWorld->FindEntity(selectedEntity);
 	if (pEntity == nullptr)
 	{
 		ImGui::End();
 		return;
 	}
-
-	for (IComponent* pComponent : pEntity->GetComponents())
+	
 	{
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+		ImGui::BeginChild("ComponentList", ImVec2(0, 100), false, window_flags);
+
+		uint64_t counter = 0;
+		for (IComponent* pComponent : pEntity->GetComponents())
+		{
+			counter++;
+			ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+
+			if (Editor::GetSelectedEntity() == pEntity->GetId())
+				nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+			bool nodeOpened = ImGui::TreeNodeEx((void*)counter, nodeFlags, "%s", pComponent->GetTypeData().name);
+			if (ImGui::IsItemClicked())
+			 	selectedComponent = pComponent->GetId();
+			
+			if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
+			{
+				ImGui::TreePop();
+			}
+		}
+
+		ImGui::EndChild();
+	}
+
+	ImGui::Separator();
+
+	eastl::vector<IComponent*> components = pEntity->GetComponents();
+	eastl::vector<IComponent*>::iterator found = eastl::find_if(components.begin(), components.end(),
+    [this] (const IComponent* pComp) { return pComp->GetId() == selectedComponent; });
+
+	if (found != components.end())
+	{
+		IComponent* pComponent = *found;
 		bool removedComponent = false;
 		TypeData& componentType = pComponent->GetTypeData();
 		if (ImGui::CollapsingHeader(componentType.name, ImGuiTreeNodeFlags_DefaultOpen))

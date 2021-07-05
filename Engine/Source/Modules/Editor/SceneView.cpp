@@ -315,6 +315,8 @@ void SceneView::Update(Scene& scene, UpdateContext& ctx)
     if (windowSize != Vec2f(ImGui::GetContentRegionAvail()))
 	{
 		windowSize = ImGui::GetContentRegionAvail();
+        windowSize.x = clamp(windowSize.x, 10.f, 100000000.f);
+        windowSize.y = clamp(windowSize.y, 10.f, 100000000.f);
         GfxDevice::FreeRenderTarget(renderTarget);
         renderTarget = GfxDevice::CreateRenderTarget(windowSize.x, windowSize.y, Engine::GetConfig().multiSamples, "SceneView Render Target");
     }
