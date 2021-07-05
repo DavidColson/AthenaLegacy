@@ -12,8 +12,6 @@
 
 struct AsteroidComponent : public IComponent
 {
-	AsteroidComponent() : IComponent() {}
-
 	REFLECT_DERIVED();
 
 	int hitCount{ 0 };
@@ -28,8 +26,6 @@ enum class CollisionType
 
 struct AsteroidPhysics : public SpatialComponent
 {
-    AsteroidPhysics() : SpatialComponent() {}
-
 	Vec3f velocity;
 	Vec3f acceleration;
     float collisionRadius{ 1.0f };
@@ -41,8 +37,6 @@ struct AsteroidPhysics : public SpatialComponent
 
 struct Polyline : public SpatialComponent
 {
-    Polyline() : SpatialComponent() {}
-
 	eastl::fixed_vector<Vec2f, 15> points;
 	float thickness{ 5.0f };
 	bool connected{ true };
@@ -53,8 +47,6 @@ struct Polyline : public SpatialComponent
 
 struct PlayerComponent : public IComponent
 {
-    PlayerComponent() : IComponent() {}
-
     float thrust{ 160.f };
 	float rotateSpeed{ 5.0f };
 	float dampening{ 0.f };
@@ -79,8 +71,6 @@ struct PlayerComponent : public IComponent
 
 struct Score : public IComponent
 {
-    Score() : IComponent() {}
-
 	int currentScore{ 0 };
 	int highScore{ 0 };
 
@@ -97,8 +87,6 @@ struct Score : public IComponent
 
 struct AsteroidSpawnData : public IComponent
 {
-	AsteroidSpawnData() : IComponent() {}
-
 	float timer = 30.0f;
 	float timeBetweenSpawns = 3.0f;
 	float decay = 0.98f;
@@ -106,7 +94,18 @@ struct AsteroidSpawnData : public IComponent
 	REFLECT_DERIVED()
 };
 
+struct MenuCursorComponent : public IComponent
+{
+	enum State
+	{
+		Start,
+		Quit
+	};
 
+	State currentState;
+
+	REFLECT_DERIVED()
+};
 
 
 

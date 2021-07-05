@@ -35,6 +35,8 @@ target_sources(AsteroidsGame
         "EntitySystems/PlayerDeathSystem.cpp"
         "EntitySystems/UIUpdateSystem.h"
         "EntitySystems/UIUpdateSystem.cpp"
+        "EntitySystems/MenuController.h"
+        "EntitySystems/MenuController.cpp"
 )
 
 GroupSources(${CMAKE_CURRENT_SOURCE_DIR})

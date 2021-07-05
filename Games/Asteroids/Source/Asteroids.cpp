@@ -8,6 +8,7 @@
 #include "EntitySystems/PlayerController.h"
 #include "EntitySystems/PlayerDeathSystem.h"
 #include "EntitySystems/UIUpdateSystem.h"
+#include "EntitySystems/MenuController.h"
 
 #include <Vec4.h>
 #include <Matrix.h>
@@ -244,11 +245,13 @@ World* CreateMainMenuScene()
 	pQuitText->fontAsset = AssetHandle("Fonts/Hyperspace/Hyperspace Bold.otf");
 
 	Entity* pSelector = world.NewEntity("Button Selector");
+	pSelector->AddNewSystem<MenuController>();
 	Vec2f verts[3] = {
 		Vec2f(0.f, 0.0f),
 		Vec2f(0.7f, 0.5f),
 		Vec2f(0.f, 1.f)
 	};
+	pSelector->AddNewComponent<MenuCursorComponent>();
 	Polyline* pPolyline = pSelector->AddNewComponent<Polyline>();
 	pPolyline->points.assign(verts, verts + 3);
 	pPolyline->SetLocalPosition(Vec3f(w / 2.0f - 100.0f, h / 2.0f + 18.0f, 0.0f));
@@ -275,7 +278,7 @@ int main(int argc, char *argv[])
 	Engine::Initialize("Games/Asteroids/Asteroids.cfg");
 
 	// Run everything
-	Engine::Run(CreateMainAsteroidsScene());
+	Engine::Run(CreateMainMenuScene());
 
 	return 0;
 }

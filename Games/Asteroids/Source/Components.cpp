@@ -35,6 +35,9 @@ REFLECT_MEMBER(timeBetweenSpawns)
 REFLECT_MEMBER(decay)
 REFLECT_END()
 
+REFLECT_BEGIN_DERIVED(MenuCursorComponent, IComponent)
+REFLECT_END()
+
 // LEGACY
 /////////
 

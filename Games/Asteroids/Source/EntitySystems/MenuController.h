@@ -5,10 +5,10 @@
 
 class World;
 struct UpdateContext;
-struct AsteroidPhysics;
-struct PlayerComponent;
+struct MenuCursorComponent;
+struct Polyline;
 
-struct PlayerController : public IEntitySystem
+struct MenuController : public IEntitySystem
 {
     virtual void Activate() override;
 
@@ -18,9 +18,7 @@ struct PlayerController : public IEntitySystem
 
 	virtual void Update(UpdateContext& ctx) override;
 
-	void SpawnBullet(World* pWorld);
-
 private:
-    AsteroidPhysics* pRootPhysics;
-    PlayerComponent* pPlayerComponent;
+    MenuCursorComponent* pCursor;
+    Polyline* pGraphics;
 };
