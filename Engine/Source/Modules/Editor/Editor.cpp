@@ -13,6 +13,7 @@
 #include "GraphicsDevice.h"
 #include "AppWindow.h"
 #include "Rendering/GameRenderer.h"
+#include "Entity.h"
 
 #include "EntityInspector.h"
 #include "FrameStats.h"
@@ -32,7 +33,7 @@
 namespace {
 	bool showEditor = false;
 
-	EntityID selectedEntity = EntityID::InvalidID();
+	Uuid selectedEntity;
 
 	eastl::string levelSaveModalFilename;
 	eastl::vector<eastl::string> levelOpenModalFiles;
@@ -53,14 +54,14 @@ struct ImGuiDemoTool : public EditorTool
 
 // ***********************************************************************
 
-EntityID Editor::GetSelectedEntity()
+Uuid Editor::GetSelectedEntity()
 {
 	return selectedEntity;
 }
 
 // ***********************************************************************
 
-void Editor::SetSelectedEntity(EntityID entity)
+void Editor::SetSelectedEntity(Uuid entity)
 {
 	selectedEntity = entity;
 }

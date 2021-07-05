@@ -33,6 +33,37 @@ public:
 		return globalSystems.back();
 	}
 
+	/**
+	 * Defines a forward iterator on the entities in this world
+	 * 
+	 * Use like: for(Entity* pEnt : world) { ... }
+	 * 
+	 **/
+	struct EntityIterator
+	{
+		EntityIterator(eastl::vector<Entity*>::iterator _it) : it(_it) {}
+
+		Entity* operator*() const;
+
+		bool operator==(const EntityIterator& other) const;
+
+		bool operator!=(const EntityIterator& other) const;
+
+		EntityIterator& operator++();
+
+		eastl::vector<Entity*>::iterator it;
+	};
+
+	/**
+	 * Iterator to first member
+	 **/
+	const EntityIterator begin();
+
+	/**
+	 * Iterator to last member
+	 **/
+	const EntityIterator end();
+
 private:
 	bool isActive{ false };
 

@@ -261,15 +261,15 @@ void SceneView::Update(Scene& scene, UpdateContext& ctx)
 
     UpdateCameraControls(ctx.deltaTime);
 
-    if (bPendingLeftClickRay)
-    {
-        lastHit = SceneQueries::Hit();
-        if (SceneQueries::RaycastRenderables(scene, rayStart, rayDir, lastHit))
-            Editor::SetSelectedEntity(lastHit.ent);   
-        else
-            Editor::SetSelectedEntity(EntityID::InvalidID());   
-        bPendingLeftClickRay = false;
-    }
+    // if (bPendingLeftClickRay)
+    // {
+    //     lastHit = SceneQueries::Hit();
+    //     if (SceneQueries::RaycastRenderables(scene, rayStart, rayDir, lastHit))
+    //         Editor::SetSelectedEntity(lastHit.ent);   
+    //     else
+    //         Editor::SetSelectedEntity(EntityID::InvalidID());   
+    //     bPendingLeftClickRay = false;
+    // }
 
     // Draw the options bar along the top
     const char* buttonLabel = "3D";

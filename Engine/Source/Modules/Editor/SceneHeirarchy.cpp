@@ -1,6 +1,8 @@
 #include "SceneHeirarchy.h"
 
 #include "Scene.h"
+#include "World.h"
+#include "Entity.h"
 
 #include <ImGui/imgui.h>
 
@@ -11,31 +13,33 @@ SceneHeirarchy::SceneHeirarchy()
 
 // ***********************************************************************
 
-void RecurseDrawEntityTree(Scene& scene, EntityID parent)
+void RecurseDrawEntityTree(UpdateContext& ctx, EntityID parent)
 {
-	CParent* pParent = scene.Get<CParent>(parent);
+	// New entity system doesn't support entity parenting yet. Come back to this
+
+	// CParent* pParent = scene.Get<CParent>(parent);
 			
-	EntityID currChild = pParent->firstChild;
-	for(int i = 0; i < pParent->nChildren; i++)
-	{
-		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+	// EntityID currChild = pParent->firstChild;
+	// for(int i = 0; i < pParent->nChildren; i++)
+	// {
+	// 	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 		
-		if (!scene.Has<CParent>(currChild))
-			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	// 	if (!scene.Has<CParent>(currChild))
+	// 		nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)currChild.value, nodeFlags, "%i - %s", currChild.Index(), scene.GetEntityName(currChild).c_str());
-		if (ImGui::IsItemClicked())
-			Editor::SetSelectedEntity(currChild);
+	// 	bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)currChild.value, nodeFlags, "%i - %s", currChild.Index(), scene.GetEntityName(currChild).c_str());
+	// 	if (ImGui::IsItemClicked())
+	// 		Editor::SetSelectedEntity(currChild);
 		
-		if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
-		{
-			if (scene.Has<CParent>(currChild))
-				RecurseDrawEntityTree(scene, currChild);
+	// 	if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
+	// 	{
+	// 		if (scene.Has<CParent>(currChild))
+	// 			RecurseDrawEntityTree(scene, currChild);
 
-			ImGui::TreePop();
-		}
-		currChild = scene.Get<CChild>(currChild)->next;
-	}
+	// 		ImGui::TreePop();
+	// 	}
+	// 	currChild = scene.Get<CChild>(currChild)->next;
+	// }
 }
 
 // ***********************************************************************
@@ -49,27 +53,29 @@ void SceneHeirarchy::Update(Scene& scene, UpdateContext& ctx)
 		scene.NewEntity("Entity");
 	}
 
-	for (EntityID entity : SceneIterator<>(scene))
+	uint64_t counter = 0;
+	for (Entity* pEntity : (*ctx.pWorld))
 	{
+		counter++;
 		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 
-		if (Editor::GetSelectedEntity() == entity)
+		if (Editor::GetSelectedEntity() == pEntity->GetId())
 			nodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-		if (!scene.Has<CParent>(entity))
-			nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+		// if (!scene.Has<CParent>(entity))
+		nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-		if (scene.Has<CChild>(entity))
-			continue;
+		// if (scene.Has<CChild>(entity))
+		// 	continue;
 
-		bool nodeOpened = ImGui::TreeNodeEx((void*)(uintptr_t)entity.value, nodeFlags, "%i - %s", entity.Index(), scene.GetEntityName(entity).c_str());
+		bool nodeOpened = ImGui::TreeNodeEx((void*)counter, nodeFlags, "%s", pEntity->name.c_str());
 		if (ImGui::IsItemClicked())
-			Editor::SetSelectedEntity(entity);
+			Editor::SetSelectedEntity(pEntity->GetId());
 		
 		if (nodeOpened && !(nodeFlags & ImGuiTreeNodeFlags_Leaf))
 		{
-			if (scene.Has<CParent>(entity))
-				RecurseDrawEntityTree(scene, entity);
+			// if (scene.Has<CParent>(entity))
+			// 	RecurseDrawEntityTree(scene, entity);
 
 			ImGui::TreePop();
 		}

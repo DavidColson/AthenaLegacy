@@ -68,10 +68,6 @@ void OnBulletAsteroidCollision(Scene& scene, EntityID bullet, EntityID asteroid)
 	// Doesn't compile for now. Fix later	
 	//scene.Get<CText>(scoreEnt)->text.sprintf("%i", pPlayerScore->score);
 
-	// Spawn death particles
-	EntityID particles = scene.NewEntity("Asteroid Particles");
-	scene.Assign<CTransform>(particles)->localPos = scene.Get<CTransform>(asteroid)->localPos;
-	scene.Assign<CParticleEmitter>(particles);
 
 	// Asteroid vs bullet collision
 	if (scene.Get<CAsteroid>(asteroid)->hitCount >= 2) // Smallest type asteroid, destroy and return

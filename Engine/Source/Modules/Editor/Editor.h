@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vec2.h"
+#include "UUID.h"
 
 struct Scene;
 struct TextureHandle;
@@ -31,6 +32,6 @@ namespace Editor
 	bool IsActive();
 	void ToggleEditor();
 
-	EntityID GetSelectedEntity();
-	void SetSelectedEntity(EntityID entity);
+	Uuid GetSelectedEntity();
+	void SetSelectedEntity(Uuid entity);
 }

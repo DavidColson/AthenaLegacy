@@ -134,3 +134,47 @@ void World::OnUpdate(UpdateContext& ctx)
         pSystem->Update(ctx);
     }
 }
+
+// ***********************************************************************
+
+Entity* World::EntityIterator::operator*() const 
+{ 
+	return *it;
+}
+
+// ***********************************************************************
+
+bool World::EntityIterator::operator==(const EntityIterator& other) const 
+{
+	return it == other.it;
+}
+
+// ***********************************************************************
+
+bool World::EntityIterator::operator!=(const EntityIterator& other) const 
+{
+	return it != other.it;
+}
+
+// ***********************************************************************
+
+World::EntityIterator& World::EntityIterator::operator++()
+{
+	++it;
+	return *this;
+}
+
+// ***********************************************************************
+
+const World::EntityIterator World::begin() 
+{
+	return EntityIterator(entities.begin());
+}
+
+// ***********************************************************************
+
+const World::EntityIterator World::end()
+{
+	return EntityIterator(entities.end());
+}
+
