@@ -1,6 +1,5 @@
 #include "SceneDrawSystem.h"
 
-#include "Scene.h"
 #include "TypeSystem.h"
 #include "Profiler.h"
 #include "Mesh.h"

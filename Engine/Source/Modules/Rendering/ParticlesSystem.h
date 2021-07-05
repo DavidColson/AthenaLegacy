@@ -4,9 +4,10 @@
 #include "Matrix.h"
 #include "GraphicsDevice.h"
 #include "Log.h"
-#include "Scene.h"
 #include "AssetDatabase.h"
 #include "Mesh.h"
+#include "SpatialComponent.h"
+#include "Systems.h"
 
 #include <EASTL/shared_ptr.h>
 
@@ -60,7 +61,7 @@ struct ParticlePool
 	size_t currentMaxParticleIndex{ 0 };
 };
 
-struct CParticleEmitter
+struct ParticleEmitter : public SpatialComponent
 {
 	bool looping{ false };
 	bool destroyEntityOnEnd{ true };
@@ -82,12 +83,22 @@ struct CParticleEmitter
 
 	eastl::shared_ptr<ParticlePool> particlePool;
 
-	REFLECT()
+	REFLECT_DERIVED()
 };
 
-namespace ParticlesSystem
+struct ParticlesSystem : public IWorldSystem
 {
-	void OnAddEmitter(Scene& scene, EntityID entity);
-	void OnRemoveEmitter(Scene& scene, EntityID entity);
-	void OnFrame(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx);
-}
+	~ParticlesSystem();
+
+    virtual void Activate() override;
+
+    virtual void Deactivate() override;
+
+	virtual void RegisterComponent(Entity* pEntity, IComponent* pComponent) override;
+
+	virtual void UnregisterComponent(Entity* pEntity, IComponent* pComponent) override;
+
+	virtual void Draw(UpdateContext& ctx, FrameContext& frameCtx) override;
+
+	eastl::map<Uuid, ParticleEmitter*> emitters;
+};

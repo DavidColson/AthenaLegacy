@@ -1,6 +1,5 @@
 #include "ParticlesSystem.h"
 
-#include "Scene.h"
 #include "Matrix.h"
 #include "Maths.h"
 #include "Profiler.h"
@@ -8,8 +7,10 @@
 #include "Vec4.h"
 #include "GameRenderer.h"
 #include "Shader.h"
+#include "Engine.h"
+#include "World.h"
 
-REFLECT_COMPONENT_BEGIN(CParticleEmitter)
+REFLECT_BEGIN_DERIVED(ParticleEmitter, SpatialComponent)
 REFLECT_MEMBER(looping)
 REFLECT_MEMBER(lifetime)
 REFLECT_MEMBER(initialCount)
@@ -28,7 +29,7 @@ struct ParticlesTransform
 
 // ***********************************************************************
 
-void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
+void RestartEmitter(ParticleEmitter& emitter)
 {
 	// Create initial particles
 	for (size_t i = 0; i < emitter.initialCount; i++)
@@ -38,7 +39,7 @@ void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 
 		auto randf = []() { return float(rand()) / float(RAND_MAX); };
 
-		pNewParticle->position = Vec2f::Project3D(emitterTransform.localPos);
+		pNewParticle->position = Vec2f::Project3D(emitter.GetLocalPosition());
 		pNewParticle->rotation = LinearMap(randf(), 0.0f, 1.0f, emitter.initialRotationMin, emitter.initialRotationMax);
 		pNewParticle->scale = Vec2f(5.0f, 5.0f);
 
@@ -52,51 +53,61 @@ void RestartEmitter(CParticleEmitter& emitter, CTransform& emitterTransform)
 	}
 }
 
-// ***********************************************************************
-
-void ParticlesSystem::OnAddEmitter(Scene& scene, EntityID entity)
+ParticlesSystem::~ParticlesSystem()
 {
-	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
-
-	emitter.transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
-	uint32_t bufferSize = sizeof(Matrixf) * 64;
-	emitter.instanceDataBuffer = GfxDevice::CreateConstantBuffer(bufferSize, "Particles instance data buffer");
-
-	emitter.particlePool = eastl::make_unique<ParticlePool>();
-	RestartEmitter(emitter, *(scene.Get<CTransform>(entity)));
+	GameRenderer::UnregisterRenderSystemOpaque(this);
 }
 
-// ***********************************************************************
-
-void ParticlesSystem::OnRemoveEmitter(Scene& scene, EntityID entity)
+void ParticlesSystem::Activate()
 {
-	CParticleEmitter& emitter = *(scene.Get<CParticleEmitter>(entity));
-	GfxDevice::FreeConstBuffer(emitter.transBuffer);
-	GfxDevice::FreeConstBuffer(emitter.instanceDataBuffer);
+	GameRenderer::RegisterRenderSystemOpaque(this);
 }
 
-// ***********************************************************************
-
-void ParticlesSystem::OnFrame(Scene& scene, UpdateContext& ctx, FrameContext& frameCtx)
+void ParticlesSystem::Deactivate()
 {
+	GameRenderer::UnregisterRenderSystemOpaque(this);
+}
+
+void ParticlesSystem::RegisterComponent(Entity* pEntity, IComponent* pComponent)
+{
+	if (pComponent->GetTypeData() == TypeDatabase::Get<ParticleEmitter>())
+	{
+		ParticleEmitter* pEmitter = static_cast<ParticleEmitter*>(pComponent);
+		emitters[pEntity->GetId()] = pEmitter;
+
+		pEmitter->transBuffer = GfxDevice::CreateConstantBuffer(sizeof(ParticlesTransform), "Particles Transform Constant Buffer");
+		uint32_t bufferSize = sizeof(Matrixf) * 64;
+		pEmitter->instanceDataBuffer = GfxDevice::CreateConstantBuffer(bufferSize, "Particles instance data buffer");
+
+		pEmitter->particlePool = eastl::make_unique<ParticlePool>();
+		RestartEmitter(*pEmitter);
+	}
+}
+
+void ParticlesSystem::UnregisterComponent(Entity* pEntity, IComponent* pComponent)
+{
+	if (pComponent->GetTypeData() == TypeDatabase::Get<ParticleEmitter>())
+	{
+		ParticleEmitter* pEmitter = static_cast<ParticleEmitter*>(pComponent);
+		GfxDevice::FreeConstBuffer(pEmitter->transBuffer);
+		GfxDevice::FreeConstBuffer(pEmitter->instanceDataBuffer);
+		emitters.erase(pEntity->GetId());
+	}
+}
+
+void ParticlesSystem::Draw(UpdateContext& ctx, FrameContext& frameCtx)
+{
+	GFX_SCOPED_EVENT("Scene Draw");
 	PROFILE();
 
-	for (EntityID ent : SceneIterator<CParticleEmitter, CTransform>(scene))
-	{
-		// Skip if this entity has a visibility component that is false
-		if (scene.Has<CVisibility>(ent))
-		{
-			if (scene.Get<CVisibility>(ent)->visible == false)
-				continue;
-		}
-
-		CParticleEmitter* pEmitter = scene.Get<CParticleEmitter>(ent);
-		CTransform* pTrans = scene.Get<CTransform>(ent);
-
+	for (eastl::pair<Uuid, ParticleEmitter*> emitterPair : emitters)
+    {
+        ParticleEmitter* pEmitter = emitterPair.second;
 		// TODO: Move particle simulation to another system that can be modified. We're going to move all the rendering code inside the rendering device.
 		// Particle lifetime management also stays here. But we want to give the opportunity to write your own particle simulators
 		// Simulate particles and update transforms
 		// ****************************************
+
 		eastl::vector<Matrixf> particleTransforms;
 		particleTransforms.reserve(64);
 		for(int i = 0; i < pEmitter->particlePool->currentMaxParticleIndex; i++)
@@ -126,9 +137,9 @@ void ParticlesSystem::OnFrame(Scene& scene, UpdateContext& ctx, FrameContext& fr
 		if (particleTransforms.empty())
 		{
 			if (pEmitter->looping == true)
-				RestartEmitter(*pEmitter, *pTrans);
+				RestartEmitter(*pEmitter);
 			else if (pEmitter->destroyEntityOnEnd == true)
-				scene.DestroyEntity(ent);
+				ctx.pWorld->DestroyEntity(emitterPair.first);
 
 			continue;
 		}

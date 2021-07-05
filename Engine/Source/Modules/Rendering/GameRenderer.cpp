@@ -3,7 +3,6 @@
 #include "Engine.h"
 #include "Scene.h"
 #include "GraphicsDevice.h"
-#include "ParticlesSystem.h"
 #include "PostProcessing.h"
 #include "DebugDraw.h"
 #include "SceneDrawSystem.h"
@@ -105,14 +104,6 @@ void GameRenderer::UnregisterRenderSystemTransparent(IWorldSystem* pSystem)
 
 // ***********************************************************************
 
-void GameRenderer::OnSceneCreate(Scene& scene)
-{
-    scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnAdd, ParticlesSystem::OnAddEmitter);
-	scene.RegisterReactiveSystem<CParticleEmitter>(Reaction::OnRemove, ParticlesSystem::OnRemoveEmitter);
-}
-
-// ***********************************************************************
-
 TextureHandle GameRenderer::DrawFrame(Scene& scene, UpdateContext& ctx)
 {
     GfxDevice::BindRenderTarget(gameRenderTarget);
@@ -167,7 +158,6 @@ void GameRenderer::SceneRenderPassOpaque(Scene& scene, UpdateContext& ctx, Frame
     {
         pSystem->Draw(ctx, frameCtx);
     }
-    ParticlesSystem::OnFrame(scene, ctx, frameCtx);
     DebugDraw::OnFrame(ctx, frameCtx);
 }
 

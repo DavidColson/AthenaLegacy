@@ -2,6 +2,7 @@
 
 #include <Engine.h>
 #include <World.h>
+#include <Rendering/ParticlesSystem.h>
 
 #include "../EntitySystems/PlayerController.h"
 #include "../Components.h"
@@ -135,7 +136,9 @@ void CollisionSystem::OnBulletAsteroidCollision(World& world, Uuid bulletEntity,
 
 	AudioDevice::PlaySound(pPlayerComponent->explosionSound, 1.0f, false);
 
-    // TODO: Spawn particles
+    Entity* pParticlesEnt = world.NewEntity("Asteroid Particles");
+    ParticleEmitter* pEmitter = pParticlesEnt->AddNewComponent<ParticleEmitter>();
+    pEmitter->SetLocalPosition(pAsteroidPhysics->GetLocalPosition());
 
     if (pAsteroidComponent->hitCount >= 2)
     {

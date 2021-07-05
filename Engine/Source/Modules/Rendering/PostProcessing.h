@@ -1,10 +1,5 @@
 #pragma once
 
-#include "GraphicsDevice.h"
-#include "Scene.h"
-#include "AssetDatabase.h"
-#include "Mesh.h"
-
 struct FrameContext;
 
 namespace PostProcessing

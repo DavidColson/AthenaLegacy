@@ -212,6 +212,7 @@ World* CreateMainAsteroidsScene()
 	world.AddGlobalSystem<FontDrawSystem>();
 	world.AddGlobalSystem<CollisionSystem>();
 	world.AddGlobalSystem<AsteroidSpawner>();
+	world.AddGlobalSystem<ParticlesSystem>();
 
 	return &world;
 }
