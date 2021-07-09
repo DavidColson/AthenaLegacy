@@ -19,8 +19,6 @@ target_sources(AsteroidsGame
         "Asteroids.cpp"
         "Components.h"
         "Components.cpp"
-        "Systems_Old.h"
-        "Systems_Old.cpp"
         "WorldSystems/PolylineDrawSystem.h"
         "WorldSystems/PolylineDrawSystem.cpp"
         "WorldSystems/MovementSystem.h"

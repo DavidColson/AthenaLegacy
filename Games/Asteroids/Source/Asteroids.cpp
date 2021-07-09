@@ -1,5 +1,4 @@
 #include "Asteroids.h"
-#include "Systems_Old.h"
 #include "Components.h"
 #include "WorldSystems/MovementSystem.h"
 #include "WorldSystems/PolylineDrawSystem.h"
