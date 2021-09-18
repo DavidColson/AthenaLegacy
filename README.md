@@ -1,30 +1,30 @@
 # Athena Toolset
 
-Athena is a small, personal game development toolset built as simply as possible to serve little game experiments I feel like making. The idea is that I make little games and experiments and this drives me to develop various different features that get added to the toolset. I'm making games here, not unecessary game engine features. The first game is an asteroids remake, which looks like this:
+This first version of Athen was a small game toolkit I was working on to learn about game engines, I made asteroids in it, which quite frankly is overcomplicated now and some other small demos. I have since abandoned the project because I wanted to work on game projects that were more focused and less about just game engine technology. Some of the source code of the project has been brough forward into newer projects of mine such as the new Athena, but I no longer work on this. The new Athena, while being a custom made engine, is being made as part of a specific game, which it turns out is a far better way of doing things.
+
+Athena was a small, personal game development toolset built as simply as possible to serve little game experiments I feel like making. The idea is that I make little games and experiments and this drives me to develop various different features that get added to the toolset. I'm making games here, not unecessary game engine features. The first game is an asteroids remake, which looks like this:
 
 ![gameplay](GitHubImages/AsteroidsImage1.png)
 
-![editor](GitHubImages/AsteroidsImage2.png)
+![3D editor](https://user-images.githubusercontent.com/7236152/133889136-aefc77b1-ccd5-4255-a15d-688b2c5d9d1f.jpg)
 
-The asteroids clone isn't quite finished yet, but so far we have the following features:
+![2D editor](https://user-images.githubusercontent.com/7236152/133889143-838c9eb1-efc8-4c8d-85f4-a498fcfdaea4.jpg)
 
-- 2D vector like graphics
+A small sampling of the features it had
+
+- 2D vector graphics
+- Basic 3D graphics
+- A type reflection system
+- A simple editor with debug tools
 - Post processing with bloom, chromatic abberation, screen warping and a few other things
 - Font drawing
-- Simple audio 
-- Entity system
+- Simple audio
+- An Entity system
 - Input
-- BONUS: Type reflection (purely because I wanted to make an entity inspector)
 
 # Supported platforms
 
 Currently only Windows 64 bit, as it uses DirectX11. It shouldn't be that hard to port to other platforms though, as the DX11 code all lives in a single file which can be replaced by a OpenGL or Vulkan version. One day I'll get around to this, promise.
-
-# Documentation
-
-Considering it's a really small, fast moving engine, I have decided documentation should live alongside code. Most of the more important systems, like the entity system, have examples and explanation as comments in the code files, and I've tried to comment in as useful a manner as I possible can. 
-
-Explore the code and read the comments. Hopefully if you want to work on this library, learn from it, or use it, it should be relatively straight forward to figure out what's going on.
 
 # Design principles
 
